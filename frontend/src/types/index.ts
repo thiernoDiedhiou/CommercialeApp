@@ -321,6 +321,42 @@ export interface PosDraft {
   created_at: string
 }
 
+// ── Users & Groups ────────────────────────────────────────────────────────
+
+export interface Permission {
+  id: number
+  name: string
+  display_name: string
+  module: string
+}
+
+export interface Group {
+  id: number
+  name: string
+  description: string | null
+  users_count?: number
+  permissions?: Permission[]
+}
+
+export interface UserWithGroups extends User {
+  groups?: Pick<Group, 'id' | 'name'>[]
+}
+
+export interface CreateUserData {
+  name: string
+  email: string
+  password: string
+  is_active?: boolean
+  group_ids?: number[]
+}
+
+export type UpdateUserData = Partial<Omit<CreateUserData, 'password'> & { password?: string }>
+
+export interface CreateGroupData {
+  name: string
+  description?: string | null
+}
+
 // ── API error ─────────────────────────────────────────────────────────────
 
 export interface ApiError {

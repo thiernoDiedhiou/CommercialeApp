@@ -1,0 +1,715 @@
+import { useEffect, useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import {
+  UserIcon,
+  UsersIcon,
+  ShieldCheckIcon,
+  PencilSquareIcon,
+  TrashIcon,
+  PlusIcon,
+} from '@heroicons/react/24/outline'
+import { useAuthStore } from '@/store/authStore'
+import Modal from '@/components/ui/Modal'
+import Button from '@/components/ui/Button'
+import Badge from '@/components/ui/Badge'
+import { Skeleton } from '@/components/ui/Skeleton'
+import {
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  syncUserGroups,
+} from '@/services/api/users'
+import {
+  getGroups,
+  getAvailablePermissions,
+  createGroup,
+  updateGroup,
+  deleteGroup,
+  syncGroupPermissions,
+} from '@/services/api/groups'
+import type { UserWithGroups, Group, Permission, CreateGroupData } from '@/types'
+
+// ─── Tab IDs ──────────────────────────────────────────────────────────────────
+
+type Tab = 'profil' | 'users' | 'groups'
+
+const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  { id: 'profil',  label: 'Mon profil',   icon: <UserIcon className="h-4 w-4" /> },
+  { id: 'users',   label: 'Utilisateurs', icon: <UsersIcon className="h-4 w-4" /> },
+  { id: 'groups',  label: 'Groupes',      icon: <ShieldCheckIcon className="h-4 w-4" /> },
+]
+
+// ─── Schemas ─────────────────────────────────────────────────────────────────
+
+const profilSchema = z.object({
+  name:     z.string().min(2, 'Nom requis'),
+  email:    z.string().email('Email invalide'),
+  password: z.string().min(8, '8 caractères min').or(z.literal('')).optional(),
+})
+type ProfilValues = z.infer<typeof profilSchema>
+
+const userSchema = z.object({
+  name:      z.string().min(2, 'Nom requis'),
+  email:     z.string().email('Email invalide'),
+  password:  z.string().min(8, '8 caractères min').or(z.literal('')).optional(),
+  is_active: z.boolean().optional(),
+})
+type UserValues = z.infer<typeof userSchema>
+
+const groupSchema = z.object({
+  name:        z.string().min(2, 'Nom requis'),
+  description: z.string().nullable().optional(),
+})
+type GroupValues = z.infer<typeof groupSchema>
+
+// ─── ProfilTab ────────────────────────────────────────────────────────────────
+
+function ProfilTab() {
+  const qc      = useQueryClient()
+  const me      = useAuthStore((s) => s.user)
+  const setAuth = useAuthStore((s) => s.setAuth)
+  const token   = useAuthStore((s) => s.token)
+  const perms   = useAuthStore((s) => s.permissions)
+  const tenant  = useAuthStore((s) => s.tenant)
+  const [saved, setSaved] = useState(false)
+
+  const { register, handleSubmit, formState: { errors, isDirty } } = useForm<ProfilValues>({
+    resolver: zodResolver(profilSchema),
+    defaultValues: { name: me?.name ?? '', email: me?.email ?? '', password: '' },
+  })
+
+  const mutation = useMutation({
+    mutationFn: (vals: ProfilValues) => {
+      const body: Record<string, unknown> = { name: vals.name, email: vals.email }
+      if (vals.password) body.password = vals.password
+      return updateUser(me!.id, body)
+    },
+    onSuccess: (updated) => {
+      if (token && tenant) {
+        setAuth(token, { ...me!, name: updated.name, email: updated.email }, perms, tenant)
+      }
+      qc.invalidateQueries({ queryKey: ['users'] })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    },
+  })
+
+  return (
+    <div className="max-w-md">
+      <h2 className="mb-6 text-base font-semibold text-gray-800">Informations personnelles</h2>
+      <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+          <input
+            {...register('name')}
+            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition"
+          />
+          {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <input type="email" {...register('email')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
+          {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Nouveau mot de passe <span className="font-normal text-gray-400">(laisser vide pour ne pas changer)</span>
+          </label>
+          <input type="password" autoComplete="new-password" {...register('password')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
+          {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
+        </div>
+
+        <div className="flex items-center gap-3 pt-2">
+          <Button type="submit" loading={mutation.isPending} disabled={!isDirty && !mutation.isPending}>
+            Enregistrer
+          </Button>
+          {saved && <span className="text-sm text-green-600">Modifications enregistrées ✓</span>}
+          {mutation.isError && <span className="text-sm text-red-500">Erreur lors de l'enregistrement</span>}
+        </div>
+      </form>
+    </div>
+  )
+}
+
+// ─── UserModal ────────────────────────────────────────────────────────────────
+
+interface UserModalProps {
+  isOpen:  boolean
+  editing: UserWithGroups | null
+  groups:  Group[]
+  onClose: () => void
+}
+
+function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
+  const qc = useQueryClient()
+  const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([])
+  const [apiError, setApiError] = useState<string | null>(null)
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<UserValues>({
+    resolver: zodResolver(userSchema),
+  })
+
+  useEffect(() => {
+    if (!isOpen) return
+    reset({
+      name:      editing?.name     ?? '',
+      email:     editing?.email    ?? '',
+      password:  '',
+      is_active: editing?.is_active ?? true,
+    })
+    setSelectedGroupIds(editing?.groups?.map((g) => g.id) ?? [])
+    setApiError(null)
+  }, [isOpen, editing, reset])
+
+  const mutation = useMutation({
+    mutationFn: async (vals: UserValues) => {
+      if (editing) {
+        const body: Record<string, unknown> = { name: vals.name, email: vals.email, is_active: vals.is_active }
+        if (vals.password) body.password = vals.password
+        const u = await updateUser(editing.id, body)
+        await syncUserGroups(u.id, selectedGroupIds)
+        return u
+      }
+      return createUser({
+        name:      vals.name,
+        email:     vals.email,
+        password:  vals.password ?? '',
+        is_active: vals.is_active ?? true,
+        group_ids: selectedGroupIds,
+      })
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users'] })
+      onClose()
+    },
+    onError: (e: unknown) => {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setApiError(msg ?? "Erreur lors de l'enregistrement.")
+    },
+  })
+
+  const toggleGroup = (id: number) =>
+    setSelectedGroupIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    )
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={editing ? "Modifier l'utilisateur" : 'Nouvel utilisateur'}
+      footer={
+        <div className="flex gap-2 w-full">
+          <Button variant="secondary" className="flex-1" onClick={onClose}>Annuler</Button>
+          <Button type="submit" form="user-form" className="flex-1" loading={mutation.isPending}>
+            {editing ? 'Enregistrer' : 'Créer'}
+          </Button>
+        </div>
+      }
+    >
+      <form id="user-form" onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
+          <input {...register('name')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
+          {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+          <input type="email" {...register('email')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
+          {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Mot de passe{!editing && ' *'}
+            {editing && <span className="font-normal text-gray-400 ml-1">(vide = inchangé)</span>}
+          </label>
+          <input type="password" autoComplete="new-password" {...register('password')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
+          {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <input type="checkbox" id="is_active_u" {...register('is_active')} className="h-4 w-4 rounded border-gray-300 text-indigo-600" />
+          <label htmlFor="is_active_u" className="text-sm text-gray-700">Compte actif</label>
+        </div>
+
+        {groups.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Groupes</label>
+            <div className="flex flex-wrap gap-2">
+              {groups.map((g) => {
+                const active = selectedGroupIds.includes(g.id)
+                return (
+                  <button
+                    key={g.id}
+                    type="button"
+                    onClick={() => toggleGroup(g.id)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                      active ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {g.name}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {apiError && (
+          <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+            {apiError}
+          </div>
+        )}
+      </form>
+    </Modal>
+  )
+}
+
+// ─── UsersTab ─────────────────────────────────────────────────────────────────
+
+function UsersTab() {
+  const qc = useQueryClient()
+  const me = useAuthStore((s) => s.user)
+  const [modalOpen, setModalOpen]   = useState(false)
+  const [editing, setEditing]       = useState<UserWithGroups | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+
+  const { data: page, isLoading } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => getUsers(),
+  })
+  const { data: groups = [] } = useQuery({
+    queryKey: ['groups'],
+    queryFn: getGroups,
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteUser,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+    onSettled: () => setDeletingId(null),
+  })
+
+  const openCreate = () => { setEditing(null); setModalOpen(true) }
+  const openEdit   = (u: UserWithGroups) => { setEditing(u); setModalOpen(true) }
+
+  const users = page?.data ?? []
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold text-gray-800">Utilisateurs</h2>
+        <Button size="sm" icon={<PlusIcon className="h-4 w-4" />} onClick={openCreate}>
+          Nouvel utilisateur
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="flex-1 space-y-1">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-56" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-xl border border-gray-100">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+              <tr>
+                <th className="px-4 py-3 text-left">Nom</th>
+                <th className="px-4 py-3 text-left">Email</th>
+                <th className="px-4 py-3 text-left">Groupes</th>
+                <th className="px-4 py-3 text-left">Statut</th>
+                <th className="px-4 py-3" aria-label="Actions" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50 bg-white">
+              {users.map((u) => (
+                <tr key={u.id} className="hover:bg-gray-50/50 transition">
+                  <td className="px-4 py-3 font-medium text-gray-800">
+                    {u.name}
+                    {u.id === me?.id && <span className="ml-2 text-xs text-indigo-500">(vous)</span>}
+                  </td>
+                  <td className="px-4 py-3 text-gray-500">{u.email}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      {(u.groups ?? []).map((g) => (
+                        <Badge key={g.id} variant="info" size="sm">{g.name}</Badge>
+                      ))}
+                      {(u.groups ?? []).length === 0 && <span className="text-xs text-gray-400">Aucun</span>}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge variant={u.is_active ? 'success' : 'default'} dot>
+                      {u.is_active ? 'Actif' : 'Inactif'}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openEdit(u)}
+                        className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600 transition"
+                        title="Modifier"
+                      >
+                        <PencilSquareIcon className="h-4 w-4" />
+                      </button>
+                      {u.id !== me?.id && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!confirm(`Supprimer ${u.name} ?`)) return
+                            setDeletingId(u.id)
+                            deleteMutation.mutate(u.id)
+                          }}
+                          disabled={deletingId === u.id}
+                          className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 transition disabled:opacity-40"
+                          title="Supprimer"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <UserModal
+        isOpen={modalOpen}
+        editing={editing}
+        groups={groups}
+        onClose={() => setModalOpen(false)}
+      />
+    </div>
+  )
+}
+
+// ─── PermissionsModal ─────────────────────────────────────────────────────────
+
+const MODULE_LABELS: Record<string, string> = {
+  dashboard:  'Tableau de bord',
+  products:   'Produits',
+  categories: 'Catégories',
+  variants:   'Variantes',
+  stock:      'Stock',
+  customers:  'Clients',
+  sales:      'Ventes',
+  pos:        'Point de vente',
+  users:      'Utilisateurs',
+  groups:     'Groupes',
+}
+
+interface PermissionsModalProps {
+  group:   Group | null
+  isOpen:  boolean
+  onClose: () => void
+}
+
+function PermissionsModal({ group, isOpen, onClose }: PermissionsModalProps) {
+  const qc = useQueryClient()
+  const [checked, setChecked] = useState<number[]>([])
+
+  const { data: byModule = {} } = useQuery({
+    queryKey: ['permissions-available'],
+    queryFn: getAvailablePermissions,
+    staleTime: Infinity,
+  })
+
+  useEffect(() => {
+    if (isOpen && group) {
+      setChecked(group.permissions?.map((p) => p.id) ?? [])
+    }
+  }, [isOpen, group])
+
+  const mutation = useMutation({
+    mutationFn: () => syncGroupPermissions(group!.id, checked),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['groups'] })
+      onClose()
+    },
+  })
+
+  const toggle = (id: number) =>
+    setChecked((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
+
+  const toggleModule = (perms: Permission[]) => {
+    const ids = perms.map((p) => p.id)
+    const allOn = ids.every((id) => checked.includes(id))
+    setChecked((prev) =>
+      allOn ? prev.filter((x) => !ids.includes(x)) : [...new Set([...prev, ...ids])],
+    )
+  }
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Permissions — ${group?.name ?? ''}`}
+      size="lg"
+      footer={
+        <div className="flex gap-2 w-full">
+          <Button variant="secondary" className="flex-1" onClick={onClose}>Annuler</Button>
+          <Button className="flex-1" loading={mutation.isPending} onClick={() => mutation.mutate()}>
+            Enregistrer
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+        {Object.entries(byModule).map(([module, perms]) => {
+          const ids = (perms as Permission[]).map((p) => p.id)
+          const checkedCount = ids.filter((id) => checked.includes(id)).length
+
+          return (
+            <div key={module} className="rounded-lg border border-gray-100 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => toggleModule(perms as Permission[])}
+                className="flex w-full items-center justify-between bg-gray-50 px-4 py-2.5 text-left hover:bg-gray-100 transition"
+              >
+                <span className="text-sm font-semibold text-gray-700">
+                  {MODULE_LABELS[module] ?? module}
+                </span>
+                <span className="text-xs text-gray-400">{checkedCount}/{ids.length}</span>
+              </button>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-2 px-4 py-3">
+                {(perms as Permission[]).map((p) => (
+                  <label key={p.id} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={checked.includes(p.id)}
+                      onChange={() => toggle(p.id)}
+                      className="h-4 w-4 rounded border-gray-300 text-indigo-600"
+                    />
+                    <span className="text-sm text-gray-600">{p.display_name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </Modal>
+  )
+}
+
+// ─── GroupModal ───────────────────────────────────────────────────────────────
+
+interface GroupModalProps {
+  isOpen:  boolean
+  editing: Group | null
+  onClose: () => void
+}
+
+function GroupModal({ isOpen, editing, onClose }: GroupModalProps) {
+  const qc = useQueryClient()
+  const [apiError, setApiError] = useState<string | null>(null)
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<GroupValues>({
+    resolver: zodResolver(groupSchema),
+  })
+
+  useEffect(() => {
+    if (!isOpen) return
+    reset({ name: editing?.name ?? '', description: editing?.description ?? '' })
+    setApiError(null)
+  }, [isOpen, editing, reset])
+
+  const mutation = useMutation({
+    mutationFn: (vals: GroupValues) =>
+      editing
+        ? updateGroup(editing.id, vals as Partial<CreateGroupData>)
+        : createGroup(vals as CreateGroupData),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['groups'] })
+      onClose()
+    },
+    onError: (e: unknown) => {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
+      setApiError(msg ?? "Erreur lors de l'enregistrement.")
+    },
+  })
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={editing ? 'Modifier le groupe' : 'Nouveau groupe'}
+      size="sm"
+      footer={
+        <div className="flex gap-2 w-full">
+          <Button variant="secondary" className="flex-1" onClick={onClose}>Annuler</Button>
+          <Button type="submit" form="group-form" className="flex-1" loading={mutation.isPending}>
+            {editing ? 'Enregistrer' : 'Créer'}
+          </Button>
+        </div>
+      }
+    >
+      <form id="group-form" onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
+          <input {...register('name')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
+          {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Description <span className="font-normal text-gray-400">(optionnel)</span>
+          </label>
+          <textarea {...register('description')} rows={2} className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
+        </div>
+
+        {apiError && (
+          <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
+            {apiError}
+          </div>
+        )}
+      </form>
+    </Modal>
+  )
+}
+
+// ─── GroupsTab ────────────────────────────────────────────────────────────────
+
+function GroupsTab() {
+  const qc = useQueryClient()
+  const [groupModalOpen, setGroupModalOpen]   = useState(false)
+  const [editing, setEditing]                 = useState<Group | null>(null)
+  const [permGroup, setPermGroup]             = useState<Group | null>(null)
+  const [permModalOpen, setPermModalOpen]     = useState(false)
+  const [deletingId, setDeletingId]           = useState<number | null>(null)
+
+  const { data: groups = [], isLoading } = useQuery({
+    queryKey: ['groups'],
+    queryFn: getGroups,
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteGroup,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['groups'] }),
+    onSettled: () => setDeletingId(null),
+  })
+
+  const openCreate = () => { setEditing(null); setGroupModalOpen(true) }
+  const openEdit   = (g: Group) => { setEditing(g); setGroupModalOpen(true) }
+  const openPerms  = (g: Group) => { setPermGroup(g); setPermModalOpen(true) }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold text-gray-800">Groupes & permissions</h2>
+        <Button size="sm" icon={<PlusIcon className="h-4 w-4" />} onClick={openCreate}>
+          Nouveau groupe
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {groups.map((g) => (
+            <div key={g.id} className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
+              <div>
+                <p className="font-medium text-gray-800">{g.name}</p>
+                <div className="mt-0.5 flex items-center gap-3 text-xs text-gray-400">
+                  <span>{g.users_count ?? 0} utilisateur{(g.users_count ?? 0) > 1 ? 's' : ''}</span>
+                  <span>·</span>
+                  <span>{g.permissions?.length ?? 0} permission{(g.permissions?.length ?? 0) > 1 ? 's' : ''}</span>
+                  {g.description && <><span>·</span><span className="italic">{g.description}</span></>}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openPerms(g)}
+                  className="rounded px-2.5 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 transition"
+                >
+                  Permissions
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openEdit(g)}
+                  className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600 transition"
+                  title="Renommer"
+                >
+                  <PencilSquareIcon className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!confirm(`Supprimer le groupe "${g.name}" ?`)) return
+                    setDeletingId(g.id)
+                    deleteMutation.mutate(g.id)
+                  }}
+                  disabled={deletingId === g.id}
+                  className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 transition disabled:opacity-40"
+                  title="Supprimer"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <GroupModal isOpen={groupModalOpen} editing={editing} onClose={() => setGroupModalOpen(false)} />
+      <PermissionsModal isOpen={permModalOpen} group={permGroup} onClose={() => setPermModalOpen(false)} />
+    </div>
+  )
+}
+
+// ─── SettingsPage ─────────────────────────────────────────────────────────────
+
+export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState<Tab>('profil')
+
+  return (
+    <div className="p-4 sm:p-6 space-y-6">
+      <h1 className="text-xl font-bold text-gray-900">Paramètres</h1>
+
+      <div className="flex gap-1 rounded-xl bg-gray-100 p-1 w-fit">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setActiveTab(t.id)}
+            className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition ${
+              activeTab === t.id
+                ? 'bg-white text-gray-800 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {t.icon}
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+        {activeTab === 'profil' && <ProfilTab />}
+        {activeTab === 'users'  && <UsersTab />}
+        {activeTab === 'groups' && <GroupsTab />}
+      </div>
+    </div>
+  )
+}

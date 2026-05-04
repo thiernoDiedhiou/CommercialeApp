@@ -11,6 +11,7 @@ import SalesPage from '@/pages/sales/SalesPage'
 import SaleDetailPage from '@/pages/sales/SaleDetailPage'
 import PosPage from '@/pages/pos/PosPage'
 import StockPage from '@/pages/stock/StockPage'
+import SettingsPage from '@/pages/settings/SettingsPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
@@ -56,7 +57,7 @@ export default function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard"        element={<DashboardPage />} />
           <Route path="sales"            element={<SalesPage />} />
-          <Route path="sales/new"        element={<PlaceholderPage name="Nouvelle vente (POS)" />} />
+          <Route path="sales/new"        element={<Navigate to="/pos" replace />} />
           <Route path="sales/:id"        element={<SaleDetailPage />} />
           <Route path="products"         element={<ProductsPage />} />
           <Route path="products/new"     element={<ProductFormPage />} />
@@ -64,7 +65,7 @@ export default function App() {
           <Route path="customers"         element={<CustomersPage />} />
           <Route path="customers/:id"    element={<CustomerDetailPage />} />
           <Route path="stock"             element={<StockPage />} />
-          <Route path="settings"         element={<PlaceholderPage name="Paramètres" />} />
+          <Route path="settings"         element={<SettingsPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
