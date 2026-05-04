@@ -50,5 +50,8 @@ class DatabaseSeeder extends Seeder
 
         $this->command->info("✓ Tenant démo prêt — X-Tenant-ID: {$tenant->api_key}");
         $this->command->info('✓ Admin : admin@demo.sn / password');
+
+        // 5. Données de démonstration (produits, stock, clients, ventes)
+        $this->call(DemoDataSeeder::class);
     }
 }
