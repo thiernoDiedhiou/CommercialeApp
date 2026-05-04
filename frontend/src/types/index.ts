@@ -297,7 +297,28 @@ export interface StockMovement {
   created_at: string
   product?: Pick<Product, 'id' | 'name'>
   variant?: Pick<ProductVariant, 'id' | 'attribute_summary'>
+  lot?: Pick<ProductLot, 'id' | 'lot_number'>
   user?: Pick<User, 'id' | 'name'>
+}
+
+// ── POS ───────────────────────────────────────────────────────────────────
+
+export interface PosSession {
+  id: number
+  user_id: number
+  opened_at: string
+  closed_at: string | null
+  opening_cash: number
+  closing_cash: number | null
+  status: 'open' | 'closed'
+  notes: string | null
+}
+
+export interface PosDraft {
+  id: number
+  name: string | null
+  cart_data: object
+  created_at: string
 }
 
 // ── API error ─────────────────────────────────────────────────────────────

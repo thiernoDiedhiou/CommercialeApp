@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Group;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -19,7 +20,7 @@ class DatabaseSeeder extends Seeder
             ['slug' => 'demo'],
             [
                 'name'     => 'Commerce Démo',
-                'api_key'  => 'demo-api-key-change-in-production-64chars000000000000000000000000',
+                'api_key'  => 'demo-api-key-change-in-production-64chars00000000000000000000000',
                 'sector'   => 'general',
                 'currency' => 'XOF',
                 'locale'   => 'fr',
@@ -32,7 +33,7 @@ class DatabaseSeeder extends Seeder
         DefaultGroupSeeder::createForTenant($tenant);
 
         // 4. Utilisateur administrateur démo
-        $adminGroup = $tenant->groups()->where('name', 'Administrateur')->first();
+        $adminGroup = Group::where('tenant_id', $tenant->id)->where('name', 'Administrateur')->first();
 
         $admin = User::firstOrCreate(
             ['tenant_id' => $tenant->id, 'email' => 'admin@demo.sn'],

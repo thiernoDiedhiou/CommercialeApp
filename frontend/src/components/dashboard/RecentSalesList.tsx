@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import Badge from '@/components/ui/Badge'
-import { SkeletonRow } from '@/components/ui/Skeleton'
+import { Skeleton } from '@/components/ui/Skeleton'
 import type { Sale } from '@/types'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 
@@ -24,9 +24,18 @@ interface RecentSalesListProps {
 export default function RecentSalesList({ sales, loading }: RecentSalesListProps) {
   if (loading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <SkeletonRow key={i} />
+          <div key={i} className="flex items-center justify-between">
+            <div className="space-y-1.5">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-5 w-20" />
+            </div>
+          </div>
         ))}
       </div>
     )

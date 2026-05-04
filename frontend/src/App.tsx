@@ -9,6 +9,8 @@ import CustomersPage from '@/pages/customers/CustomersPage'
 import CustomerDetailPage from '@/pages/customers/CustomerDetailPage'
 import SalesPage from '@/pages/sales/SalesPage'
 import SaleDetailPage from '@/pages/sales/SaleDetailPage'
+import PosPage from '@/pages/pos/PosPage'
+import StockPage from '@/pages/stock/StockPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
@@ -32,7 +34,17 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Toutes les routes protégées partagent le Layout */}
+        {/* POS — fullscreen, pas de Layout */}
+        <Route
+          path="/pos"
+          element={
+            <ProtectedRoute>
+              <PosPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Toutes les autres routes protégées partagent le Layout */}
         <Route
           path="/"
           element={
@@ -43,7 +55,6 @@ export default function App() {
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard"        element={<DashboardPage />} />
-          <Route path="pos"              element={<PlaceholderPage name="Caisse POS" />} />
           <Route path="sales"            element={<SalesPage />} />
           <Route path="sales/new"        element={<PlaceholderPage name="Nouvelle vente (POS)" />} />
           <Route path="sales/:id"        element={<SaleDetailPage />} />
@@ -52,7 +63,7 @@ export default function App() {
           <Route path="products/:id/edit" element={<ProductFormPage />} />
           <Route path="customers"         element={<CustomersPage />} />
           <Route path="customers/:id"    element={<CustomerDetailPage />} />
-          <Route path="stock"            element={<PlaceholderPage name="Stock" />} />
+          <Route path="stock"             element={<StockPage />} />
           <Route path="settings"         element={<PlaceholderPage name="Paramètres" />} />
         </Route>
 

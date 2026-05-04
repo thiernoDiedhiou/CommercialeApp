@@ -6,7 +6,7 @@ import {
   ClockIcon,
 } from '@heroicons/react/24/outline'
 import { getDashboardSummary } from '@/services/api/dashboard'
-import { SkeletonCard, SkeletonRow } from '@/components/ui/Skeleton'
+import { SkeletonCard, Skeleton } from '@/components/ui/Skeleton'
 import KpiCard from '@/components/dashboard/KpiCard'
 import WeekChart from '@/components/dashboard/WeekChart'
 import StockAlertList from '@/components/dashboard/StockAlertList'
@@ -62,7 +62,7 @@ export default function DashboardPage() {
               value={formatCurrency(today?.pending_amount ?? 0)}
               icon={<ClockIcon className="h-5 w-5" />}
             >
-              {data && Object.keys(data.by_payment_method).length > 0 && (
+              {data?.by_payment_method && Object.keys(data.by_payment_method).length > 0 && (
                 <ul className="space-y-1">
                   {Object.entries(data.by_payment_method).map(([method, amount]) => (
                     <li key={method} className="flex justify-between text-xs text-gray-500">
@@ -93,9 +93,14 @@ export default function DashboardPage() {
           {isLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
-                <SkeletonRow key={i} />
+                <div key={i} className="flex items-center justify-between gap-3 py-2">
+                  <Skeleton className="h-4 flex-1" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
               ))}
             </div>
+          ) : data?.top_products?.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-6">Aucun produit vendu aujourd'hui</p>
           ) : (
             <ul className="divide-y divide-gray-50">
               {(data?.top_products ?? []).map((p, idx) => (

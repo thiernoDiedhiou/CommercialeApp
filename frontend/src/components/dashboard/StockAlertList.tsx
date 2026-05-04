@@ -1,5 +1,5 @@
 import Badge from '@/components/ui/Badge'
-import { SkeletonRow } from '@/components/ui/Skeleton'
+import { Skeleton } from '@/components/ui/Skeleton'
 import type { StockAlert, ExpiringSoon } from '@/types'
 import { formatDate } from '@/lib/utils'
 
@@ -12,9 +12,12 @@ interface StockAlertListProps {
 export default function StockAlertList({ alerts, expiring, loading }: StockAlertListProps) {
   if (loading) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonRow key={i} />
+          <div key={i} className="flex items-center justify-between">
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-5 w-16" />
+          </div>
         ))}
       </div>
     )
