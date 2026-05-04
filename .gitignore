@@ -1,0 +1,118 @@
+# ═══════════════════════════════════════════════════════════════
+#  .gitignore — SaaS Gestion Commerciale
+#  Monorepo : backend/ (Laravel 11) + frontend/ (React/Vite)
+# ═══════════════════════════════════════════════════════════════
+
+
+# ── Système d'exploitation ────────────────────────────────────────────────
+
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+desktop.ini
+
+
+# ── Éditeurs ─────────────────────────────────────────────────────────────
+
+.idea/
+.vscode/
+*.swp
+*.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+
+# ══════════════════════════════════════════════════════════════
+#  BACKEND — Laravel 11
+# ══════════════════════════════════════════════════════════════
+
+# Dépendances PHP (jamais commitées — composer install les recrée)
+/backend/vendor/
+
+# Variables d'environnement (contient secrets, tokens, mots de passe)
+/backend/.env
+/backend/.env.backup
+/backend/.env.staging
+/backend/.env.production
+
+# Cache applicatif Laravel (recréé par artisan)
+/backend/bootstrap/cache/*.php
+!/backend/bootstrap/cache/.gitkeep
+
+# Fichiers uploadés et générés
+/backend/storage/app/public/
+/backend/storage/logs/*.log
+/backend/storage/*.key
+
+# Fichiers de compilation frontend (si mix/vite dans Laravel)
+/backend/public/hot
+/backend/public/storage
+/backend/public/build/
+
+# Cache et rapports de tests
+/backend/.phpunit.result.cache
+/backend/.phpunit.cache/
+/backend/coverage/
+
+# Rapport Pint (lint)
+/backend/.pint.cache
+
+# Auth Composer (credentials privés)
+/backend/auth.json
+
+
+# ══════════════════════════════════════════════════════════════
+#  FRONTEND — React 18 / Vite / TypeScript
+# ══════════════════════════════════════════════════════════════
+
+# Dépendances Node (jamais commitées — npm install les recrée)
+/frontend/node_modules/
+
+# Build de production
+/frontend/dist/
+/frontend/dist-ssr/
+
+# Variables d'environnement locales
+# .env.example est commité — .env contient les vraies valeurs
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.*.local
+
+# Cache Vite
+/frontend/.vite/
+
+# Rapport de couverture
+/frontend/coverage/
+
+
+# ══════════════════════════════════════════════════════════════
+#  DOCKER
+# ══════════════════════════════════════════════════════════════
+
+# Surcharge locale (ports, volumes) — docker-compose.yml est commité
+docker-compose.override.yml
+
+# Données persistées localement par les conteneurs
+/docker/mysql-data/
+/docker/redis-data/
+
+
+# ══════════════════════════════════════════════════════════════
+#  DIVERS
+# ══════════════════════════════════════════════════════════════
+
+# Logs généraux
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Archives temporaires
+*.zip
+*.tar.gz
