@@ -1,0 +1,352 @@
+import { useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getProduct, createProduct, updateProduct, createVariant } from '@/services/api/products'
+import Button from '@/components/ui/Button'
+import Input from '@/components/ui/Input'
+import { Textarea } from '@/components/ui/Input'
+import CategorySelect from '@/components/products/CategorySelect'
+import VariantManager from '@/components/products/VariantManager'
+import type { CreateVariantData } from '@/types'
+
+// ── Schema Zod ────────────────────────────────────────────────────────────
+
+const schema = z.object({
+  name: z.string().min(2, 'Au moins 2 caractères'),
+  sku: z.string().optional(),
+  category_id: z.number().nullable().optional(),
+  price: z
+    .number({ invalid_type_error: 'Prix requis' })
+    .positive('Le prix doit être supérieur à 0'),
+  cost_price: z.number().min(0).nullable().optional(),
+  unit: z.string().optional(),
+  alert_threshold: z.number().min(0).nullable().optional(),
+  has_variants: z.boolean().default(false),
+  is_weight_based: z.boolean().default(false),
+  has_expiry: z.boolean().default(false),
+  description: z.string().optional(),
+  variants: z
+    .array(
+      z.object({
+        attribute_value_ids: z.array(z.number()),
+        sku: z.string().nullable().optional(),
+        price: z.number().nullable().optional(),
+      }),
+    )
+    .optional(),
+})
+
+type FormValues = z.infer<typeof schema>
+
+// ── Toggle switch ─────────────────────────────────────────────────────────
+
+function Toggle({
+  checked,
+  onChange,
+  label,
+  hint,
+  disabled,
+}: {
+  checked: boolean
+  onChange: (v: boolean) => void
+  label: string
+  hint?: string
+  disabled?: boolean
+}) {
+  return (
+    <label className="flex items-start gap-3 cursor-pointer">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        disabled={disabled}
+        onClick={() => onChange(!checked)}
+        className={`relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 disabled:opacity-50 ${
+          checked ? 'bg-brand-primary' : 'bg-gray-300'
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+            checked ? 'translate-x-4' : 'translate-x-0'
+          }`}
+        />
+      </button>
+      <div>
+        <p className="text-sm font-medium text-gray-700">{label}</p>
+        {hint && <p className="text-xs text-gray-500">{hint}</p>}
+      </div>
+    </label>
+  )
+}
+
+// ── Section wrapper ────────────────────────────────────────────────────────
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+      <h2 className="mb-4 text-sm font-semibold text-gray-700">{title}</h2>
+      <div className="space-y-4">{children}</div>
+    </div>
+  )
+}
+
+// ── Page principale ────────────────────────────────────────────────────────
+
+export default function ProductFormPage() {
+  const { id } = useParams<{ id: string }>()
+  const isEdit = !!id
+  const navigate = useNavigate()
+  const qc = useQueryClient()
+
+  const { data: product, isLoading: productLoading } = useQuery({
+    queryKey: ['product', id],
+    queryFn: () => getProduct(Number(id)),
+    enabled: isEdit,
+  })
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      has_variants: false,
+      is_weight_based: false,
+      has_expiry: false,
+    },
+  })
+
+  // Préremplissage en mode édition
+  useEffect(() => {
+    if (product) {
+      reset({
+        name: product.name,
+        sku: product.sku ?? '',
+        category_id: product.category_id,
+        price: Number(product.price),
+        cost_price: product.cost_price ? Number(product.cost_price) : null,
+        unit: product.unit ?? '',
+        alert_threshold: product.alert_threshold ?? null,
+        has_variants: product.has_variants,
+        is_weight_based: product.is_weight_based,
+        has_expiry: product.has_expiry,
+        description: product.description ?? '',
+      })
+    }
+  }, [product, reset])
+
+  const hasVariants = watch('has_variants')
+  const price = watch('price') ?? 0
+
+  // ── Mutations ─────────────────────────────────────────────────────────────
+
+  const createMutation = useMutation({
+    mutationFn: async (values: FormValues) => {
+      const { variants, ...productData } = values
+      const created = await createProduct(productData)
+      if (created.has_variants && variants?.length) {
+        await Promise.all(
+          variants.map((v) => createVariant(created.id, v as CreateVariantData)),
+        )
+      }
+      return created
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['products'] })
+      navigate('/products')
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: (values: FormValues) => {
+      const { variants: _variants, has_variants: _hv, ...rest } = values
+      return updateProduct(Number(id), rest)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['products'] })
+      qc.invalidateQueries({ queryKey: ['product', id] })
+      navigate('/products')
+    },
+  })
+
+  const isPending = createMutation.isPending || updateMutation.isPending
+  const mutationError = createMutation.error || updateMutation.error
+
+  const onSubmit = (values: FormValues) => {
+    if (isEdit) updateMutation.mutate(values)
+    else createMutation.mutate(values)
+  }
+
+  if (isEdit && productLoading) {
+    return (
+      <div className="p-6 text-sm text-gray-400">Chargement du produit…</div>
+    )
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-gray-900">
+          {isEdit ? 'Modifier le produit' : 'Nouveau produit'}
+        </h1>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        {/* Section : Informations de base */}
+        <Section title="Informations de base">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Input
+                label="Nom du produit"
+                placeholder="Ex : T-shirt coton"
+                error={errors.name?.message}
+                {...register('name')}
+              />
+            </div>
+            <Input
+              label="SKU"
+              placeholder="TSH-001"
+              error={errors.sku?.message}
+              {...register('sku')}
+            />
+            <Controller
+              name="category_id"
+              control={control}
+              render={({ field }) => (
+                <CategorySelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={errors.category_id?.message}
+                />
+              )}
+            />
+            <div className="sm:col-span-2">
+              <Textarea
+                label="Description"
+                placeholder="Description optionnelle…"
+                {...register('description')}
+              />
+            </div>
+          </div>
+        </Section>
+
+        {/* Section : Prix et stock */}
+        <Section title="Prix et stock">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Input
+              label="Prix de vente (FCFA)"
+              type="number"
+              min={0}
+              placeholder="0"
+              error={errors.price?.message}
+              {...register('price', { valueAsNumber: true })}
+            />
+            <Input
+              label="Prix d'achat (FCFA)"
+              type="number"
+              min={0}
+              placeholder="0"
+              error={errors.cost_price?.message}
+              {...register('cost_price', { valueAsNumber: true })}
+            />
+            <Input
+              label="Unité"
+              placeholder="pièce, kg, L…"
+              {...register('unit')}
+            />
+            <Input
+              label="Seuil d'alerte stock"
+              type="number"
+              min={0}
+              placeholder="5"
+              error={errors.alert_threshold?.message}
+              {...register('alert_threshold', { valueAsNumber: true })}
+            />
+          </div>
+        </Section>
+
+        {/* Section : Options */}
+        <Section title="Options">
+          <div className="space-y-3">
+            <Controller
+              name="has_variants"
+              control={control}
+              render={({ field }) => (
+                <Toggle
+                  checked={field.value}
+                  onChange={field.onChange}
+                  label="Produit à variantes"
+                  hint="Couleur, taille, format…"
+                  disabled={isEdit}
+                />
+              )}
+            />
+            <Controller
+              name="is_weight_based"
+              control={control}
+              render={({ field }) => (
+                <Toggle
+                  checked={field.value}
+                  onChange={field.onChange}
+                  label="Vendu au poids"
+                  hint="Quantité en kilogrammes"
+                />
+              )}
+            />
+            <Controller
+              name="has_expiry"
+              control={control}
+              render={({ field }) => (
+                <Toggle
+                  checked={field.value}
+                  onChange={field.onChange}
+                  label="Gestion par lots / expiration"
+                  hint="Dates de péremption, numéros de lot"
+                />
+              )}
+            />
+          </div>
+        </Section>
+
+        {/* Section : Variantes (création uniquement) */}
+        {hasVariants && !isEdit && (
+          <Section title="Variantes">
+            <VariantManager
+              productPrice={price}
+              onChange={(variants) => setValue('variants', variants)}
+            />
+          </Section>
+        )}
+
+        {/* Erreur globale */}
+        {mutationError && (
+          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+            Une erreur est survenue. Veuillez réessayer.
+          </p>
+        )}
+
+        {/* Actions */}
+        <div className="flex justify-end gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate('/products')}
+          >
+            Annuler
+          </Button>
+          <Button type="submit" loading={isPending}>
+            {isEdit ? 'Enregistrer' : 'Créer le produit'}
+          </Button>
+        </div>
+      </form>
+    </div>
+  )
+}

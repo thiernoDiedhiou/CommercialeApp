@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Valeurs de fallback (blue-600 / violet-700) — écrasées dynamiquement par useTenantStore */
+  --brand-primary:   37 99 235;
+  --brand-secondary: 109 40 217;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 antialiased;
+}
