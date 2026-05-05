@@ -36,12 +36,37 @@ export async function getProduct(id: number): Promise<Product> {
   return data.data
 }
 
-export async function createProduct(body: CreateProductData): Promise<Product> {
+export async function createProduct(body: CreateProductData, image?: File | null): Promise<Product> {
+  if (image) {
+    const form = new FormData()
+    Object.entries(body).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) form.append(k, String(v))
+    })
+    form.append('image', image)
+    const { data } = await apiClient.post<{ data: Product }>('/api/v1/products', form)
+    return data.data
+  }
   const { data } = await apiClient.post<{ data: Product }>('/api/v1/products', body)
   return data.data
 }
 
-export async function updateProduct(id: number, body: UpdateProductData): Promise<Product> {
+export async function updateProduct(
+  id: number,
+  body: UpdateProductData,
+  image?: File | null,
+  removeImage?: boolean,
+): Promise<Product> {
+  if (image || removeImage) {
+    const form = new FormData()
+    form.append('_method', 'PUT')
+    Object.entries(body).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) form.append(k, String(v))
+    })
+    if (image) form.append('image', image)
+    if (removeImage) form.append('remove_image', '1')
+    const { data } = await apiClient.post<{ data: Product }>(`/api/v1/products/${id}`, form)
+    return data.data
+  }
   const { data } = await apiClient.put<{ data: Product }>(`/api/v1/products/${id}`, body)
   return data.data
 }

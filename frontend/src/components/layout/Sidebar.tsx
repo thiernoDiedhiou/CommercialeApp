@@ -8,6 +8,9 @@ import {
   CurrencyDollarIcon,
   Cog6ToothIcon,
   XMarkIcon,
+  TruckIcon,
+  ShoppingBagIcon,
+  ChartBarIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/authStore'
 import { cn } from '@/lib/utils'
@@ -24,8 +27,11 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Caisse POS',      path: '/pos',         icon: ShoppingCartIcon,          permission: 'pos.access' },
   { label: 'Ventes',          path: '/sales',        icon: CurrencyDollarIcon,        permission: 'sales.view' },
   { label: 'Produits',        path: '/products',     icon: ArchiveBoxIcon,            permission: 'products.view' },
+  { label: 'Fournisseurs',    path: '/suppliers',    icon: TruckIcon,                 permission: 'suppliers.view' },
+  { label: 'Achats',          path: '/purchases',    icon: ShoppingBagIcon,           permission: 'purchases.view' },
   { label: 'Clients',         path: '/customers',    icon: UsersIcon,                 permission: 'customers.view' },
   { label: 'Stock',           path: '/stock',        icon: ClipboardDocumentListIcon, permission: 'stock.view' },
+  { label: 'Rapports',        path: '/reports',      icon: ChartBarIcon,              permission: 'reports.view' },
   { label: 'Paramètres',      path: '/settings',     icon: Cog6ToothIcon,             permission: 'users.view' },
 ]
 
@@ -91,7 +97,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           'fixed inset-0 z-50 lg:hidden transition-opacity duration-200',
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
         )}
-        aria-hidden={!isOpen}
       >
         {/* Backdrop */}
         <div

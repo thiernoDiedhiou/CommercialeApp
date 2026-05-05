@@ -10,6 +10,7 @@ use App\Models\SaleItem;
 use App\Services\ProductService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -35,7 +36,13 @@ class ProductController extends Controller
 
     public function store(StoreProductRequest $request): JsonResponse
     {
-        $product = $this->productService->create($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('image')) {
+            $data['image_path'] = $request->file('image')->store('products', 'public');
+        }
+
+        $product = $this->productService->create($data);
 
         return response()->json(['data' => $product], 201);
     }
@@ -49,7 +56,19 @@ class ProductController extends Controller
 
     public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
-        $product = $this->productService->update($product, $request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('image')) {
+            if ($product->image_path) {
+                Storage::disk('public')->delete($product->image_path);
+            }
+            $data['image_path'] = $request->file('image')->store('products', 'public');
+        } elseif ($request->boolean('remove_image') && $product->image_path) {
+            Storage::disk('public')->delete($product->image_path);
+            $data['image_path'] = null;
+        }
+
+        $product = $this->productService->update($product, $data);
 
         return response()->json(['data' => $product]);
     }
@@ -57,12 +76,14 @@ class ProductController extends Controller
     public function destroy(Product $product): JsonResponse
     {
         if (SaleItem::where('product_id', $product->id)->exists()) {
-            // Soft delete — conserve l'historique des ventes
             $product->delete();
             return response()->json(['message' => 'Produit archivé (historique de ventes conservé).']);
         }
 
-        // Pas de ventes → suppression définitive (variants en cascade)
+        if ($product->image_path) {
+            Storage::disk('public')->delete($product->image_path);
+        }
+
         $product->forceDelete();
         return response()->json(null, 204);
     }

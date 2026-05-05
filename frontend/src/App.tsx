@@ -11,7 +11,12 @@ import SalesPage from '@/pages/sales/SalesPage'
 import SaleDetailPage from '@/pages/sales/SaleDetailPage'
 import PosPage from '@/pages/pos/PosPage'
 import StockPage from '@/pages/stock/StockPage'
+import ReportsPage from '@/pages/reports/ReportsPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
+import SuppliersPage from '@/pages/purchases/SuppliersPage'
+import PurchaseOrdersPage from '@/pages/purchases/PurchaseOrdersPage'
+import PurchaseFormPage from '@/pages/purchases/PurchaseFormPage'
+import PurchaseDetailPage from '@/pages/purchases/PurchaseDetailPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
@@ -64,8 +69,14 @@ export default function App() {
           <Route path="products/:id/edit" element={<ProductFormPage />} />
           <Route path="customers"         element={<CustomersPage />} />
           <Route path="customers/:id"    element={<CustomerDetailPage />} />
-          <Route path="stock"             element={<StockPage />} />
-          <Route path="settings"         element={<SettingsPage />} />
+          <Route path="stock"               element={<StockPage />} />
+          <Route path="reports"             element={<ReportsPage />} />
+          <Route path="suppliers"         element={<SuppliersPage />} />
+          <Route path="purchases"         element={<PurchaseOrdersPage />} />
+          <Route path="purchases/new"     element={<PurchaseFormPage />} />
+          <Route path="purchases/:id"     element={<PurchaseDetailPage />} />
+          <Route path="purchases/:id/edit" element={<PurchaseFormPage />} />
+          <Route path="settings"          element={<SettingsPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -9,6 +9,9 @@ use App\Http\Controllers\Pos\PosController;
 use App\Http\Controllers\Product\AttributeController;
 use App\Http\Controllers\Product\ProductController;
 use App\Http\Controllers\Product\VariantController;
+use App\Http\Controllers\Purchase\PurchaseOrderController;
+use App\Http\Controllers\Purchase\SupplierController;
+use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\Sale\SaleController;
 use App\Http\Controllers\Stock\StockController;
 use App\Http\Controllers\Users\GroupController;
@@ -45,6 +48,13 @@ Route::prefix('v1')->group(function () {
         // ── Dashboard ─────────────────────────────────────────────────────────
         Route::get('dashboard/summary', [DashboardController::class, 'summary'])
             ->middleware('permission:dashboard.view');
+
+        // ── Rapports ──────────────────────────────────────────────────────────
+        Route::prefix('reports')->name('reports.')->middleware('permission:reports.view')->group(function () {
+            Route::get('sales',    [ReportController::class, 'sales']);
+            Route::get('products', [ReportController::class, 'products']);
+            Route::get('stock',    [ReportController::class, 'stock']);
+        });
 
         // ── Catégories ────────────────────────────────────────────────────────
         Route::prefix('categories')->name('categories.')->group(function () {
@@ -170,6 +180,40 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:groups.delete');
             Route::post('{group}/permissions',  [GroupController::class, 'syncPermissions'])
                 ->middleware('permission:groups.edit');
+        });
+
+        // ── Fournisseurs ──────────────────────────────────────────────────────
+        Route::prefix('suppliers')->name('suppliers.')->group(function () {
+            Route::get('/',               [SupplierController::class, 'index'])
+                ->middleware('permission:suppliers.view');
+            Route::post('/',              [SupplierController::class, 'store'])
+                ->middleware('permission:suppliers.create');
+            Route::get('{supplier}',      [SupplierController::class, 'show'])
+                ->middleware('permission:suppliers.view');
+            Route::put('{supplier}',      [SupplierController::class, 'update'])
+                ->middleware('permission:suppliers.edit');
+            Route::delete('{supplier}',   [SupplierController::class, 'destroy'])
+                ->middleware('permission:suppliers.delete');
+        });
+
+        // ── Bons de commande (Achats) ─────────────────────────────────────────
+        Route::prefix('purchases')->name('purchases.')->group(function () {
+            Route::get('/',                          [PurchaseOrderController::class, 'index'])
+                ->middleware('permission:purchases.view');
+            Route::post('/',                         [PurchaseOrderController::class, 'store'])
+                ->middleware('permission:purchases.create');
+            Route::get('{purchaseOrder}',            [PurchaseOrderController::class, 'show'])
+                ->middleware('permission:purchases.view');
+            Route::put('{purchaseOrder}',            [PurchaseOrderController::class, 'update'])
+                ->middleware('permission:purchases.edit');
+            Route::delete('{purchaseOrder}',         [PurchaseOrderController::class, 'destroy'])
+                ->middleware('permission:purchases.delete');
+            Route::post('{purchaseOrder}/confirm',   [PurchaseOrderController::class, 'confirm'])
+                ->middleware('permission:purchases.edit');
+            Route::post('{purchaseOrder}/receive',   [PurchaseOrderController::class, 'receive'])
+                ->middleware('permission:purchases.receive');
+            Route::post('{purchaseOrder}/cancel',    [PurchaseOrderController::class, 'cancel'])
+                ->middleware('permission:purchases.edit');
         });
 
         // ── POS ───────────────────────────────────────────────────────────────

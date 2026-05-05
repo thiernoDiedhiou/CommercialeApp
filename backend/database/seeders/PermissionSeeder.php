@@ -65,6 +65,22 @@ class PermissionSeeder extends Seeder
         ['name' => 'groups.edit',           'display_name' => 'Modifier un groupe',          'module' => 'groups',       'action' => 'edit'],
         ['name' => 'groups.delete',         'display_name' => 'Supprimer un groupe',         'module' => 'groups',       'action' => 'delete'],
 
+        // Fournisseurs
+        ['name' => 'suppliers.view',        'display_name' => 'Voir les fournisseurs',        'module' => 'suppliers',    'action' => 'view'],
+        ['name' => 'suppliers.create',      'display_name' => 'Créer un fournisseur',         'module' => 'suppliers',    'action' => 'create'],
+        ['name' => 'suppliers.edit',        'display_name' => 'Modifier un fournisseur',      'module' => 'suppliers',    'action' => 'edit'],
+        ['name' => 'suppliers.delete',      'display_name' => 'Supprimer un fournisseur',     'module' => 'suppliers',    'action' => 'delete'],
+
+        // Achats
+        ['name' => 'purchases.view',        'display_name' => 'Voir les bons de commande',    'module' => 'purchases',    'action' => 'view'],
+        ['name' => 'purchases.create',      'display_name' => 'Créer un bon de commande',     'module' => 'purchases',    'action' => 'create'],
+        ['name' => 'purchases.edit',        'display_name' => 'Modifier un bon de commande',  'module' => 'purchases',    'action' => 'edit'],
+        ['name' => 'purchases.delete',      'display_name' => 'Supprimer un bon de commande', 'module' => 'purchases',    'action' => 'delete'],
+        ['name' => 'purchases.receive',     'display_name' => 'Réceptionner une commande',    'module' => 'purchases',    'action' => 'receive'],
+
+        // Rapports
+        ['name' => 'reports.view',          'display_name' => 'Voir les rapports',            'module' => 'reports',      'action' => 'view'],
+
         // Paramètres
         ['name' => 'settings.view',         'display_name' => 'Voir les paramètres',         'module' => 'settings',     'action' => 'view'],
         ['name' => 'settings.edit',         'display_name' => 'Modifier les paramètres',     'module' => 'settings',     'action' => 'edit'],

@@ -3,16 +3,20 @@
 namespace App\Models;
 
 use App\Traits\BelongsToTenant;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Product extends Model
 {
     use BelongsToTenant, HasFactory, SoftDeletes;
+
+    protected $appends = ['image_url'];
 
     protected $fillable = [
         'tenant_id',
@@ -74,33 +78,42 @@ class Product extends Model
 
     // ─── Scopes ───────────────────────────────────────────────────────────────
 
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
-    public function scopeSimple($query)
+    public function scopeSimple(Builder $query): Builder
     {
         return $query->where('has_variants', false);
     }
 
-    public function scopeWithVariants($query)
+    public function scopeWithVariants(Builder $query): Builder
     {
         return $query->where('has_variants', true);
     }
 
-    public function scopeWeightBased($query)
+    public function scopeWeightBased(Builder $query): Builder
     {
         return $query->where('is_weight_based', true);
     }
 
     // Produits simples dont le stock est en dessous du seuil d'alerte
-    public function scopeLowStock($query)
+    public function scopeLowStock(Builder $query): Builder
     {
         return $query
             ->where('has_variants', false)
             ->whereRaw('stock_quantity <= alert_threshold')
             ->where('alert_threshold', '>', 0);
+    }
+
+    // ─── Accesseurs ───────────────────────────────────────────────────────────
+
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image_path
+            ? Storage::disk('public')->url($this->image_path)
+            : null;
     }
 
     // ─── Helpers sectoriels ───────────────────────────────────────────────────
