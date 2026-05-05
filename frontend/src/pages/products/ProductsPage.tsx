@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { PlusIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilSquareIcon, TrashIcon, ArrowUpTrayIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { getProducts, deleteProduct } from '@/services/api/products'
 import { getCategories } from '@/services/api/categories'
+import { importProducts, downloadImportTemplate } from '@/services/api/import'
 import { Table } from '@/components/ui/Table'
 import type { Column } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
@@ -14,7 +15,7 @@ import Input from '@/components/ui/Input'
 import { Select } from '@/components/ui/Input'
 import CanDo from '@/components/ui/CanDo'
 import { formatCurrency } from '@/lib/utils'
-import type { Product, Category } from '@/types'
+import type { Product, Category, ImportResult } from '@/types'
 
 function flatCategories(nodes: Category[]): Category[] {
   return nodes.flatMap((n) => [n, ...flatCategories(n.children ?? [])])
@@ -60,6 +61,38 @@ export default function ProductsPage() {
     staleTime: 10 * 60 * 1000,
   })
   const flatCats = flatCategories(categories)
+
+  // ── Import CSV ────────────────────────────────────────────────────────────
+  const [showImport, setShowImport]           = useState(false)
+  const [importFile, setImportFile]           = useState<File | null>(null)
+  const [updateExisting, setUpdateExisting]   = useState(false)
+  const [importResult, setImportResult]       = useState<ImportResult | null>(null)
+  const [dlLoading, setDlLoading]             = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const importMutation = useMutation({
+    mutationFn: () => {
+      if (!importFile) throw new Error('Sélectionnez un fichier CSV.')
+      return importProducts(importFile, updateExisting)
+    },
+    onSuccess: (result) => {
+      setImportResult(result)
+      qc.invalidateQueries({ queryKey: ['products'] })
+    },
+  })
+
+  const handleImportClose = () => {
+    setShowImport(false)
+    setImportFile(null)
+    setUpdateExisting(false)
+    setImportResult(null)
+    importMutation.reset()
+  }
+
+  const handleDownloadTemplate = async () => {
+    setDlLoading(true)
+    try { await downloadImportTemplate() } finally { setDlLoading(false) }
+  }
 
   // ── Suppression ───────────────────────────────────────────────────────────
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
@@ -166,14 +199,25 @@ export default function ProductsPage() {
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-gray-900">Produits</h1>
-        <CanDo permission="products.create">
-          <Button
-            icon={<PlusIcon className="h-4 w-4" />}
-            onClick={() => navigate('/products/new')}
-          >
-            Nouveau produit
-          </Button>
-        </CanDo>
+        <div className="flex gap-2">
+          <CanDo permission="products.import">
+            <Button
+              variant="outline"
+              icon={<ArrowUpTrayIcon className="h-4 w-4" />}
+              onClick={() => setShowImport(true)}
+            >
+              Importer CSV
+            </Button>
+          </CanDo>
+          <CanDo permission="products.create">
+            <Button
+              icon={<PlusIcon className="h-4 w-4" />}
+              onClick={() => navigate('/products/new')}
+            >
+              Nouveau produit
+            </Button>
+          </CanDo>
+        </div>
       </div>
 
       {/* Filtres */}
@@ -229,6 +273,136 @@ export default function ProductsPage() {
           onPageChange={setPage}
         />
       )}
+
+      {/* Modal import CSV */}
+      <Modal
+        isOpen={showImport}
+        onClose={handleImportClose}
+        title="Importer des produits depuis un fichier CSV"
+        size="md"
+        footer={
+          importResult ? (
+            <Button onClick={handleImportClose}>Fermer</Button>
+          ) : (
+            <>
+              <Button variant="outline" type="button" onClick={handleImportClose}>
+                Annuler
+              </Button>
+              <Button
+                loading={importMutation.isPending}
+                disabled={!importFile}
+                onClick={() => importMutation.mutate()}
+              >
+                Importer
+              </Button>
+            </>
+          )
+        }
+      >
+        {/* ── Résultats après import ── */}
+        {importResult ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-lg bg-emerald-50 p-3">
+                <p className="text-2xl font-bold text-emerald-700">{importResult.created}</p>
+                <p className="text-xs text-emerald-600">Créés</p>
+              </div>
+              <div className="rounded-lg bg-blue-50 p-3">
+                <p className="text-2xl font-bold text-blue-700">{importResult.updated}</p>
+                <p className="text-xs text-blue-600">Mis à jour</p>
+              </div>
+              <div className="rounded-lg bg-gray-100 p-3">
+                <p className="text-2xl font-bold text-gray-600">{importResult.skipped}</p>
+                <p className="text-xs text-gray-500">Ignorés</p>
+              </div>
+            </div>
+
+            {importResult.errors.length > 0 && (
+              <div className="rounded-lg bg-red-50 p-3">
+                <p className="mb-2 text-sm font-semibold text-red-700">
+                  {importResult.errors.length} ligne{importResult.errors.length > 1 ? 's' : ''} en erreur
+                </p>
+                <ul className="space-y-1 max-h-40 overflow-y-auto">
+                  {importResult.errors.map((e, i) => (
+                    <li key={i} className="text-xs text-red-600">
+                      {e.message}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ── Formulaire d'upload ── */
+          <div className="space-y-4">
+            {/* Zone de sélection fichier */}
+            <div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv,text/plain"
+                aria-label="Fichier CSV à importer"
+                className="hidden"
+                onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className={`w-full rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors ${
+                  importFile
+                    ? 'border-brand-primary bg-brand-primary/5 text-brand-primary'
+                    : 'border-gray-300 text-gray-400 hover:border-brand-primary hover:text-brand-primary'
+                }`}
+              >
+                <ArrowUpTrayIcon className="mx-auto mb-2 h-8 w-8" aria-hidden="true" />
+                {importFile ? (
+                  <p className="text-sm font-medium">{importFile.name}</p>
+                ) : (
+                  <>
+                    <p className="text-sm font-medium">Cliquer pour choisir un fichier CSV</p>
+                    <p className="mt-1 text-xs">Format : UTF-8, séparateur point-virgule (;), max 2 Mo</p>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Option mise à jour */}
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={updateExisting}
+                onChange={(e) => setUpdateExisting(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
+              />
+              <span className="text-sm text-gray-700">
+                Mettre à jour les produits existants (correspondance par SKU)
+              </span>
+            </label>
+
+            {/* Télécharger le modèle */}
+            <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2.5">
+              <ArrowDownTrayIcon className="h-4 w-4 shrink-0 text-gray-400" />
+              <span className="text-xs text-gray-500">Besoin du format exact ?</span>
+              <button
+                type="button"
+                onClick={handleDownloadTemplate}
+                disabled={dlLoading}
+                className="text-xs font-medium text-brand-primary hover:underline disabled:opacity-50"
+              >
+                {dlLoading ? 'Téléchargement…' : 'Télécharger le modèle CSV'}
+              </button>
+            </div>
+
+            {importMutation.isError && (
+              <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                {importMutation.error instanceof Error
+                  ? importMutation.error.message
+                  : 'Une erreur est survenue. Veuillez réessayer.'}
+              </p>
+            )}
+          </div>
+        )}
+      </Modal>
 
       {/* Modal confirmation suppression */}
       <Modal

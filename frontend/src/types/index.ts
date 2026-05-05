@@ -207,6 +207,20 @@ export interface CreateVariantData {
   alert_threshold?: number | null
 }
 
+// ── Product Import ────────────────────────────────────────────────────────
+
+export interface ImportError {
+  row: number
+  message: string
+}
+
+export interface ImportResult {
+  created: number
+  updated: number
+  skipped: number
+  errors: ImportError[]
+}
+
 // ── Suppliers ─────────────────────────────────────────────────────────────
 
 export interface Supplier {

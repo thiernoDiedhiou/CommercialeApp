@@ -18,6 +18,7 @@ class PermissionSeeder extends Seeder
         ['name' => 'products.create',       'display_name' => 'Créer un produit',            'module' => 'products',     'action' => 'create'],
         ['name' => 'products.edit',         'display_name' => 'Modifier un produit',         'module' => 'products',     'action' => 'edit'],
         ['name' => 'products.delete',       'display_name' => 'Supprimer un produit',        'module' => 'products',     'action' => 'delete'],
+        ['name' => 'products.import',       'display_name' => 'Importer des produits CSV',   'module' => 'products',     'action' => 'import'],
 
         // Catégories
         ['name' => 'categories.view',       'display_name' => 'Voir les catégories',         'module' => 'categories',   'action' => 'view'],

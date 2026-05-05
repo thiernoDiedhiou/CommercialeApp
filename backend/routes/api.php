@@ -10,6 +10,7 @@ use App\Http\Controllers\Product\AttributeController;
 use App\Http\Controllers\Product\ProductController;
 use App\Http\Controllers\Product\VariantController;
 use App\Http\Controllers\Invoice\InvoiceController;
+use App\Http\Controllers\Product\ProductImportController;
 use App\Http\Controllers\Purchase\PurchaseOrderController;
 use App\Http\Controllers\Purchase\SupplierController;
 use App\Http\Controllers\Report\ReportController;
@@ -71,6 +72,12 @@ Route::prefix('v1')->group(function () {
 
         // ── Produits ──────────────────────────────────────────────────────────
         Route::prefix('products')->name('products.')->group(function () {
+            // Import CSV — déclaré avant {product} pour éviter toute collision de route
+            Route::get('import/template',   [ProductImportController::class, 'template'])
+                ->middleware('permission:products.import');
+            Route::post('import',           [ProductImportController::class, 'import'])
+                ->middleware('permission:products.import');
+
             Route::get('/',    [ProductController::class, 'index'])
                 ->middleware('permission:products.view');
             Route::post('/',   [ProductController::class, 'store'])
