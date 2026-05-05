@@ -11,6 +11,7 @@ import {
   TruckIcon,
   ShoppingBagIcon,
   ChartBarIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/authStore'
 import { cn } from '@/lib/utils'
@@ -26,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Tableau de bord', path: '/dashboard',  icon: HomeIcon,                  permission: 'dashboard.view' },
   { label: 'Caisse POS',      path: '/pos',         icon: ShoppingCartIcon,          permission: 'pos.access' },
   { label: 'Ventes',          path: '/sales',        icon: CurrencyDollarIcon,        permission: 'sales.view' },
+  { label: 'Factures',        path: '/invoices',     icon: DocumentTextIcon,          permission: 'invoices.view' },
   { label: 'Produits',        path: '/products',     icon: ArchiveBoxIcon,            permission: 'products.view' },
   { label: 'Fournisseurs',    path: '/suppliers',    icon: TruckIcon,                 permission: 'suppliers.view' },
   { label: 'Achats',          path: '/purchases',    icon: ShoppingBagIcon,           permission: 'purchases.view' },

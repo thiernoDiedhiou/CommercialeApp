@@ -9,6 +9,7 @@ use App\Http\Controllers\Pos\PosController;
 use App\Http\Controllers\Product\AttributeController;
 use App\Http\Controllers\Product\ProductController;
 use App\Http\Controllers\Product\VariantController;
+use App\Http\Controllers\Invoice\InvoiceController;
 use App\Http\Controllers\Purchase\PurchaseOrderController;
 use App\Http\Controllers\Purchase\SupplierController;
 use App\Http\Controllers\Report\ReportController;
@@ -180,6 +181,28 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:groups.delete');
             Route::post('{group}/permissions',  [GroupController::class, 'syncPermissions'])
                 ->middleware('permission:groups.edit');
+        });
+
+        // ── Facturation ───────────────────────────────────────────────────────
+        Route::prefix('invoices')->name('invoices.')->group(function () {
+            Route::get('/',                        [InvoiceController::class, 'index'])
+                ->middleware('permission:invoices.view');
+            Route::post('/',                       [InvoiceController::class, 'store'])
+                ->middleware('permission:invoices.create');
+            Route::get('{invoice}',                [InvoiceController::class, 'show'])
+                ->middleware('permission:invoices.view');
+            Route::put('{invoice}',                [InvoiceController::class, 'update'])
+                ->middleware('permission:invoices.edit');
+            Route::delete('{invoice}',             [InvoiceController::class, 'destroy'])
+                ->middleware('permission:invoices.delete');
+            Route::post('{invoice}/send',          [InvoiceController::class, 'send'])
+                ->middleware('permission:invoices.edit');
+            Route::post('{invoice}/payment',       [InvoiceController::class, 'recordPayment'])
+                ->middleware('permission:invoices.edit');
+            Route::post('{invoice}/cancel',        [InvoiceController::class, 'cancel'])
+                ->middleware('permission:invoices.edit');
+            Route::get('{invoice}/pdf',            [InvoiceController::class, 'pdf'])
+                ->middleware('permission:invoices.pdf');
         });
 
         // ── Fournisseurs ──────────────────────────────────────────────────────

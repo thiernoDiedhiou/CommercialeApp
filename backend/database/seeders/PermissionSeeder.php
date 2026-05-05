@@ -78,6 +78,13 @@ class PermissionSeeder extends Seeder
         ['name' => 'purchases.delete',      'display_name' => 'Supprimer un bon de commande', 'module' => 'purchases',    'action' => 'delete'],
         ['name' => 'purchases.receive',     'display_name' => 'Réceptionner une commande',    'module' => 'purchases',    'action' => 'receive'],
 
+        // Facturation
+        ['name' => 'invoices.view',         'display_name' => 'Voir les factures',             'module' => 'invoices',     'action' => 'view'],
+        ['name' => 'invoices.create',       'display_name' => 'Créer une facture',             'module' => 'invoices',     'action' => 'create'],
+        ['name' => 'invoices.edit',         'display_name' => 'Modifier une facture',          'module' => 'invoices',     'action' => 'edit'],
+        ['name' => 'invoices.delete',       'display_name' => 'Supprimer une facture',         'module' => 'invoices',     'action' => 'delete'],
+        ['name' => 'invoices.pdf',          'display_name' => 'Télécharger une facture PDF',   'module' => 'invoices',     'action' => 'pdf'],
+
         // Rapports
         ['name' => 'reports.view',          'display_name' => 'Voir les rapports',            'module' => 'reports',      'action' => 'view'],
 

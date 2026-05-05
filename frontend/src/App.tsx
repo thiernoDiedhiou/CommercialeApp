@@ -12,6 +12,9 @@ import SaleDetailPage from '@/pages/sales/SaleDetailPage'
 import PosPage from '@/pages/pos/PosPage'
 import StockPage from '@/pages/stock/StockPage'
 import ReportsPage from '@/pages/reports/ReportsPage'
+import InvoicesPage from '@/pages/invoices/InvoicesPage'
+import InvoiceFormPage from '@/pages/invoices/InvoiceFormPage'
+import InvoiceDetailPage from '@/pages/invoices/InvoiceDetailPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
 import SuppliersPage from '@/pages/purchases/SuppliersPage'
 import PurchaseOrdersPage from '@/pages/purchases/PurchaseOrdersPage'
@@ -70,7 +73,11 @@ export default function App() {
           <Route path="customers"         element={<CustomersPage />} />
           <Route path="customers/:id"    element={<CustomerDetailPage />} />
           <Route path="stock"               element={<StockPage />} />
-          <Route path="reports"             element={<ReportsPage />} />
+          <Route path="reports"               element={<ReportsPage />} />
+          <Route path="invoices"             element={<InvoicesPage />} />
+          <Route path="invoices/new"         element={<InvoiceFormPage />} />
+          <Route path="invoices/:id"         element={<InvoiceDetailPage />} />
+          <Route path="invoices/:id/edit"    element={<InvoiceFormPage />} />
           <Route path="suppliers"         element={<SuppliersPage />} />
           <Route path="purchases"         element={<PurchaseOrdersPage />} />
           <Route path="purchases/new"     element={<PurchaseFormPage />} />

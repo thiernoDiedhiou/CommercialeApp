@@ -429,6 +429,70 @@ export interface CreateGroupData {
   description?: string | null
 }
 
+// ── Invoices ──────────────────────────────────────────────────────────────
+
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
+
+export interface InvoiceItem {
+  id: number
+  invoice_id: number
+  product_id: number | null
+  description: string
+  quantity: string
+  unit_price: string
+  discount: string
+  total: string
+  product?: Pick<Product, 'id' | 'name' | 'unit'>
+}
+
+export interface Invoice {
+  id: number
+  reference: string
+  status: InvoiceStatus
+  issue_date: string
+  due_date: string | null
+  subtotal: string
+  discount_type: 'percent' | 'fixed' | null
+  discount_value: string
+  discount_amount: string
+  tax_rate: string
+  tax_amount: string
+  total: string
+  paid_amount: string
+  notes: string | null
+  footer: string | null
+  sent_at: string | null
+  paid_at: string | null
+  cancelled_at: string | null
+  created_at: string
+  items_count?: number
+  customer?: Pick<Customer, 'id' | 'name' | 'phone' | 'email' | 'address'> | null
+  user?: Pick<User, 'id' | 'name'>
+  items?: InvoiceItem[]
+}
+
+export interface CreateInvoiceItemData {
+  product_id?: number | null
+  description: string
+  quantity: number
+  unit_price: number
+  discount?: number
+}
+
+export interface CreateInvoiceData {
+  customer_id?: number | null
+  issue_date: string
+  due_date?: string | null
+  discount_type?: 'percent' | 'fixed' | null
+  discount_value?: number
+  tax_rate?: number
+  notes?: string | null
+  footer?: string | null
+  items: CreateInvoiceItemData[]
+}
+
+export type UpdateInvoiceData = Partial<CreateInvoiceData>
+
 // ── Reports ───────────────────────────────────────────────────────────────
 
 export interface ReportPeriod {

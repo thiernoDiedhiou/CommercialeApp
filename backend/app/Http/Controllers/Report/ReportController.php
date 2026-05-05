@@ -29,6 +29,8 @@ class ReportController extends Controller
             ? $request->input('group_by')
             : 'day';
         $dateFormat = $groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d';
+        $dateFmt    = $this->dateFormatExpr('confirmed_at', $dateFormat);
+        $dateFmtS   = $this->dateFormatExpr('s.confirmed_at', $dateFormat);
 
         // ── Revenue + sales_count depuis sales (sans JOIN — évite la multiplication des lignes)
         $summaryRow = DB::selectOne("
@@ -47,30 +49,30 @@ class ReportController extends Controller
               AND DATE(s.confirmed_at) BETWEEN ? AND ?
         ", [$tenantId, $from, $to]);
 
-        // ── Graphique revenue par période (depuis sales uniquement)
+        // ── Graphique revenue par période (depuis sales uniquement, expression driver-aware)
         $revenueRows = DB::select("
             SELECT
-                DATE_FORMAT(confirmed_at, ?) AS period,
+                {$dateFmt} AS period,
                 COUNT(*)                     AS sales_count,
                 COALESCE(SUM(total), 0)      AS revenue
             FROM sales
             WHERE tenant_id = ? AND status = 'confirmed'
               AND DATE(confirmed_at) BETWEEN ? AND ?
-            GROUP BY DATE_FORMAT(confirmed_at, ?)
+            GROUP BY {$dateFmt}
             ORDER BY period ASC
-        ", [$dateFormat, $tenantId, $from, $to, $dateFormat]);
+        ", [$tenantId, $from, $to]);
 
         // ── Profit par période (depuis sale_items)
         $profitRows = DB::select("
             SELECT
-                DATE_FORMAT(s.confirmed_at, ?)                               AS period,
+                {$dateFmtS}                                                  AS period,
                 COALESCE(SUM(si.total - si.cost_price * si.quantity), 0)     AS profit
             FROM sale_items si
             JOIN sales s ON s.id = si.sale_id
             WHERE s.tenant_id = ? AND s.status = 'confirmed'
               AND DATE(s.confirmed_at) BETWEEN ? AND ?
-            GROUP BY DATE_FORMAT(s.confirmed_at, ?)
-        ", [$dateFormat, $tenantId, $from, $to, $dateFormat]);
+            GROUP BY {$dateFmtS}
+        ", [$tenantId, $from, $to]);
 
         $profitByPeriod = collect($profitRows)->pluck('profit', 'period');
 
@@ -245,6 +247,17 @@ class ReportController extends Controller
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /**
+     * Génère une expression SQL de formatage de date compatible MySQL et SQLite.
+     * MySQL : DATE_FORMAT(col, '%Y-%m-%d') — SQLite : strftime('%Y-%m-%d', col)
+     */
+    private function dateFormatExpr(string $column, string $format): string
+    {
+        return DB::getDriverName() === 'sqlite'
+            ? "strftime('{$format}', {$column})"
+            : "DATE_FORMAT({$column}, '{$format}')";
+    }
 
     private function parseDateRange(Request $request): array
     {
