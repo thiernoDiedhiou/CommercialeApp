@@ -9,6 +9,8 @@ import {
   getInvoice, sendInvoice, cancelInvoice,
   recordInvoicePayment, openInvoicePdf,
 } from '@/services/api/invoices'
+import { toast } from '@/store/toastStore'
+import { getApiErrorMessage } from '@/lib/errors'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
@@ -55,15 +57,18 @@ export default function InvoiceDetailPage() {
 
   const sendMutation = useMutation({
     mutationFn: () => sendInvoice(Number(id)),
-    onSuccess: () => { invalidate(); setShowSend(false) },
+    onSuccess: () => { invalidate(); setShowSend(false); toast.success('Facture marquée comme envoyée.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
   const cancelMutation = useMutation({
     mutationFn: () => cancelInvoice(Number(id)),
-    onSuccess: () => { invalidate(); setShowCancel(false) },
+    onSuccess: () => { invalidate(); setShowCancel(false); toast.success('Facture annulée.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
   const paymentMutation = useMutation({
     mutationFn: () => recordInvoicePayment(Number(id), parseFloat(payAmount) || 0),
-    onSuccess: () => { invalidate(); setShowPayment(false); setPayAmount('') },
+    onSuccess: () => { invalidate(); setShowPayment(false); setPayAmount(''); toast.success('Paiement enregistré.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const handlePdf = async () => {

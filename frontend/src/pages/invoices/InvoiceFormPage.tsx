@@ -8,6 +8,8 @@ import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { getProducts } from '@/services/api/products'
 import { getCustomers } from '@/services/api/customers'
 import { getInvoice, createInvoice, updateInvoice } from '@/services/api/invoices'
+import { toast } from '@/store/toastStore'
+import { getApiErrorMessage } from '@/lib/errors'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Textarea, Select } from '@/components/ui/Input'
@@ -188,15 +190,18 @@ export default function InvoiceFormPage() {
 
   const createMutation = useMutation({
     mutationFn: (v: FormValues) => createInvoice(buildPayload(v)),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); navigate('/invoices') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); toast.success('Facture créée.'); navigate('/invoices') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
   const updateMutation = useMutation({
     mutationFn: (v: FormValues) => updateInvoice(Number(id), buildPayload(v)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['invoices'] })
       qc.invalidateQueries({ queryKey: ['invoice', id] })
+      toast.success('Facture mise à jour.')
       navigate(`/invoices/${id}`)
     },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const isPending = createMutation.isPending || updateMutation.isPending

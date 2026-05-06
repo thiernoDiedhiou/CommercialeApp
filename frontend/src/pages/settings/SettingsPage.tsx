@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,6 +11,8 @@ import {
   TrashIcon,
   PlusIcon,
   BuildingStorefrontIcon,
+  PhotoIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/authStore'
 import { getTenantSettings, updateTenantSettings } from '@/services/api/settings'
@@ -18,6 +20,8 @@ import { SUPPORTED_CURRENCIES } from '@/hooks/useCurrency'
 import Input from '@/components/ui/Input'
 import { Select } from '@/components/ui/Input'
 import PhoneInput, { normalizePhone } from '@/components/ui/PhoneInput'
+import { toast } from '@/store/toastStore'
+import { getApiErrorMessage } from '@/lib/errors'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
@@ -102,6 +106,12 @@ function BoutiqueTab() {
   const perms     = useAuthStore((s) => s.permissions)
   const [saved, setSaved] = useState(false)
 
+  const [logoFile, setLogoFile]       = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [removeLogo, setRemoveLogo]   = useState(false)
+  const [logoError, setLogoError]     = useState<string | null>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+
   const { data, isLoading } = useQuery({
     queryKey: ['tenant-settings'],
     queryFn:  getTenantSettings,
@@ -113,32 +123,63 @@ function BoutiqueTab() {
   })
 
   useEffect(() => {
-    if (data) reset({
-      name:          data.name,
-      sector:        data.sector as BoutiqueValues['sector'],
-      currency:      data.currency,
-      phone_country: 'SN',
-      phone:         data.phone ?? '',
-      email:         data.email ?? '',
-      address:       data.address ?? '',
-      city:          data.city ?? '',
-      primary_color: data.primary_color ?? '',
-    })
+    if (data) {
+      reset({
+        name:          data.name,
+        sector:        data.sector as BoutiqueValues['sector'],
+        currency:      data.currency,
+        phone_country: 'SN',
+        phone:         data.phone ?? '',
+        email:         data.email ?? '',
+        address:       data.address ?? '',
+        city:          data.city ?? '',
+        primary_color: data.primary_color ?? '',
+      })
+      setLogoPreview(data.logo_url ?? null)
+    }
   }, [data, reset])
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
+    if (!ACCEPTED.includes(file.type)) {
+      setLogoError('Format non supporté. Utilisez JPEG, PNG, WebP ou SVG.')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoError('Logo trop lourd. Maximum 2 Mo.')
+      return
+    }
+    setLogoError(null)
+    setLogoFile(file)
+    setRemoveLogo(false)
+    setLogoPreview(URL.createObjectURL(file))
+  }
+
+  const handleLogoRemove = () => {
+    setLogoFile(null)
+    setLogoPreview(null)
+    setLogoError(null)
+    setRemoveLogo(true)
+  }
+
   const mutation = useMutation({
-    mutationFn: (vals: BoutiqueValues) => updateTenantSettings({
-      name:          vals.name,
-      sector:        vals.sector,
-      currency:      vals.currency,
-      phone:         normalizePhone(vals.phone),
-      email:         vals.email || null,
-      address:       vals.address || null,
-      city:          vals.city || null,
-      primary_color: vals.primary_color || null,
-    }),
+    mutationFn: (vals: BoutiqueValues) => updateTenantSettings(
+      {
+        name:          vals.name,
+        sector:        vals.sector,
+        currency:      vals.currency,
+        phone:         normalizePhone(vals.phone),
+        email:         vals.email || null,
+        address:       vals.address || null,
+        city:          vals.city || null,
+        primary_color: vals.primary_color || null,
+      },
+      logoFile,
+      removeLogo,
+    ),
     onSuccess: (updated) => {
-      // Met à jour le authStore pour que formatCurrency() réagisse immédiatement
       if (token && user) {
         setAuth(token, user, perms, {
           name:            updated.name,
@@ -146,17 +187,75 @@ function BoutiqueTab() {
           sector:          updated.sector,
           primary_color:   updated.primary_color,
           secondary_color: updated.secondary_color,
+          logo_url:        updated.logo_url ?? null,
         })
       }
+      setLogoFile(null)
+      setRemoveLogo(false)
+      setLogoPreview(updated.logo_url ?? null)
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
+      toast.success('Paramètres de la boutique enregistrés.')
     },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   if (isLoading) return <div className="text-sm text-gray-400">Chargement…</div>
 
   return (
-    <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-6">
+    <form onSubmit={handleSubmit((v) => { if (!logoError) mutation.mutate(v) })} className="space-y-6">
+      {/* Logo */}
+      <div>
+        <p className="mb-2 text-sm font-medium text-gray-700">Logo de la boutique</p>
+        <div className="flex items-center gap-4">
+          {logoPreview ? (
+            <div className="relative">
+              <img
+                src={logoPreview}
+                alt="Logo"
+                className="h-20 w-20 rounded-xl object-contain ring-1 ring-gray-200 bg-gray-50 p-1"
+              />
+              <button
+                type="button"
+                onClick={handleLogoRemove}
+                className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow hover:bg-red-600"
+                aria-label="Supprimer le logo"
+              >
+                <XMarkIcon className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-gray-300 text-gray-400 hover:border-brand-primary hover:text-brand-primary transition"
+            >
+              <PhotoIcon className="h-7 w-7" />
+              <span className="text-xs font-medium">Logo</span>
+            </button>
+          )}
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => logoInputRef.current?.click()}
+              className="text-sm font-medium text-brand-primary hover:underline"
+            >
+              {logoPreview ? 'Changer le logo' : 'Ajouter un logo'}
+            </button>
+            <p className="text-xs text-gray-400">JPEG, PNG, WebP ou SVG — max 2 Mo</p>
+            {logoError && <p className="text-xs text-red-500">{logoError}</p>}
+          </div>
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/svg+xml"
+            className="hidden"
+            onChange={handleLogoChange}
+            aria-label="Sélectionner un logo"
+          />
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input label="Nom du commerce" error={errors.name?.message} {...register('name')} />
         <div>
@@ -252,7 +351,9 @@ function ProfilTab() {
       qc.invalidateQueries({ queryKey: ['users'] })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
+      toast.success('Profil mis à jour.')
     },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   return (
@@ -343,6 +444,7 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['users'] })
+      toast.success(editing ? 'Utilisateur mis à jour.' : 'Utilisateur créé.')
       onClose()
     },
     onError: (e: unknown) => {
@@ -450,7 +552,8 @@ function UsersTab() {
 
   const deleteMutation = useMutation({
     mutationFn: deleteUser,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['users'] }); toast.success('Utilisateur supprimé.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
     onSettled: () => setDeletingId(null),
   })
 
@@ -599,8 +702,10 @@ function PermissionsModal({ group, isOpen, onClose }: PermissionsModalProps) {
     mutationFn: () => syncGroupPermissions(group!.id, checked),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['groups'] })
+      toast.success('Permissions mises à jour.')
       onClose()
     },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const toggle = (id: number) =>
@@ -696,6 +801,7 @@ function GroupModal({ isOpen, editing, onClose }: GroupModalProps) {
         : createGroup(vals as CreateGroupData),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['groups'] })
+      toast.success(editing ? 'Groupe mis à jour.' : 'Groupe créé.')
       onClose()
     },
     onError: (e: unknown) => {
@@ -760,7 +866,8 @@ function GroupsTab() {
 
   const deleteMutation = useMutation({
     mutationFn: deleteGroup,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['groups'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['groups'] }); toast.success('Groupe supprimé.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
     onSettled: () => setDeletingId(null),
   })
 

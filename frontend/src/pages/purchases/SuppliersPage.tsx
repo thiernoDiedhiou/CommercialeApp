@@ -6,6 +6,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, PencilSquareIcon, TrashIcon, NoSymbolIcon } from '@heroicons/react/24/outline'
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/services/api/suppliers'
 import PhoneInput, { normalizePhone } from '@/components/ui/PhoneInput'
+import { toast } from '@/store/toastStore'
+import { getApiErrorMessage } from '@/lib/errors'
 import { Table } from '@/components/ui/Table'
 import type { Column } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
@@ -90,7 +92,8 @@ export default function SuppliersPage() {
       address: v.address || null,
       notes:   v.notes || null,
     }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setModal(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setModal(null); toast.success('Fournisseur créé avec succès.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const updateMutation = useMutation({
@@ -102,17 +105,20 @@ export default function SuppliersPage() {
       address: v.address || null,
       notes:   v.notes || null,
     }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setModal(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setModal(null); toast.success('Fournisseur mis à jour.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const toggleMutation = useMutation({
     mutationFn: (s: Supplier) => updateSupplier(s.id, { is_active: !s.is_active }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setToggleTarget(null) },
+    onSuccess: (_, s) => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setToggleTarget(null); toast.success(s.is_active ? 'Fournisseur désactivé.' : 'Fournisseur activé.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteSupplier(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setDeleteTarget(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setDeleteTarget(null); toast.success('Fournisseur supprimé.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const onSubmit = (v: FormValues) => {

@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, PencilSquareIcon, TrashIcon, ArrowUpTrayIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
 import { getProducts, deleteProduct } from '@/services/api/products'
+import { toast } from '@/store/toastStore'
+import { getApiErrorMessage } from '@/lib/errors'
 import { getCategories } from '@/services/api/categories'
 import { importProducts, downloadImportTemplate } from '@/services/api/import'
 import { Table } from '@/components/ui/Table'
@@ -78,7 +80,9 @@ export default function ProductsPage() {
     onSuccess: (result) => {
       setImportResult(result)
       qc.invalidateQueries({ queryKey: ['products'] })
+      toast.success(`Import terminé : ${result.created} créés, ${result.updated} mis à jour.`)
     },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const handleImportClose = () => {
@@ -101,7 +105,9 @@ export default function ProductsPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
       setDeleteTarget(null)
+      toast.success('Produit supprimé.')
     },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   // ── Colonnes ──────────────────────────────────────────────────────────────

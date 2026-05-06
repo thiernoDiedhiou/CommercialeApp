@@ -10,6 +10,8 @@ import {
 } from '@heroicons/react/24/outline'
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/services/api/customers'
 import { normalizePhone } from '@/components/ui/PhoneInput'
+import { toast } from '@/store/toastStore'
+import { getApiErrorMessage } from '@/lib/errors'
 import { Table } from '@/components/ui/Table'
 import type { Column } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
@@ -81,7 +83,9 @@ export default function CustomersPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['customers'] })
       setModal(null)
+      toast.success('Client créé avec succès.')
     },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const updateMutation = useMutation({
@@ -98,16 +102,20 @@ export default function CustomersPage() {
       qc.invalidateQueries({ queryKey: ['customers'] })
       qc.invalidateQueries({ queryKey: ['customer', id] })
       setModal(null)
+      toast.success('Client mis à jour.')
     },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const toggleMutation = useMutation({
     mutationFn: (customer: Customer) =>
       updateCustomer(customer.id, { is_active: !customer.is_active }),
-    onSuccess: () => {
+    onSuccess: (_, customer) => {
       qc.invalidateQueries({ queryKey: ['customers'] })
       setToggleTarget(null)
+      toast.success(customer.is_active ? 'Client désactivé.' : 'Client activé.')
     },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const deleteMutation = useMutation({
@@ -115,7 +123,9 @@ export default function CustomersPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['customers'] })
       setDeleteTarget(null)
+      toast.success('Client supprimé.')
     },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   // ── Handlers formulaire ───────────────────────────────────────────────────

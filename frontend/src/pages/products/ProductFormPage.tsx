@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { getProduct, createProduct, updateProduct, createVariant } from '@/services/api/products'
 import { getApiErrorMessage } from '@/lib/errors'
+import { toast } from '@/store/toastStore'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Input'
@@ -275,6 +276,7 @@ export default function ProductFormPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
+      toast.success('Produit créé avec succès.')
       navigate('/products')
     },
   })
@@ -287,6 +289,7 @@ export default function ProductFormPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['product', id] })
+      toast.success('Produit mis à jour.')
       navigate('/products')
     },
   })

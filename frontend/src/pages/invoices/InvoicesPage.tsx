@@ -9,6 +9,8 @@ import {
   getInvoices, sendInvoice, cancelInvoice,
   deleteInvoice, openInvoicePdf,
 } from '@/services/api/invoices'
+import { toast } from '@/store/toastStore'
+import { getApiErrorMessage } from '@/lib/errors'
 import { Table } from '@/components/ui/Table'
 import type { Column } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
@@ -76,15 +78,18 @@ export default function InvoicesPage() {
 
   const sendMutation = useMutation({
     mutationFn: (id: number) => sendInvoice(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setSendTarget(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setSendTarget(null); toast.success('Facture marquée comme envoyée.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
   const cancelMutation = useMutation({
     mutationFn: (id: number) => cancelInvoice(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setCancelTarget(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setCancelTarget(null); toast.success('Facture annulée.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteInvoice(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setDeleteTarget(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setDeleteTarget(null); toast.success('Facture supprimée.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const handlePdf = async (id: number, reference: string) => {

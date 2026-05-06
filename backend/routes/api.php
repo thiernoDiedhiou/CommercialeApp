@@ -58,6 +58,8 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:settings.view');
             Route::put('/',  [SettingsController::class, 'update'])
                 ->middleware('permission:settings.edit');
+            Route::post('/', [SettingsController::class, 'update'])
+                ->middleware('permission:settings.edit');
         });
 
         // ── Rapports ──────────────────────────────────────────────────────────

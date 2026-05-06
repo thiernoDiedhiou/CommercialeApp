@@ -8,6 +8,8 @@ import {
   XCircleIcon,
 } from '@heroicons/react/24/outline'
 import { getSales, cancelSale, openSalePdf } from '@/services/api/sales'
+import { toast } from '@/store/toastStore'
+import { getApiErrorMessage } from '@/lib/errors'
 import { Table } from '@/components/ui/Table'
 import type { Column } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
@@ -65,7 +67,9 @@ export default function SalesPage() {
       qc.invalidateQueries({ queryKey: ['sales'] })
       qc.invalidateQueries({ queryKey: ['sale', id] })
       setCancelTarget(null)
+      toast.success('Vente annulée.')
     },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   // ── PDF ───────────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
+import ToastContainer from '@/components/ui/ToastContainer'
 import { useAuthStore } from '@/store/authStore'
 import { useTenantStore } from '@/store/tenantStore'
 
@@ -32,6 +33,7 @@ export default function Layout() {
           <Outlet />
         </main>
       </div>
+      <ToastContainer />
     </div>
   )
 }

@@ -10,6 +10,7 @@ use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
 {
@@ -83,6 +84,9 @@ class AuthController extends Controller
                 'sector'          => $tenant->sector,
                 'primary_color'   => $tenant->primary_color,
                 'secondary_color' => $tenant->secondary_color,
+                'logo_url'        => $tenant->logo_path
+                    ? Storage::disk('public')->url($tenant->logo_path)
+                    : null,
             ],
         ];
     }

@@ -8,6 +8,8 @@ import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { getProducts } from '@/services/api/products'
 import { getSuppliers } from '@/services/api/suppliers'
 import { getPurchaseOrder, createPurchaseOrder, updatePurchaseOrder } from '@/services/api/purchases'
+import { toast } from '@/store/toastStore'
+import { getApiErrorMessage } from '@/lib/errors'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Textarea, Select } from '@/components/ui/Input'
@@ -187,7 +189,8 @@ export default function PurchaseFormPage() {
 
   const createMutation = useMutation({
     mutationFn: (v: FormValues) => createPurchaseOrder(buildPayload(v)),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['purchases'] }); navigate('/purchases') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['purchases'] }); toast.success('Bon de commande créé.'); navigate('/purchases') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const updateMutation = useMutation({
@@ -195,8 +198,10 @@ export default function PurchaseFormPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['purchases'] })
       qc.invalidateQueries({ queryKey: ['purchase', id] })
+      toast.success('Bon de commande mis à jour.')
       navigate('/purchases')
     },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const isPending = createMutation.isPending || updateMutation.isPending

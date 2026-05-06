@@ -8,6 +8,8 @@ import {
   cancelPurchaseOrder,
   receivePurchaseOrder,
 } from '@/services/api/purchases'
+import { toast } from '@/store/toastStore'
+import { getApiErrorMessage } from '@/lib/errors'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
@@ -53,12 +55,14 @@ export default function PurchaseDetailPage() {
 
   const confirmMutation = useMutation({
     mutationFn: () => confirmPurchaseOrder(Number(id)),
-    onSuccess: () => { invalidate(); setShowConfirm(false) },
+    onSuccess: () => { invalidate(); setShowConfirm(false); toast.success('Commande confirmée.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const cancelMutation = useMutation({
     mutationFn: () => cancelPurchaseOrder(Number(id)),
-    onSuccess: () => { invalidate(); setShowCancel(false) },
+    onSuccess: () => { invalidate(); setShowCancel(false); toast.success('Commande annulée.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const receiveMutation = useMutation({
@@ -68,7 +72,8 @@ export default function PurchaseDetailPage() {
         .filter((r) => r.quantity_received > 0)
       return receivePurchaseOrder(Number(id), receptions)
     },
-    onSuccess: () => { invalidate(); setShowReceive(false); setReceivedQtys({}) },
+    onSuccess: () => { invalidate(); setShowReceive(false); setReceivedQtys({}); toast.success('Réception enregistrée.') },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   if (isLoading) return <div className="p-6 text-sm text-gray-400">Chargement…</div>

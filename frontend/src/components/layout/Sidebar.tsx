@@ -49,11 +49,22 @@ function SidebarContent({ onClose }: SidebarContentProps) {
   return (
     <div className="flex h-full flex-col bg-white border-r border-gray-200">
       {/* En-tête tenant */}
-      <div className="flex h-16 shrink-0 items-center px-4 border-b border-gray-200">
+      <NavLink
+        to="/dashboard"
+        className="flex h-16 shrink-0 items-center gap-3 px-4 border-b border-gray-200 hover:bg-gray-50 transition-colors"
+        onClick={onClose}
+      >
+        {tenant?.logo_url ? (
+          <img
+            src={tenant.logo_url}
+            alt={tenant.name}
+            className="h-9 w-9 shrink-0 rounded-lg object-contain"
+          />
+        ) : null}
         <span className="truncate text-lg font-bold text-brand-primary">
           {tenant?.name ?? 'Gestion Commerciale'}
         </span>
-      </div>
+      </NavLink>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">

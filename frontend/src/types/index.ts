@@ -14,6 +14,7 @@ export interface TenantInfo {
   sector: string
   primary_color: string | null
   secondary_color: string | null
+  logo_url: string | null
 }
 
 export interface LoginResponse {
