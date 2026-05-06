@@ -262,7 +262,7 @@ export default function PosPage() {
             {productsLoading ? (
               <div className="grid grid-cols-3 xl:grid-cols-4 gap-3">
                 {Array.from({ length: 12 }).map((_, i) => (
-                  <div key={i} className="h-28 animate-pulse rounded-xl bg-gray-200" />
+                  <div key={i} className="h-44 animate-pulse rounded-xl bg-gray-200" />
                 ))}
               </div>
             ) : products.length === 0 ? (

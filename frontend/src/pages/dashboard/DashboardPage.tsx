@@ -47,6 +47,7 @@ export default function DashboardPage() {
               title="Chiffre d'affaires"
               value={formatCurrency(today?.revenue ?? 0)}
               icon={<BanknotesIcon className="h-5 w-5" />}
+              accent="secondary"
             />
 
             <KpiCard
@@ -61,6 +62,7 @@ export default function DashboardPage() {
               title="Paiements en attente"
               value={formatCurrency(today?.pending_amount ?? 0)}
               icon={<ClockIcon className="h-5 w-5" />}
+              accent="secondary"
             >
               {data?.by_payment_method && Object.keys(data.by_payment_method).length > 0 && (
                 <ul className="space-y-1">

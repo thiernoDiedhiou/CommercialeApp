@@ -7,6 +7,7 @@ interface KpiCardProps {
   subtitle?: string
   icon?: ReactNode
   trend?: 'up' | 'down' | 'neutral'
+  accent?: 'primary' | 'secondary'
   children?: ReactNode
   className?: string
 }
@@ -17,15 +18,20 @@ export default function KpiCard({
   subtitle,
   icon,
   trend,
+  accent = 'primary',
   children,
   className,
 }: KpiCardProps) {
+  const iconCls = accent === 'secondary'
+    ? 'bg-brand-secondary/10 text-brand-secondary'
+    : 'bg-brand-primary/10 text-brand-primary'
+
   return (
     <div className={cn('rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100', className)}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium text-gray-500">{title}</p>
         {icon && (
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary">
+          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', iconCls)}>
             {icon}
           </span>
         )}

@@ -8,6 +8,10 @@ import {
   CurrencyDollarIcon,
   Cog6ToothIcon,
   XMarkIcon,
+  TruckIcon,
+  ShoppingBagIcon,
+  ChartBarIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/authStore'
 import { cn } from '@/lib/utils'
@@ -23,9 +27,13 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Tableau de bord', path: '/dashboard',  icon: HomeIcon,                  permission: 'dashboard.view' },
   { label: 'Caisse POS',      path: '/pos',         icon: ShoppingCartIcon,          permission: 'pos.access' },
   { label: 'Ventes',          path: '/sales',        icon: CurrencyDollarIcon,        permission: 'sales.view' },
+  { label: 'Factures',        path: '/invoices',     icon: DocumentTextIcon,          permission: 'invoices.view' },
   { label: 'Produits',        path: '/products',     icon: ArchiveBoxIcon,            permission: 'products.view' },
+  { label: 'Fournisseurs',    path: '/suppliers',    icon: TruckIcon,                 permission: 'suppliers.view' },
+  { label: 'Achats',          path: '/purchases',    icon: ShoppingBagIcon,           permission: 'purchases.view' },
   { label: 'Clients',         path: '/customers',    icon: UsersIcon,                 permission: 'customers.view' },
   { label: 'Stock',           path: '/stock',        icon: ClipboardDocumentListIcon, permission: 'stock.view' },
+  { label: 'Rapports',        path: '/reports',      icon: ChartBarIcon,              permission: 'reports.view' },
   { label: 'Paramètres',      path: '/settings',     icon: Cog6ToothIcon,             permission: 'users.view' },
 ]
 
@@ -41,11 +49,22 @@ function SidebarContent({ onClose }: SidebarContentProps) {
   return (
     <div className="flex h-full flex-col bg-white border-r border-gray-200">
       {/* En-tête tenant */}
-      <div className="flex h-16 shrink-0 items-center px-4 border-b border-gray-200">
+      <NavLink
+        to="/dashboard"
+        className="flex h-16 shrink-0 items-center gap-3 px-4 border-b border-gray-200 hover:bg-gray-50 transition-colors"
+        onClick={onClose}
+      >
+        {tenant?.logo_url ? (
+          <img
+            src={tenant.logo_url}
+            alt={tenant.name}
+            className="h-9 w-9 shrink-0 rounded-lg object-contain"
+          />
+        ) : null}
         <span className="truncate text-lg font-bold text-brand-primary">
           {tenant?.name ?? 'Gestion Commerciale'}
         </span>
-      </div>
+      </NavLink>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
@@ -91,7 +110,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           'fixed inset-0 z-50 lg:hidden transition-opacity duration-200',
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
         )}
-        aria-hidden={!isOpen}
       >
         {/* Backdrop */}
         <div

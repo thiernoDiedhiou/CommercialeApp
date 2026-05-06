@@ -26,6 +26,8 @@ class Tenant extends Model
         'city',
         'country',
         'logo_path',
+        'primary_color',
+        'secondary_color',
         'is_active',
         'trial_ends_at',
         'subscription_ends_at',

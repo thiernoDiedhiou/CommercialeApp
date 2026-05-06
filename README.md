@@ -2,9 +2,31 @@
 
 Plateforme SaaS multi-tenant de gestion commerciale pour PME — Afrique de l'Ouest (Sénégal).
 
-**Backend :** API REST Laravel 11 · PHP 8.3 · MySQL 8.0 · Redis  
-**Frontend :** React 18 · Vite · TypeScript · Tailwind CSS · TanStack Query · Zustand  
-**Devise :** XOF (FCFA) — secteurs : `retail` | `food` | `fashion` | `cosmetic`
+**Backend :** API REST Laravel 11 · PHP 8.3 · MySQL 8.0  
+**Frontend :** React 18 · Vite · TypeScript · Tailwind CSS · TanStack Query v5 · Zustand  
+**Devises :** XOF · XAF · GNF · EUR · USD · GBP · MAD · MRU (configurable par tenant)  
+**Secteurs :** `general` | `food` | `fashion` | `cosmetic`
+
+---
+
+## Fonctionnalités
+
+| Module | Détail |
+| --- | --- |
+| **Super Admin** | Interface dédiée `/admin` — CRUD tenants, charte graphique, utilisateurs, stats globales |
+| **Tableau de bord** | KPIs du jour, graphique CA 7 jours (couleurs bi-chrome tenant), top produits, alertes stock |
+| **Caisse POS** | Fullscreen, panier, variantes, pesée, paiement multi-méthode, mode hors-ligne |
+| **Ventes** | Liste paginée, détail, annulation, téléchargement PDF |
+| **Factures** | Workflow `draft→sent→paid/overdue/cancelled`, remise, TVA, paiement partiel, PDF |
+| **Produits** | CRUD, image upload, variantes, attributs, catégories imbriquées, import CSV, thumbnail dans la liste |
+| **Fournisseurs** | CRUD, activation/désactivation, sélecteur pays + téléphone international |
+| **Achats** | Bons de commande `ACH-YYYY-XXXXX`, workflow draft → ordered → partial → received, réception partielle idempotente |
+| **Clients** | CRUD, historique des achats, sélecteur pays + téléphone international |
+| **Stock** | Mouvements, ajustements, alertes seuil, lots expirants |
+| **Rapports** | CA par période, top produits, synthèse stock — export CSV (UTF-8 BOM, séparateur `;`) |
+| **Paramètres** | Logo boutique, devise, secteur, coordonnées, profil utilisateur, groupes & permissions (57 permissions) |
+| **Toasts** | Notifications succès/erreur sur toutes les mutations — messages d'erreur Laravel traduits en français |
+| **Charte graphique** | `--brand-primary` / `--brand-secondary` CSS variables — appliquées sur sidebar, boutons, badges, graphe |
 
 ---
 
@@ -14,271 +36,319 @@ Plateforme SaaS multi-tenant de gestion commerciale pour PME — Afrique de l'Ou
 
 ```bash
 cp backend/.env.example backend/.env
-# Éditer backend/.env si besoin (DB_HOST=mysql, REDIS_HOST=redis déjà configurés)
-
 docker compose up -d
 docker compose exec app php artisan key:generate
 docker compose exec app php artisan migrate --seed
+docker compose exec app php artisan storage:link
 ```
 
 API disponible sur `http://localhost:80`.
 
-### Option B — Local
+### Option B — Local (sans Redis requis)
 
 ```bash
-# Backend
+# ── Backend ────────────────────────────────────────────────────────────
 cd backend
 composer install
 cp .env.example .env && php artisan key:generate
-# → Éditer .env : DB_HOST, DB_DATABASE, DB_USERNAME, DB_PASSWORD
+# Éditer .env : DB_DATABASE, DB_USERNAME, DB_PASSWORD
 php artisan migrate --seed
-php artisan serve
-# → http://localhost:8000
+php artisan storage:link   # lien symbolique pour images et logos (une seule fois)
+php artisan serve          # → http://localhost:8000
 
-# Frontend (autre terminal)
+# ── Frontend (autre terminal) ──────────────────────────────────────────
 cd frontend
 npm install
-npm run dev
-# → http://localhost:5173
+npm run dev                # → http://localhost:5173
 ```
 
-### Accès démo (après `db:seed`)
+> **Redis non requis en dev** — `.env.example` utilise `CACHE_STORE=file` et `SESSION_DRIVER=file` par défaut.
 
-```
-Email       : admin@demo.sn
-Mot de passe: password
-Tenant slug : demo
-```
+### Comptes de démonstration
+
+Après `php artisan migrate --seed` :
+
+#### Tenant démo
+
+| Champ | Valeur |
+| --- | --- |
+| Email | `admin@demo.sn` |
+| Mot de passe | `password` |
+| X-Tenant-ID | `demo-api-key-change-in-production-64chars00000000000000000000000` |
+
+#### Super Admin
+
+| Champ | Valeur |
+| --- | --- |
+| URL | `http://localhost:5173/admin/login` |
+| Email | `superadmin@saas.sn` |
+| Mot de passe | `superadmin123` |
+
+> ⚠ Changer le mot de passe Super Admin en production.
+
+Le seed insère : 5 catégories · 15 produits · stock initial · 7 clients · ~17 ventes sur 7 jours.
 
 ---
 
-## Backend
-
-### Prérequis
+## Prérequis
 
 | Outil | Version | Notes |
-|---|---|---|
-| PHP | 8.3 | pdo_mysql, mbstring, gd, zip, intl, redis |
+| --- | --- | --- |
+| PHP | 8.2+ | pdo_mysql, mbstring, gd, zip, intl |
 | Composer | 2.x | |
-| MySQL | 8.0 | |
-| Redis | 7.x | Optionnel — fallback `database` si absent |
-
-### Commandes utiles
-
-```bash
-# Depuis backend/
-composer test                                   # Pest (clear-config + tous les tests)
-./vendor/bin/pest --filter "nom du test"        # un seul test
-./vendor/bin/pest tests/Feature/Sales/          # un dossier
-./vendor/bin/pest --coverage                    # avec couverture
-
-composer lint                                   # Laravel Pint (corrige)
-composer lint:check                             # vérifie sans modifier
-
-php artisan route:list --path=api/v1
-php artisan tinker
-```
-
-### Architecture multi-tenant
-
-Toutes les routes API exigent le header `X-Tenant-ID: <api_key>`.
-
-```
-X-Tenant-ID → ResolveTenant middleware → TenantService::setCurrentTenant()
-                                       → TenantScope injecte WHERE tenant_id = ?
-                                       → BelongsToTenant::creating() injecte tenant_id
-```
-
-- **400** si header absent · **404** si tenant inconnu · **401** si tenant suspendu
-- Cache Redis 24h sur la résolution du tenant (`tenant:api_key:{key}`)
-
-### Services métier
-
-| Service | Responsabilité |
-|---|---|
-| `TenantService` | Singleton de contexte — `current()`, `currentId()`, `setting()` |
-| `StockService` | `adjust()` — atomique, idempotent via `source+source_id`, journal immuable |
-| `SaleService` | Transaction + verrous stock ASC (anti-deadlock) + bcmath + idempotence `offline_id` |
-| `PosService` | `syncOffline()` — ventes hors-ligne idempotentes via `offline_id` |
-| `ProductService` | `generateVariantCombinations()` — produit cartésien des `attribute_value_ids` |
-
-### Authentification et test de l'API
-
-```bash
-# Login
-curl -X POST http://localhost:8000/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -H "X-Tenant-ID: {api_key}" \
-  -d '{"email":"admin@demo.sn","password":"password"}'
-
-# Réponse
-# { "token": "1|xxx", "data": { "user": {...}, "permissions": [...], "tenant": {...} } }
-
-# Appel authentifié
-curl http://localhost:8000/api/v1/products \
-  -H "Authorization: Bearer 1|xxx" \
-  -H "X-Tenant-ID: {api_key}" \
-  -H "Accept: application/json"
-```
-
-### Créer un tenant (production)
-
-```bash
-php artisan tinker
-```
-
-```php
-$tenant = App\Models\Tenant::create([
-    'name'     => 'Boutique Diallo',
-    'sector'   => 'fashion',   // retail | food | fashion | cosmetic
-    'currency' => 'XOF',
-    'email'    => 'contact@boutique-diallo.sn',
-    'city'     => 'Dakar',
-]);
-// api_key générée automatiquement, 3 groupes créés (TenantObserver)
-
-$admin = App\Models\User::create([
-    'tenant_id' => $tenant->id,
-    'name'      => 'Mamadou Diallo',
-    'email'     => 'admin@boutique-diallo.sn',
-    'password'  => bcrypt('motdepasse-securise'),
-]);
-$admin->groups()->attach(
-    $tenant->groups()->where('name', 'Administrateur')->first()->id
-);
-echo $tenant->api_key;
-```
+| MySQL | 8.0+ | |
+| Node.js | 18+ | |
+| npm | 9+ | |
+| Redis | 7.x | Optionnel — fallback `file` / `database` si absent |
 
 ---
 
-## Frontend
-
-### Prérequis
-
-| Outil | Version |
-|---|---|
-| Node.js | 20.x |
-| npm | 10.x |
-
-### Stack
-
-| Catégorie | Librairie |
-|---|---|
-| Framework | React 18 + TypeScript |
-| Build | Vite 5 |
-| Style | Tailwind CSS 3 |
-| Routing | React Router v6 |
-| État global | Zustand 5 |
-| Requêtes | TanStack Query v5 |
-| Formulaires | React Hook Form 7 + Zod |
-| HTTP | Axios |
-| UI headless | Headless UI v2 + Heroicons v2 |
-| Graphiques | Recharts 2 |
-
-### Variables d'environnement
+## Commandes utiles
 
 ```bash
-# frontend/.env.local  (optionnel — proxy Vite utilisé en dev)
-VITE_API_BASE_URL=http://localhost:8000
-```
+# Backend (depuis backend/)
+composer test                                  # Pest — tous les tests
+php vendor/bin/pest tests/Feature/Stock/       # un dossier
+php vendor/bin/pest --filter "InvoiceService"  # un test précis
+composer lint                                  # Laravel Pint (corrige)
+composer lint:check                            # vérifie sans modifier
+php artisan route:list --path=api/v1           # liste les routes tenant
+php artisan route:list --path=api/v1/admin     # liste les routes super admin
+php artisan db:seed --class=PermissionSeeder   # (re)créer les permissions
+php artisan db:seed --class=SuperAdminSeeder   # (re)créer le compte super admin
+php artisan storage:link                       # lien public/storage (images, logos)
+php artisan view:clear                         # vider le cache des vues Blade (PDF)
 
-### Commandes
-
-```bash
-cd frontend
-npm install    # installe toutes les dépendances (dont recharts)
-npm run dev    # serveur de développement http://localhost:5173
-npm run build  # build production dans dist/
-npm run preview
+# Frontend (depuis frontend/)
+npm run dev      # dev server → http://localhost:5173
+npm run build    # build production → dist/
+npm run preview  # prévisualise le build
 ```
 
 ---
 
 ## Structure du projet
 
-```
+```text
 saas-commercial/
 ├── backend/
 │   ├── app/
-│   │   ├── Http/
-│   │   │   ├── Controllers/        ← Auth, Products, Variants, Sales, POS, Customers…
-│   │   │   ├── Middleware/         ← ResolveTenant, CheckPermission
-│   │   │   └── Requests/           ← Validation typée par ressource
-│   │   ├── Models/                 ← Tenant, User, Product, Sale, StockMovement…
-│   │   ├── Observers/              ← TenantObserver
-│   │   ├── Scopes/                 ← TenantScope
-│   │   ├── Services/               ← TenantService, StockService, SaleService, PosService
-│   │   └── Traits/                 ← BelongsToTenant
+│   │   ├── Http/Controllers/
+│   │   │   ├── Admin/          # AdminAuthController, AdminTenantController, AdminStatsController
+│   │   │   ├── Auth/           # AuthController
+│   │   │   ├── Category/       # CategoryController
+│   │   │   ├── Customer/       # CustomerController
+│   │   │   ├── Dashboard/      # DashboardController
+│   │   │   ├── Invoice/        # InvoiceController
+│   │   │   ├── Pos/            # PosController, PosDraftController
+│   │   │   ├── Product/        # ProductController, VariantController,
+│   │   │   │                   # AttributeController, ProductImportController
+│   │   │   ├── Purchase/       # SupplierController, PurchaseOrderController
+│   │   │   ├── Report/         # ReportController
+│   │   │   ├── Sale/           # SaleController
+│   │   │   ├── Settings/       # SettingsController
+│   │   │   ├── Stock/          # StockController
+│   │   │   └── Users/          # UserController, GroupController
+│   │   ├── Http/Middleware/
+│   │   │   ├── ResolveTenant.php    # Skip automatique des routes /api/v1/admin/*
+│   │   │   ├── CheckPermission.php
+│   │   │   └── EnsureSuperAdmin.php # Auth super admin via Sanctum (tokenable_type)
+│   │   ├── Models/             # Tenant, SuperAdmin, User, Product, Sale, Invoice…
+│   │   ├── Services/           # TenantService, StockService, SaleService,
+│   │   │                       # PosService, ProductService, PurchaseService,
+│   │   │                       # InvoiceService, ProductImportService
+│   │   └── Traits/             # BelongsToTenant
 │   ├── database/
-│   │   ├── factories/              ← Tenant, User, Product, Customer
-│   │   ├── migrations/
-│   │   └── seeders/
-│   ├── tests/Feature/
-│   │   ├── Auth/                   ← AuthTest
-│   │   ├── Pos/                    ← PosOfflineSyncTest
-│   │   ├── Sales/                  ← SaleServiceTest
-│   │   ├── Stock/                  ← StockServiceTest
-│   │   └── Tenant/                 ← TenantIsolationTest
-│   └── routes/api.php
+│   │   ├── migrations/         # 32 migrations (préfixe 2026_MM_DD)
+│   │   └── seeders/            # DatabaseSeeder, DemoDataSeeder, SuperAdminSeeder
+│   ├── resources/views/pdf/    # invoice.blade.php, invoice_doc.blade.php
+│   ├── routes/api.php          # Routes tenant + routes super admin /api/v1/admin/*
+│   └── tests/Feature/          # Auth, Invoice, Pos, Product, Purchase, Report,
+│                               # Sales, Stock, Tenant
 │
-├── frontend/
-│   └── src/
-│       ├── components/
-│       │   ├── ui/                 ← Button, Input, Badge, Modal, Table, Pagination…
-│       │   ├── layout/             ← Layout, Sidebar, Topbar
-│       │   ├── dashboard/          ← KpiCard, WeekChart, StockAlertList, RecentSalesList
-│       │   └── products/           ← CategorySelect, VariantManager
-│       ├── pages/
-│       │   ├── auth/               ← LoginPage
-│       │   ├── dashboard/          ← DashboardPage
-│       │   └── products/           ← ProductsPage, ProductFormPage
-│       ├── services/api/           ← dashboard, products, categories, customers, attributes
-│       ├── store/                  ← authStore, tenantStore (Zustand)
-│       ├── hooks/                  ← usePermission
-│       ├── lib/                    ← axios, utils (cn, formatCurrency, formatDate…)
-│       └── types/                  ← interfaces TypeScript complètes
-│
-├── nginx/default.conf
-├── docker-compose.yml
-├── CLAUDE.md                       ← Guide pour Claude Code
-└── README.md
+└── frontend/
+    └── src/
+        ├── pages/
+        │   ├── admin/          # AdminLoginPage, AdminDashboardPage,
+        │   │                   # AdminTenantsPage, AdminTenantDetailPage
+        │   ├── dashboard/      # DashboardPage
+        │   ├── pos/            # PosPage
+        │   ├── sales/          # SalesPage, SaleDetailPage
+        │   ├── products/       # ProductsPage (import CSV + thumbnails), ProductFormPage
+        │   ├── purchases/      # SuppliersPage, PurchaseOrdersPage,
+        │   │                   # PurchaseFormPage, PurchaseDetailPage
+        │   ├── invoices/       # InvoicesPage, InvoiceFormPage, InvoiceDetailPage
+        │   ├── customers/      # CustomersPage, CustomerDetailPage
+        │   ├── stock/          # StockPage
+        │   ├── reports/        # ReportsPage (3 onglets + export CSV)
+        │   └── settings/       # SettingsPage (Boutique, Profil, Utilisateurs, Groupes)
+        ├── components/
+        │   ├── ui/             # Button, Modal, Badge, Skeleton, CanDo,
+        │   │                   # PhoneInput (pays + indicatif auto), ToastContainer
+        │   ├── layout/         # Layout (refresh auth au montage), Sidebar, Topbar
+        │   ├── admin/          # AdminLayout
+        │   └── dashboard/, pos/, stock/, products/, customers/
+        ├── services/api/
+        │   ├── admin.ts        # Super Admin : auth, stats, CRUD tenants
+        │   ├── settings.ts     # GET/POST settings + logo upload (FormData)
+        │   ├── products.ts     # CRUD + variantes + image upload (multipart)
+        │   └── …               # dashboard, categories, customers, sales,
+        │                       # suppliers, purchases, invoices, reports, stock,
+        │                       # import, users, groups
+        ├── store/
+        │   ├── authStore.ts        # Zustand — user, token, permissions, tenant
+        │   ├── superAdminStore.ts  # Zustand — super admin auth (localStorage séparé)
+        │   ├── cartStore.ts        # Zustand — panier POS
+        │   └── toastStore.ts       # Zustand — notifications toast
+        ├── lib/
+        │   ├── axios.ts        # intercepteur tenant (401→logout, erreurs→toast)
+        │   ├── adminAxios.ts   # intercepteur super admin (pas de X-Tenant-ID)
+        │   ├── errors.ts       # getApiErrorMessage() + traductions Laravel→FR
+        │   └── utils.ts        # formatCurrency(), formatDate(), cn()
+        └── types/              # Types TypeScript centralisés (index.ts)
 ```
+
+---
+
+## Architecture multi-tenant
+
+### Routes tenant (avec X-Tenant-ID)
+
+```text
+X-Tenant-ID → ResolveTenant → TenantService::setCurrentTenant()
+                             → TenantScope injecte WHERE tenant_id = ?
+                             → BelongsToTenant::creating() injecte tenant_id
+```
+
+Toutes les routes API exigent :
+
+- **Header** `X-Tenant-ID: <api_key>` — 400 si absent, 404 si inconnu, 401 si suspendu
+- **Bearer token** Sanctum (obtenu via `POST /api/v1/auth/login`)
+
+### Routes Super Admin (sans X-Tenant-ID)
+
+```text
+/api/v1/admin/* → ResolveTenant skippe (str_starts_with check)
+               → EnsureSuperAdmin → PersonalAccessToken::findToken()
+                                  → tokenable_type = App\Models\SuperAdmin
+```
+
+Interface accessible sur `/admin/login` — store Zustand `superAdminStore` séparé de `authStore`.
+
+---
+
+## Services métier
+
+| Service | Responsabilité clé |
+| --- | --- |
+| `TenantService` | Singleton de contexte — `current()`, `currentId()`, `setting()`, `flushCache()` |
+| `StockService` | `adjust()` — atomique, idempotent via `source+source_id`, journal immuable |
+| `SaleService` | Transaction + verrous stock ASC (anti-deadlock) + bcmath + idempotence `offline_id` |
+| `PosService` | `syncOffline()` — ventes hors-ligne idempotentes |
+| `ProductService` | `generateVariantCombinations()` — produit cartésien des attributs |
+| `PurchaseService` | `create/confirm/receive/cancel` — réception partielle idempotente (sourceId composite) |
+| `InvoiceService` | `create/send/recordPayment/markOverdue/cancel/update` — bcmath, tolérance 1 FCFA |
+| `ProductImportService` | Import CSV — séparateur `;`, BOM UTF-8, cache catégories, `update_existing` par SKU |
+
+---
+
+## Endpoints API principaux
+
+### Routes tenant
+
+| Groupe | Préfixe | Endpoints |
+| --- | --- | --- |
+| Auth | `/api/v1/auth` | login, logout, me |
+| Dashboard | `/api/v1/dashboard` | summary |
+| Rapports | `/api/v1/reports` | sales, products, stock (+ `?format=csv`) |
+| Produits | `/api/v1/products` | CRUD + variantes + attributs + mouvements stock + import CSV |
+| Catégories | `/api/v1/categories` | CRUD |
+| Fournisseurs | `/api/v1/suppliers` | CRUD |
+| Achats | `/api/v1/purchases` | CRUD + confirm + receive + cancel |
+| Factures | `/api/v1/invoices` | CRUD + send + payment + cancel + PDF |
+| Ventes | `/api/v1/sales` | CRUD + paiements + annulation + PDF |
+| Clients | `/api/v1/customers` | CRUD + historique |
+| Stock | `/api/v1/stock` | adjust + movements + alerts + expiring |
+| POS | `/api/v1/pos` | products + session + sync offline + drafts |
+| Utilisateurs | `/api/v1/users` | CRUD + syncGroups |
+| Groupes | `/api/v1/groups` | CRUD + permissions |
+| Paramètres | `/api/v1/settings` | GET + PUT/POST (logo upload multipart) |
+
+### Routes Super Admin
+
+| Groupe | Préfixe | Endpoints |
+| --- | --- | --- |
+| Auth Admin | `/api/v1/admin/auth` | login, logout, me |
+| Stats | `/api/v1/admin/stats` | index (tenants total/actifs/suspendus, users total) |
+| Tenants | `/api/v1/admin/tenants` | CRUD + suspend + activate |
+
+---
+
+## Charte graphique par tenant
+
+Les couleurs sont définies par le Super Admin (page détail tenant) et appliquées automatiquement :
+
+```text
+Super Admin → PUT /api/v1/admin/tenants/{id} → primary_color + secondary_color sauvés en DB
+Tenant login → GET /api/v1/auth/me → retourne les couleurs fraîches
+Layout.tsx → applyBrandColors() → CSS variables --brand-primary / --brand-secondary
+Tailwind → bg-brand-primary, text-brand-secondary, etc.
+```
+
+Rafraîchissement silencieux : `Layout.tsx` appelle `/api/v1/auth/me` à chaque montage — les couleurs mises à jour par le Super Admin sont visibles sans reconnexion.
+
+Le tenant peut modifier son logo, sa devise et ses coordonnées mais **pas** ses couleurs.
 
 ---
 
 ## Déploiement
 
-### Hostinger (Shared Hosting)
+### Hostinger Shared Hosting
 
 ```bash
-cd public_html/api
-git pull origin main
 composer install --no-dev --optimize-autoloader
+php artisan key:generate
 php artisan config:cache && php artisan route:cache
 php artisan migrate --force
+php artisan db:seed --class=PermissionSeeder
+php artisan db:seed --class=DefaultGroupSeeder
+php artisan db:seed --class=SuperAdminSeeder
+php artisan storage:link
 ```
 
-Pointer le Document Root vers `backend/public`.  
-`QUEUE_CONNECTION=database` et `CACHE_STORE=database` (Redis optionnel).
+Dans `.env` :
+
+```env
+CACHE_STORE=database
+SESSION_DRIVER=database
+QUEUE_CONNECTION=database
+```
 
 ### VPS / Docker
 
 ```bash
 docker compose up -d
 docker compose exec app php artisan migrate --force
+docker compose exec app php artisan storage:link
 ```
-
-Pour activer Horizon (queues Redis) : décommenter le service `horizon` dans `docker-compose.yml`.
 
 ---
 
 ## Roadmap
 
 | Phase | Statut | Contenu |
-|---|---|---|
-| Backend P1 | ✅ Terminée | Auth · RBAC · Tenants · Produits · Variantes · Attributs · Stock · Catégories |
-| Backend P2 | ✅ Terminée | Ventes · POS · Clients · Dashboard · POS offline |
-| Backend P3 | ✅ Terminée | Tests Pest (Auth, TenantIsolation, Stock, Sales, POS) · Factories |
-| Frontend P4 | 🔄 En cours | Setup · Composants UI · Dashboard · Produits |
-| Frontend P5 | 🔜 Planifiée | Clients · Ventes · POS · Stock · Paramètres |
-| Frontend P6 | 🔜 Planifiée | Rapports · Exports PDF · Notifications |
+| --- | --- | --- |
+| Backend — Infrastructure | ✅ Terminée | Multi-tenant, RBAC, Auth Sanctum, 57 permissions |
+| Backend — Produits & Stock | ✅ Terminée | Produits + images, variantes, attributs, catégories, mouvements de stock |
+| Backend — Commerce | ✅ Terminée | Ventes, POS, clients, dashboard, PDF, sync offline |
+| Backend — Achats | ✅ Terminée | Fournisseurs, bons de commande, réception partielle idempotente |
+| Backend — Facturation | ✅ Terminée | Factures `FAC-YYYY-XXXXX`, paiements partiels, PDF |
+| Backend — Rapports | ✅ Terminée | CA par période, top produits, synthèse stock, export CSV |
+| Backend — Import CSV | ✅ Terminée | Import produits CSV, template téléchargeable, rapport d'erreurs |
+| Backend — Super Admin | ✅ Terminée | `super_admins` table, `EnsureSuperAdmin`, CRUD tenants + charte graphique |
+| Tests | ✅ Terminée | Tests Pest 3 — Auth, Invoice, Purchase, Product, Report, Sales, Stock, Tenant |
+| Frontend — Tenant | ✅ Terminée | Dashboard, POS, Ventes, Factures, Produits (images), Fournisseurs, Achats, Clients, Stock, Rapports, Paramètres |
+| Frontend — Super Admin | ✅ Terminée | Login dark, Dashboard stats globales, Tenants (liste + détail + édition + charte graphique) |
+| UX — Toasts & notifications | ✅ Terminée | Toast success/error sur toutes les mutations, messages Laravel traduits FR |
+| UX — Charte graphique | ✅ Terminée | `brand-secondary` appliqué sur badges info, icônes KPI alternées, graphe bi-chrome |
+| UX — Téléphone international | ✅ Terminée | `PhoneInput` avec sélecteur pays, indicatif auto-préfixé, validation par pays |

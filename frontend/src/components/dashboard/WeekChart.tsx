@@ -1,12 +1,8 @@
 import { useEffect, useState } from 'react'
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
+  BarChart, Bar, Cell,
+  XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer,
 } from 'recharts'
 import type { WeekChartPoint } from '@/types'
 import { formatCurrency } from '@/lib/utils'
@@ -15,21 +11,25 @@ interface WeekChartProps {
   data: WeekChartPoint[]
 }
 
-function useBrandColor(): string {
-  const [color, setColor] = useState('rgb(99,102,241)')
+function useBrandColors(): { primary: string; secondary: string } {
+  const [colors, setColors] = useState({ primary: 'rgb(99,102,241)', secondary: 'rgb(109,40,217)' })
 
   useEffect(() => {
-    const raw = getComputedStyle(document.documentElement)
-      .getPropertyValue('--brand-primary')
-      .trim()
-    if (raw) setColor(`rgb(${raw})`)
+    const styles = getComputedStyle(document.documentElement)
+    const p = styles.getPropertyValue('--brand-primary').trim()
+    const s = styles.getPropertyValue('--brand-secondary').trim()
+    setColors({
+      primary:   p ? `rgb(${p})` : 'rgb(99,102,241)',
+      secondary: s ? `rgb(${s})` : 'rgb(109,40,217)',
+    })
   }, [])
 
-  return color
+  return colors
 }
 
 export default function WeekChart({ data }: WeekChartProps) {
-  const brandColor = useBrandColor()
+  const { primary, secondary } = useBrandColors()
+  const lastIndex = data.length - 1
 
   return (
     <ResponsiveContainer width="100%" height={220}>
@@ -59,7 +59,15 @@ export default function WeekChart({ data }: WeekChartProps) {
           labelStyle={{ fontWeight: 600 }}
           contentStyle={{ borderRadius: 8, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,.12)' }}
         />
-        <Bar dataKey="revenue" fill={brandColor} radius={[4, 4, 0, 0]} maxBarSize={40} />
+        <Bar dataKey="revenue" radius={[4, 4, 0, 0]} maxBarSize={40}>
+          {data.map((_, index) => (
+            <Cell
+              key={index}
+              fill={index === lastIndex ? secondary : primary}
+              fillOpacity={index === lastIndex ? 1 : 0.85}
+            />
+          ))}
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   )

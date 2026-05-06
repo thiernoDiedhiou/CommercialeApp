@@ -18,6 +18,7 @@ class PermissionSeeder extends Seeder
         ['name' => 'products.create',       'display_name' => 'Créer un produit',            'module' => 'products',     'action' => 'create'],
         ['name' => 'products.edit',         'display_name' => 'Modifier un produit',         'module' => 'products',     'action' => 'edit'],
         ['name' => 'products.delete',       'display_name' => 'Supprimer un produit',        'module' => 'products',     'action' => 'delete'],
+        ['name' => 'products.import',       'display_name' => 'Importer des produits CSV',   'module' => 'products',     'action' => 'import'],
 
         // Catégories
         ['name' => 'categories.view',       'display_name' => 'Voir les catégories',         'module' => 'categories',   'action' => 'view'],
@@ -64,6 +65,29 @@ class PermissionSeeder extends Seeder
         ['name' => 'groups.create',         'display_name' => 'Créer un groupe',             'module' => 'groups',       'action' => 'create'],
         ['name' => 'groups.edit',           'display_name' => 'Modifier un groupe',          'module' => 'groups',       'action' => 'edit'],
         ['name' => 'groups.delete',         'display_name' => 'Supprimer un groupe',         'module' => 'groups',       'action' => 'delete'],
+
+        // Fournisseurs
+        ['name' => 'suppliers.view',        'display_name' => 'Voir les fournisseurs',        'module' => 'suppliers',    'action' => 'view'],
+        ['name' => 'suppliers.create',      'display_name' => 'Créer un fournisseur',         'module' => 'suppliers',    'action' => 'create'],
+        ['name' => 'suppliers.edit',        'display_name' => 'Modifier un fournisseur',      'module' => 'suppliers',    'action' => 'edit'],
+        ['name' => 'suppliers.delete',      'display_name' => 'Supprimer un fournisseur',     'module' => 'suppliers',    'action' => 'delete'],
+
+        // Achats
+        ['name' => 'purchases.view',        'display_name' => 'Voir les bons de commande',    'module' => 'purchases',    'action' => 'view'],
+        ['name' => 'purchases.create',      'display_name' => 'Créer un bon de commande',     'module' => 'purchases',    'action' => 'create'],
+        ['name' => 'purchases.edit',        'display_name' => 'Modifier un bon de commande',  'module' => 'purchases',    'action' => 'edit'],
+        ['name' => 'purchases.delete',      'display_name' => 'Supprimer un bon de commande', 'module' => 'purchases',    'action' => 'delete'],
+        ['name' => 'purchases.receive',     'display_name' => 'Réceptionner une commande',    'module' => 'purchases',    'action' => 'receive'],
+
+        // Facturation
+        ['name' => 'invoices.view',         'display_name' => 'Voir les factures',             'module' => 'invoices',     'action' => 'view'],
+        ['name' => 'invoices.create',       'display_name' => 'Créer une facture',             'module' => 'invoices',     'action' => 'create'],
+        ['name' => 'invoices.edit',         'display_name' => 'Modifier une facture',          'module' => 'invoices',     'action' => 'edit'],
+        ['name' => 'invoices.delete',       'display_name' => 'Supprimer une facture',         'module' => 'invoices',     'action' => 'delete'],
+        ['name' => 'invoices.pdf',          'display_name' => 'Télécharger une facture PDF',   'module' => 'invoices',     'action' => 'pdf'],
+
+        // Rapports
+        ['name' => 'reports.view',          'display_name' => 'Voir les rapports',            'module' => 'reports',      'action' => 'view'],
 
         // Paramètres
         ['name' => 'settings.view',         'display_name' => 'Voir les paramètres',         'module' => 'settings',     'action' => 'view'],

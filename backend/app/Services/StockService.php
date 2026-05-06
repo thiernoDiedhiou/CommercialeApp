@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductLot;
 use App\Models\ProductVariant;
 use App\Models\StockMovement;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -98,7 +99,7 @@ class StockService
                 'source'             => $source,
                 'source_id'          => $sourceId,
                 'unit_cost'          => $unitCost,
-                'user_id'            => auth()->id(),
+                'user_id'            => Auth::id(),
                 'notes'              => $notes,
             ]);
 

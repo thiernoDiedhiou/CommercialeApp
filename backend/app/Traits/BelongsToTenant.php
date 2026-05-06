@@ -11,6 +11,14 @@ use App\Services\TenantService;
  * Injecte aussi tenant_id au moment de la création (creating event).
  *
  * Usage : ajouter `use BelongsToTenant;` dans chaque modèle métier.
+ *
+ * Les @method ci-dessous déclarent les méthodes héritées de Model utilisées
+ * dans bootBelongsToTenant — nécessaire pour résoudre Intelephense P1013
+ * (le trait est analysé isolément, sans connaître la classe hôte).
+ *
+ * @method static void addGlobalScope(\Illuminate\Database\Eloquent\Scope|\Closure|string $scope, ?\Closure $implementation = null)
+ * @method static void creating(\Closure|string $callback, int $priority = 0)
+ * @mixin \Illuminate\Database\Eloquent\Model
  */
 trait BelongsToTenant
 {

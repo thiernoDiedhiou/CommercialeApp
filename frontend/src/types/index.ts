@@ -14,6 +14,7 @@ export interface TenantInfo {
   sector: string
   primary_color: string | null
   secondary_color: string | null
+  logo_url: string | null
 }
 
 export interface LoginResponse {
@@ -148,6 +149,8 @@ export interface Product {
   has_expiry: boolean
   is_active: boolean
   category_id: number | null
+  image_path: string | null
+  image_url: string | null
   category?: Category
   variants?: ProductVariant[]
 }
@@ -205,12 +208,99 @@ export interface CreateVariantData {
   alert_threshold?: number | null
 }
 
+// ── Product Import ────────────────────────────────────────────────────────
+
+export interface ImportError {
+  row: number
+  message: string
+}
+
+export interface ImportResult {
+  created: number
+  updated: number
+  skipped: number
+  errors: ImportError[]
+}
+
+// ── Suppliers ─────────────────────────────────────────────────────────────
+
+export interface Supplier {
+  id: number
+  name: string
+  phone: string | null
+  country: string
+  email: string | null
+  address: string | null
+  notes: string | null
+  is_active: boolean
+}
+
+export interface CreateSupplierData {
+  name: string
+  country?: string
+  phone?: string | null
+  email?: string | null
+  address?: string | null
+  notes?: string | null
+  is_active?: boolean
+}
+
+// ── Purchases ─────────────────────────────────────────────────────────────
+
+export type PurchaseOrderStatus = 'draft' | 'ordered' | 'partial' | 'received' | 'cancelled'
+
+export interface PurchaseOrderItem {
+  id: number
+  purchase_order_id: number
+  product_id: number
+  product_variant_id: number | null
+  quantity_ordered: string
+  quantity_received: string
+  unit_cost: string
+  product?: Pick<Product, 'id' | 'name' | 'unit'>
+  variant?: Pick<ProductVariant, 'id' | 'attribute_summary'>
+}
+
+export interface PurchaseOrder {
+  id: number
+  reference: string
+  status: PurchaseOrderStatus
+  expected_at: string | null
+  received_at: string | null
+  notes: string | null
+  created_at: string
+  items_count?: number
+  supplier?: Pick<Supplier, 'id' | 'name'> | null
+  user?: Pick<User, 'id' | 'name'>
+  items?: PurchaseOrderItem[]
+}
+
+export interface CreatePurchaseOrderData {
+  supplier_id?: number | null
+  expected_at?: string | null
+  notes?: string | null
+  items: {
+    product_id: number
+    product_variant_id?: number | null
+    quantity_ordered: number
+    unit_cost: number
+  }[]
+}
+
+export type UpdatePurchaseOrderData = Partial<CreatePurchaseOrderData>
+
+export interface ReceiveItemData {
+  id: number
+  quantity_received: number
+}
+
 // ── Customers ─────────────────────────────────────────────────────────────
 
 export interface Customer {
   id: number
   name: string
   phone: string | null
+  country: string       // ISO 3166-1 alpha-2, ex: 'SN'
   email: string | null
   address: string | null
   notes: string | null
@@ -227,9 +317,11 @@ export interface CustomerDetail extends Customer {
 export interface CreateCustomerData {
   name: string
   phone?: string | null
+  country?: string
   email?: string | null
   address?: string | null
   notes?: string | null
+  is_active?: boolean
 }
 
 // ── Sales ─────────────────────────────────────────────────────────────────
@@ -355,6 +447,134 @@ export type UpdateUserData = Partial<Omit<CreateUserData, 'password'> & { passwo
 export interface CreateGroupData {
   name: string
   description?: string | null
+}
+
+// ── Invoices ──────────────────────────────────────────────────────────────
+
+export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
+
+export interface InvoiceItem {
+  id: number
+  invoice_id: number
+  product_id: number | null
+  description: string
+  quantity: string
+  unit_price: string
+  discount: string
+  total: string
+  product?: Pick<Product, 'id' | 'name' | 'unit'>
+}
+
+export interface Invoice {
+  id: number
+  reference: string
+  status: InvoiceStatus
+  issue_date: string
+  due_date: string | null
+  subtotal: string
+  discount_type: 'percent' | 'fixed' | null
+  discount_value: string
+  discount_amount: string
+  tax_rate: string
+  tax_amount: string
+  total: string
+  paid_amount: string
+  notes: string | null
+  footer: string | null
+  sent_at: string | null
+  paid_at: string | null
+  cancelled_at: string | null
+  created_at: string
+  items_count?: number
+  customer?: Pick<Customer, 'id' | 'name' | 'phone' | 'email' | 'address'> | null
+  user?: Pick<User, 'id' | 'name'>
+  items?: InvoiceItem[]
+}
+
+export interface CreateInvoiceItemData {
+  product_id?: number | null
+  description: string
+  quantity: number
+  unit_price: number
+  discount?: number
+}
+
+export interface CreateInvoiceData {
+  customer_id?: number | null
+  issue_date: string
+  due_date?: string | null
+  discount_type?: 'percent' | 'fixed' | null
+  discount_value?: number
+  tax_rate?: number
+  notes?: string | null
+  footer?: string | null
+  items: CreateInvoiceItemData[]
+}
+
+export type UpdateInvoiceData = Partial<CreateInvoiceData>
+
+// ── Reports ───────────────────────────────────────────────────────────────
+
+export interface ReportPeriod {
+  from: string
+  to: string
+}
+
+export interface SalesReportSummary {
+  sales_count: number
+  revenue: number
+  profit: number
+  average_basket: number
+}
+
+export interface SalesChartPoint {
+  period: string
+  sales_count: number
+  revenue: number
+  profit: number
+}
+
+export interface SalesReport {
+  period: ReportPeriod
+  summary: SalesReportSummary
+  chart: SalesChartPoint[]
+}
+
+export interface ProductReportRow {
+  product_id: number
+  name: string
+  category: string | null
+  qty_sold: number
+  revenue: number
+  profit: number
+}
+
+export interface ProductsReport {
+  period: ReportPeriod
+  data: ProductReportRow[]
+}
+
+export interface StockReportSummary {
+  total_in: number
+  total_out: number
+  total_return: number
+  total_adjustment: number
+}
+
+export interface StockReportRow {
+  product_id: number
+  name: string
+  total_in: number
+  total_out: number
+  total_return: number
+  total_adjustment: number
+  current_stock: number
+}
+
+export interface StockReport {
+  period: ReportPeriod
+  summary: StockReportSummary
+  data: StockReportRow[]
 }
 
 // ── API error ─────────────────────────────────────────────────────────────

@@ -7,6 +7,8 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import { getProducts } from '@/services/api/products'
 import { adjustStock } from '@/services/api/stock'
+import { toast } from '@/store/toastStore'
+import { getApiErrorMessage } from '@/lib/errors'
 import type { Product, ProductVariant } from '@/types'
 
 const schema = z.object({
@@ -106,9 +108,11 @@ export function StockAdjustModal({ isOpen, prefill, onClose, onSuccess }: Props)
       qc.invalidateQueries({ queryKey: ['stock'] })
       qc.invalidateQueries({ queryKey: ['pos-products'] })
       qc.invalidateQueries({ queryKey: ['products'] })
+      toast.success('Ajustement de stock enregistré.')
       onSuccess()
       onClose()
     },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const onSubmit = async (values: FormValues) => {

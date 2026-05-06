@@ -1,10 +1,13 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { getProduct, createProduct, updateProduct, createVariant } from '@/services/api/products'
+import { getApiErrorMessage } from '@/lib/errors'
+import { toast } from '@/store/toastStore'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Input'
@@ -58,22 +61,26 @@ function Toggle({
 }) {
   return (
     <label className="flex items-start gap-3 cursor-pointer">
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        disabled={disabled}
-        onClick={() => onChange(!checked)}
-        className={`relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 disabled:opacity-50 ${
-          checked ? 'bg-brand-primary' : 'bg-gray-300'
-        }`}
-      >
+      <div className="relative mt-0.5 shrink-0">
+        <input
+          type="checkbox"
+          role="switch"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          disabled={disabled}
+          className="peer sr-only"
+        />
+        <div
+          className={`h-5 w-9 rounded-full transition-colors peer-focus:ring-2 peer-focus:ring-brand-primary peer-focus:ring-offset-2 peer-disabled:opacity-50 ${
+            checked ? 'bg-brand-primary' : 'bg-gray-300'
+          }`}
+        />
         <span
-          className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+          className={`pointer-events-none absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
             checked ? 'translate-x-4' : 'translate-x-0'
           }`}
         />
-      </button>
+      </div>
       <div>
         <p className="text-sm font-medium text-gray-700">{label}</p>
         {hint && <p className="text-xs text-gray-500">{hint}</p>}
@@ -93,6 +100,82 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
+// ── Image Upload ───────────────────────────────────────────────────────────
+
+function ImageUpload({
+  preview,
+  onFileChange,
+  onRemove,
+}: {
+  preview: string | null
+  onFileChange: (file: File) => void
+  onRemove: () => void
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) onFileChange(file)
+  }
+
+  if (preview) {
+    return (
+      <div className="relative inline-block">
+        <img
+          src={preview}
+          alt="Aperçu produit"
+          className="h-32 w-32 rounded-lg object-cover ring-1 ring-gray-200"
+        />
+        <button
+          type="button"
+          onClick={onRemove}
+          className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow hover:bg-red-600"
+          aria-label="Supprimer l'image"
+        >
+          <XMarkIcon className="h-3.5 w-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="mt-2 block w-32 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-center text-xs text-gray-600 hover:bg-gray-50"
+        >
+          Changer
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          aria-label="Changer l'image produit"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 text-gray-400 transition hover:border-brand-primary hover:text-brand-primary"
+        aria-label="Ajouter une image produit"
+      >
+        <PhotoIcon className="h-8 w-8" aria-hidden="true" />
+        <span className="text-xs font-medium">Ajouter une image</span>
+      </button>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        aria-label="Sélectionner une image produit"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+    </>
+  )
+}
+
 // ── Page principale ────────────────────────────────────────────────────────
 
 export default function ProductFormPage() {
@@ -100,6 +183,12 @@ export default function ProductFormPage() {
   const isEdit = !!id
   const navigate = useNavigate()
   const qc = useQueryClient()
+
+  // Image state (géré hors React Hook Form car File n'est pas sérialisable)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [removeImage, setRemoveImage] = useState(false)
+  const [imageError, setImageError] = useState<string | null>(null)
 
   const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ['product', id],
@@ -140,18 +229,44 @@ export default function ProductFormPage() {
         has_expiry: product.has_expiry,
         description: product.description ?? '',
       })
+      setImagePreview(product.image_url ?? null)
     }
   }, [product, reset])
 
   const hasVariants = watch('has_variants')
   const price = watch('price') ?? 0
 
+  const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+  const MAX_SIZE_BYTES = 2 * 1024 * 1024 // 2 Mo
+
+  const handleFileChange = (file: File) => {
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      setImageError('Format non supporté. Utilisez JPEG, PNG ou WebP.')
+      return
+    }
+    if (file.size > MAX_SIZE_BYTES) {
+      setImageError('Image trop lourde. Maximum 2 Mo.')
+      return
+    }
+    setImageError(null)
+    setImageFile(file)
+    setRemoveImage(false)
+    setImagePreview(URL.createObjectURL(file))
+  }
+
+  const handleRemoveImage = () => {
+    setImageFile(null)
+    setImagePreview(null)
+    setImageError(null)
+    setRemoveImage(true)
+  }
+
   // ── Mutations ─────────────────────────────────────────────────────────────
 
   const createMutation = useMutation({
     mutationFn: async (values: FormValues) => {
       const { variants, ...productData } = values
-      const created = await createProduct(productData)
+      const created = await createProduct(productData, imageFile)
       if (created.has_variants && variants?.length) {
         await Promise.all(
           variants.map((v) => createVariant(created.id, v as CreateVariantData)),
@@ -161,6 +276,7 @@ export default function ProductFormPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
+      toast.success('Produit créé avec succès.')
       navigate('/products')
     },
   })
@@ -168,11 +284,12 @@ export default function ProductFormPage() {
   const updateMutation = useMutation({
     mutationFn: (values: FormValues) => {
       const { variants: _variants, has_variants: _hv, ...rest } = values
-      return updateProduct(Number(id), rest)
+      return updateProduct(Number(id), rest, imageFile, removeImage)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['product', id] })
+      toast.success('Produit mis à jour.')
       navigate('/products')
     },
   })
@@ -181,6 +298,7 @@ export default function ProductFormPage() {
   const mutationError = createMutation.error || updateMutation.error
 
   const onSubmit = (values: FormValues) => {
+    if (imageError) return
     if (isEdit) updateMutation.mutate(values)
     else createMutation.mutate(values)
   }
@@ -202,40 +320,51 @@ export default function ProductFormPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Section : Informations de base */}
         <Section title="Informations de base">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
+          {/* Image */}
+          <div className="flex items-start gap-5">
+            <div>
+              <ImageUpload
+                preview={imagePreview}
+                onFileChange={handleFileChange}
+                onRemove={handleRemoveImage}
+              />
+              {imageError && (
+                <p className="mt-1.5 w-32 text-xs text-red-500 leading-snug">{imageError}</p>
+              )}
+            </div>
+            <div className="flex-1 space-y-4">
               <Input
                 label="Nom du produit"
                 placeholder="Ex : T-shirt coton"
                 error={errors.name?.message}
                 {...register('name')}
               />
-            </div>
-            <Input
-              label="SKU"
-              placeholder="TSH-001"
-              error={errors.sku?.message}
-              {...register('sku')}
-            />
-            <Controller
-              name="category_id"
-              control={control}
-              render={({ field }) => (
-                <CategorySelect
-                  value={field.value}
-                  onChange={field.onChange}
-                  error={errors.category_id?.message}
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  label="SKU"
+                  placeholder="TSH-001"
+                  error={errors.sku?.message}
+                  {...register('sku')}
                 />
-              )}
-            />
-            <div className="sm:col-span-2">
-              <Textarea
-                label="Description"
-                placeholder="Description optionnelle…"
-                {...register('description')}
-              />
+                <Controller
+                  name="category_id"
+                  control={control}
+                  render={({ field }) => (
+                    <CategorySelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      error={errors.category_id?.message}
+                    />
+                  )}
+                />
+              </div>
             </div>
           </div>
+          <Textarea
+            label="Description"
+            placeholder="Description optionnelle…"
+            {...register('description')}
+          />
         </Section>
 
         {/* Section : Prix et stock */}
@@ -329,7 +458,7 @@ export default function ProductFormPage() {
         {/* Erreur globale */}
         {mutationError && (
           <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-            Une erreur est survenue. Veuillez réessayer.
+            {getApiErrorMessage(mutationError)}
           </p>
         )}
 

@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\AdminTenantController;
+use App\Http\Controllers\Admin\AdminStatsController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Customer\CustomerController;
@@ -9,6 +12,12 @@ use App\Http\Controllers\Pos\PosController;
 use App\Http\Controllers\Product\AttributeController;
 use App\Http\Controllers\Product\ProductController;
 use App\Http\Controllers\Product\VariantController;
+use App\Http\Controllers\Invoice\InvoiceController;
+use App\Http\Controllers\Product\ProductImportController;
+use App\Http\Controllers\Settings\SettingsController;
+use App\Http\Controllers\Purchase\PurchaseOrderController;
+use App\Http\Controllers\Purchase\SupplierController;
+use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\Sale\SaleController;
 use App\Http\Controllers\Stock\StockController;
 use App\Http\Controllers\Users\GroupController;
@@ -29,6 +38,28 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
 
+    // ── Super Admin ───────────────────────────────────────────────────────────
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::post('auth/login',  [AdminAuthController::class, 'login'])->name('auth.login');
+
+        Route::middleware('super_admin')->group(function () {
+            Route::post('auth/logout', [AdminAuthController::class, 'logout'])->name('auth.logout');
+            Route::get('auth/me',      [AdminAuthController::class, 'me'])->name('auth.me');
+
+            Route::get('stats', [AdminStatsController::class, 'index'])->name('stats');
+
+            Route::prefix('tenants')->name('tenants.')->group(function () {
+                Route::get('/',                      [AdminTenantController::class, 'index'])->name('index');
+                Route::post('/',                     [AdminTenantController::class, 'store'])->name('store');
+                Route::get('{tenant}',               [AdminTenantController::class, 'show'])->name('show');
+                Route::put('{tenant}',               [AdminTenantController::class, 'update'])->name('update');
+                Route::delete('{tenant}',            [AdminTenantController::class, 'destroy'])->name('destroy');
+                Route::post('{tenant}/suspend',      [AdminTenantController::class, 'suspend'])->name('suspend');
+                Route::post('{tenant}/activate',     [AdminTenantController::class, 'activate'])->name('activate');
+            });
+        });
+    });
+
     // ── Authentification ──────────────────────────────────────────────────────
     Route::prefix('auth')->name('auth.')->group(function () {
         Route::post('login', [AuthController::class, 'login'])->name('login');
@@ -46,6 +77,23 @@ Route::prefix('v1')->group(function () {
         Route::get('dashboard/summary', [DashboardController::class, 'summary'])
             ->middleware('permission:dashboard.view');
 
+        // ── Paramètres tenant ─────────────────────────────────────────────────
+        Route::prefix('settings')->name('settings.')->group(function () {
+            Route::get('/',  [SettingsController::class, 'show'])
+                ->middleware('permission:settings.view');
+            Route::put('/',  [SettingsController::class, 'update'])
+                ->middleware('permission:settings.edit');
+            Route::post('/', [SettingsController::class, 'update'])
+                ->middleware('permission:settings.edit');
+        });
+
+        // ── Rapports ──────────────────────────────────────────────────────────
+        Route::prefix('reports')->name('reports.')->middleware('permission:reports.view')->group(function () {
+            Route::get('sales',    [ReportController::class, 'sales']);
+            Route::get('products', [ReportController::class, 'products']);
+            Route::get('stock',    [ReportController::class, 'stock']);
+        });
+
         // ── Catégories ────────────────────────────────────────────────────────
         Route::prefix('categories')->name('categories.')->group(function () {
             Route::get('/',             [CategoryController::class, 'index'])
@@ -60,6 +108,12 @@ Route::prefix('v1')->group(function () {
 
         // ── Produits ──────────────────────────────────────────────────────────
         Route::prefix('products')->name('products.')->group(function () {
+            // Import CSV — déclaré avant {product} pour éviter toute collision de route
+            Route::get('import/template',   [ProductImportController::class, 'template'])
+                ->middleware('permission:products.import');
+            Route::post('import',           [ProductImportController::class, 'import'])
+                ->middleware('permission:products.import');
+
             Route::get('/',    [ProductController::class, 'index'])
                 ->middleware('permission:products.view');
             Route::post('/',   [ProductController::class, 'store'])
@@ -170,6 +224,62 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:groups.delete');
             Route::post('{group}/permissions',  [GroupController::class, 'syncPermissions'])
                 ->middleware('permission:groups.edit');
+        });
+
+        // ── Facturation ───────────────────────────────────────────────────────
+        Route::prefix('invoices')->name('invoices.')->group(function () {
+            Route::get('/',                        [InvoiceController::class, 'index'])
+                ->middleware('permission:invoices.view');
+            Route::post('/',                       [InvoiceController::class, 'store'])
+                ->middleware('permission:invoices.create');
+            Route::get('{invoice}',                [InvoiceController::class, 'show'])
+                ->middleware('permission:invoices.view');
+            Route::put('{invoice}',                [InvoiceController::class, 'update'])
+                ->middleware('permission:invoices.edit');
+            Route::delete('{invoice}',             [InvoiceController::class, 'destroy'])
+                ->middleware('permission:invoices.delete');
+            Route::post('{invoice}/send',          [InvoiceController::class, 'send'])
+                ->middleware('permission:invoices.edit');
+            Route::post('{invoice}/payment',       [InvoiceController::class, 'recordPayment'])
+                ->middleware('permission:invoices.edit');
+            Route::post('{invoice}/cancel',        [InvoiceController::class, 'cancel'])
+                ->middleware('permission:invoices.edit');
+            Route::get('{invoice}/pdf',            [InvoiceController::class, 'pdf'])
+                ->middleware('permission:invoices.pdf');
+        });
+
+        // ── Fournisseurs ──────────────────────────────────────────────────────
+        Route::prefix('suppliers')->name('suppliers.')->group(function () {
+            Route::get('/',               [SupplierController::class, 'index'])
+                ->middleware('permission:suppliers.view');
+            Route::post('/',              [SupplierController::class, 'store'])
+                ->middleware('permission:suppliers.create');
+            Route::get('{supplier}',      [SupplierController::class, 'show'])
+                ->middleware('permission:suppliers.view');
+            Route::put('{supplier}',      [SupplierController::class, 'update'])
+                ->middleware('permission:suppliers.edit');
+            Route::delete('{supplier}',   [SupplierController::class, 'destroy'])
+                ->middleware('permission:suppliers.delete');
+        });
+
+        // ── Bons de commande (Achats) ─────────────────────────────────────────
+        Route::prefix('purchases')->name('purchases.')->group(function () {
+            Route::get('/',                          [PurchaseOrderController::class, 'index'])
+                ->middleware('permission:purchases.view');
+            Route::post('/',                         [PurchaseOrderController::class, 'store'])
+                ->middleware('permission:purchases.create');
+            Route::get('{purchaseOrder}',            [PurchaseOrderController::class, 'show'])
+                ->middleware('permission:purchases.view');
+            Route::put('{purchaseOrder}',            [PurchaseOrderController::class, 'update'])
+                ->middleware('permission:purchases.edit');
+            Route::delete('{purchaseOrder}',         [PurchaseOrderController::class, 'destroy'])
+                ->middleware('permission:purchases.delete');
+            Route::post('{purchaseOrder}/confirm',   [PurchaseOrderController::class, 'confirm'])
+                ->middleware('permission:purchases.edit');
+            Route::post('{purchaseOrder}/receive',   [PurchaseOrderController::class, 'receive'])
+                ->middleware('permission:purchases.receive');
+            Route::post('{purchaseOrder}/cancel',    [PurchaseOrderController::class, 'cancel'])
+                ->middleware('permission:purchases.edit');
         });
 
         // ── POS ───────────────────────────────────────────────────────────────
