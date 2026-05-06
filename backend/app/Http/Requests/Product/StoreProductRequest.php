@@ -24,7 +24,7 @@ class StoreProductRequest extends FormRequest
             'category_id'           => ['nullable', 'integer', Rule::exists('categories', 'id')->where('tenant_id', $tenantId)],
             'name'                  => ['required', 'string', 'max:200'],
             'description'           => ['nullable', 'string'],
-            'image'                 => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:2048'],
+            'image'                 => ['nullable', 'mimes:jpeg,png,webp', 'max:2048'],
             'sku'                   => ['nullable', 'string', 'max:100', Rule::unique('products')->where('tenant_id', $tenantId)->whereNull('deleted_at')],
             'barcode'               => ['nullable', 'string', 'max:100', Rule::unique('products')->where('tenant_id', $tenantId)->whereNull('deleted_at')],
             'price'                 => ['required', 'numeric', 'min:0'],

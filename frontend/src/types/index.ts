@@ -227,6 +227,7 @@ export interface Supplier {
   id: number
   name: string
   phone: string | null
+  country: string
   email: string | null
   address: string | null
   notes: string | null
@@ -235,6 +236,7 @@ export interface Supplier {
 
 export interface CreateSupplierData {
   name: string
+  country?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -297,6 +299,7 @@ export interface Customer {
   id: number
   name: string
   phone: string | null
+  country: string       // ISO 3166-1 alpha-2, ex: 'SN'
   email: string | null
   address: string | null
   notes: string | null
@@ -313,9 +316,11 @@ export interface CustomerDetail extends Customer {
 export interface CreateCustomerData {
   name: string
   phone?: string | null
+  country?: string
   email?: string | null
   address?: string | null
   notes?: string | null
+  is_active?: boolean
 }
 
 // ── Sales ─────────────────────────────────────────────────────────────────

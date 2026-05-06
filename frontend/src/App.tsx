@@ -12,6 +12,7 @@ import SaleDetailPage from '@/pages/sales/SaleDetailPage'
 import PosPage from '@/pages/pos/PosPage'
 import StockPage from '@/pages/stock/StockPage'
 import ReportsPage from '@/pages/reports/ReportsPage'
+import ToastContainer from '@/components/ui/ToastContainer'
 import InvoicesPage from '@/pages/invoices/InvoicesPage'
 import InvoiceFormPage from '@/pages/invoices/InvoiceFormPage'
 import InvoiceDetailPage from '@/pages/invoices/InvoiceDetailPage'
@@ -25,16 +26,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
   if (!token) return <Navigate to="/login" replace />
   return <>{children}</>
-}
-
-// Placeholder pour les pages à implémenter dans les prochaines priorités
-function PlaceholderPage({ name }: { name: string }) {
-  return (
-    <div className="flex h-64 flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 text-gray-400">
-      <p className="text-lg font-medium">{name}</p>
-      <p className="mt-1 text-sm">Page en cours de développement</p>
-    </div>
-  )
 }
 
 export default function App() {
@@ -88,6 +79,9 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
+
+      {/* Notifications toast — visibles sur toutes les pages */}
+      <ToastContainer />
     </BrowserRouter>
   )
 }

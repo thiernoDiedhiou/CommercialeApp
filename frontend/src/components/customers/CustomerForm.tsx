@@ -1,29 +1,24 @@
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import Input from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Input'
+import PhoneInput from '@/components/ui/PhoneInput'
 import type { Customer } from '@/types'
 
 export const customerSchema = z.object({
-  name: z.string().min(2, 'Au moins 2 caractères'),
-  phone: z
-    .string()
-    .optional()
-    .refine(
-      (v) => !v || /^(\+221\s?)?[0-9\s]{7,15}$/.test(v),
-      'Format : +221 77 000 00 00',
-    ),
-  email: z.string().email('Email invalide').optional().or(z.literal('')),
+  name:    z.string().min(2, 'Au moins 2 caractères'),
+  country: z.string().length(2).default('SN'),
+  phone:   z.string().optional(),
+  email:   z.string().email('Email invalide').optional().or(z.literal('')),
   address: z.string().optional(),
-  notes: z.string().optional(),
+  notes:   z.string().optional(),
 })
 
 export type CustomerFormValues = z.infer<typeof customerSchema>
 
 interface CustomerFormProps {
-  /** id HTML du <form> — lié au bouton submit externe via form="…" */
   formId: string
   customer?: Customer | null
   onSubmit: (values: CustomerFormValues) => void
@@ -33,27 +28,22 @@ export default function CustomerForm({ formId, customer, onSubmit }: CustomerFor
   const {
     register,
     handleSubmit,
+    control,
     reset,
     formState: { errors },
   } = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
-    defaultValues: {
-      name: '',
-      phone: '',
-      email: '',
-      address: '',
-      notes: '',
-    },
+    defaultValues: { name: '', country: 'SN', phone: '', email: '', address: '', notes: '' },
   })
 
-  // Préremplissage quand le client change (mode édition ou réouverture du modal)
   useEffect(() => {
     reset({
-      name: customer?.name ?? '',
-      phone: customer?.phone ?? '',
-      email: customer?.email ?? '',
+      name:    customer?.name    ?? '',
+      country: customer?.country ?? 'SN',
+      phone:   customer?.phone   ?? '',
+      email:   customer?.email   ?? '',
       address: customer?.address ?? '',
-      notes: customer?.notes ?? '',
+      notes:   customer?.notes   ?? '',
     })
   }, [customer, reset])
 
@@ -67,22 +57,38 @@ export default function CustomerForm({ formId, customer, onSubmit }: CustomerFor
         {...register('name')}
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Input
-          label="Téléphone"
-          placeholder="+221 77 000 00 00"
-          error={errors.phone?.message}
-          hint="Format Sénégal recommandé"
-          {...register('phone')}
-        />
-        <Input
-          label="Email"
-          type="email"
-          placeholder="contact@example.sn"
-          error={errors.email?.message}
-          {...register('email')}
-        />
-      </div>
+      <Controller
+        name="phone"
+        control={control}
+        render={({ field }) => (
+          <Controller
+            name="country"
+            control={control}
+            render={({ field: countryField }) => (
+              <PhoneInput
+                label="Téléphone"
+                country={countryField.value}
+                onCountryChange={countryField.onChange}
+                phoneProps={{
+                  value: field.value ?? '',
+                  onChange: field.onChange,
+                  onBlur: field.onBlur,
+                  name: field.name,
+                }}
+                error={errors.phone?.message}
+              />
+            )}
+          />
+        )}
+      />
+
+      <Input
+        label="Email"
+        type="email"
+        placeholder="contact@example.sn"
+        error={errors.email?.message}
+        {...register('email')}
+      />
 
       <Input
         label="Adresse"

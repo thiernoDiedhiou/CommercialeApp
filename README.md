@@ -4,24 +4,27 @@ Plateforme SaaS multi-tenant de gestion commerciale pour PME — Afrique de l'Ou
 
 **Backend :** API REST Laravel 11 · PHP 8.3 · MySQL 8.0  
 **Frontend :** React 18 · Vite · TypeScript · Tailwind CSS · TanStack Query · Zustand  
-**Devise :** XOF (FCFA) — secteurs : `general` | `food` | `fashion` | `cosmetic`
+**Devises :** XOF · XAF · GNF · EUR · USD · GBP · MAD · MRU (configurable par tenant, décimales adaptées)  
+**Secteurs :** `general` | `food` | `fashion` | `cosmetic`
 
 ---
 
 ## Fonctionnalités
 
 | Module | Détail |
-|---|---|
+| --- | --- |
 | **Tableau de bord** | KPIs du jour, graphique CA 7 jours, top produits, alertes stock |
 | **Caisse POS** | Fullscreen, panier, variantes, pesée, paiement multi-méthode, mode hors-ligne |
 | **Ventes** | Liste paginée, détail, annulation, téléchargement PDF |
-| **Produits** | CRUD, image upload, variantes, attributs, catégories imbriquées |
+| **Factures** | Workflow `draft→sent→paid/overdue/cancelled`, remise, TVA, paiement partiel, PDF |
+| **Produits** | CRUD, image upload, variantes, attributs, catégories imbriquées, import CSV |
 | **Fournisseurs** | CRUD, activation/désactivation |
-| **Achats** | Bons de commande `ACH-YYYY-XXXXX`, workflow draft → ordered → partial → received, réception partielle avec mise à jour stock |
+| **Achats** | Bons de commande `ACH-YYYY-XXXXX`, workflow draft → ordered → partial → received, réception partielle idempotente |
 | **Clients** | CRUD, historique des achats |
 | **Stock** | Mouvements, ajustements, alertes seuil, lots expirants |
 | **Rapports** | CA par période, top produits, synthèse stock — export CSV (UTF-8 BOM, séparateur `;`) |
-| **Paramètres** | Profil utilisateur, gestion des utilisateurs, groupes & permissions |
+| **Paramètres** | Onglet Boutique (devise, secteur, couleur, coordonnées), profil utilisateur, groupes & permissions (57 permissions) |
+| **Multi-devise** | `formatCurrency()` lit la devise du tenant automatiquement — toast global pour toutes les erreurs API |
 
 ---
 
@@ -68,7 +71,7 @@ npm run dev
 Après `php artisan migrate --seed` :
 
 | Champ | Valeur |
-|---|---|
+| --- | --- |
 | Email | `admin@demo.sn` |
 | Mot de passe | `password` |
 | X-Tenant-ID | `demo-api-key-change-in-production-64chars00000000000000000000000` |
@@ -80,7 +83,7 @@ Le seed insère : 5 catégories · 15 produits · stock initial · 7 clients · 
 ## Prérequis
 
 | Outil | Version | Notes |
-|---|---|---|
+| --- | --- | --- |
 | PHP | 8.2+ | pdo_mysql, mbstring, gd, zip, intl |
 | Composer | 2.x | |
 | MySQL | 8.0+ | |
@@ -94,15 +97,15 @@ Le seed insère : 5 catégories · 15 produits · stock initial · 7 clients · 
 
 ```bash
 # Backend (depuis backend/)
-composer test                              # Pest — tous les tests
-./vendor/bin/pest --filter "SaleService"  # un test précis
-./vendor/bin/pest tests/Feature/Stock/    # un dossier
-./vendor/bin/pest --coverage              # avec couverture
+composer test                              # Pest — tous les tests (107 tests)
+php vendor/bin/pest tests/Feature/Stock/  # un dossier
+php vendor/bin/pest --filter "InvoiceService"  # un test précis
 composer lint                             # Laravel Pint (corrige)
 composer lint:check                       # vérifie sans modifier
 php artisan route:list --path=api/v1      # liste les routes API
 php artisan db:seed --class=PermissionSeeder   # (re)créer les permissions
 php artisan db:seed --class=DefaultGroupSeeder # (re)créer les groupes par défaut
+php artisan view:clear                    # vider le cache des vues Blade (PDF)
 php artisan tinker
 
 # Frontend (depuis frontend/)
@@ -124,22 +127,29 @@ saas-commercial/
 │   │   │   ├── Category/       # CategoryController
 │   │   │   ├── Customer/       # CustomerController
 │   │   │   ├── Dashboard/      # DashboardController
+│   │   │   ├── Invoice/        # InvoiceController
 │   │   │   ├── Pos/            # PosController, PosDraftController
-│   │   │   ├── Product/        # ProductController, VariantController, AttributeController
+│   │   │   ├── Product/        # ProductController, VariantController,
+│   │   │   │                   # AttributeController, ProductImportController
 │   │   │   ├── Purchase/       # SupplierController, PurchaseOrderController
 │   │   │   ├── Report/         # ReportController
 │   │   │   ├── Sale/           # SaleController
 │   │   │   ├── Stock/          # StockController
 │   │   │   └── Users/          # UserController, GroupController
-│   │   ├── Models/             # Tenant, User, Product, Sale, Supplier, PurchaseOrder…
-│   │   ├── Services/           # TenantService, StockService, SaleService, PosService,
-│   │   │                       # ProductService, PurchaseService
+│   │   ├── Models/             # Tenant, User, Product, Sale, Invoice,
+│   │   │                       # Supplier, PurchaseOrder, PurchaseOrderItem…
+│   │   ├── Services/           # TenantService, StockService, SaleService,
+│   │   │                       # PosService, ProductService, PurchaseService,
+│   │   │                       # InvoiceService, ProductImportService
 │   │   └── Traits/             # BelongsToTenant
 │   ├── database/
-│   │   ├── migrations/         # Préfixe 2026_MM_DD
+│   │   ├── factories/          # ProductFactory, CustomerFactory, UserFactory…
+│   │   ├── migrations/         # Préfixe 2026_MM_DD — 29 migrations
 │   │   └── seeders/            # DatabaseSeeder + DemoDataSeeder
-│   ├── routes/api.php          # ~80 endpoints sous /api/v1/
-│   └── tests/Feature/          # Auth, Pos, Sales, Stock, Tenant (Pest 3)
+│   ├── resources/views/pdf/    # invoice.blade.php (ventes), invoice_doc.blade.php (factures)
+│   ├── routes/api.php          # ~95 endpoints sous /api/v1/
+│   └── tests/Feature/          # 107 tests — Auth, Invoice, Pos, Product,
+│                               # Purchase, Report, Sales, Stock, Tenant
 │
 └── frontend/
     └── src/
@@ -147,17 +157,24 @@ saas-commercial/
         │   ├── dashboard/      # DashboardPage
         │   ├── pos/            # PosPage
         │   ├── sales/          # SalesPage, SaleDetailPage
-        │   ├── products/       # ProductsPage, ProductFormPage
+        │   ├── products/       # ProductsPage (import CSV intégré), ProductFormPage
         │   ├── purchases/      # SuppliersPage, PurchaseOrdersPage,
         │   │                   # PurchaseFormPage, PurchaseDetailPage
+        │   ├── invoices/       # InvoicesPage, InvoiceFormPage, InvoiceDetailPage
         │   ├── customers/      # CustomersPage, CustomerDetailPage
         │   ├── stock/          # StockPage
-        │   ├── reports/        # ReportsPage
+        │   ├── reports/        # ReportsPage (3 onglets + export CSV)
         │   └── settings/       # SettingsPage
         ├── components/         # ui/, layout/, dashboard/, pos/, stock/, products/, customers/
+        ├── hooks/              # useCurrency() — devise du tenant + formatAmount()
         ├── services/api/       # auth, dashboard, products, categories, customers,
-        │                       # sales, stock, suppliers, purchases, reports, users, groups
-        ├── store/              # authStore, cartStore (Zustand)
+        │                       # sales, stock, suppliers, purchases, invoices,
+        │                       # reports, import, settings, users, groups
+        ├── store/              # authStore, cartStore, toastStore (Zustand)
+        ├── lib/
+        │   ├── axios.ts        # intercepteur global (401→logout, erreurs→toast)
+        │   ├── errors.ts       # getApiErrorMessage() — messages précis par code HTTP
+        │   └── utils.ts        # formatCurrency() lit la devise du tenant automatiquement
         └── types/              # Types TypeScript centralisés (index.ts)
 ```
 
@@ -181,33 +198,38 @@ X-Tenant-ID → ResolveTenant → TenantService::setCurrentTenant()
 ## Services métier
 
 | Service | Responsabilité clé |
-|---|---|
+| --- | --- |
 | `TenantService` | Singleton de contexte — `current()`, `currentId()`, `setting()` |
 | `StockService` | `adjust()` — atomique, idempotent via `source+source_id`, journal immuable |
 | `SaleService` | Transaction + verrous stock ASC (anti-deadlock) + bcmath + idempotence `offline_id` |
 | `PosService` | `syncOffline()` — ventes hors-ligne idempotentes |
 | `ProductService` | `generateVariantCombinations()` — produit cartésien des attributs |
-| `PurchaseService` | `create/confirm/receive/cancel` — réception partielle idempotente, mise à jour stock via `StockService` |
+| `PurchaseService` | `create/confirm/receive/cancel` — réception partielle idempotente (sourceId composite), mise à jour stock via `StockService` |
+| `InvoiceService` | `create/send/recordPayment/markOverdue/cancel/update` — bcmath, tolérance 1 FCFA, référence `FAC-YYYY-XXXXX` |
+| `ProductImportService` | Import CSV — séparateur `;`, BOM UTF-8, cache catégories, `update_existing` par SKU |
+| `SettingsController` | `GET/PUT /api/v1/settings` — devise, secteur, couleurs, coordonnées + `flushCache` |
 
 ---
 
 ## Endpoints API principaux
 
 | Groupe | Préfixe | Endpoints |
-|---|---|---|
+| --- | --- | --- |
 | Auth | `/api/v1/auth` | login, logout, me |
 | Dashboard | `/api/v1/dashboard` | summary |
 | Rapports | `/api/v1/reports` | sales, products, stock (+ `?format=csv`) |
-| Produits | `/api/v1/products` | CRUD + variantes + attributs + mouvements stock |
+| Produits | `/api/v1/products` | CRUD + variantes + attributs + mouvements stock + import CSV + template |
 | Catégories | `/api/v1/categories` | CRUD |
 | Fournisseurs | `/api/v1/suppliers` | CRUD |
 | Achats | `/api/v1/purchases` | CRUD + confirm + receive + cancel |
+| Factures | `/api/v1/invoices` | CRUD + send + payment + cancel + PDF |
 | Ventes | `/api/v1/sales` | CRUD + paiements + annulation + PDF |
 | Clients | `/api/v1/customers` | CRUD + historique |
 | Stock | `/api/v1/stock` | adjust + movements + alerts + expiring |
 | POS | `/api/v1/pos` | products + session + sync offline + drafts |
 | Utilisateurs | `/api/v1/users` | CRUD + syncGroups |
 | Groupes | `/api/v1/groups` | CRUD + permissions |
+| Paramètres | `/api/v1/settings` | GET (info boutique) + PUT (devise, secteur, couleurs…) |
 
 ---
 
@@ -230,6 +252,13 @@ curl "http://localhost:8000/api/v1/reports/sales?from=2026-05-01&to=2026-05-31&f
   -H "Authorization: Bearer <token>" \
   -H "X-Tenant-ID: demo-api-key-change-in-production-64chars00000000000000000000000" \
   --output ventes.csv
+
+# Import produits CSV
+curl -X POST http://localhost:8000/api/v1/products/import \
+  -H "Authorization: Bearer <token>" \
+  -H "X-Tenant-ID: demo-api-key-change-in-production-64chars00000000000000000000000" \
+  -F "file=@produits.csv" \
+  -F "update_existing=1"
 ```
 
 ---
@@ -271,8 +300,11 @@ echo $tenant->api_key;
 ```bash
 # Sur le serveur
 composer install --no-dev --optimize-autoloader
+php artisan key:generate          # NE PAS committer le .env
 php artisan config:cache && php artisan route:cache
 php artisan migrate --force
+php artisan db:seed --class=PermissionSeeder
+php artisan db:seed --class=DefaultGroupSeeder
 php artisan storage:link
 ```
 
@@ -299,15 +331,15 @@ Pour activer Horizon (queues Redis) : décommenter le service `horizon` dans `do
 ## Roadmap
 
 | Phase | Statut | Contenu |
-|---|---|---|
-| Backend — Infrastructure | ✅ Terminée | Multi-tenant, RBAC, Auth Sanctum, 47 permissions |
+| --- | --- | --- |
+| Backend — Infrastructure | ✅ Terminée | Multi-tenant, RBAC, Auth Sanctum, 57 permissions |
 | Backend — Produits & Stock | ✅ Terminée | Produits + images, variantes, attributs, catégories, mouvements de stock |
 | Backend — Commerce | ✅ Terminée | Ventes, POS, clients, dashboard, PDF, sync offline |
 | Backend — Achats | ✅ Terminée | Fournisseurs, bons de commande, réception partielle idempotente |
+| Backend — Facturation | ✅ Terminée | Factures `FAC-YYYY-XXXXX`, paiements partiels, PDF |
 | Backend — Rapports | ✅ Terminée | CA par période, top produits, synthèse stock, export CSV |
-| Backend — Tests | ✅ Terminée | Pest 3 (Auth, TenantIsolation, Stock, Sales, POS) |
-| Frontend — Complet | ✅ Terminée | Dashboard, POS, Ventes, Produits, Fournisseurs, Achats, Clients, Stock, Rapports, Paramètres |
+| Backend — Import CSV | ✅ Terminée | Import produits CSV, template téléchargeable, rapport d'erreurs |
+| Tests | ✅ Terminée | 107 tests Pest 3 — Auth, Invoice, Purchase, Product, Report, Sales, Stock, Tenant |
+| Frontend — Complet | ✅ Terminée | Dashboard, POS, Ventes, Factures, Produits, Fournisseurs, Achats, Clients, Stock, Rapports, Paramètres |
 | Données démo | ✅ Terminée | DemoDataSeeder — 15 produits, 7 clients, ~17 ventes |
-| Tests Achats & Rapports | 🔜 Planifiée | Feature tests PurchaseService, ReportController |
-| Multi-devise | 🔜 Planifiée | EUR, USD, GNF |
-| Import CSV produits | 🔜 Planifiée | Import en masse depuis un fichier CSV |
+| Multi-devise & UX | ✅ Terminée | `useCurrency()` hook, `formatCurrency()` auto-tenant, toast global, onglet Boutique dans paramètres |

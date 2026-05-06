@@ -9,6 +9,7 @@ import {
   NoSymbolIcon,
 } from '@heroicons/react/24/outline'
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/services/api/customers'
+import { normalizePhone } from '@/components/ui/PhoneInput'
 import { Table } from '@/components/ui/Table'
 import type { Column } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
@@ -62,18 +63,20 @@ export default function CustomersPage() {
   })
 
   // ── Modaux ────────────────────────────────────────────────────────────────
-  const [modal, setModal] = useState<ModalState>(null)
+  const [modal, setModal]             = useState<ModalState>(null)
   const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null)
+  const [toggleTarget, setToggleTarget] = useState<Customer | null>(null)
 
   // ── Mutations ─────────────────────────────────────────────────────────────
   const createMutation = useMutation({
     mutationFn: (values: CustomerFormValues) =>
       createCustomer({
-        name: values.name,
-        phone: values.phone || null,
-        email: values.email || null,
+        name:    values.name,
+        country: values.country,
+        phone:   normalizePhone(values.phone),
+        email:   values.email   || null,
         address: values.address || null,
-        notes: values.notes || null,
+        notes:   values.notes   || null,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['customers'] })
@@ -84,11 +87,12 @@ export default function CustomersPage() {
   const updateMutation = useMutation({
     mutationFn: ({ id, values }: { id: number; values: CustomerFormValues }) =>
       updateCustomer(id, {
-        name: values.name,
-        phone: values.phone || null,
-        email: values.email || null,
+        name:    values.name,
+        country: values.country,
+        phone:   normalizePhone(values.phone),
+        email:   values.email   || null,
         address: values.address || null,
-        notes: values.notes || null,
+        notes:   values.notes   || null,
       }),
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: ['customers'] })
@@ -100,7 +104,10 @@ export default function CustomersPage() {
   const toggleMutation = useMutation({
     mutationFn: (customer: Customer) =>
       updateCustomer(customer.id, { is_active: !customer.is_active }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['customers'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['customers'] })
+      setToggleTarget(null)
+    },
   })
 
   const deleteMutation = useMutation({
@@ -189,7 +196,7 @@ export default function CustomersPage() {
           <CanDo permission="customers.edit">
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); toggleMutation.mutate(c) }}
+              onClick={(e) => { e.stopPropagation(); setToggleTarget(c) }}
               className={`rounded p-1.5 transition-colors ${
                 c.is_active
                   ? 'text-gray-400 hover:bg-orange-50 hover:text-orange-500'
@@ -332,6 +339,38 @@ export default function CustomersPage() {
           Voulez-vous supprimer{' '}
           <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ?
           Cette action est irréversible.
+        </p>
+      </Modal>
+
+      {/* Modal confirmation activation / désactivation */}
+      <Modal
+        isOpen={!!toggleTarget}
+        onClose={() => setToggleTarget(null)}
+        title={toggleTarget?.is_active ? 'Désactiver le client' : 'Activer le client'}
+        size="sm"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setToggleTarget(null)}>
+              Annuler
+            </Button>
+            <Button
+              variant={toggleTarget?.is_active ? 'danger' : undefined}
+              loading={toggleMutation.isPending}
+              onClick={() => toggleTarget && toggleMutation.mutate(toggleTarget)}
+            >
+              {toggleTarget?.is_active ? 'Désactiver' : 'Activer'}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-600">
+          Voulez-vous {toggleTarget?.is_active ? 'désactiver' : 'activer'} le client{' '}
+          <span className="font-semibold text-gray-900">«{toggleTarget?.name}»</span> ?
+          {toggleTarget?.is_active && (
+            <span className="mt-1 block text-xs text-gray-400">
+              Le client ne sera plus accessible depuis le POS.
+            </span>
+          )}
         </p>
       </Modal>
     </div>

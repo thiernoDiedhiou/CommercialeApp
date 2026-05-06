@@ -112,7 +112,10 @@ export default function ProductsPage() {
       render: (p) => (
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 shrink-0 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-xs overflow-hidden">
-            <span>{p.name.charAt(0).toUpperCase()}</span>
+            {p.image_url
+              ? <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
+              : <span>{p.name.charAt(0).toUpperCase()}</span>
+            }
           </div>
           <div>
             <p className="font-medium text-gray-900">{p.name}</p>

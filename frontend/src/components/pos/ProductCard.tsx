@@ -15,39 +15,55 @@ export function ProductCard({ product, onClick }: Props) {
       onClick={() => onClick(product)}
       disabled={outOfStock}
       className={[
-        'flex flex-col items-start rounded-xl border p-3 text-left transition-all',
+        'flex flex-col items-start rounded-xl border text-left transition-all overflow-hidden',
         'active:scale-95',
         outOfStock
           ? 'cursor-not-allowed border-gray-200 bg-gray-50 opacity-50'
           : 'border-gray-200 bg-white cursor-pointer hover:border-indigo-400 hover:shadow-sm',
       ].join(' ')}
     >
-      {product.category && (
-        <span className="mb-1.5 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-600">
-          {product.category.name}
-        </span>
-      )}
+      {/* Image / placeholder */}
+      <div className="w-full h-24 bg-gray-100 shrink-0 overflow-hidden flex items-center justify-center">
+        {product.image_url ? (
+          <img
+            src={product.image_url}
+            alt={product.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span className="text-3xl font-bold text-gray-300 select-none">
+            {product.name.charAt(0).toUpperCase()}
+          </span>
+        )}
+      </div>
 
-      <p className="line-clamp-2 text-sm font-semibold text-gray-800 leading-tight">
-        {product.name}
-      </p>
+      {/* Contenu */}
+      <div className="flex flex-col items-start w-full p-2.5 gap-0.5">
+        {product.category && (
+          <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-600">
+            {product.category.name}
+          </span>
+        )}
 
-      {product.has_variants ? (
-        <p className="mt-auto pt-2 text-xs text-indigo-500 font-medium">Choisir variante →</p>
-      ) : (
-        <>
-          <p className="mt-1 text-base font-bold text-indigo-700">
-            {formatCurrency(Number(product.price))}
-          </p>
-          <p
-            className={`text-[11px] ${outOfStock ? 'text-red-500 font-medium' : 'text-gray-400'}`}
-          >
-            {outOfStock
-              ? 'Rupture de stock'
-              : `Stock : ${product.stock_quantity}${product.unit ? ` ${product.unit}` : ''}`}
-          </p>
-        </>
-      )}
+        <p className="line-clamp-2 text-sm font-semibold text-gray-800 leading-tight">
+          {product.name}
+        </p>
+
+        {product.has_variants ? (
+          <p className="mt-1 text-xs text-indigo-500 font-medium">Choisir variante →</p>
+        ) : (
+          <>
+            <p className="text-base font-bold text-indigo-700">
+              {formatCurrency(Number(product.price))}
+            </p>
+            <p className={`text-[11px] ${outOfStock ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+              {outOfStock
+                ? 'Rupture de stock'
+                : `Stock : ${product.stock_quantity}${product.unit ? ` ${product.unit}` : ''}`}
+            </p>
+          </>
+        )}
+      </div>
     </button>
   )
 }

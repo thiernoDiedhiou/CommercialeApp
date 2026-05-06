@@ -36,14 +36,25 @@ export async function getProduct(id: number): Promise<Product> {
   return data.data
 }
 
+function appendToForm(form: FormData, body: Record<string, unknown>) {
+  Object.entries(body).forEach(([k, v]) => {
+    if (v === undefined || v === null) return
+    // Laravel n'accepte que "0"/"1" pour les champs boolean en multipart
+    if (typeof v === 'boolean') form.append(k, v ? '1' : '0')
+    else form.append(k, String(v))
+  })
+}
+
+// Headers pour les requêtes multipart — supprime Content-Type pour que le
+// navigateur génère automatiquement la boundary correcte.
+const MULTIPART_HEADERS = { headers: { 'Content-Type': undefined } }
+
 export async function createProduct(body: CreateProductData, image?: File | null): Promise<Product> {
   if (image) {
     const form = new FormData()
-    Object.entries(body).forEach(([k, v]) => {
-      if (v !== undefined && v !== null) form.append(k, String(v))
-    })
+    appendToForm(form, body as unknown as Record<string, unknown>)
     form.append('image', image)
-    const { data } = await apiClient.post<{ data: Product }>('/api/v1/products', form)
+    const { data } = await apiClient.post<{ data: Product }>('/api/v1/products', form, MULTIPART_HEADERS)
     return data.data
   }
   const { data } = await apiClient.post<{ data: Product }>('/api/v1/products', body)
@@ -59,12 +70,10 @@ export async function updateProduct(
   if (image || removeImage) {
     const form = new FormData()
     form.append('_method', 'PUT')
-    Object.entries(body).forEach(([k, v]) => {
-      if (v !== undefined && v !== null) form.append(k, String(v))
-    })
+    appendToForm(form, body as unknown as Record<string, unknown>)
     if (image) form.append('image', image)
     if (removeImage) form.append('remove_image', '1')
-    const { data } = await apiClient.post<{ data: Product }>(`/api/v1/products/${id}`, form)
+    const { data } = await apiClient.post<{ data: Product }>(`/api/v1/products/${id}`, form, MULTIPART_HEADERS)
     return data.data
   }
   const { data } = await apiClient.put<{ data: Product }>(`/api/v1/products/${id}`, body)

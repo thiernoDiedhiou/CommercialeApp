@@ -17,6 +17,7 @@ class Supplier extends Model
         'tenant_id',
         'name',
         'phone',
+        'country',
         'email',
         'address',
         'notes',

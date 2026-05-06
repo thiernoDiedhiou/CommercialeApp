@@ -99,7 +99,8 @@ class ProductImportService
             }
 
             // Création du produit
-            Product::create([
+            // alert_threshold omis quand null → le default DB s'applique (5)
+            $productData = [
                 'tenant_id'       => $tenantId,
                 'name'            => $data['name'],
                 'sku'             => $data['sku'] ?: null,
@@ -107,14 +108,17 @@ class ProductImportService
                 'price'           => $data['price'],
                 'cost_price'      => $data['cost_price'],
                 'stock_quantity'  => $data['stock'],
-                'alert_threshold' => $data['alert_threshold'],
                 'unit'            => $data['unit'],
                 'description'     => $data['description'] ?: null,
                 'has_variants'    => false,
                 'is_weight_based' => false,
                 'has_expiry'      => false,
                 'is_active'       => true,
-            ]);
+            ];
+            if ($data['alert_threshold'] !== null) {
+                $productData['alert_threshold'] = $data['alert_threshold'];
+            }
+            Product::create($productData);
 
             $created++;
             $rowNum++;

@@ -70,8 +70,10 @@ it('adjusts variant stock without touching parent product stock', function () {
         'stock_quantity' => 0,
     ]);
     // ProductVariant n'a pas HasFactory — création directe (creating hook injecte tenant_id)
+    // sku est NOT NULL dans la migration (variantes identifiées par SKU)
     $variant = ProductVariant::create([
         'product_id'        => $product->id,
+        'sku'               => 'TEST-VAR-M-ROUGE',
         'stock_quantity'    => 30,
         'price'             => 1000,
         'attribute_summary' => 'M / Rouge',

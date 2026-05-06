@@ -25,7 +25,7 @@ class UpdateProductRequest extends FormRequest
             'category_id'     => ['nullable', 'integer', Rule::exists('categories', 'id')->where('tenant_id', $tenantId)],
             'name'            => ['sometimes', 'string', 'max:200'],
             'description'     => ['nullable', 'string'],
-            'image'           => ['nullable', 'image', 'mimes:jpeg,png,webp', 'max:2048'],
+            'image'           => ['nullable', 'mimes:jpeg,png,webp', 'max:2048'],
             'remove_image'    => ['boolean'],
             'sku'             => ['nullable', 'string', 'max:100', Rule::unique('products')->where('tenant_id', $tenantId)->whereNull('deleted_at')->ignore($productId)],
             'barcode'         => ['nullable', 'string', 'max:100', Rule::unique('products')->where('tenant_id', $tenantId)->whereNull('deleted_at')->ignore($productId)],

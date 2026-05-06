@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, PencilSquareIcon, TrashIcon, NoSymbolIcon } from '@heroicons/react/24/outline'
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/services/api/suppliers'
+import PhoneInput, { normalizePhone } from '@/components/ui/PhoneInput'
 import { Table } from '@/components/ui/Table'
 import type { Column } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
@@ -18,6 +19,7 @@ import type { Supplier } from '@/types'
 
 const schema = z.object({
   name:    z.string().min(1, 'Le nom est requis').max(200),
+  country: z.string().length(2).default('SN'),
   phone:   z.string().optional(),
   email:   z.union([z.literal(''), z.string().email('Email invalide')]).optional(),
   address: z.string().optional(),
@@ -53,54 +55,59 @@ export default function SuppliersPage() {
   })
 
   // ── Modaux ────────────────────────────────────────────────────────────────
-  const [modal, setModal] = useState<ModalState>(null)
+  const [modal, setModal]               = useState<ModalState>(null)
   const [deleteTarget, setDeleteTarget] = useState<Supplier | null>(null)
+  const [toggleTarget, setToggleTarget] = useState<Supplier | null>(null)
 
   // ── Formulaire ────────────────────────────────────────────────────────────
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
+    defaultValues: { name: '', country: 'SN', phone: '', email: '', address: '', notes: '' },
   })
 
   useEffect(() => {
     if (modal?.mode === 'edit') {
       reset({
         name:    modal.supplier.name,
+        country: modal.supplier.country ?? 'SN',
         phone:   modal.supplier.phone ?? '',
         email:   modal.supplier.email ?? '',
         address: modal.supplier.address ?? '',
         notes:   modal.supplier.notes ?? '',
       })
     } else if (modal?.mode === 'create') {
-      reset({ name: '', phone: '', email: '', address: '', notes: '' })
+      reset({ name: '', country: 'SN', phone: '', email: '', address: '', notes: '' })
     }
   }, [modal, reset])
 
   // ── Mutations ─────────────────────────────────────────────────────────────
   const createMutation = useMutation({
     mutationFn: (v: FormValues) => createSupplier({
-      name: v.name,
-      phone: v.phone || null,
-      email: v.email || null,
+      name:    v.name,
+      country: v.country,
+      phone:   normalizePhone(v.phone),
+      email:   v.email || null,
       address: v.address || null,
-      notes: v.notes || null,
+      notes:   v.notes || null,
     }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setModal(null) },
   })
 
   const updateMutation = useMutation({
     mutationFn: ({ id, v }: { id: number; v: FormValues }) => updateSupplier(id, {
-      name: v.name,
-      phone: v.phone || null,
-      email: v.email || null,
+      name:    v.name,
+      country: v.country,
+      phone:   normalizePhone(v.phone),
+      email:   v.email || null,
       address: v.address || null,
-      notes: v.notes || null,
+      notes:   v.notes || null,
     }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setModal(null) },
   })
 
   const toggleMutation = useMutation({
     mutationFn: (s: Supplier) => updateSupplier(s.id, { is_active: !s.is_active }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['suppliers'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setToggleTarget(null) },
   })
 
   const deleteMutation = useMutation({
@@ -156,7 +163,7 @@ export default function SuppliersPage() {
             </button>
           </CanDo>
           <CanDo permission="suppliers.edit">
-            <button type="button" onClick={(e) => { e.stopPropagation(); toggleMutation.mutate(s) }}
+            <button type="button" onClick={(e) => { e.stopPropagation(); setToggleTarget(s) }}
               className={`rounded p-1.5 transition-colors ${s.is_active ? 'text-gray-400 hover:bg-orange-50 hover:text-orange-500' : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-600'}`}
               title={s.is_active ? 'Désactiver' : 'Activer'}>
               <NoSymbolIcon className="h-4 w-4" />
@@ -221,10 +228,31 @@ export default function SuppliersPage() {
         )}
         <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           <Input label="Nom *" error={errors.name?.message} {...register('name')} />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="Téléphone" {...register('phone')} />
-            <Input label="Email" type="email" {...register('email')} />
-          </div>
+          <Controller
+            name="phone"
+            control={control}
+            render={({ field }) => (
+              <Controller
+                name="country"
+                control={control}
+                render={({ field: countryField }) => (
+                  <PhoneInput
+                    label="Téléphone"
+                    country={countryField.value}
+                    onCountryChange={countryField.onChange}
+                    phoneProps={{
+                      value: field.value ?? '',
+                      onChange: field.onChange,
+                      onBlur: field.onBlur,
+                      name: field.name,
+                    }}
+                    error={errors.phone?.message}
+                  />
+                )}
+              />
+            )}
+          />
+          <Input label="Email" type="email" error={errors.email?.message} {...register('email')} />
           <Textarea label="Adresse" {...register('address')} />
           <Textarea label="Notes" {...register('notes')} />
         </form>
@@ -247,6 +275,31 @@ export default function SuppliersPage() {
       >
         <p className="text-sm text-gray-600">
           Voulez-vous supprimer <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ? Cette action est irréversible.
+        </p>
+      </Modal>
+
+      {/* Modal confirmation activation / désactivation */}
+      <Modal
+        isOpen={!!toggleTarget}
+        onClose={() => setToggleTarget(null)}
+        title={toggleTarget?.is_active ? 'Désactiver le fournisseur' : 'Activer le fournisseur'}
+        size="sm"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setToggleTarget(null)}>Annuler</Button>
+            <Button
+              variant={toggleTarget?.is_active ? 'danger' : undefined}
+              loading={toggleMutation.isPending}
+              onClick={() => toggleTarget && toggleMutation.mutate(toggleTarget)}
+            >
+              {toggleTarget?.is_active ? 'Désactiver' : 'Activer'}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-600">
+          Voulez-vous {toggleTarget?.is_active ? 'désactiver' : 'activer'} le fournisseur{' '}
+          <span className="font-semibold text-gray-900">«{toggleTarget?.name}»</span> ?
         </p>
       </Modal>
     </div>

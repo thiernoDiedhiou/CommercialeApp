@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
@@ -10,8 +10,14 @@ import {
   PencilSquareIcon,
   TrashIcon,
   PlusIcon,
+  BuildingStorefrontIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/authStore'
+import { getTenantSettings, updateTenantSettings } from '@/services/api/settings'
+import { SUPPORTED_CURRENCIES } from '@/hooks/useCurrency'
+import Input from '@/components/ui/Input'
+import { Select } from '@/components/ui/Input'
+import PhoneInput, { normalizePhone } from '@/components/ui/PhoneInput'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
@@ -35,12 +41,13 @@ import type { UserWithGroups, Group, Permission, CreateGroupData } from '@/types
 
 // ─── Tab IDs ──────────────────────────────────────────────────────────────────
 
-type Tab = 'profil' | 'users' | 'groups'
+type Tab = 'boutique' | 'profil' | 'users' | 'groups'
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: 'profil',  label: 'Mon profil',   icon: <UserIcon className="h-4 w-4" /> },
-  { id: 'users',   label: 'Utilisateurs', icon: <UsersIcon className="h-4 w-4" /> },
-  { id: 'groups',  label: 'Groupes',      icon: <ShieldCheckIcon className="h-4 w-4" /> },
+  { id: 'boutique', label: 'Boutique',     icon: <BuildingStorefrontIcon className="h-4 w-4" /> },
+  { id: 'profil',   label: 'Mon profil',   icon: <UserIcon className="h-4 w-4" /> },
+  { id: 'users',    label: 'Utilisateurs', icon: <UsersIcon className="h-4 w-4" /> },
+  { id: 'groups',   label: 'Groupes',      icon: <ShieldCheckIcon className="h-4 w-4" /> },
 ]
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
@@ -65,6 +72,156 @@ const groupSchema = z.object({
   description: z.string().nullable().optional(),
 })
 type GroupValues = z.infer<typeof groupSchema>
+
+// ─── BoutiqueTab ─────────────────────────────────────────────────────────────
+
+const boutiqueSchema = z.object({
+  name:          z.string().min(2, 'Nom requis'),
+  sector:        z.enum(['general', 'food', 'fashion', 'cosmetic']),
+  currency:      z.string().min(3).max(3),
+  phone_country: z.string().length(2).default('SN'),
+  phone:         z.string().optional(),
+  email:         z.string().email('Email invalide').or(z.literal('')).optional(),
+  address:       z.string().optional(),
+  city:          z.string().optional(),
+  primary_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Couleur invalide').optional().or(z.literal('')),
+})
+type BoutiqueValues = z.infer<typeof boutiqueSchema>
+
+const SECTOR_LABELS: Record<string, string> = {
+  general: 'Commerce général',
+  food:    'Alimentation / Restauration',
+  fashion: 'Mode / Vêtements',
+  cosmetic:'Beauté / Cosmétique',
+}
+
+function BoutiqueTab() {
+  const setAuth   = useAuthStore((s) => s.setAuth)
+  const token     = useAuthStore((s) => s.token)
+  const user      = useAuthStore((s) => s.user)
+  const perms     = useAuthStore((s) => s.permissions)
+  const [saved, setSaved] = useState(false)
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['tenant-settings'],
+    queryFn:  getTenantSettings,
+  })
+
+  const { register, handleSubmit, reset, control, formState: { errors, isDirty } } = useForm<BoutiqueValues>({
+    resolver: zodResolver(boutiqueSchema),
+    defaultValues: { phone_country: 'SN' },
+  })
+
+  useEffect(() => {
+    if (data) reset({
+      name:          data.name,
+      sector:        data.sector as BoutiqueValues['sector'],
+      currency:      data.currency,
+      phone_country: 'SN',
+      phone:         data.phone ?? '',
+      email:         data.email ?? '',
+      address:       data.address ?? '',
+      city:          data.city ?? '',
+      primary_color: data.primary_color ?? '',
+    })
+  }, [data, reset])
+
+  const mutation = useMutation({
+    mutationFn: (vals: BoutiqueValues) => updateTenantSettings({
+      name:          vals.name,
+      sector:        vals.sector,
+      currency:      vals.currency,
+      phone:         normalizePhone(vals.phone),
+      email:         vals.email || null,
+      address:       vals.address || null,
+      city:          vals.city || null,
+      primary_color: vals.primary_color || null,
+    }),
+    onSuccess: (updated) => {
+      // Met à jour le authStore pour que formatCurrency() réagisse immédiatement
+      if (token && user) {
+        setAuth(token, user, perms, {
+          name:            updated.name,
+          currency:        updated.currency,
+          sector:          updated.sector,
+          primary_color:   updated.primary_color,
+          secondary_color: updated.secondary_color,
+        })
+      }
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    },
+  })
+
+  if (isLoading) return <div className="text-sm text-gray-400">Chargement…</div>
+
+  return (
+    <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Input label="Nom du commerce" error={errors.name?.message} {...register('name')} />
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">Secteur d'activité</label>
+          <Select {...register('sector')}>
+            {Object.entries(SECTOR_LABELS).map(([val, label]) => (
+              <option key={val} value={val}>{label}</option>
+            ))}
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">Devise</label>
+          <Select {...register('currency')}>
+            {SUPPORTED_CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.code} — {c.symbol}
+                {c.decimals === 0 ? ' (sans centimes)' : ' (avec centimes)'}
+              </option>
+            ))}
+          </Select>
+          <p className="mt-1 text-xs text-gray-400">Affecte tous les montants affichés dans l'application.</p>
+        </div>
+        <Input label="Couleur principale (hex)" placeholder="#2563eb" error={errors.primary_color?.message} {...register('primary_color')} />
+      </div>
+
+      <Controller
+        name="phone"
+        control={control}
+        render={({ field }) => (
+          <Controller
+            name="phone_country"
+            control={control}
+            render={({ field: countryField }) => (
+              <PhoneInput
+                label="Téléphone"
+                country={countryField.value}
+                onCountryChange={countryField.onChange}
+                phoneProps={{
+                  value: field.value ?? '',
+                  onChange: field.onChange,
+                  onBlur: field.onBlur,
+                  name: field.name,
+                }}
+                error={errors.phone?.message}
+              />
+            )}
+          />
+        )}
+      />
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Input label="Email" type="email" {...register('email')} />
+        <Input label="Adresse" {...register('address')} />
+        <Input label="Ville" {...register('city')} />
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Button type="submit" loading={mutation.isPending} disabled={!isDirty}>
+          Enregistrer
+        </Button>
+        {saved && <span className="text-sm text-emerald-600 font-medium">Paramètres enregistrés ✓</span>}
+      </div>
+    </form>
+  )
+}
 
 // ─── ProfilTab ────────────────────────────────────────────────────────────────
 
@@ -324,15 +481,15 @@ function UsersTab() {
           ))}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-gray-100">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border border-gray-100">
+          <table className="w-full min-w-[480px] text-sm">
             <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
               <tr>
                 <th className="px-4 py-3 text-left">Nom</th>
-                <th className="px-4 py-3 text-left">Email</th>
-                <th className="px-4 py-3 text-left">Groupes</th>
+                <th className="px-4 py-3 text-left hidden sm:table-cell">Email</th>
+                <th className="px-4 py-3 text-left hidden md:table-cell">Groupes</th>
                 <th className="px-4 py-3 text-left">Statut</th>
-                <th className="px-4 py-3" aria-label="Actions" />
+                <th className="px-4 py-3" aria-label="Actions"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 bg-white">
@@ -341,9 +498,10 @@ function UsersTab() {
                   <td className="px-4 py-3 font-medium text-gray-800">
                     {u.name}
                     {u.id === me?.id && <span className="ml-2 text-xs text-indigo-500">(vous)</span>}
+                    <p className="text-xs text-gray-400 sm:hidden">{u.email}</p>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{u.email}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{u.email}</td>
+                  <td className="px-4 py-3 hidden md:table-cell">
                     <div className="flex flex-wrap gap-1">
                       {(u.groups ?? []).map((g) => (
                         <Badge key={g.id} variant="info" size="sm">{g.name}</Badge>
@@ -626,10 +784,10 @@ function GroupsTab() {
       ) : (
         <div className="space-y-3">
           {groups.map((g) => (
-            <div key={g.id} className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
+            <div key={g.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
               <div>
                 <p className="font-medium text-gray-800">{g.name}</p>
-                <div className="mt-0.5 flex items-center gap-3 text-xs text-gray-400">
+                <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-gray-400">
                   <span>{g.users_count ?? 0} utilisateur{(g.users_count ?? 0) > 1 ? 's' : ''}</span>
                   <span>·</span>
                   <span>{g.permissions?.length ?? 0} permission{(g.permissions?.length ?? 0) > 1 ? 's' : ''}</span>
@@ -637,7 +795,7 @@ function GroupsTab() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 self-end sm:self-auto">
                 <button
                   type="button"
                   onClick={() => openPerms(g)}
@@ -681,34 +839,37 @@ function GroupsTab() {
 // ─── SettingsPage ─────────────────────────────────────────────────────────────
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('profil')
+  const [activeTab, setActiveTab] = useState<Tab>('boutique')
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h1 className="text-xl font-bold text-gray-900">Paramètres</h1>
 
-      <div className="flex gap-1 rounded-xl bg-gray-100 p-1 w-fit">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setActiveTab(t.id)}
-            className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition ${
-              activeTab === t.id
-                ? 'bg-white text-gray-800 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {t.icon}
-            {t.label}
-          </button>
-        ))}
+      <div className="overflow-x-auto">
+        <div className="flex gap-1 rounded-xl bg-gray-100 p-1 min-w-fit">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setActiveTab(t.id)}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-2 sm:px-4 text-sm font-medium transition whitespace-nowrap ${
+                activeTab === t.id
+                  ? 'bg-white text-gray-800 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {t.icon}
+              <span className="hidden xs:inline sm:inline">{t.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-        {activeTab === 'profil' && <ProfilTab />}
-        {activeTab === 'users'  && <UsersTab />}
-        {activeTab === 'groups' && <GroupsTab />}
+      <div className="rounded-xl bg-white p-4 sm:p-5 shadow-sm ring-1 ring-gray-100">
+        {activeTab === 'boutique' && <BoutiqueTab />}
+        {activeTab === 'profil'   && <ProfilTab />}
+        {activeTab === 'users'    && <UsersTab />}
+        {activeTab === 'groups'   && <GroupsTab />}
       </div>
     </div>
   )

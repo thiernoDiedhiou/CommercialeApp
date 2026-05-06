@@ -11,6 +11,7 @@ use App\Http\Controllers\Product\ProductController;
 use App\Http\Controllers\Product\VariantController;
 use App\Http\Controllers\Invoice\InvoiceController;
 use App\Http\Controllers\Product\ProductImportController;
+use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Purchase\PurchaseOrderController;
 use App\Http\Controllers\Purchase\SupplierController;
 use App\Http\Controllers\Report\ReportController;
@@ -50,6 +51,14 @@ Route::prefix('v1')->group(function () {
         // ── Dashboard ─────────────────────────────────────────────────────────
         Route::get('dashboard/summary', [DashboardController::class, 'summary'])
             ->middleware('permission:dashboard.view');
+
+        // ── Paramètres tenant ─────────────────────────────────────────────────
+        Route::prefix('settings')->name('settings.')->group(function () {
+            Route::get('/',  [SettingsController::class, 'show'])
+                ->middleware('permission:settings.view');
+            Route::put('/',  [SettingsController::class, 'update'])
+                ->middleware('permission:settings.edit');
+        });
 
         // ── Rapports ──────────────────────────────────────────────────────────
         Route::prefix('reports')->name('reports.')->middleware('permission:reports.view')->group(function () {

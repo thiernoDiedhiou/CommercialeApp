@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { getProduct, createProduct, updateProduct, createVariant } from '@/services/api/products'
+import { getApiErrorMessage } from '@/lib/errors'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Input'
@@ -186,6 +187,7 @@ export default function ProductFormPage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [removeImage, setRemoveImage] = useState(false)
+  const [imageError, setImageError] = useState<string | null>(null)
 
   const { data: product, isLoading: productLoading } = useQuery({
     queryKey: ['product', id],
@@ -233,7 +235,19 @@ export default function ProductFormPage() {
   const hasVariants = watch('has_variants')
   const price = watch('price') ?? 0
 
+  const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+  const MAX_SIZE_BYTES = 2 * 1024 * 1024 // 2 Mo
+
   const handleFileChange = (file: File) => {
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      setImageError('Format non supporté. Utilisez JPEG, PNG ou WebP.')
+      return
+    }
+    if (file.size > MAX_SIZE_BYTES) {
+      setImageError('Image trop lourde. Maximum 2 Mo.')
+      return
+    }
+    setImageError(null)
     setImageFile(file)
     setRemoveImage(false)
     setImagePreview(URL.createObjectURL(file))
@@ -242,6 +256,7 @@ export default function ProductFormPage() {
   const handleRemoveImage = () => {
     setImageFile(null)
     setImagePreview(null)
+    setImageError(null)
     setRemoveImage(true)
   }
 
@@ -280,6 +295,7 @@ export default function ProductFormPage() {
   const mutationError = createMutation.error || updateMutation.error
 
   const onSubmit = (values: FormValues) => {
+    if (imageError) return
     if (isEdit) updateMutation.mutate(values)
     else createMutation.mutate(values)
   }
@@ -303,11 +319,16 @@ export default function ProductFormPage() {
         <Section title="Informations de base">
           {/* Image */}
           <div className="flex items-start gap-5">
-            <ImageUpload
-              preview={imagePreview}
-              onFileChange={handleFileChange}
-              onRemove={handleRemoveImage}
-            />
+            <div>
+              <ImageUpload
+                preview={imagePreview}
+                onFileChange={handleFileChange}
+                onRemove={handleRemoveImage}
+              />
+              {imageError && (
+                <p className="mt-1.5 w-32 text-xs text-red-500 leading-snug">{imageError}</p>
+              )}
+            </div>
             <div className="flex-1 space-y-4">
               <Input
                 label="Nom du produit"
@@ -434,7 +455,7 @@ export default function ProductFormPage() {
         {/* Erreur globale */}
         {mutationError && (
           <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-            Une erreur est survenue. Veuillez réessayer.
+            {getApiErrorMessage(mutationError)}
           </p>
         )}
 

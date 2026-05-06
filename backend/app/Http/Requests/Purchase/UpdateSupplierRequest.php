@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Purchase;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Propaganistas\LaravelPhone\Rules\Phone;
 
 class UpdateSupplierRequest extends FormRequest
 {
@@ -15,11 +16,19 @@ class UpdateSupplierRequest extends FormRequest
     {
         return [
             'name'      => ['sometimes', 'string', 'max:200'],
-            'phone'     => ['nullable', 'string', 'max:30'],
+            'country'   => ['nullable', 'string', 'size:2'],
+            'phone'     => ['nullable', 'string', 'max:30', (new Phone)->countryField('country')],
             'email'     => ['nullable', 'email', 'max:191'],
             'address'   => ['nullable', 'string'],
             'notes'     => ['nullable', 'string'],
             'is_active' => ['boolean'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'phone.phone' => 'Le numéro de téléphone est invalide pour le pays sélectionné.',
         ];
     }
 }

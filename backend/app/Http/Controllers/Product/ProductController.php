@@ -38,6 +38,10 @@ class ProductController extends Controller
     {
         $data = $request->validated();
 
+        if (array_key_exists('unit', $data) && $data['unit'] === null) {
+            $data['unit'] = '';
+        }
+
         if ($request->hasFile('image')) {
             $data['image_path'] = $request->file('image')->store('products', 'public');
         }
@@ -57,6 +61,11 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
         $data = $request->validated();
+
+        // unit est NOT NULL en base ; ConvertEmptyStringsToNull le transforme en null si vide
+        if (array_key_exists('unit', $data) && $data['unit'] === null) {
+            $data['unit'] = '';
+        }
 
         if ($request->hasFile('image')) {
             if ($product->image_path) {
