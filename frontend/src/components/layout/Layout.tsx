@@ -5,18 +5,39 @@ import Topbar from './Topbar'
 import ToastContainer from '@/components/ui/ToastContainer'
 import { useAuthStore } from '@/store/authStore'
 import { useTenantStore } from '@/store/tenantStore'
+import apiClient from '@/lib/axios'
+import type { LoginResponse } from '@/types'
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const tenant           = useAuthStore((s) => s.tenant)
+  const setAuth          = useAuthStore((s) => s.setAuth)
+  const token            = useAuthStore((s) => s.token)
+  const user             = useAuthStore((s) => s.user)
   const applyBrandColors = useTenantStore((s) => s.applyBrandColors)
 
-  // Applique les couleurs tenant au montage (et à chaque changement de tenant)
+  // Applique les couleurs du cache immédiatement (pas de flash)
   useEffect(() => {
     if (tenant) {
       applyBrandColors(tenant.primary_color, tenant.secondary_color)
     }
   }, [tenant, applyBrandColors])
+
+  // Rafraîchit silencieusement les données tenant depuis la DB à chaque montage
+  // pour que les changements Super Admin (couleurs, nom, logo…) soient pris en compte
+  // sans que le tenant ait besoin de se reconnecter.
+  useEffect(() => {
+    if (!token || !user) return
+    // La réponse a la forme { data: { user, permissions, tenant } }
+    apiClient.get<{ data: LoginResponse['data'] }>('/api/v1/auth/me').then(({ data: response }) => {
+      const { user: freshUser, permissions: freshPerms, tenant: freshTenant } = response.data
+      setAuth(token, freshUser, freshPerms, freshTenant)
+      applyBrandColors(freshTenant.primary_color, freshTenant.secondary_color)
+    }).catch(() => {
+      // Silencieux — le cache localStorage reste valide si l'appel échoue
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Uniquement au montage
 
   return (
     <div className="min-h-screen bg-gray-50">

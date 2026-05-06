@@ -1,7 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
+import { useSuperAdminStore } from '@/store/superAdminStore'
 import LoginPage from '@/pages/auth/LoginPage'
 import Layout from '@/components/layout/Layout'
+import AdminLayout from '@/components/admin/AdminLayout'
+import AdminLoginPage from '@/pages/admin/AdminLoginPage'
+import AdminDashboardPage from '@/pages/admin/AdminDashboardPage'
+import AdminTenantsPage from '@/pages/admin/AdminTenantsPage'
+import AdminTenantDetailPage from '@/pages/admin/AdminTenantDetailPage'
 import DashboardPage from '@/pages/dashboard/DashboardPage'
 import ProductsPage from '@/pages/products/ProductsPage'
 import ProductFormPage from '@/pages/products/ProductFormPage'
@@ -25,6 +31,12 @@ import PurchaseDetailPage from '@/pages/purchases/PurchaseDetailPage'
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
   if (!token) return <Navigate to="/login" replace />
+  return <>{children}</>
+}
+
+function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
+  const token = useSuperAdminStore((s) => s.token)
+  if (!token) return <Navigate to="/admin/login" replace />
   return <>{children}</>
 }
 
@@ -78,6 +90,22 @@ export default function App() {
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+        {/* ── Super Admin ── */}
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route
+          path="/admin"
+          element={
+            <AdminProtectedRoute>
+              <AdminLayout />
+            </AdminProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard"     element={<AdminDashboardPage />} />
+          <Route path="tenants"       element={<AdminTenantsPage />} />
+          <Route path="tenants/:id"   element={<AdminTenantDetailPage />} />
+        </Route>
       </Routes>
 
       {/* Notifications toast — visibles sur toutes les pages */}

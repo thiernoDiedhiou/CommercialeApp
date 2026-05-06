@@ -42,8 +42,7 @@ class SettingsController extends Controller
             'email'           => ['nullable', 'email', 'max:150'],
             'address'         => ['nullable', 'string', 'max:255'],
             'city'            => ['nullable', 'string', 'max:100'],
-            'primary_color'   => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            // primary_color et secondary_color sont gérés exclusivement par le Super Admin
             'logo'            => ['nullable', 'mimes:jpeg,png,webp,svg', 'max:2048'],
             'remove_logo'     => ['boolean'],
         ]);

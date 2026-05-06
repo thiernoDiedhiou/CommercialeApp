@@ -8,7 +8,7 @@ const variantClasses: Record<Variant, string> = {
   success: 'bg-green-100 text-green-700',
   warning: 'bg-amber-100 text-amber-700',
   danger:  'bg-red-100 text-red-700',
-  info:    'bg-blue-100 text-blue-700',
+  info:    'bg-brand-secondary/10 text-brand-secondary',
   brand:   'bg-brand-primary/10 text-brand-primary',
 }
 
@@ -48,7 +48,7 @@ export default function Badge({
             'bg-green-500':  variant === 'success',
             'bg-amber-500':  variant === 'warning',
             'bg-red-500':    variant === 'danger',
-            'bg-blue-500':   variant === 'info',
+            'bg-brand-secondary': variant === 'info',
             'bg-brand-primary': variant === 'brand',
           })}
         />

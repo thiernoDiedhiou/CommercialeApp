@@ -88,7 +88,6 @@ const boutiqueSchema = z.object({
   email:         z.string().email('Email invalide').or(z.literal('')).optional(),
   address:       z.string().optional(),
   city:          z.string().optional(),
-  primary_color: z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Couleur invalide').optional().or(z.literal('')),
 })
 type BoutiqueValues = z.infer<typeof boutiqueSchema>
 
@@ -133,7 +132,6 @@ function BoutiqueTab() {
         email:         data.email ?? '',
         address:       data.address ?? '',
         city:          data.city ?? '',
-        primary_color: data.primary_color ?? '',
       })
       setLogoPreview(data.logo_url ?? null)
     }
@@ -174,7 +172,6 @@ function BoutiqueTab() {
         email:         vals.email || null,
         address:       vals.address || null,
         city:          vals.city || null,
-        primary_color: vals.primary_color || null,
       },
       logoFile,
       removeLogo,
@@ -278,7 +275,6 @@ function BoutiqueTab() {
           </Select>
           <p className="mt-1 text-xs text-gray-400">Affecte tous les montants affichés dans l'application.</p>
         </div>
-        <Input label="Couleur principale (hex)" placeholder="#2563eb" error={errors.primary_color?.message} {...register('primary_color')} />
       </div>
 
       <Controller

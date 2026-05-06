@@ -16,8 +16,9 @@ $app = Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'tenant'     => ResolveTenant::class,
-            'permission' => CheckPermission::class,
+            'tenant'       => ResolveTenant::class,
+            'permission'   => CheckPermission::class,
+            'super_admin'  => \App\Http\Middleware\EnsureSuperAdmin::class,
         ]);
 
         // ResolveTenant s'exécute en premier sur toutes les routes API

@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\AdminTenantController;
+use App\Http\Controllers\Admin\AdminStatsController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Customer\CustomerController;
@@ -34,6 +37,28 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('v1')->group(function () {
+
+    // ── Super Admin ───────────────────────────────────────────────────────────
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::post('auth/login',  [AdminAuthController::class, 'login'])->name('auth.login');
+
+        Route::middleware('super_admin')->group(function () {
+            Route::post('auth/logout', [AdminAuthController::class, 'logout'])->name('auth.logout');
+            Route::get('auth/me',      [AdminAuthController::class, 'me'])->name('auth.me');
+
+            Route::get('stats', [AdminStatsController::class, 'index'])->name('stats');
+
+            Route::prefix('tenants')->name('tenants.')->group(function () {
+                Route::get('/',                      [AdminTenantController::class, 'index'])->name('index');
+                Route::post('/',                     [AdminTenantController::class, 'store'])->name('store');
+                Route::get('{tenant}',               [AdminTenantController::class, 'show'])->name('show');
+                Route::put('{tenant}',               [AdminTenantController::class, 'update'])->name('update');
+                Route::delete('{tenant}',            [AdminTenantController::class, 'destroy'])->name('destroy');
+                Route::post('{tenant}/suspend',      [AdminTenantController::class, 'suspend'])->name('suspend');
+                Route::post('{tenant}/activate',     [AdminTenantController::class, 'activate'])->name('activate');
+            });
+        });
+    });
 
     // ── Authentification ──────────────────────────────────────────────────────
     Route::prefix('auth')->name('auth.')->group(function () {
