@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
 
-            $table->string('name', 255);
+            $table->string('name', 191);
             $table->string('phone', 30)->nullable();
             $table->string('email', 191)->nullable();
             $table->text('address')->nullable();

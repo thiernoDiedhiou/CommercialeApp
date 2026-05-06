@@ -17,8 +17,8 @@ return new class extends Migration
             $table->unsignedBigInteger('category_id')->nullable();
 
             // ─── Identification ────────────────────────────────────────────
-            $table->string('name', 255);
-            $table->string('slug', 255);
+            $table->string('name', 191);
+            $table->string('slug', 191);
             $table->text('description')->nullable();
             $table->string('image_path')->nullable();
 

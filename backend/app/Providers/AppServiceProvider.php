@@ -6,7 +6,9 @@ use App\Models\Tenant;
 use App\Observers\TenantObserver;
 use App\Services\PermissionService;
 use App\Services\TenantService;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use PhpParser\Node\Scalar;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,5 +26,5 @@ class AppServiceProvider extends ServiceProvider
     {
         // Crée automatiquement les groupes par défaut à la création d'un tenant
         Tenant::observe(TenantObserver::class);
-    }
+        Schema::defaultStringLength(191);    }
 }
