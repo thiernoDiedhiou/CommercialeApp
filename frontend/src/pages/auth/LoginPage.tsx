@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 import apiClient from '@/lib/axios'
 import { useAuthStore } from '@/store/authStore'
@@ -17,32 +18,42 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>
 
+const ENV_KEY = import.meta.env.VITE_TENANT_API_KEY ?? ''
+
 export default function LoginPage() {
   const navigate         = useNavigate()
+  const [searchParams]   = useSearchParams()
   const setAuth          = useAuthStore((s) => s.setAuth)
+  const setTenantApiKey  = useAuthStore((s) => s.setTenantApiKey)
   const applyBrandColors = useTenantStore((s) => s.applyBrandColors)
+
+  // Priorité : URL ?key= > env VITE_TENANT_API_KEY > store actuel
+  const keyFromUrl = searchParams.get('key') ?? ''
+  const [tenantKey, setTenantKey] = useState(keyFromUrl || ENV_KEY)
+
+  // Affiche le champ si aucune clé n'est préconfigurée dans l'env (développement multi-tenant)
+  const showKeyField = !ENV_KEY || !!keyFromUrl
 
   const {
     register,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  })
+  } = useForm<LoginFormData>({ resolver: zodResolver(loginSchema) })
 
   const mutation = useMutation({
-    mutationFn: (data: LoginFormData) =>
-      apiClient
+    mutationFn: (data: LoginFormData) => {
+      // Applique la clé tenant AVANT la requête pour que l'intercepteur l'utilise
+      setTenantApiKey(tenantKey)
+      return apiClient
         .post<LoginResponse>('/api/v1/auth/login', data)
-        .then((r) => r.data),
-
+        .then((r) => r.data)
+    },
     onSuccess: ({ token, data: { user, permissions, tenant } }) => {
       setAuth(token, user, permissions, tenant)
       applyBrandColors(tenant.primary_color, tenant.secondary_color)
       navigate('/dashboard', { replace: true })
     },
-
     onError: (error) => {
       const message = axios.isAxiosError(error)
         ? (error.response?.data as { message?: string })?.message ??
@@ -55,30 +66,41 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-sm">
-        {/* En-tête */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900">Gestion Commerciale</h1>
           <p className="mt-1 text-sm text-gray-500">Connectez-vous à votre espace</p>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-          <form
-            onSubmit={handleSubmit((d) => mutation.mutate(d))}
-            noValidate
-          >
-            {/* Erreur globale (identifiants incorrects, etc.) */}
+          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} noValidate>
             {errors.root && (
               <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {errors.root.message}
               </div>
             )}
 
-            {/* Email */}
+            {/* Clé d'accès boutique — visible uniquement si aucune clé env configurée */}
+            {showKeyField && (
+              <div className="mb-4">
+                <label htmlFor="tenantKey" className="mb-1 block text-sm font-medium text-gray-700">
+                  Clé d'accès boutique
+                </label>
+                <input
+                  id="tenantKey"
+                  type="text"
+                  value={tenantKey}
+                  onChange={(e) => setTenantKey(e.target.value)}
+                  placeholder="Fournie par votre administrateur"
+                  className="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm font-mono transition-colors hover:border-gray-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                />
+                <p className="mt-1 text-xs text-gray-400">
+                  Identifiant unique de votre boutique
+                </p>
+              </div>
+            )}
+
             <div className="mb-4">
-              <label
-                htmlFor="email"
-                className="mb-1 block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
                 Email
               </label>
               <input
@@ -99,12 +121,8 @@ export default function LoginPage() {
               )}
             </div>
 
-            {/* Mot de passe */}
             <div className="mb-6">
-              <label
-                htmlFor="password"
-                className="mb-1 block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
                 Mot de passe
               </label>
               <input
@@ -125,10 +143,9 @@ export default function LoginPage() {
               )}
             </div>
 
-            {/* Bouton soumettre */}
             <button
               type="submit"
-              disabled={isSubmitting || mutation.isPending}
+              disabled={isSubmitting || mutation.isPending || !tenantKey}
               className={cn(
                 'w-full rounded-lg bg-brand-primary py-2.5 px-4 text-sm font-semibold text-white',
                 'hover:opacity-90 transition-opacity',

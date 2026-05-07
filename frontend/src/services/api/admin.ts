@@ -43,6 +43,7 @@ export interface AdminTenant {
   id:              number
   name:            string
   slug:            string
+  api_key:         string
   sector:          string
   currency:        string
   phone:           string | null

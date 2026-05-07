@@ -3,10 +3,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   ArrowLeftIcon, BuildingStorefrontIcon, UsersIcon,
-  NoSymbolIcon, CheckCircleIcon, TrashIcon,
+  NoSymbolIcon, CheckCircleIcon, TrashIcon, LinkIcon, ClipboardDocumentIcon,
 } from '@heroicons/react/24/outline'
 import {
   getAdminTenant, updateAdminTenant,
@@ -158,6 +158,7 @@ export default function AdminTenantDetailPage() {
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           <button type="button" onClick={() => navigate('/admin/tenants')}
+            title="Retour à la liste"
             className="rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white transition">
             <ArrowLeftIcon className="h-5 w-5" />
           </button>
@@ -280,24 +281,24 @@ export default function AdminTenantDetailPage() {
                   error={errors.secondary_color?.message}
                 />
               </div>
-              {/* Aperçu */}
-              {(watch('primary_color') || watch('secondary_color')) && (
-                <div className="flex items-center gap-3 rounded-lg bg-gray-800 px-3 py-2">
-                  <span className="text-xs text-gray-400">Aperçu :</span>
-                  <div className="flex gap-2">
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-5 w-5 rounded border border-gray-600"
-                        style={{ backgroundColor: watch('primary_color') || '#4F46E5' }} />
-                      <span className="text-xs text-gray-300">Primaire</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="h-5 w-5 rounded border border-gray-600"
-                        style={{ backgroundColor: watch('secondary_color') || '#7C3AED' }} />
-                      <span className="text-xs text-gray-300">Secondaire</span>
-                    </div>
+              {/* Aperçu — input[type=color] affiche la couleur nativement sans inline style */}
+              <div className="flex items-center gap-4 rounded-lg bg-gray-800 px-3 py-2">
+                <span className="text-xs text-gray-400">Aperçu :</span>
+                <div className="flex gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <input type="color" readOnly aria-label="Couleur primaire"
+                      value={/^#[0-9A-Fa-f]{6}$/.test(watch('primary_color') ?? '') ? watch('primary_color')! : '#4F46E5'}
+                      className="h-5 w-5 rounded border-0 p-0 cursor-default" />
+                    <span className="text-xs text-gray-300">Primaire</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <input type="color" readOnly aria-label="Couleur secondaire"
+                      value={/^#[0-9A-Fa-f]{6}$/.test(watch('secondary_color') ?? '') ? watch('secondary_color')! : '#7C3AED'}
+                      className="h-5 w-5 rounded border-0 p-0 cursor-default" />
+                    <span className="text-xs text-gray-300">Secondaire</span>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="flex justify-end pt-2">
@@ -342,6 +343,60 @@ export default function AdminTenantDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Lien de connexion tenant */}
+      <LoginLinkCard apiKey={tenant.api_key} />
+    </div>
+  )
+}
+
+function LoginLinkCard({ apiKey }: { apiKey: string }) {
+  const loginUrl = `${window.location.origin}/login?key=${apiKey}`
+  const [copied, setCopied] = useState(false)
+
+  const copy = async (text: string) => {
+    await navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-4">
+      <div className="flex items-center gap-2">
+        <LinkIcon className="h-4 w-4 text-gray-400" />
+        <h2 className="text-sm font-semibold text-white">Accès tenant</h2>
+      </div>
+
+      {/* Clé API */}
+      <div>
+        <p className="text-xs font-medium text-gray-400 mb-1.5">Clé d'accès (X-Tenant-ID)</p>
+        <div className="flex items-center gap-2 rounded-lg bg-gray-800 px-3 py-2.5">
+          <code className="flex-1 text-xs text-indigo-300 font-mono truncate">{apiKey}</code>
+          <button type="button" onClick={() => copy(apiKey)} title="Copier la clé"
+            className="shrink-0 text-gray-400 hover:text-white transition">
+            <ClipboardDocumentIcon className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Lien de connexion direct */}
+      <div>
+        <p className="text-xs font-medium text-gray-400 mb-1.5">Lien de connexion direct</p>
+        <div className="flex items-center gap-2 rounded-lg bg-gray-800 px-3 py-2.5">
+          <code className="flex-1 text-xs text-gray-300 font-mono truncate">{loginUrl}</code>
+          <button type="button" onClick={() => copy(loginUrl)} title="Copier le lien"
+            className="shrink-0 text-gray-400 hover:text-white transition">
+            <ClipboardDocumentIcon className="h-4 w-4" />
+          </button>
+        </div>
+        <p className="mt-1.5 text-xs text-gray-500">
+          Partager ce lien au tenant admin — la boutique est pré-sélectionnée automatiquement.
+        </p>
+      </div>
+
+      {copied && (
+        <p className="text-xs text-emerald-400 font-medium">Copié dans le presse-papiers ✓</p>
+      )}
     </div>
   )
 }
