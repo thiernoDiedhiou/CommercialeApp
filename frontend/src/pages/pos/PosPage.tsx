@@ -48,7 +48,6 @@ export default function PosPage() {
   const [categoryId, setCategoryId] = useState<number | null>(null)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [customerSearch, setCustomerSearch] = useState('')
-  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
   const [variantProduct, setVariantProduct] = useState<Product | null>(null)
   const [weightProduct, setWeightProduct] = useState<Product | null>(null)
   const [paymentOpen, setPaymentOpen] = useState(false)
@@ -62,11 +61,11 @@ export default function PosPage() {
     return () => clearTimeout(t)
   }, [search])
 
-  // Close customer dropdown on outside click
+  // Ferme le dropdown client au clic extérieur en vidant la recherche
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (customerRef.current && !customerRef.current.contains(e.target as Node)) {
-        setShowCustomerDropdown(false)
+        setCustomerSearch('')
       }
     }
     document.addEventListener('mousedown', handler)
@@ -186,10 +185,12 @@ export default function PosPage() {
       <header className="flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 shrink-0">
         <div className="flex items-center gap-3">
           <button
+            type="button"
             onClick={() => navigate('/dashboard')}
+            aria-label="Retour au tableau de bord"
             className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
           >
-            <ArrowLeftIcon className="h-5 w-5" />
+            <ArrowLeftIcon className="h-5 w-5" aria-hidden="true" />
           </button>
           <h1 className="text-base font-semibold text-gray-800">Caisse POS</h1>
           {session ? (
@@ -303,37 +304,38 @@ export default function PosPage() {
                   <input
                     type="text"
                     value={customerSearch}
-                    onChange={(e) => {
-                      setCustomerSearch(e.target.value)
-                      setShowCustomerDropdown(true)
-                    }}
-                    onFocus={() => setShowCustomerDropdown(true)}
-                    placeholder="Client (optionnel)"
+                    onChange={(e) => setCustomerSearch(e.target.value)}
+                    placeholder="Rechercher un client…"
                     className="flex-1 text-sm outline-none bg-transparent placeholder-gray-400"
                   />
                 )}
               </div>
 
-              {showCustomerDropdown && customerSearch.length >= 2 && customerResults.length > 0 && (
+              {customerSearch.length >= 2 && !selectedCustomer && (
                 <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
-                  {customerResults.slice(0, 5).map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedCustomer(c)
-                        setCustomerSearch('')
-                        setShowCustomerDropdown(false)
-                      }}
-                      className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center gap-2 border-b border-gray-50 last:border-0"
-                    >
-                      <UserIcon className="h-4 w-4 text-gray-400 shrink-0" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-800">{c.name}</p>
-                        {c.phone && <p className="text-xs text-gray-400">{c.phone}</p>}
-                      </div>
-                    </button>
-                  ))}
+                  {customerResults.length > 0 ? (
+                    customerResults.slice(0, 5).map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCustomer(c)
+                          setCustomerSearch('')
+                        }}
+                        className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center gap-2 border-b border-gray-50 last:border-0"
+                      >
+                        <UserIcon className="h-4 w-4 text-gray-400 shrink-0" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-800">{c.name}</p>
+                          {c.phone && <p className="text-xs text-gray-400">{c.phone}</p>}
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-4 py-3 text-sm text-gray-400 text-center">
+                      Aucun client trouvé
+                    </div>
+                  )}
                 </div>
               )}
             </div>

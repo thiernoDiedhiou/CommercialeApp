@@ -39,6 +39,25 @@ class Sale extends Model
         'cancelled_at'    => 'datetime',
     ];
 
+    // paid_amount est calculé dynamiquement (withSum ou relation payments)
+    protected $appends = ['paid_amount'];
+
+    public function getPaidAmountAttribute(): string
+    {
+        // Cas 1 : index() utilise withSum('payments', 'amount') → payments_sum_amount
+        $fromAggr = $this->getAttribute('payments_sum_amount');
+        if (! is_null($fromAggr)) {
+            return number_format((float) $fromAggr, 2, '.', '');
+        }
+
+        // Cas 2 : show() charge la relation payments via EAGER_LOAD
+        if ($this->relationLoaded('payments')) {
+            return number_format((float) $this->payments->sum('amount'), 2, '.', '');
+        }
+
+        return '0.00';
+    }
+
     // ─── Relations ────────────────────────────────────────────────────────────
 
     public function customer(): BelongsTo
