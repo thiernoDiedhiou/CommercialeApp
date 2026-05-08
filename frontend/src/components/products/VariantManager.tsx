@@ -4,7 +4,7 @@ import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { getAttributes, createAttribute, createAttributeValue } from '@/services/api/attributes'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
-import type { ProductAttribute, AttributeValue, CreateVariantData } from '@/types'
+import type { AttributeValue, CreateVariantData } from '@/types'
 
 interface CombinationRow {
   key: string
@@ -230,7 +230,7 @@ export default function VariantManager({ productPrice, onChange }: VariantManage
                   <div className="flex items-center gap-1">
                     <input
                       type="text"
-                      placeholder="+ valeur"
+                      placeholder="Nouvelle valeur…"
                       value={newValueInputs[attr.id] ?? ''}
                       onChange={(e) =>
                         setNewValueInputs((prev) => ({ ...prev, [attr.id]: e.target.value }))
@@ -242,13 +242,30 @@ export default function VariantManager({ productPrice, onChange }: VariantManage
                           if (val) createValueMutation.mutate({ attrId: attr.id, body: { value: val } })
                         }
                       }}
-                      className="w-24 rounded-full border border-dashed border-gray-300 px-2.5 py-0.5 text-xs placeholder:text-gray-400 focus:outline-none focus:border-brand-primary"
+                      className="w-28 rounded-full border border-dashed border-gray-300 px-2.5 py-0.5 text-xs placeholder:text-gray-400 focus:outline-none focus:border-brand-primary"
                     />
+                    <button
+                      type="button"
+                      disabled={!newValueInputs[attr.id]?.trim() || createValueMutation.isPending}
+                      onClick={() => {
+                        const val = newValueInputs[attr.id]?.trim()
+                        if (val) createValueMutation.mutate({ attrId: attr.id, body: { value: val } })
+                      }}
+                      className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-primary text-white text-xs disabled:opacity-40 hover:opacity-90 transition"
+                      aria-label="Ajouter la valeur"
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
               </div>
             ))}
 
+          {selectedAttrIds.some((id) => (selectedValueIds[id] ?? []).length === 0) && (
+            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              Sélectionnez ou ajoutez au moins une valeur pour chaque attribut, puis cliquez sur <strong>+</strong>.
+            </p>
+          )}
           <div className="flex gap-2">
             <Button type="button" variant="outline" onClick={() => setStep(1)}>
               Retour
@@ -318,9 +335,10 @@ export default function VariantManager({ productPrice, onChange }: VariantManage
                         <button
                           type="button"
                           onClick={() => removeCombination(row.key)}
+                          aria-label="Supprimer cette combinaison"
                           className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
                         >
-                          <TrashIcon className="h-4 w-4" />
+                          <TrashIcon className="h-4 w-4" aria-hidden="true" />
                         </button>
                       </td>
                     </tr>

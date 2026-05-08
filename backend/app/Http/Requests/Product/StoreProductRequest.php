@@ -46,14 +46,6 @@ class StoreProductRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function ($validator) {
-            // has_variants → au moins une valeur d'attribut requise
-            if ($this->boolean('has_variants') && empty($this->input('attribute_value_ids'))) {
-                $validator->errors()->add(
-                    'attribute_value_ids',
-                    'Les valeurs d\'attribut sont requises pour un produit avec variantes.'
-                );
-            }
-
             // is_weight_based → unité de poids ou volume obligatoire
             if ($this->boolean('is_weight_based')) {
                 $unit = $this->input('unit');

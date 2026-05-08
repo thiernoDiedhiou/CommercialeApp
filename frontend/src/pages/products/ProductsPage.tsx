@@ -269,7 +269,7 @@ export default function ProductsPage() {
         loading={isLoading}
         skeletonRows={8}
         emptyMessage="Aucun produit trouvé."
-        onRowClick={(p) => navigate(`/products/${p.id}/edit`)}
+        onRowClick={(p) => navigate(`/products/${p.id}`)}
       />
 
       {/* Pagination */}
