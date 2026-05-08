@@ -29,6 +29,10 @@ class SaleController extends Controller
         $sales = Sale::with(['customer:id,name', 'user:id,name'])
             ->withCount('items')
             ->withSum('payments', 'amount')
+            ->when($request->search, fn($q) => $q->where(function ($inner) use ($request) {
+                $inner->where('reference', 'like', "%{$request->search}%")
+                      ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%{$request->search}%"));
+            }))
             ->when($request->status, fn($q) => $q->where('status', $request->status))
             ->when($request->customer_id, fn($q) => $q->where('customer_id', $request->customer_id))
             ->when($request->user_id, fn($q) => $q->where('user_id', $request->user_id))
