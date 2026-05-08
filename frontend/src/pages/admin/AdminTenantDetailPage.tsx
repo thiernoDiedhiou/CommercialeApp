@@ -74,6 +74,7 @@ export default function AdminTenantDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-tenant', id],
@@ -206,7 +207,7 @@ export default function AdminTenantDetailPage() {
             </button>
           )}
           <button type="button"
-            onClick={() => { if (confirm(`Supprimer définitivement "${tenant.name}" ?`)) deleteMutation.mutate() }}
+            onClick={() => setDeleteOpen(true)}
             disabled={deleteMutation.isPending}
             className="flex items-center gap-2 rounded-lg border border-red-800 px-3 py-2 text-sm text-red-400 hover:bg-red-900/20 disabled:opacity-50 transition">
             <TrashIcon className="h-4 w-4" />
@@ -346,6 +347,24 @@ export default function AdminTenantDetailPage() {
 
       {/* Lien de connexion tenant */}
       <LoginLinkCard apiKey={tenant.api_key} />
+
+      {/* Modal confirmation suppression */}
+      <ConfirmModal
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="Supprimer le tenant"
+        confirmLabel="Supprimer définitivement"
+        loading={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate()}
+      >
+        <p className="text-sm text-gray-300">
+          Voulez-vous supprimer définitivement{' '}
+          <span className="font-semibold text-white">«{tenant.name}»</span> ?
+          <span className="mt-2 block text-xs text-gray-400">
+            Toutes les données de ce tenant (produits, ventes, clients…) seront supprimées de façon irréversible.
+          </span>
+        </p>
+      </ConfirmModal>
     </div>
   )
 }
@@ -397,6 +416,38 @@ function LoginLinkCard({ apiKey }: { apiKey: string }) {
       {copied && (
         <p className="text-xs text-emerald-400 font-medium">Copié dans le presse-papiers ✓</p>
       )}
+    </div>
+  )
+}
+
+// ── Modal de confirmation réutilisable ────────────────────────────────────
+
+function ConfirmModal({ isOpen, onClose, title, confirmLabel, loading, onConfirm, children }: {
+  isOpen: boolean
+  onClose: () => void
+  title: string
+  confirmLabel: string
+  loading?: boolean
+  onConfirm: () => void
+  children: React.ReactNode
+}) {
+  if (!isOpen) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+      <div className="w-full max-w-sm rounded-xl bg-gray-900 border border-gray-800 p-6 space-y-4">
+        <h2 className="text-base font-semibold text-white">{title}</h2>
+        {children}
+        <div className="flex gap-3 justify-end">
+          <button type="button" onClick={onClose}
+            className="px-4 py-2 rounded-lg border border-gray-700 text-sm text-gray-300 hover:border-gray-500 transition">
+            Annuler
+          </button>
+          <button type="button" onClick={onConfirm} disabled={loading}
+            className="px-4 py-2 rounded-lg bg-red-600 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-60 transition">
+            {loading ? 'Suppression…' : confirmLabel}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

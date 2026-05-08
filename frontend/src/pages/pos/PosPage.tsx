@@ -23,6 +23,8 @@ import { OfflineBanner } from '@/components/pos/OfflineBanner'
 import { VariantModal } from '@/components/pos/VariantModal'
 import { WeightModal } from '@/components/pos/WeightModal'
 import { PaymentModal } from '@/components/pos/PaymentModal'
+import Modal from '@/components/ui/Modal'
+import Button from '@/components/ui/Button'
 
 export default function PosPage() {
   const navigate = useNavigate()
@@ -51,6 +53,7 @@ export default function PosPage() {
   const [variantProduct, setVariantProduct] = useState<Product | null>(null)
   const [weightProduct, setWeightProduct] = useState<Product | null>(null)
   const [paymentOpen, setPaymentOpen] = useState(false)
+  const [clearOpen, setClearOpen]     = useState(false)
   const [note, setNote] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
   const customerRef = useRef<HTMLDivElement>(null)
@@ -205,9 +208,8 @@ export default function PosPage() {
         </div>
         {items.length > 0 && (
           <button
-            onClick={() => {
-              if (window.confirm('Vider le panier ?')) clearCart()
-            }}
+            type="button"
+            onClick={() => setClearOpen(true)}
             className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition"
           >
             <TrashIcon className="h-3.5 w-3.5" />
@@ -457,6 +459,25 @@ export default function PosPage() {
         onConfirm={handlePaymentConfirm}
         onClose={() => setPaymentOpen(false)}
       />
+
+      <Modal
+        isOpen={clearOpen}
+        onClose={() => setClearOpen(false)}
+        title="Vider le panier"
+        size="sm"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setClearOpen(false)}>Annuler</Button>
+            <Button variant="danger" onClick={() => { clearCart(); setClearOpen(false) }}>
+              Vider le panier
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-600">
+          Tous les articles du panier seront supprimés. Cette action ne peut pas être annulée.
+        </p>
+      </Modal>
     </div>
   )
 }
