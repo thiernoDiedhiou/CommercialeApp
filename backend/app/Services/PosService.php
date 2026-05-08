@@ -26,7 +26,7 @@ class PosService
         ])
         ->where('is_active', true)
         ->with(['variants' => function ($q) {
-            $q->select(['id', 'product_id', 'sku', 'attribute_summary', 'price', 'stock_quantity'])
+            $q->select(['id', 'product_id', 'sku', 'attribute_summary', 'price', 'stock_quantity', 'is_active'])
               ->where('is_active', true);
         }])
         ->when($search, fn($q) => $q->where(function ($inner) use ($search) {
