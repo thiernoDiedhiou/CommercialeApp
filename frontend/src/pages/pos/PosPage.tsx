@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeftIcon, UserIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, UserIcon, TrashIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'
 import axios from 'axios'
 
 import { useCartStore } from '@/store/cartStore'
@@ -45,6 +45,7 @@ export default function PosPage() {
   const addToOfflineQueue = useCartStore((s) => s.addToOfflineQueue)
 
   // ── Local state ──────────────────────────────────────────────────────────
+  const [mobileView, setMobileView] = useState<'products' | 'cart'>('products')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [categoryId, setCategoryId] = useState<number | null>(null)
@@ -111,6 +112,8 @@ export default function PosPage() {
       setWeightProduct(product)
     } else {
       addItem(product)
+      // On mobile, jump to cart so the user sees the updated basket
+      if (window.innerWidth < 768) setMobileView('cart')
     }
   }
 
@@ -197,31 +200,47 @@ export default function PosPage() {
           </button>
           <h1 className="text-base font-semibold text-gray-800">Caisse POS</h1>
           {session ? (
-            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+            <span className="hidden sm:inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
               Session ouverte
             </span>
           ) : (
-            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+            <span className="hidden sm:inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
               Pas de session
             </span>
           )}
         </div>
-        {items.length > 0 && (
+        <div className="flex items-center gap-2">
+          {items.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setClearOpen(true)}
+              className="hidden md:flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition"
+            >
+              <TrashIcon className="h-3.5 w-3.5" />
+              Vider
+            </button>
+          )}
+          {/* Mobile: cart toggle button */}
           <button
             type="button"
-            onClick={() => setClearOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition"
+            onClick={() => setMobileView(mobileView === 'cart' ? 'products' : 'cart')}
+            aria-label={mobileView === 'cart' ? 'Voir les produits' : 'Voir le panier'}
+            className="relative md:hidden rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 transition"
           >
-            <TrashIcon className="h-3.5 w-3.5" />
-            Vider
+            <ShoppingCartIcon className="h-5 w-5" />
+            {items.length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white">
+                {items.length}
+              </span>
+            )}
           </button>
-        )}
+        </div>
       </header>
 
       {/* Main */}
       <div className="flex flex-1 overflow-hidden">
         {/* ── Left: Product browser ────────────────────────────────────── */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className={`overflow-hidden ${mobileView === 'cart' ? 'hidden md:flex md:flex-col md:flex-1' : 'flex flex-col flex-1'}`}>
           {/* Search + categories */}
           <div className="shrink-0 bg-white border-b border-gray-200 px-4 py-3 space-y-2">
             <input
@@ -235,6 +254,7 @@ export default function PosPage() {
             />
             <div className="flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none]">
               <button
+                type="button"
                 onClick={() => setCategoryId(null)}
                 className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
                   categoryId === null
@@ -246,6 +266,7 @@ export default function PosPage() {
               </button>
               {categories.map((cat) => (
                 <button
+                  type="button"
                   key={cat.id}
                   onClick={() => setCategoryId(cat.id === categoryId ? null : cat.id)}
                   className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
@@ -283,7 +304,28 @@ export default function PosPage() {
         </div>
 
         {/* ── Right: Cart panel ────────────────────────────────────────── */}
-        <div className="flex w-[380px] shrink-0 flex-col bg-white border-l border-gray-200 overflow-hidden">
+        <div className={`bg-white border-l border-gray-200 overflow-hidden ${mobileView === 'cart' ? 'flex flex-col flex-1 md:flex-none md:w-[380px] md:shrink-0' : 'hidden md:flex md:flex-col md:w-[380px] md:shrink-0'}`}>
+          {/* Mobile back button */}
+          <div className="md:hidden shrink-0 flex items-center justify-between border-b border-gray-100 px-4 py-2">
+            <button
+              type="button"
+              onClick={() => setMobileView('products')}
+              className="flex items-center gap-1.5 text-sm text-indigo-600 font-medium"
+            >
+              <ArrowLeftIcon className="h-4 w-4" />
+              Produits
+            </button>
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setClearOpen(true)}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition"
+              >
+                <TrashIcon className="h-3.5 w-3.5" />
+                Vider
+              </button>
+            )}
+          </div>
           {/* Customer selector */}
           <div className="shrink-0 border-b border-gray-100 px-4 py-3" ref={customerRef}>
             <div className="relative">
@@ -293,6 +335,7 @@ export default function PosPage() {
                   <div className="flex flex-1 items-center justify-between">
                     <span className="text-sm font-medium text-gray-800">{selectedCustomer.name}</span>
                     <button
+                      type="button"
                       onClick={() => {
                         setSelectedCustomer(null)
                         setCustomerSearch('')
@@ -372,6 +415,7 @@ export default function PosPage() {
                 <span className="text-xs text-gray-500 shrink-0">Remise globale</span>
                 <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
                   <button
+                    type="button"
                     onClick={() => setGlobalDiscount('percent', discountValue)}
                     className={`px-2 py-1 transition ${
                       discountType === 'percent'
@@ -382,6 +426,7 @@ export default function PosPage() {
                     %
                   </button>
                   <button
+                    type="button"
                     onClick={() => setGlobalDiscount('fixed', discountValue)}
                     className={`px-2 py-1 transition ${
                       discountType === 'fixed'
@@ -431,6 +476,7 @@ export default function PosPage() {
 
               {/* Encaisser */}
               <button
+                type="button"
                 onClick={() => setPaymentOpen(true)}
                 className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white hover:bg-indigo-700 active:scale-[0.98] transition-all"
               >
