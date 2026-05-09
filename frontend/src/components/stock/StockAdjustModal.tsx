@@ -219,7 +219,7 @@ export function StockAdjustModal({ isOpen, prefill, onClose, onSuccess }: Props)
         </div>
 
         {/* Variant selector (only if product has variants and none selected yet) */}
-        {selectedProduct?.has_variants && !selectedVariant && !prefill && (
+        {selectedProduct?.has_variants && !selectedVariant && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Variante *</label>
             {selectedProduct.variants?.length ? (

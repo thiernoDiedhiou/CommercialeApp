@@ -5,14 +5,19 @@ import {
   DocumentArrowDownIcon,
   XCircleIcon,
   CheckCircleIcon,
+  BanknotesIcon,
 } from '@heroicons/react/24/outline'
-import { getSale, cancelSale, openSalePdf } from '@/services/api/sales'
+import { getSale, cancelSale, openSalePdf, addPayment } from '@/services/api/sales'
 import { SkeletonCard, SkeletonRow } from '@/components/ui/Skeleton'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
+import Input from '@/components/ui/Input'
+import { Select } from '@/components/ui/Input'
 import CanDo from '@/components/ui/CanDo'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
+import { getApiErrorMessage } from '@/lib/errors'
+import { toast } from '@/store/toastStore'
 import type { Sale } from '@/types'
 import { useState } from 'react'
 
@@ -71,6 +76,9 @@ export default function SaleDetailPage() {
   const qc = useQueryClient()
 
   const [cancelOpen, setCancelOpen] = useState(false)
+  const [paymentOpen, setPaymentOpen] = useState(false)
+  const [payMethod, setPayMethod] = useState('cash')
+  const [payAmount, setPayAmount] = useState('')
   const [pdfLoading, setPdfLoading] = useState(false)
 
   // ── Données ───────────────────────────────────────────────────────────────
@@ -88,6 +96,22 @@ export default function SaleDetailPage() {
       qc.invalidateQueries({ queryKey: ['sales'] })
       setCancelOpen(false)
     },
+  })
+
+  const paymentMutation = useMutation({
+    mutationFn: () => addPayment(Number(id), {
+      method: payMethod,
+      amount: parseFloat(payAmount) || 0,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['sale', Number(id)] })
+      qc.invalidateQueries({ queryKey: ['sales'] })
+      setPaymentOpen(false)
+      setPayAmount('')
+      setPayMethod('cash')
+      toast.success('Paiement enregistré.')
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const handlePdf = async () => {
@@ -152,6 +176,18 @@ export default function SaleDetailPage() {
               PDF
             </Button>
           </CanDo>
+
+          {sale.status === 'confirmed' && due > 0 && (
+            <CanDo permission="sales.create">
+              <Button
+                size="sm"
+                icon={<BanknotesIcon className="h-4 w-4" />}
+                onClick={() => { setPayAmount(String(due.toFixed(0))); setPaymentOpen(true) }}
+              >
+                Encaisser le reste
+              </Button>
+            </CanDo>
+          )}
 
           {sale.status === 'confirmed' && (
             <CanDo permission="sales.delete">
@@ -309,7 +345,20 @@ export default function SaleDetailPage() {
             <div className="flex items-center justify-between text-sm">
               <span className="text-gray-500">Reste dû</span>
               {due > 0 ? (
-                <span className="font-bold text-red-600">{formatCurrency(due)}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-red-600">{formatCurrency(due)}</span>
+                  {sale.status === 'confirmed' && (
+                    <CanDo permission="sales.create">
+                      <button
+                        type="button"
+                        onClick={() => { setPayAmount(String(due.toFixed(0))); setPaymentOpen(true) }}
+                        className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition border border-emerald-200"
+                      >
+                        + Encaisser
+                      </button>
+                    </CanDo>
+                  )}
+                </div>
               ) : (
                 <Badge variant="success" dot>
                   <CheckCircleIcon className="mr-1 h-3.5 w-3.5" />
@@ -320,6 +369,55 @@ export default function SaleDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal encaissement du reste */}
+      <Modal
+        isOpen={paymentOpen}
+        onClose={() => setPaymentOpen(false)}
+        title="Encaisser le reste dû"
+        size="sm"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setPaymentOpen(false)}>Annuler</Button>
+            <Button
+              loading={paymentMutation.isPending}
+              disabled={!payAmount || parseFloat(payAmount) <= 0}
+              onClick={() => paymentMutation.mutate()}
+            >
+              Confirmer le paiement
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-600">
+            Reste dû : <span className="font-bold text-red-600">{formatCurrency(due)}</span>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">Mode de paiement</label>
+            <Select value={payMethod} onChange={(e) => setPayMethod(e.target.value)}>
+              <option value="cash">Espèces</option>
+              <option value="mobile_money">Mobile Money</option>
+              <option value="card">Carte bancaire</option>
+              <option value="bank_transfer">Virement bancaire</option>
+              <option value="credit">Crédit client</option>
+            </Select>
+          </div>
+          <Input
+            label="Montant encaissé (FCFA)"
+            type="number"
+            min={1}
+            max={due}
+            value={payAmount}
+            onChange={(e) => setPayAmount(e.target.value)}
+          />
+          {parseFloat(payAmount) > due && (
+            <p className="text-xs text-amber-600">
+              Le montant dépasse le reste dû ({formatCurrency(due)}). Seul le montant exact sera enregistré.
+            </p>
+          )}
+        </div>
+      </Modal>
 
       {/* Modal annulation */}
       <Modal

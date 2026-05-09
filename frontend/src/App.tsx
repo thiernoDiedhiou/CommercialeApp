@@ -11,6 +11,7 @@ import AdminTenantDetailPage from '@/pages/admin/AdminTenantDetailPage'
 import DashboardPage from '@/pages/dashboard/DashboardPage'
 import ProductsPage from '@/pages/products/ProductsPage'
 import ProductFormPage from '@/pages/products/ProductFormPage'
+import ProductDetailPage from '@/pages/products/ProductDetailPage'
 import CustomersPage from '@/pages/customers/CustomersPage'
 import CustomerDetailPage from '@/pages/customers/CustomerDetailPage'
 import SalesPage from '@/pages/sales/SalesPage'
@@ -70,9 +71,10 @@ export default function App() {
           <Route path="sales"            element={<SalesPage />} />
           <Route path="sales/new"        element={<Navigate to="/pos" replace />} />
           <Route path="sales/:id"        element={<SaleDetailPage />} />
-          <Route path="products"         element={<ProductsPage />} />
-          <Route path="products/new"     element={<ProductFormPage />} />
-          <Route path="products/:id/edit" element={<ProductFormPage />} />
+          <Route path="products"           element={<ProductsPage />} />
+          <Route path="products/new"       element={<ProductFormPage />} />
+          <Route path="products/:id"       element={<ProductDetailPage />} />
+          <Route path="products/:id/edit"  element={<ProductFormPage />} />
           <Route path="customers"         element={<CustomersPage />} />
           <Route path="customers/:id"    element={<CustomerDetailPage />} />
           <Route path="stock"               element={<StockPage />} />

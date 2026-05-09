@@ -161,23 +161,24 @@ class AdminTenantController extends Controller
     private function formatTenant(Tenant $tenant): array
     {
         return [
-            'id'           => $tenant->id,
-            'name'         => $tenant->name,
-            'slug'         => $tenant->slug,
-            'sector'       => $tenant->sector,
-            'currency'     => $tenant->currency,
-            'phone'        => $tenant->phone,
-            'email'        => $tenant->email,
-            'address'      => $tenant->address,
-            'city'         => $tenant->city,
+            'id'              => $tenant->id,
+            'name'            => $tenant->name,
+            'slug'            => $tenant->slug,
+            'api_key'         => $tenant->api_key, // exposé au Super Admin uniquement
+            'sector'          => $tenant->sector,
+            'currency'        => $tenant->currency,
+            'phone'           => $tenant->phone,
+            'email'           => $tenant->email,
+            'address'         => $tenant->address,
+            'city'            => $tenant->city,
             'primary_color'   => $tenant->primary_color,
             'secondary_color' => $tenant->secondary_color,
             'logo_url'        => $tenant->logo_path
                 ? Storage::disk('public')->url($tenant->logo_path)
                 : null,
-            'is_active'    => $tenant->is_active,
-            'users_count'  => $tenant->users_count ?? 0,
-            'created_at'   => $tenant->created_at?->format('d/m/Y'),
+            'is_active'       => $tenant->is_active,
+            'users_count'     => $tenant->users_count ?? 0,
+            'created_at'      => $tenant->created_at?->format('d/m/Y'),
         ];
     }
 }

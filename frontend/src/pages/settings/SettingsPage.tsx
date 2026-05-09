@@ -533,9 +533,10 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
 function UsersTab() {
   const qc = useQueryClient()
   const me = useAuthStore((s) => s.user)
-  const [modalOpen, setModalOpen]   = useState(false)
-  const [editing, setEditing]       = useState<UserWithGroups | null>(null)
-  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [modalOpen, setModalOpen]     = useState(false)
+  const [editing, setEditing]         = useState<UserWithGroups | null>(null)
+  const [deletingId, setDeletingId]   = useState<number | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<UserWithGroups | null>(null)
 
   const { data: page, isLoading } = useQuery({
     queryKey: ['users'],
@@ -626,11 +627,7 @@ function UsersTab() {
                       {u.id !== me?.id && (
                         <button
                           type="button"
-                          onClick={() => {
-                            if (!confirm(`Supprimer ${u.name} ?`)) return
-                            setDeletingId(u.id)
-                            deleteMutation.mutate(u.id)
-                          }}
+                          onClick={() => setDeleteTarget(u)}
                           disabled={deletingId === u.id}
                           className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 transition disabled:opacity-40"
                           title="Supprimer"
@@ -653,6 +650,36 @@ function UsersTab() {
         groups={groups}
         onClose={() => setModalOpen(false)}
       />
+
+      <Modal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="Supprimer l'utilisateur"
+        size="sm"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+            <Button
+              variant="danger"
+              loading={deleteMutation.isPending}
+              onClick={() => {
+                if (!deleteTarget) return
+                setDeletingId(deleteTarget.id)
+                deleteMutation.mutate(deleteTarget.id)
+                setDeleteTarget(null)
+              }}
+            >
+              Supprimer
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-600">
+          Voulez-vous supprimer{' '}
+          <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ?
+          {' '}Cette action est irréversible.
+        </p>
+      </Modal>
     </div>
   )
 }
@@ -854,6 +881,7 @@ function GroupsTab() {
   const [permGroup, setPermGroup]             = useState<Group | null>(null)
   const [permModalOpen, setPermModalOpen]     = useState(false)
   const [deletingId, setDeletingId]           = useState<number | null>(null)
+  const [deleteGroupTarget, setDeleteGroupTarget] = useState<Group | null>(null)
 
   const { data: groups = [], isLoading } = useQuery({
     queryKey: ['groups'],
@@ -916,11 +944,7 @@ function GroupsTab() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (!confirm(`Supprimer le groupe "${g.name}" ?`)) return
-                    setDeletingId(g.id)
-                    deleteMutation.mutate(g.id)
-                  }}
+                  onClick={() => setDeleteGroupTarget(g)}
                   disabled={deletingId === g.id}
                   className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 transition disabled:opacity-40"
                   title="Supprimer"
@@ -935,6 +959,36 @@ function GroupsTab() {
 
       <GroupModal isOpen={groupModalOpen} editing={editing} onClose={() => setGroupModalOpen(false)} />
       <PermissionsModal isOpen={permModalOpen} group={permGroup} onClose={() => setPermModalOpen(false)} />
+
+      <Modal
+        isOpen={!!deleteGroupTarget}
+        onClose={() => setDeleteGroupTarget(null)}
+        title="Supprimer le groupe"
+        size="sm"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setDeleteGroupTarget(null)}>Annuler</Button>
+            <Button
+              variant="danger"
+              loading={deleteMutation.isPending}
+              onClick={() => {
+                if (!deleteGroupTarget) return
+                setDeletingId(deleteGroupTarget.id)
+                deleteMutation.mutate(deleteGroupTarget.id)
+                setDeleteGroupTarget(null)
+              }}
+            >
+              Supprimer
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-gray-600">
+          Voulez-vous supprimer le groupe{' '}
+          <span className="font-semibold text-gray-900">«{deleteGroupTarget?.name}»</span> ?
+          {' '}Les utilisateurs de ce groupe perdront ses permissions.
+        </p>
+      </Modal>
     </div>
   )
 }

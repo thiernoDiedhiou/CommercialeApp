@@ -8,17 +8,14 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    // X-Tenant-ID identifie le tenant — valeur statique par déploiement
-    'X-Tenant-ID': import.meta.env.VITE_TENANT_API_KEY ?? '',
   },
 })
 
-// Injecte le token Bearer à chaque requête
+// Injecte le Bearer token ET le X-Tenant-ID depuis le store (dynamique)
 apiClient.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
+  const { token, tenantApiKey } = useAuthStore.getState()
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  if (tenantApiKey) config.headers['X-Tenant-ID'] = tenantApiKey
   return config
 })
 
