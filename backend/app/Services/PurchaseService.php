@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Product;
+use App\Models\ProductLot;
 use App\Models\ProductVariant;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
@@ -144,6 +145,18 @@ class PurchaseService
                 // produit le même sourceId → StockService retourne le mouvement existant.
                 $sourceId = abs(crc32("purchase:{$item->id}:{$item->quantity_received}:{$qty}"));
 
+                $lot = null;
+                if ($product->has_expiry && ! empty($reception['lot_number'])) {
+                    $lot = $this->findOrCreateLot(
+                        product:    $product,
+                        variant:    $variant,
+                        lotNumber:  $reception['lot_number'],
+                        expiryDate: $reception['expiry_date'] ?? null,
+                        qty:        (int) $qty,
+                        unitCost:   (float) $item->unit_cost,
+                    );
+                }
+
                 $this->stockService->adjust(
                     product:  $product,
                     type:     'in',
@@ -153,6 +166,7 @@ class PurchaseService
                     variant:  $variant,
                     unitCost: (float) $item->unit_cost,
                     notes:    "Réception {$order->reference}",
+                    lot:      $lot,
                 );
 
                 $item->increment('quantity_received', $qty);
@@ -188,6 +202,43 @@ class PurchaseService
         $order->update(['status' => PurchaseOrder::STATUS_CANCELLED]);
 
         return $order->fresh();
+    }
+
+    // ─── Lots ─────────────────────────────────────────────────────────────────
+
+    private function findOrCreateLot(
+        Product        $product,
+        ?ProductVariant $variant,
+        string         $lotNumber,
+        ?string        $expiryDate,
+        int            $qty,
+        float          $unitCost,
+    ): ProductLot {
+        $existing = ProductLot::where('tenant_id', $this->tenantService->currentId())
+            ->where('product_id', $product->id)
+            ->where('product_variant_id', $variant?->id)
+            ->where('lot_number', $lotNumber)
+            ->first();
+
+        if ($existing) {
+            // Seul quantity_received est incrémenté manuellement.
+            // quantity_remaining sera incrémenté par StockService::updateLotQuantity()
+            $existing->increment('quantity_received', $qty);
+
+            return $existing;
+        }
+
+        return ProductLot::create([
+            'tenant_id'          => $this->tenantService->currentId(),
+            'product_id'         => $product->id,
+            'product_variant_id' => $variant?->id,
+            'lot_number'         => $lotNumber,
+            'expiry_date'        => $expiryDate,
+            'quantity_received'  => $qty,
+            'quantity_remaining' => 0, // StockService::adjust() incrémentera via updateLotQuantity()
+            'purchase_price'     => $unitCost,
+            'is_active'          => true,
+        ]);
     }
 
     // ─── Référence ────────────────────────────────────────────────────────────

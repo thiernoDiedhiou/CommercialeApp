@@ -6,7 +6,7 @@ import {
   ChartBarIcon, ArrowsUpDownIcon, TagIcon, PlusIcon,
 } from '@heroicons/react/24/outline'
 import type { StockAdjustPrefill } from '@/components/stock/StockAdjustModal'
-import { getProduct, getProductStockMovements, createVariant } from '@/services/api/products'
+import { getProduct, getProductStockMovements, createVariant, updateVariant, getProductLots, createProductLot, updateProductLot } from '@/services/api/products'
 import { getAttributes } from '@/services/api/attributes'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import Badge from '@/components/ui/Badge'
@@ -18,7 +18,7 @@ import CanDo from '@/components/ui/CanDo'
 import { StockAdjustModal } from '@/components/stock/StockAdjustModal'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
-import type { ProductVariant } from '@/types'
+import type { ProductLot, ProductVariant } from '@/types'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -52,11 +52,31 @@ export default function ProductDetailPage() {
   const [adjustOpen, setAdjustOpen] = useState(false)
   const [adjustPrefill, setAdjustPrefill] = useState<StockAdjustPrefill | null>(null)
   const [addVariantOpen, setAddVariantOpen] = useState(false)
+  const [editVariant, setEditVariant] = useState<ProductVariant | null>(null)
+  const [addLotOpen, setAddLotOpen] = useState(false)
+  const [editLot, setEditLot] = useState<ProductLot | null>(null)
 
   const openAdjust = (prefill: StockAdjustPrefill) => {
     setAdjustPrefill(prefill)
     setAdjustOpen(true)
   }
+
+  const editVariantMutation = useMutation({
+    mutationFn: (data: { price: string; cost_price: string; sku: string; alert_threshold: string; is_active: boolean }) =>
+      updateVariant(Number(id), editVariant!.id, {
+        price:           data.price           ? Number(data.price)           : undefined,
+        cost_price:      data.cost_price      ? Number(data.cost_price)      : undefined,
+        sku:             data.sku             || undefined,
+        alert_threshold: data.alert_threshold ? Number(data.alert_threshold) : undefined,
+        is_active:       data.is_active,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['product', id] })
+      setEditVariant(null)
+      toast.success('Variante mise à jour.')
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
+  })
 
   const addVariantMutation = useMutation({
     mutationFn: (data: { attribute_value_ids: number[]; sku: string; price: string }) =>
@@ -82,6 +102,44 @@ export default function ProductDetailPage() {
     queryKey: ['product-movements', id],
     queryFn: () => getProductStockMovements(Number(id), { page: 1 }),
     enabled: !!id,
+  })
+
+  const { data: lots = [], isLoading: lotsLoading } = useQuery({
+    queryKey: ['product-lots', id],
+    queryFn: () => getProductLots(Number(id)),
+    enabled: !!id,
+  })
+
+  const addLotMutation = useMutation({
+    mutationFn: (data: { lot_number: string; expiry_date: string; quantity: string; purchase_price: string }) =>
+      createProductLot(Number(id), {
+        lot_number:     data.lot_number,
+        expiry_date:    data.expiry_date || null,
+        quantity:       parseInt(data.quantity) || 1,
+        purchase_price: data.purchase_price ? Number(data.purchase_price) : null,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['product-lots', id] })
+      qc.invalidateQueries({ queryKey: ['product', id] })
+      setAddLotOpen(false)
+      toast.success('Lot ajouté.')
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
+  })
+
+  const editLotMutation = useMutation({
+    mutationFn: (data: { expiry_date: string; is_active: boolean; notes: string }) =>
+      updateProductLot(Number(id), editLot!.id, {
+        expiry_date: data.expiry_date || null,
+        is_active:   data.is_active,
+        notes:       data.notes || null,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['product-lots', id] })
+      setEditLot(null)
+      toast.success('Lot mis à jour.')
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const movements = movementsPage?.data ?? []
@@ -338,16 +396,111 @@ export default function ProductDetailPage() {
                           </Badge>
                         </td>
                         <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <CanDo permission="variants.edit">
+                              <button type="button"
+                                onClick={() => setEditVariant(v)}
+                                className="rounded px-2 py-1 text-xs text-gray-600 border border-gray-200 hover:bg-gray-50 transition">
+                                Modifier
+                              </button>
+                            </CanDo>
+                            <CanDo permission="stock.adjust">
+                              <button type="button"
+                                onClick={() => openAdjust({
+                                  product_id: product.id,
+                                  product_name: product.name,
+                                  variant_id: v.id,
+                                  variant_summary: v.attribute_summary,
+                                })}
+                                className="rounded px-2 py-1 text-xs text-brand-primary border border-brand-primary/30 hover:bg-brand-primary/5 transition">
+                                Ajuster
+                              </button>
+                            </CanDo>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Lots (produits avec suivi d'expiration) */}
+      {product.has_expiry && (
+        <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+            <p className="text-sm font-semibold text-gray-700">
+              Lots / Expiration
+              <span className="ml-2 text-xs font-normal text-gray-400">({lots.length})</span>
+            </p>
+            <CanDo permission="stock.adjust">
+              <Button size="sm" variant="outline"
+                icon={<PlusIcon className="h-3.5 w-3.5" />}
+                onClick={() => setAddLotOpen(true)}>
+                Ajouter un lot
+              </Button>
+            </CanDo>
+          </div>
+          {lotsLoading ? (
+            <div className="p-4 space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}
+            </div>
+          ) : lots.length === 0 ? (
+            <div className="px-5 py-8 text-center text-sm text-gray-400">
+              Aucun lot enregistré. Réceptionnez un bon de commande ou ajoutez un lot manuellement.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  <tr>
+                    <th className="px-4 py-3 text-left">N° Lot</th>
+                    <th className="px-4 py-3 text-left">Expiration</th>
+                    <th className="px-4 py-3 text-right">Reçu</th>
+                    <th className="px-4 py-3 text-right">Restant</th>
+                    <th className="px-4 py-3 text-center">Statut</th>
+                    <th className="px-4 py-3 sr-only">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {lots.map((lot) => {
+                    const expired = lot.expiry_date && new Date(lot.expiry_date) < new Date()
+                    const expiringSoon = !expired && lot.expiry_date &&
+                      new Date(lot.expiry_date) <= new Date(Date.now() + 30 * 86400000)
+                    return (
+                      <tr key={lot.id} className="hover:bg-gray-50/50 transition">
+                        <td className="px-4 py-3 font-mono text-xs font-medium text-gray-800">
+                          {lot.lot_number}
+                        </td>
+                        <td className="px-4 py-3">
+                          {lot.expiry_date ? (
+                            <span className={`text-sm ${expired ? 'text-red-600 font-medium' : expiringSoon ? 'text-amber-600 font-medium' : 'text-gray-700'}`}>
+                              {formatDate(lot.expiry_date)}
+                              {expired && ' — Expiré'}
+                              {expiringSoon && !expired && ' — Bientôt'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right text-gray-500">{lot.quantity_received}</td>
+                        <td className={`px-4 py-3 text-right font-semibold ${lot.quantity_remaining <= 0 ? 'text-gray-400' : 'text-emerald-600'}`}>
+                          {lot.quantity_remaining}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <Badge variant={!lot.is_active || expired ? 'danger' : lot.quantity_remaining <= 0 ? 'default' : 'success'} dot>
+                            {!lot.is_active ? 'Inactif' : expired ? 'Expiré' : lot.quantity_remaining <= 0 ? 'Épuisé' : 'Disponible'}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-right">
                           <CanDo permission="stock.adjust">
                             <button type="button"
-                              onClick={() => openAdjust({
-                                product_id: product.id,
-                                product_name: product.name,
-                                variant_id: v.id,
-                                variant_summary: v.attribute_summary,
-                              })}
-                              className="rounded px-2 py-1 text-xs text-brand-primary border border-brand-primary/30 hover:bg-brand-primary/5 transition">
-                              Ajuster
+                              onClick={() => setEditLot(lot)}
+                              className="rounded px-2 py-1 text-xs text-gray-600 border border-gray-200 hover:bg-gray-50 transition">
+                              Modifier
                             </button>
                           </CanDo>
                         </td>
@@ -441,7 +594,262 @@ export default function ProductDetailPage() {
           prefill={adjustPrefill}
         />
       )}
+
+      {editVariant && (
+        <EditVariantModal
+          variant={editVariant}
+          isPending={editVariantMutation.isPending}
+          onClose={() => setEditVariant(null)}
+          onSubmit={(data) => editVariantMutation.mutate(data)}
+        />
+      )}
+
+      {addLotOpen && (
+        <AddLotModal
+          isPending={addLotMutation.isPending}
+          onClose={() => setAddLotOpen(false)}
+          onSubmit={(data) => addLotMutation.mutate(data)}
+        />
+      )}
+
+      {editLot && (
+        <EditLotModal
+          lot={editLot}
+          isPending={editLotMutation.isPending}
+          onClose={() => setEditLot(null)}
+          onSubmit={(data) => editLotMutation.mutate(data)}
+        />
+      )}
     </div>
+  )
+}
+
+// ── Modal d'ajout de lot ──────────────────────────────────────────────────
+
+function AddLotModal({
+  isPending,
+  onClose,
+  onSubmit,
+}: {
+  isPending: boolean
+  onClose: () => void
+  onSubmit: (data: { lot_number: string; expiry_date: string; quantity: string; purchase_price: string }) => void
+}) {
+  const [lotNumber, setLotNumber]       = useState('')
+  const [expiryDate, setExpiryDate]     = useState('')
+  const [quantity, setQuantity]         = useState('')
+  const [purchasePrice, setPurchasePrice] = useState('')
+
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title="Ajouter un lot"
+      size="sm"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>Annuler</Button>
+          <Button
+            loading={isPending}
+            disabled={!lotNumber || !quantity}
+            onClick={() => onSubmit({ lot_number: lotNumber, expiry_date: expiryDate, quantity, purchase_price: purchasePrice })}
+          >
+            Enregistrer
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <Input
+          label="N° de lot *"
+          placeholder="LOT-2024-001"
+          value={lotNumber}
+          onChange={(e) => setLotNumber(e.target.value)}
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            label="Quantité *"
+            type="number"
+            min={1}
+            placeholder="0"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+          />
+          <Input
+            label="Prix d'achat (FCFA)"
+            type="number"
+            min={0}
+            placeholder="Optionnel"
+            value={purchasePrice}
+            onChange={(e) => setPurchasePrice(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Date d'expiration</label>
+          <input
+            type="date"
+            title="Date d'expiration du lot"
+            value={expiryDate}
+            onChange={(e) => setExpiryDate(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+          />
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// ── Modal d'édition de lot ────────────────────────────────────────────────
+
+function EditLotModal({
+  lot,
+  isPending,
+  onClose,
+  onSubmit,
+}: {
+  lot: ProductLot
+  isPending: boolean
+  onClose: () => void
+  onSubmit: (data: { expiry_date: string; is_active: boolean; notes: string }) => void
+}) {
+  const [expiryDate, setExpiryDate] = useState(lot.expiry_date ?? '')
+  const [isActive, setIsActive]     = useState(lot.is_active)
+  const [notes, setNotes]           = useState(lot.notes ?? '')
+
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title={`Modifier lot — ${lot.lot_number}`}
+      size="sm"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>Annuler</Button>
+          <Button
+            loading={isPending}
+            onClick={() => onSubmit({ expiry_date: expiryDate, is_active: isActive, notes })}
+          >
+            Enregistrer
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Date d'expiration</label>
+          <input
+            type="date"
+            title="Date d'expiration du lot"
+            value={expiryDate}
+            onChange={(e) => setExpiryDate(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+          />
+        </div>
+        <Input
+          label="Notes"
+          placeholder="Optionnel"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            role="switch"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
+          />
+          <span className="text-sm text-gray-700">Lot actif (disponible à la vente)</span>
+        </label>
+      </div>
+    </Modal>
+  )
+}
+
+// ── Modal d'édition de variante ───────────────────────────────────────────
+
+function EditVariantModal({
+  variant,
+  isPending,
+  onClose,
+  onSubmit,
+}: {
+  variant: ProductVariant
+  isPending: boolean
+  onClose: () => void
+  onSubmit: (data: { price: string; cost_price: string; sku: string; alert_threshold: string; is_active: boolean }) => void
+}) {
+  const [price, setPrice]           = useState(variant.price          ? String(variant.price)          : '')
+  const [costPrice, setCostPrice]   = useState(variant.cost_price     ? String(variant.cost_price)     : '')
+  const [sku, setSku]               = useState(variant.sku            ?? '')
+  const [threshold, setThreshold]   = useState(variant.alert_threshold != null ? String(variant.alert_threshold) : '')
+  const [isActive, setIsActive]     = useState(variant.is_active)
+
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title={`Modifier — ${variant.attribute_summary ?? 'Variante'}`}
+      size="sm"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>Annuler</Button>
+          <Button
+            loading={isPending}
+            onClick={() => onSubmit({ price, cost_price: costPrice, sku, alert_threshold: threshold, is_active: isActive })}
+          >
+            Enregistrer
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            label="Prix de vente (FCFA)"
+            type="number"
+            min={0}
+            placeholder="Hérité du produit"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+          />
+          <Input
+            label="Prix d'achat (FCFA)"
+            type="number"
+            min={0}
+            placeholder="Optionnel"
+            value={costPrice}
+            onChange={(e) => setCostPrice(e.target.value)}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Input
+            label="SKU"
+            placeholder="DB-00001"
+            value={sku}
+            onChange={(e) => setSku(e.target.value)}
+          />
+          <Input
+            label="Seuil d'alerte stock"
+            type="number"
+            min={0}
+            placeholder="Optionnel"
+            value={threshold}
+            onChange={(e) => setThreshold(e.target.value)}
+          />
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            role="switch"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
+          />
+          <span className="text-sm text-gray-700">Variante active</span>
+        </label>
+      </div>
+    </Modal>
   )
 }
 

@@ -11,6 +11,7 @@ use App\Http\Controllers\Pos\PosDraftController;
 use App\Http\Controllers\Pos\PosController;
 use App\Http\Controllers\Product\AttributeController;
 use App\Http\Controllers\Product\ProductController;
+use App\Http\Controllers\Product\ProductLotController;
 use App\Http\Controllers\Product\VariantController;
 use App\Http\Controllers\Invoice\InvoiceController;
 use App\Http\Controllers\Product\ProductImportController;
@@ -136,6 +137,14 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:variants.edit');
             Route::delete('{product}/variants/{variant}',     [VariantController::class, 'destroy'])
                 ->middleware('permission:variants.delete');
+
+            // Lots (produits avec suivi d'expiration)
+            Route::get('{product}/lots',              [ProductLotController::class, 'index'])
+                ->middleware('permission:stock.view');
+            Route::post('{product}/lots',             [ProductLotController::class, 'store'])
+                ->middleware('permission:stock.adjust');
+            Route::put('{product}/lots/{lot}',        [ProductLotController::class, 'update'])
+                ->middleware('permission:stock.adjust');
         });
 
         // ── Attributs ─────────────────────────────────────────────────────────

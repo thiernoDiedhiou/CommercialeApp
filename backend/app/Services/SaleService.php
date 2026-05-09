@@ -152,10 +152,13 @@ class SaleService
 
             // ── 8. Décréments stock (StockService = seule source de mouvements) ─
             foreach ($resolvedItems as $item) {
+                $stockQty = isset($item['unit_weight']) && (float) $item['unit_weight'] > 0
+                    ? (float) $item['unit_weight']
+                    : (float) $item['quantity'];
                 $this->stockService->adjust(
                     product:  $item['product'],
                     type:     'out',
-                    quantity: (float) $item['quantity'],
+                    quantity: $stockQty,
                     source:   'sale',
                     sourceId: $sale->id,
                     variant:  $item['variant'],
@@ -200,10 +203,13 @@ class SaleService
                 $lot     = $item->lot_id ? ProductLot::find($item->lot_id) : null;
 
                 // source_id = sale.id → idempotent si cancel() est appelé deux fois
+                $restoreQty = $item->unit_weight && (float) $item->unit_weight > 0
+                    ? (float) $item->unit_weight
+                    : (float) $item->quantity;
                 $this->stockService->adjust(
                     product:  $product,
                     type:     'return',
-                    quantity: (float) $item->quantity,
+                    quantity: $restoreQty,
                     source:   'sale_cancel',
                     sourceId: $sale->id,
                     variant:  $variant,
@@ -328,8 +334,11 @@ class SaleService
                     ))
                 : null;
 
-            // Total ligne = (unit_price × quantity) - discount
-            $lineTotal = bcmul((string) $item['unit_price'], (string) $item['quantity'], 2);
+            // Total ligne : produit au poids → unit_price × unit_weight, sinon × quantity
+            $multiplier = isset($item['unit_weight']) && (float) $item['unit_weight'] > 0
+                ? (string) $item['unit_weight']
+                : (string) $item['quantity'];
+            $lineTotal = bcmul((string) $item['unit_price'], $multiplier, 2);
             $lineTotal = bcsub($lineTotal, (string) ($item['discount'] ?? '0'), 2);
 
             $resolved[] = [
@@ -351,12 +360,11 @@ class SaleService
                 ? "v:{$item['variant']->id}"
                 : "p:{$item['product']->id}";
 
-            // bcadd avec scale 3 pour la vente au poids
-            $stockNeeds[$key] = bcadd(
-                $stockNeeds[$key] ?? '0',
-                (string) $item['quantity'],
-                3,
-            );
+            // Quantité à déduire : unit_weight pour produits au poids, quantity sinon
+            $qtyNeeded = isset($item['unit_weight']) && (float) $item['unit_weight'] > 0
+                ? (string) $item['unit_weight']
+                : (string) $item['quantity'];
+            $stockNeeds[$key] = bcadd($stockNeeds[$key] ?? '0', $qtyNeeded, 3);
         }
 
         $validated = [];

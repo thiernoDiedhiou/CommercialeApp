@@ -35,7 +35,7 @@ export function CartItemRow({ item, index, onRemove, onUpdateQty, onUpdateDiscou
       <div className="mt-1.5 flex items-center gap-2 flex-wrap">
         {item.unit_weight !== null ? (
           <span className="text-xs text-gray-500">
-            {item.unit_weight} kg × {formatCurrency(item.unit_price)}
+            {item.unit_weight} {item.product.unit ?? 'kg'} × {formatCurrency(item.unit_price)}
           </span>
         ) : (
           <div className="flex items-center gap-1">

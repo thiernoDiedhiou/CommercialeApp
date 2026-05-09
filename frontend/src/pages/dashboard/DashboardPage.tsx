@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   BanknotesIcon,
@@ -106,17 +107,22 @@ export default function DashboardPage() {
           ) : (
             <ul className="divide-y divide-gray-50">
               {(data?.top_products ?? []).map((p, idx) => (
-                <li key={p.product_id} className="flex items-center justify-between py-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-500">
-                      {idx + 1}
-                    </span>
-                    <p className="truncate text-sm text-gray-800">{p.product_name}</p>
-                  </div>
-                  <div className="ml-2 shrink-0 text-right">
-                    <p className="text-sm font-medium text-gray-900">{formatCurrency(p.revenue)}</p>
-                    <p className="text-xs text-gray-400">{p.quantity_sold} u.</p>
-                  </div>
+                <li key={p.product_id}>
+                  <Link
+                    to={`/products/${p.product_id}`}
+                    className="flex items-center justify-between py-2 transition-colors hover:bg-gray-50"
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-bold text-gray-500">
+                        {idx + 1}
+                      </span>
+                      <p className="truncate text-sm text-gray-800">{p.product_name}</p>
+                    </div>
+                    <div className="ml-2 shrink-0 text-right">
+                      <p className="text-sm font-medium text-gray-900">{formatCurrency(p.revenue)}</p>
+                      <p className="text-xs text-gray-400">{p.quantity_sold} u.</p>
+                    </div>
+                  </Link>
                 </li>
               ))}
             </ul>

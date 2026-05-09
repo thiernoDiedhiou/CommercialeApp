@@ -84,6 +84,13 @@ class DashboardController extends Controller
             ];
         }
 
+        // ── [ajout] Montant en attente (factures envoyées/en retard) ────────
+        $pendingRow = DB::selectOne("
+            SELECT COALESCE(SUM(total - paid_amount), 0) AS pending_amount
+            FROM invoices
+            WHERE tenant_id = ? AND status IN ('sent', 'overdue')
+        ", [$tenantId]);
+
         // ── 4. Top 5 produits du mois courant ───────────────────────────────
         $topProductRows = DB::select("
             SELECT
@@ -143,7 +150,7 @@ class DashboardController extends Controller
             ->with(['customer:id,name'])
             ->latest('confirmed_at')
             ->limit(5)
-            ->get(['id', 'reference', 'customer_id', 'total', 'status', 'confirmed_at'])
+            ->get(['id', 'reference', 'customer_id', 'total', 'status', 'confirmed_at', 'created_at'])
             ->map(fn($s) => [
                 'id'           => $s->id,
                 'reference'    => $s->reference,
@@ -151,6 +158,7 @@ class DashboardController extends Controller
                 'total'        => (float) $s->total,
                 'status'       => $s->status,
                 'confirmed_at' => $s->confirmed_at,
+                'created_at'   => $s->created_at,
             ]);
 
         // ── [Conditionnel] Lots expirant bientôt ────────────────────────────
@@ -178,35 +186,36 @@ class DashboardController extends Controller
             ", [$tenantId, $days]);
 
             $expiringSoon = collect($expiryRows)->map(fn($r) => [
-                'product'        => $r->product,
-                'lot_number'     => $r->lot_number,
-                'expiry_date'    => $r->expiry_date,
-                'qty_remaining'  => (float) $r->qty_remaining,
-                'days_remaining' => (int)   $r->days_remaining,
+                'product_name'       => $r->product,
+                'lot_number'         => $r->lot_number,
+                'expiry_date'        => $r->expiry_date,
+                'quantity_remaining' => (float) $r->qty_remaining,
+                'days_remaining'     => (int)   $r->days_remaining,
             ])->all();
         }
 
         return response()->json([
             'today' => [
-                'sales_count'        => (int)   ($todayRow->sales_count ?? 0),
-                'revenue'            => (float) ($todayRow->revenue     ?? 0),
-                'profit'             => (float) ($todayRow->profit      ?? 0),
-                'payments_by_method' => $paymentsByMethod,
+                'sales_count'    => (int)   ($todayRow->sales_count ?? 0),
+                'revenue'        => (float) ($todayRow->revenue     ?? 0),
+                'profit'         => (float) ($todayRow->profit      ?? 0),
+                'pending_amount' => (float) ($pendingRow->pending_amount ?? 0),
             ],
-            'week_chart'    => $weekChart,
-            'top_products'  => collect($topProductRows)->map(fn($r) => [
-                'product_id' => $r->product_id,
-                'name'       => $r->name,
-                'qty_sold'   => (float) $r->qty_sold,
-                'revenue'    => (float) $r->revenue,
+            'by_payment_method' => $paymentsByMethod,
+            'week_chart'        => $weekChart,
+            'top_products'      => collect($topProductRows)->map(fn($r) => [
+                'product_id'    => $r->product_id,
+                'product_name'  => $r->name,
+                'quantity_sold' => (float) $r->qty_sold,
+                'revenue'       => (float) $r->revenue,
             ]),
             'stock_alerts'  => collect($stockAlertRows)->map(fn($r) => [
-                'product_id'    => $r->product_id,
-                'name'          => $r->name,
-                'variant_id'    => $r->variant_id,
-                'variant'       => $r->variant,
-                'current_stock' => (float) $r->current_stock,
-                'threshold'     => (int)   $r->threshold,
+                'product_id'      => $r->product_id,
+                'product_name'    => $r->name,
+                'variant_id'      => $r->variant_id,
+                'variant_summary' => $r->variant,
+                'current_stock'   => (float) $r->current_stock,
+                'threshold'       => (int)   $r->threshold,
             ]),
             'expiring_soon' => $expiringSoon,
             'recent_sales'  => $recentSales,

@@ -17,6 +17,8 @@ class ReceivePurchaseOrderRequest extends FormRequest
             'receptions'                      => ['required', 'array', 'min:1'],
             'receptions.*.id'                 => ['required', 'integer'],
             'receptions.*.quantity_received'  => ['required', 'numeric', 'min:0'],
+            'receptions.*.lot_number'         => ['nullable', 'string', 'max:100'],
+            'receptions.*.expiry_date'        => ['nullable', 'date', 'after:today'],
         ];
     }
 }

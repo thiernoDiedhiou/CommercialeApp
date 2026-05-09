@@ -175,8 +175,11 @@ export interface ProductLot {
   product_variant_id: number | null
   lot_number: string
   expiry_date: string | null
+  quantity_received: number
   quantity_remaining: number
+  purchase_price: string | null
   is_active: boolean
+  notes: string | null
 }
 
 export interface CreateProductData {
@@ -206,6 +209,7 @@ export interface CreateVariantData {
   price?: number | null
   cost_price?: number | null
   alert_threshold?: number | null
+  is_active?: boolean
 }
 
 // ── Product Import ────────────────────────────────────────────────────────
@@ -257,7 +261,7 @@ export interface PurchaseOrderItem {
   quantity_ordered: string
   quantity_received: string
   unit_cost: string
-  product?: Pick<Product, 'id' | 'name' | 'unit'>
+  product?: Pick<Product, 'id' | 'name' | 'unit' | 'has_expiry'>
   variant?: Pick<ProductVariant, 'id' | 'attribute_summary'>
 }
 
@@ -292,6 +296,8 @@ export type UpdatePurchaseOrderData = Partial<CreatePurchaseOrderData>
 export interface ReceiveItemData {
   id: number
   quantity_received: number
+  lot_number?: string
+  expiry_date?: string
 }
 
 // ── Customers ─────────────────────────────────────────────────────────────

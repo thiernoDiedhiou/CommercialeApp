@@ -39,7 +39,7 @@ class PurchaseOrderController extends Controller
 
     public function show(PurchaseOrder $purchaseOrder): JsonResponse
     {
-        $purchaseOrder->load(['supplier:id,name', 'user:id,name', 'items.product:id,name,unit', 'items.variant:id,attribute_summary']);
+        $purchaseOrder->load(['supplier:id,name', 'user:id,name', 'items.product:id,name,unit,has_expiry', 'items.variant:id,attribute_summary']);
 
         return response()->json(['data' => $purchaseOrder]);
     }

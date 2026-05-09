@@ -1,6 +1,7 @@
 import apiClient from '@/lib/axios'
 import type {
   Product,
+  ProductLot,
   ProductVariant,
   PaginatedResponse,
   StockMovement,
@@ -129,4 +130,35 @@ export async function updateVariant(
 
 export async function deleteVariant(productId: number, variantId: number): Promise<void> {
   await apiClient.delete(`/api/v1/products/${productId}/variants/${variantId}`)
+}
+
+// ── Lots ──────────────────────────────────────────────────────────────────
+
+export async function getProductLots(productId: number): Promise<ProductLot[]> {
+  const { data } = await apiClient.get<{ data: ProductLot[] }>(`/api/v1/products/${productId}/lots`)
+  return data.data
+}
+
+export async function createProductLot(
+  productId: number,
+  body: {
+    lot_number: string
+    expiry_date?: string | null
+    quantity: number
+    purchase_price?: number | null
+    product_variant_id?: number | null
+    notes?: string | null
+  },
+): Promise<ProductLot> {
+  const { data } = await apiClient.post<{ data: ProductLot }>(`/api/v1/products/${productId}/lots`, body)
+  return data.data
+}
+
+export async function updateProductLot(
+  productId: number,
+  lotId: number,
+  body: { expiry_date?: string | null; is_active?: boolean; notes?: string | null },
+): Promise<ProductLot> {
+  const { data } = await apiClient.put<{ data: ProductLot }>(`/api/v1/products/${productId}/lots/${lotId}`, body)
+  return data.data
 }
