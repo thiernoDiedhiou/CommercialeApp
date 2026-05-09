@@ -6,7 +6,7 @@ import {
   ChartBarIcon, ArrowsUpDownIcon, TagIcon, PlusIcon,
 } from '@heroicons/react/24/outline'
 import type { StockAdjustPrefill } from '@/components/stock/StockAdjustModal'
-import { getProduct, getProductStockMovements, createVariant, updateVariant, getProductLots, createProductLot, updateProductLot } from '@/services/api/products'
+import { getProduct, getProductStockMovements, createVariant, updateVariant, getProductLots, createProductLot, updateProductLot, regularizeProductLots } from '@/services/api/products'
 import { getAttributes } from '@/services/api/attributes'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import Badge from '@/components/ui/Badge'
@@ -55,6 +55,7 @@ export default function ProductDetailPage() {
   const [editVariant, setEditVariant] = useState<ProductVariant | null>(null)
   const [addLotOpen, setAddLotOpen] = useState(false)
   const [editLot, setEditLot] = useState<ProductLot | null>(null)
+  const [regularizeOpen, setRegularizeOpen] = useState(false)
 
   const openAdjust = (prefill: StockAdjustPrefill) => {
     setAdjustPrefill(prefill)
@@ -142,6 +143,21 @@ export default function ProductDetailPage() {
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
+  const regularizeMutation = useMutation({
+    mutationFn: (data: { lot_number: string; expiry_date: string; notes: string }) =>
+      regularizeProductLots(Number(id), {
+        lot_number:  data.lot_number || undefined,
+        expiry_date: data.expiry_date || null,
+        notes:       data.notes || undefined,
+      }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['product-lots', id] })
+      setRegularizeOpen(false)
+      toast.success(`${res.orphaned_absorbed} unité(s) affectées au lot.`)
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
+  })
+
   const movements = movementsPage?.data ?? []
 
   if (isLoading) {
@@ -200,13 +216,23 @@ export default function ProductDetailPage() {
 
         <div className="flex gap-2">
           {!hasVariants && (
-            <CanDo permission="stock.adjust">
-              <Button variant="outline"
-                onClick={() => openAdjust({ product_id: product.id, product_name: product.name, variant_id: null, variant_summary: null })}
-                icon={<ArrowsUpDownIcon className="h-4 w-4" />}>
-                Ajuster stock
-              </Button>
-            </CanDo>
+            product.has_expiry ? (
+              <CanDo permission="stock.adjust">
+                <Button variant="outline"
+                  onClick={() => setAddLotOpen(true)}
+                  icon={<PlusIcon className="h-4 w-4" />}>
+                  Ajouter un lot
+                </Button>
+              </CanDo>
+            ) : (
+              <CanDo permission="stock.adjust">
+                <Button variant="outline"
+                  onClick={() => openAdjust({ product_id: product.id, product_name: product.name, variant_id: null, variant_summary: null })}
+                  icon={<ArrowsUpDownIcon className="h-4 w-4" />}>
+                  Ajuster stock
+                </Button>
+              </CanDo>
+            )
           )}
           <CanDo permission="products.edit">
             <Button icon={<PencilSquareIcon className="h-4 w-4" />}
@@ -276,6 +302,43 @@ export default function ProductDetailPage() {
                 <span className="text-gray-900">{variants.reduce((s, v) => s + v.stock_quantity, 0)}</span>
               </div>
             </div>
+          ) : product.has_expiry ? (
+            (() => {
+              const lotAvailable = lots
+                .filter(l => l.is_active && (!l.expiry_date || new Date(l.expiry_date) > new Date()))
+                .reduce((s, l) => s + l.quantity_remaining, 0)
+              const lotTotal = lots.reduce((s, l) => s + l.quantity_remaining, 0)
+              const orphaned = product.stock_quantity - lotTotal
+              const low = product.alert_threshold !== null && lotAvailable <= product.alert_threshold
+              return (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Disponible</span>
+                    <span className={`text-xl font-bold ${low ? 'text-red-600' : 'text-emerald-600'}`}>
+                      {lotAvailable}
+                      {product.unit && <span className="text-sm font-normal ml-1">{product.unit}</span>}
+                    </span>
+                  </div>
+                  {orphaned > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Sans lot</span>
+                      <span className="text-amber-600 font-medium">{orphaned}</span>
+                    </div>
+                  )}
+                  {product.alert_threshold !== null && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Seuil d'alerte</span>
+                      <span className="font-medium text-amber-600">{product.alert_threshold}</span>
+                    </div>
+                  )}
+                  {low && (
+                    <div className="mt-2 rounded-lg bg-red-50 border border-red-100 px-3 py-1.5 text-xs text-red-600 font-medium">
+                      ⚠ Stock bas — réapprovisionner
+                    </div>
+                  )}
+                </div>
+              )
+            })()
           ) : (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
@@ -427,6 +490,32 @@ export default function ProductDetailPage() {
           )}
         </div>
       )}
+
+      {/* Bannière stock orphelin */}
+      {product.has_expiry && (() => {
+        const lotTotal  = lots.reduce((s, l) => s + l.quantity_remaining, 0)
+        const orphaned  = product.stock_quantity - lotTotal
+        if (orphaned <= 0) return null
+        return (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-amber-800">
+                {orphaned} unité{orphaned > 1 ? 's' : ''} sans lot détecté{orphaned > 1 ? 'es' : 'e'}
+              </p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                Ce stock existe en entrepôt mais n'est rattaché à aucun lot — il ne peut pas être vendu à la caisse tant qu'il n'est pas régularisé.
+              </p>
+            </div>
+            <CanDo permission="stock.adjust">
+              <Button size="sm" variant="outline"
+                onClick={() => setRegularizeOpen(true)}
+                className="shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100">
+                Régulariser
+              </Button>
+            </CanDo>
+          </div>
+        )
+      })()}
 
       {/* Lots (produits avec suivi d'expiration) */}
       {product.has_expiry && (
@@ -612,6 +701,19 @@ export default function ProductDetailPage() {
         />
       )}
 
+      {regularizeOpen && (() => {
+        const lotTotal = lots.reduce((s, l) => s + l.quantity_remaining, 0)
+        const orphaned = product.stock_quantity - lotTotal
+        return (
+          <RegularizeModal
+            orphaned={orphaned}
+            isPending={regularizeMutation.isPending}
+            onClose={() => setRegularizeOpen(false)}
+            onSubmit={(data) => regularizeMutation.mutate(data)}
+          />
+        )
+      })()}
+
       {editLot && (
         <EditLotModal
           lot={editLot}
@@ -621,6 +723,74 @@ export default function ProductDetailPage() {
         />
       )}
     </div>
+  )
+}
+
+// ── Modal de régularisation stock orphelin ────────────────────────────────
+
+function RegularizeModal({
+  orphaned,
+  isPending,
+  onClose,
+  onSubmit,
+}: {
+  orphaned: number
+  isPending: boolean
+  onClose: () => void
+  onSubmit: (data: { lot_number: string; expiry_date: string; notes: string }) => void
+}) {
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+  const [lotNumber, setLotNumber]   = useState(`REG-${today}`)
+  const [expiryDate, setExpiryDate] = useState('')
+  const [notes, setNotes]           = useState('Régularisation stock existant')
+
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title="Régulariser le stock orphelin"
+      size="sm"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>Annuler</Button>
+          <Button
+            loading={isPending}
+            onClick={() => onSubmit({ lot_number: lotNumber, expiry_date: expiryDate, notes })}
+          >
+            Affecter {orphaned} unité{orphaned > 1 ? 's' : ''}
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <div className="rounded-lg bg-amber-50 border border-amber-100 px-4 py-3 text-sm text-amber-800">
+          <strong>{orphaned} unité{orphaned > 1 ? 's' : ''}</strong> seront affectées à un nouveau lot
+          sans créer de mouvement de stock supplémentaire.
+        </div>
+        <Input
+          label="N° de lot"
+          value={lotNumber}
+          onChange={(e) => setLotNumber(e.target.value)}
+        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Date d'expiration <span className="text-gray-400 font-normal">(optionnel)</span>
+          </label>
+          <input
+            type="date"
+            title="Date d'expiration du lot de régularisation"
+            value={expiryDate}
+            onChange={(e) => setExpiryDate(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+          />
+        </div>
+        <Input
+          label="Notes"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
+      </div>
+    </Modal>
   )
 }
 

@@ -232,7 +232,8 @@ La page **Produits** affiche tous vos produits avec filtres :
 La fiche détail affiche :
 - **Tarification** : prix de vente, prix d'achat, bénéfice unitaire et marge
 - **Stock** : quantité disponible, seuil d'alerte, alerte si stock bas
-- **Informations** : statut, code-barres, options
+- **Informations** : statut, code-barres, options actives
+- **Lots / Expiration** : section visible uniquement pour les produits avec suivi d'expiration
 - **Variantes** : tableau de toutes les variantes avec leur stock individuel
 - **Mouvements de stock** : historique des entrées/sorties pour ce produit
 
@@ -249,13 +250,22 @@ La fiche détail affiche :
    - **Prix d'achat** : coût d'acquisition (pour le calcul de la marge)
    - **Unité** : pièce, kg, L, etc.
    - **Seuil d'alerte stock** : déclenche une alerte quand le stock descend en dessous
-4. Activez les options si besoin :
+4. Activez les options avancées si besoin (voir sections dédiées ci-dessous) :
    - **Produit à variantes** : pour les produits avec taille, couleur, format…
-   - **Vendu au poids** : saisie en kg au POS
+   - **Vendu au poids** : saisie du poids en kg au POS
    - **Gestion par lots / expiration** : suivi des dates de péremption
 5. Cliquez sur **Créer le produit**
 
-### Créer un produit avec variantes
+> **Règle importante :** les options **Produit à variantes**, **Vendu au poids** et **Gestion par lots** ne peuvent pas être modifiées après création. Choisissez bien dès le départ.
+
+---
+
+### Option 1 — Produits à variantes
+
+**Quand l'utiliser ?**
+Pour un produit vendu en plusieurs déclinaisons : T-shirt Blanc/M, T-shirt Blanc/L, Djellaba Bleu/XL, etc. Chaque variante a son propre stock, son propre SKU et peut avoir un prix différent.
+
+#### Créer les variantes lors de la création du produit
 
 Activez **Produit à variantes**, puis suivez les 3 étapes :
 
@@ -273,11 +283,145 @@ Activez **Produit à variantes**, puis suivez les 3 étapes :
 - Pour chaque combinaison, saisissez un SKU et/ou un prix spécifique (optionnel)
 - Supprimez les combinaisons non souhaitées avec la corbeille
 
+#### Gérer les variantes depuis la fiche détail
+
+Depuis la fiche détail du produit, la section **Variantes** liste toutes les déclinaisons :
+
+| Colonne | Description |
+|---|---|
+| **Combinaison** | Ex : Blanc / M |
+| **SKU** | Code unique de cette variante |
+| **Prix** | Prix spécifique ou "Hérité" (= prix du produit parent) |
+| **Stock** | Quantité disponible pour cette variante |
+| **Statut** | Actif / Inactif |
+
+**Ajouter une variante** (bouton `+ Ajouter une variante`) : sélectionnez les valeurs d'attribut et saisissez un SKU et/ou prix si nécessaire.
+
+**Modifier une variante** (bouton `Modifier`) : permet de changer le prix de vente, le prix d'achat, le SKU, le seuil d'alerte et activer/désactiver la variante.
+
+**Ajuster le stock d'une variante** (bouton `Ajuster`) : ouvre le formulaire d'ajustement de stock pour cette variante uniquement.
+
+#### Au POS avec une variante
+
+Quand vous cliquez sur un produit à variantes à la caisse, une fenêtre s'ouvre avec toutes les variantes disponibles. Cliquez sur la variante souhaitée pour l'ajouter au panier.
+
+> **Note :** Seules les variantes **actives** avec du **stock disponible** s'affichent à la caisse.
+
+---
+
+### Option 2 — Vendu au poids
+
+**Quand l'utiliser ?**
+Pour les produits vendus à la pesée : Farine de blé, Riz en vrac, Petit pois, viandes, etc. Le caissier saisit le poids exact en kg plutôt qu'une quantité en nombre de pièces.
+
+#### Comment ça fonctionne
+
+- Dans le formulaire produit, activez **Vendu au poids** et définissez l'unité (ex : kg, g, L)
+- Le stock est exprimé dans cette unité (ex : 54 kg en stock)
+- Le prix de vente est le prix **par unité de mesure** (ex : 700 FCFA/kg)
+
+#### Au POS avec un produit au poids
+
+1. Cliquez sur le produit dans le catalogue — une fenêtre s'ouvre
+2. Saisissez le **poids** (ex : 2.5 pour 2,5 kg)
+3. Cliquez sur **Ajouter au panier**
+4. Dans le panier, la ligne affiche : `2.5 kg × 700 FCFA = 1 750 FCFA`
+
+> Le stock est automatiquement décrémenté du poids vendu (−2.5 kg).
+
+#### Ajuster le stock d'un produit au poids
+
+Utilisez le bouton **Ajuster stock** sur la fiche détail. Vous pouvez entrer des décimales (ex : 12.750 pour 12 kg 750 g).
+
+---
+
+### Option 3 — Gestion par lots / expiration
+
+**Quand l'utiliser ?**
+Pour les produits ayant une date de péremption : médicaments, produits alimentaires (dentifrice, yaourts, conserves), cosmétiques, etc. Chaque arrivage est enregistré comme un **lot** avec sa date d'expiration.
+
+**Principe :** à la vente, le système utilise automatiquement le lot qui expire **le plus tôt** en premier (méthode FEFO — First Expiry, First Out). Vous n'avez pas à choisir manuellement.
+
+#### La fiche détail d'un produit avec lots
+
+La section **Lots / Expiration** remplace l'affichage de stock simple. Elle affiche :
+
+| Colonne | Description |
+|---|---|
+| **N° Lot** | Identifiant du lot (ex : LOT-2026-001) |
+| **Expiration** | Date de péremption (orange = expire dans 30 jours, rouge = expiré) |
+| **Reçu** | Quantité totale reçue pour ce lot |
+| **Restant** | Quantité encore disponible (diminue à chaque vente) |
+| **Statut** | Disponible / Bientôt expiré / Expiré / Épuisé / Inactif |
+
+La **carte Stock** affiche :
+
+- **Disponible** : total des lots actifs non expirés (ce qui peut être vendu)
+- **Sans lot** : stock présent mais non affecté à un lot (bloqué à la caisse — voir "Régulariser")
+
+#### Ajouter un lot manuellement
+
+Depuis la fiche détail, cliquez sur **+ Ajouter un lot** (bouton en haut à droite ou dans la section Lots).
+
+| Champ | Obligatoire | Description |
+|---|---|---|
+| **N° de lot** | Oui | Numéro figurant sur l'emballage fournisseur |
+| **Quantité** | Oui | Nombre d'unités de ce lot |
+| **Date d'expiration** | Non | Date de péremption (format JJ/MM/AAAA) |
+| **Prix d'achat** | Non | Coût unitaire de ce lot |
+
+> Une entrée de stock est automatiquement créée — le total disponible augmente.
+
+#### Modifier un lot
+
+Cliquez sur **Modifier** à droite d'un lot pour changer :
+
+- La date d'expiration (correction d'une erreur de saisie)
+- Le statut actif/inactif (désactiver un lot abîmé ou retiré)
+- Les notes
+
+#### Régulariser le stock orphelin
+
+Si la section Stock affiche une ligne **"Sans lot : X unités"** accompagnée d'une **bannière orange**, cela signifie que des unités existent en stock mais ne sont rattachées à aucun lot — elles ne peuvent pas être vendues à la caisse.
+
+**Quand ça arrive ?**
+
+- Stock saisi manuellement avant que l'option "Gestion par lots" soit activée
+- Ajustement de stock effectué sans numéro de lot
+
+**Comment corriger :**
+
+1. Cliquez sur **Régulariser** dans la bannière orange
+2. Vérifiez ou modifiez le numéro de lot proposé (ex : `REG-20260509`)
+3. Ajoutez une date d'expiration si vous la connaissez
+4. Cliquez sur **Affecter X unités**
+
+> **Important :** la régularisation n'ajoute pas de stock — elle affecte simplement le stock existant à un lot pour le rendre vendable. Le compteur total ne change pas.
+
+#### Au POS avec un produit à lots
+
+La vente se déroule exactement comme un produit normal. Le caissier **n'a rien à choisir** — le système sélectionne automatiquement le lot qui expire le plus tôt.
+
+Si aucun lot disponible n'a la quantité suffisante, la vente est bloquée avec le message *"Aucun lot disponible"*. Dans ce cas, réapprovisionnez le produit via un bon de commande ou ajoutez un lot manuellement.
+
+#### Réceptionner un bon de commande avec lots
+
+Lors de la réception d'un bon de commande (voir section 7), pour les articles avec suivi d'expiration, deux champs supplémentaires apparaissent :
+
+- **N° de lot** : numéro indiqué sur les cartons reçus
+- **Date d'expiration** : date de péremption du lot
+
+Renseignez ces informations pour que le lot soit automatiquement créé et le stock mis à jour.
+
+> Si vous ne renseignez pas le numéro de lot lors de la réception, le stock sera quand même incrémenté mais les unités seront "sans lot" et ne pourront pas être vendues à la caisse. Pensez à régulariser ensuite.
+
+---
+
 ### Modifier un produit
 
 Depuis la liste ou la fiche détail, cliquez sur l'icône **crayon** ou le bouton **Modifier**.
 
-> **Note :** L'option "Produit à variantes" ne peut pas être modifiée après création.
+> **Note :** Les options **Produit à variantes**, **Vendu au poids** et **Gestion par lots** ne peuvent pas être modifiées après création.
 
 ### Importer des produits en masse (CSV)
 
@@ -339,6 +483,13 @@ Brouillon → Commandé → Partiellement reçu → Reçu
 | **Annuler** | Statut → Annulé | Bon brouillon ou commandé |
 
 **Réception partielle :** lors de la réception, saisissez la quantité réellement reçue pour chaque ligne. Le bon passe en "Partiellement reçu" si toutes les lignes ne sont pas complètes.
+
+**Réception avec suivi de lots :** pour les produits avec l'option **Gestion par lots / expiration** activée, deux champs supplémentaires apparaissent sur chaque ligne :
+
+- **N° de lot** : le numéro figurant sur les cartons (ex : `LOT-2026-003`)
+- **Date d'expiration** : la date de péremption imprimée sur l'emballage
+
+Renseignez ces informations pour que le lot soit automatiquement créé et immédiatement disponible à la vente. Si vous ne les saisissez pas, le stock sera quand même incrémenté mais les unités seront "sans lot" et bloquées à la caisse jusqu'à régularisation.
 
 ---
 
@@ -403,6 +554,8 @@ Pour corriger manuellement le stock d'un produit :
 6. Cliquez sur **Enregistrer**
 
 > **Inventaire :** utilisez ce type pour corriger une différence entre le stock théorique et le stock réel après comptage physique.
+>
+> **Produits avec suivi de lots :** le bouton "Ajuster stock" est remplacé par "Ajouter un lot" sur la fiche détail. Pour ces produits, toute entrée de stock passe obligatoirement par la création d'un lot afin de garantir la traçabilité.
 
 ---
 

@@ -139,11 +139,13 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:variants.delete');
 
             // Lots (produits avec suivi d'expiration)
-            Route::get('{product}/lots',              [ProductLotController::class, 'index'])
+            Route::get('{product}/lots',                   [ProductLotController::class, 'index'])
                 ->middleware('permission:stock.view');
-            Route::post('{product}/lots',             [ProductLotController::class, 'store'])
+            Route::post('{product}/lots',                  [ProductLotController::class, 'store'])
                 ->middleware('permission:stock.adjust');
-            Route::put('{product}/lots/{lot}',        [ProductLotController::class, 'update'])
+            Route::post('{product}/lots/regularize',       [ProductLotController::class, 'regularize'])
+                ->middleware('permission:stock.adjust');
+            Route::put('{product}/lots/{lot}',             [ProductLotController::class, 'update'])
                 ->middleware('permission:stock.adjust');
         });
 

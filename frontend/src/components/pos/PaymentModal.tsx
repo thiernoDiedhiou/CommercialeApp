@@ -122,6 +122,7 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
             <select
               value={line.method}
               onChange={(e) => updateLine(i, { method: e.target.value })}
+              aria-label="Méthode de paiement"
               className="flex-1 rounded-lg border border-gray-200 py-2 px-2 text-sm text-gray-700 bg-white"
             >
               {METHODS.map((m) => (
@@ -150,6 +151,7 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
               <button
                 type="button"
                 onClick={() => removeLine(i)}
+                aria-label="Supprimer ce mode de paiement"
                 className="text-gray-400 hover:text-red-500 shrink-0"
               >
                 <TrashIcon className="h-4 w-4" />

@@ -162,3 +162,14 @@ export async function updateProductLot(
   const { data } = await apiClient.put<{ data: ProductLot }>(`/api/v1/products/${productId}/lots/${lotId}`, body)
   return data.data
 }
+
+export async function regularizeProductLots(
+  productId: number,
+  body: { lot_number?: string; expiry_date?: string | null; notes?: string | null },
+): Promise<{ data: ProductLot; orphaned_absorbed: number }> {
+  const { data } = await apiClient.post<{ data: ProductLot; orphaned_absorbed: number }>(
+    `/api/v1/products/${productId}/lots/regularize`,
+    body,
+  )
+  return data
+}

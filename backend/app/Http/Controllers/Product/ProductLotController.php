@@ -101,4 +101,48 @@ class ProductLotController extends Controller
 
         return response()->json(['data' => $lot]);
     }
+
+    /**
+     * Régularise le stock orphelin (stock_quantity - sum(lots.quantity_remaining)).
+     * Crée un lot sans mouvement de stock supplémentaire — le stock_quantity ne change pas.
+     */
+    public function regularize(Request $request, Product $product): JsonResponse
+    {
+        $data = $request->validate([
+            'lot_number'  => ['nullable', 'string', 'max:100'],
+            'expiry_date' => ['nullable', 'date'],
+            'notes'       => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $lotTotal = ProductLot::where('product_id', $product->id)->sum('quantity_remaining');
+        $orphaned = (int) $product->stock_quantity - (int) $lotTotal;
+
+        if ($orphaned <= 0) {
+            return response()->json(['message' => 'Aucun stock orphelin à régulariser.'], 422);
+        }
+
+        $lotNumber = $data['lot_number'] ?? ('REG-' . now()->format('Ymd'));
+
+        $existing = ProductLot::where('product_id', $product->id)
+            ->where('lot_number', $lotNumber)
+            ->first();
+
+        if ($existing) {
+            return response()->json(['message' => "Le lot {$lotNumber} existe déjà. Choisissez un autre numéro."], 422);
+        }
+
+        $lot = ProductLot::create([
+            'tenant_id'          => $this->tenantService->currentId(),
+            'product_id'         => $product->id,
+            'product_variant_id' => null,
+            'lot_number'         => $lotNumber,
+            'expiry_date'        => $data['expiry_date'] ?? null,
+            'quantity_received'  => $orphaned,
+            'quantity_remaining' => $orphaned,
+            'is_active'          => true,
+            'notes'              => $data['notes'] ?? 'Régularisation stock existant',
+        ]);
+
+        return response()->json(['data' => $lot, 'orphaned_absorbed' => $orphaned], 201);
+    }
 }
