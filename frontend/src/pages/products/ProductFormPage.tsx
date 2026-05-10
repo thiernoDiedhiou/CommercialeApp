@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { getProduct, createProduct, updateProduct, createVariant } from '@/services/api/products'
+import { getProduct, createProduct, updateProduct, createVariant, deleteProduct } from '@/services/api/products'
 import { getApiErrorMessage } from '@/lib/errors'
 import { toast } from '@/store/toastStore'
 import Button from '@/components/ui/Button'
@@ -235,6 +235,7 @@ export default function ProductFormPage() {
 
   const hasVariants = watch('has_variants')
   const price = watch('price') ?? 0
+  const sku = watch('sku') ?? ''
 
   const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
   const MAX_SIZE_BYTES = 2 * 1024 * 1024 // 2 Mo
@@ -268,9 +269,15 @@ export default function ProductFormPage() {
       const { variants, ...productData } = values
       const created = await createProduct(productData, imageFile)
       if (created.has_variants && variants?.length) {
-        await Promise.all(
-          variants.map((v) => createVariant(created.id, v as CreateVariantData)),
-        )
+        try {
+          await Promise.all(
+            variants.map((v) => createVariant(created.id, v as CreateVariantData)),
+          )
+        } catch (err) {
+          // Rollback : supprimer le produit orphelin si les variantes échouent
+          await deleteProduct(created.id).catch(() => {})
+          throw err
+        }
       }
       return created
     },
@@ -450,6 +457,7 @@ export default function ProductFormPage() {
           <Section title="Variantes">
             <VariantManager
               productPrice={price}
+              productSku={sku}
               onChange={(variants) => setValue('variants', variants)}
             />
           </Section>

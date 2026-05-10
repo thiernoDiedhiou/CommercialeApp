@@ -39,9 +39,16 @@ class VariantController extends Controller
         $summary  = $values->pluck('value')->join(' / ');
 
         $variant = DB::transaction(function () use ($product, $data, $valueIds, $summary) {
+            // Auto-generate SKU if not provided — avoids NOT NULL DB constraint error
+            $sku = $data['sku'] ?? null;
+            if (! $sku) {
+                $suffix = strtoupper(str_replace([' / ', ' '], ['-', ''], $summary));
+                $sku = ($product->sku ? $product->sku . '-' : '') . $suffix;
+            }
+
             $variant = ProductVariant::create([
                 'product_id'        => $product->id,
-                'sku'               => $data['sku'] ?? null,
+                'sku'               => $sku,
                 'barcode'           => $data['barcode'] ?? null,
                 'price'             => $data['price'] ?? $product->price,
                 'cost_price'        => $data['cost_price'] ?? $product->cost_price,
