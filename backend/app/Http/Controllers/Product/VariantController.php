@@ -7,6 +7,7 @@ use App\Models\AttributeValue;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\SaleItem;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -38,32 +39,43 @@ class VariantController extends Controller
         $values   = AttributeValue::whereIn('id', $valueIds)->get();
         $summary  = $values->pluck('value')->join(' / ');
 
-        $variant = DB::transaction(function () use ($product, $data, $valueIds, $summary) {
-            // Auto-generate SKU if not provided — avoids NOT NULL DB constraint error
-            $sku = $data['sku'] ?? null;
-            if (! $sku) {
-                $suffix = strtoupper(str_replace([' / ', ' '], ['-', ''], $summary));
-                $sku = ($product->sku ? $product->sku . '-' : '') . $suffix;
+        // Auto-generate SKU if not provided — avoids NOT NULL DB constraint error
+        $sku = $data['sku'] ?? null;
+        if (! $sku) {
+            $suffix = strtoupper(str_replace([' / ', ' '], ['-', ''], $summary));
+            $sku = ($product->sku ? $product->sku . '-' : '') . $suffix;
+        }
+
+        try {
+            $variant = DB::transaction(function () use ($product, $data, $valueIds, $summary, $sku) {
+                $variant = ProductVariant::create([
+                    'product_id'        => $product->id,
+                    'sku'               => $sku,
+                    'barcode'           => $data['barcode'] ?? null,
+                    'price'             => $data['price'] ?? $product->price,
+                    'cost_price'        => $data['cost_price'] ?? $product->cost_price,
+                    'alert_threshold'   => $data['alert_threshold'] ?? null,
+                    'attribute_summary' => $summary,
+                    'stock_quantity'    => 0,
+                    'is_active'         => true,
+                ]);
+
+                $variant->attributeValues()->sync($valueIds);
+
+                return $variant;
+            });
+
+            return response()->json(['data' => $variant->load('attributeValues.attribute')], 201);
+        } catch (UniqueConstraintViolationException $e) {
+            // Distingue la contrainte violée (sku vs barcode) pour un message précis
+            if (str_contains($e->getMessage(), 'barcode') && ! empty($data['barcode'])) {
+                $message = "Le code-barres « {$data['barcode']} » est déjà utilisé par une autre variante.";
+            } else {
+                $message = "Le SKU « {$sku} » est déjà utilisé par une autre variante. Modifiez-le avant de continuer.";
             }
 
-            $variant = ProductVariant::create([
-                'product_id'        => $product->id,
-                'sku'               => $sku,
-                'barcode'           => $data['barcode'] ?? null,
-                'price'             => $data['price'] ?? $product->price,
-                'cost_price'        => $data['cost_price'] ?? $product->cost_price,
-                'alert_threshold'   => $data['alert_threshold'] ?? null,
-                'attribute_summary' => $summary,
-                'stock_quantity'    => 0,
-                'is_active'         => true,
-            ]);
-
-            $variant->attributeValues()->sync($valueIds);
-
-            return $variant;
-        });
-
-        return response()->json(['data' => $variant->load('attributeValues.attribute')], 201);
+            return response()->json(['message' => $message], 422);
+        }
     }
 
     public function update(Request $request, Product $product, ProductVariant $variant): JsonResponse
@@ -86,7 +98,7 @@ class VariantController extends Controller
         return response()->json(['data' => $variant->fresh('attributeValues.attribute')]);
     }
 
-    public function destroy(Request $request, Product $product, ProductVariant $variant): JsonResponse
+    public function destroy(Product $product, ProductVariant $variant): JsonResponse
     {
         if ($variant->product_id !== $product->id) {
             return response()->json(['message' => 'Variante introuvable pour ce produit.'], 404);

@@ -1,41 +1,9 @@
 import { NavLink } from 'react-router-dom'
-import {
-  HomeIcon,
-  ShoppingCartIcon,
-  ArchiveBoxIcon,
-  UsersIcon,
-  ClipboardDocumentListIcon,
-  CurrencyDollarIcon,
-  Cog6ToothIcon,
-  XMarkIcon,
-  TruckIcon,
-  ShoppingBagIcon,
-  ChartBarIcon,
-  DocumentTextIcon,
-} from '@heroicons/react/24/outline'
+import { XMarkIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/authStore'
+import { useHomePath } from '@/hooks/useHomePath'
+import { NAV_ITEMS } from '@/lib/navItems'
 import { cn } from '@/lib/utils'
-
-interface NavItem {
-  label: string
-  path: string
-  icon: React.ComponentType<{ className?: string }>
-  permission: string
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { label: 'Tableau de bord', path: '/dashboard',  icon: HomeIcon,                  permission: 'dashboard.view' },
-  { label: 'Caisse POS',      path: '/pos',         icon: ShoppingCartIcon,          permission: 'pos.access' },
-  { label: 'Ventes',          path: '/sales',        icon: CurrencyDollarIcon,        permission: 'sales.view' },
-  { label: 'Factures',        path: '/invoices',     icon: DocumentTextIcon,          permission: 'invoices.view' },
-  { label: 'Produits',        path: '/products',     icon: ArchiveBoxIcon,            permission: 'products.view' },
-  { label: 'Fournisseurs',    path: '/suppliers',    icon: TruckIcon,                 permission: 'suppliers.view' },
-  { label: 'Achats',          path: '/purchases',    icon: ShoppingBagIcon,           permission: 'purchases.view' },
-  { label: 'Clients',         path: '/customers',    icon: UsersIcon,                 permission: 'customers.view' },
-  { label: 'Stock',           path: '/stock',        icon: ClipboardDocumentListIcon, permission: 'stock.view' },
-  { label: 'Rapports',        path: '/reports',      icon: ChartBarIcon,              permission: 'reports.view' },
-  { label: 'Paramètres',      path: '/settings',     icon: Cog6ToothIcon,             permission: 'users.view' },
-]
 
 interface SidebarContentProps {
   onClose: () => void
@@ -45,12 +13,13 @@ function SidebarContent({ onClose }: SidebarContentProps) {
   const permissions  = useAuthStore((s) => s.permissions)
   const tenant       = useAuthStore((s) => s.tenant)
   const visibleItems = NAV_ITEMS.filter((item) => permissions.includes(item.permission))
+  const homePath     = useHomePath()
 
   return (
     <div className="flex h-full flex-col bg-white border-r border-gray-200">
       {/* En-tête tenant */}
       <NavLink
-        to="/dashboard"
+        to={homePath}
         className="flex h-16 shrink-0 items-center gap-3 px-4 border-b border-gray-200 hover:bg-gray-50 transition-colors"
         onClick={onClose}
       >

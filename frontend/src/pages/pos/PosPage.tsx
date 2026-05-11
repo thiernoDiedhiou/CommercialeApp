@@ -5,6 +5,8 @@ import { ArrowLeftIcon, UserIcon, TrashIcon, ShoppingCartIcon } from '@heroicons
 import axios from 'axios'
 
 import { useCartStore } from '@/store/cartStore'
+import { useExitPosPath } from '@/hooks/useHomePath'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import type { Product, ProductVariant, Customer } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
@@ -27,7 +29,9 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 
 export default function PosPage() {
-  const navigate = useNavigate()
+  const navigate    = useNavigate()
+  const exitPosPath = useExitPosPath()
+  const isMobile    = useIsMobile()
 
   // ── Cart store ───────────────────────────────────────────────────────────
   const items = useCartStore((s) => s.items)
@@ -112,8 +116,7 @@ export default function PosPage() {
       setWeightProduct(product)
     } else {
       addItem(product)
-      // On mobile, jump to cart so the user sees the updated basket
-      if (window.innerWidth < 768) setMobileView('cart')
+      if (isMobile) setMobileView('cart')
     }
   }
 
@@ -190,14 +193,16 @@ export default function PosPage() {
       {/* Header */}
       <header className="flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 shrink-0">
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            aria-label="Retour au tableau de bord"
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
-          >
-            <ArrowLeftIcon className="h-5 w-5" aria-hidden="true" />
-          </button>
+          {exitPosPath && (
+            <button
+              type="button"
+              onClick={() => navigate(exitPosPath)}
+              aria-label="Retour"
+              className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+            >
+              <ArrowLeftIcon className="h-5 w-5" aria-hidden="true" />
+            </button>
+          )}
           <h1 className="text-base font-semibold text-gray-800">Caisse POS</h1>
           {session ? (
             <span className="hidden sm:inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
@@ -250,7 +255,7 @@ export default function PosPage() {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher un produit ou scanner un code-barres…"
               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-indigo-400 focus:bg-white transition"
-              autoFocus
+              autoFocus={!isMobile}
             />
             <div className="flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none]">
               <button

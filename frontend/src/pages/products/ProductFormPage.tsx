@@ -269,14 +269,18 @@ export default function ProductFormPage() {
       const { variants, ...productData } = values
       const created = await createProduct(productData, imageFile)
       if (created.has_variants && variants?.length) {
-        try {
-          await Promise.all(
-            variants.map((v) => createVariant(created.id, v as CreateVariantData)),
-          )
-        } catch (err) {
-          // Rollback : supprimer le produit orphelin si les variantes échouent
+        // allSettled : tente toutes les variantes avant de décider du rollback
+        const results = await Promise.allSettled(
+          variants.map((v) => createVariant(created.id, v as CreateVariantData)),
+        )
+        const failures = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+        if (failures.length > 0) {
+          // Rollback complet — cascade supprime les variantes déjà créées
           await deleteProduct(created.id).catch(() => {})
-          throw err
+          // Agrège tous les messages pour que l'utilisateur voie tous les conflits d'un coup
+          const messages = failures.map((f) => getApiErrorMessage(f.reason))
+          const unique = [...new Set(messages)]
+          throw new Error(unique.join('\n'))
         }
       }
       return created
@@ -465,7 +469,7 @@ export default function ProductFormPage() {
 
         {/* Erreur globale */}
         {mutationError && (
-          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 whitespace-pre-wrap">
             {getApiErrorMessage(mutationError)}
           </p>
         )}

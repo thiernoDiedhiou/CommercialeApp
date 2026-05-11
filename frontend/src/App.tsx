@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useSuperAdminStore } from '@/store/superAdminStore'
+import { useHomePath } from '@/hooks/useHomePath'
 import LoginPage from '@/pages/auth/LoginPage'
 import Layout from '@/components/layout/Layout'
 import AdminLayout from '@/components/admin/AdminLayout'
@@ -16,7 +17,7 @@ import CustomersPage from '@/pages/customers/CustomersPage'
 import CustomerDetailPage from '@/pages/customers/CustomerDetailPage'
 import SalesPage from '@/pages/sales/SalesPage'
 import SaleDetailPage from '@/pages/sales/SaleDetailPage'
-import PosPage from '@/pages/pos/PosPage'
+import PosPage from '@/pages/pos/POSPage'
 import StockPage from '@/pages/stock/StockPage'
 import ReportsPage from '@/pages/reports/ReportsPage'
 import ToastContainer from '@/components/ui/ToastContainer'
@@ -33,6 +34,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
   if (!token) return <Navigate to="/login" replace />
   return <>{children}</>
+}
+
+function SmartRedirect() {
+  const token    = useAuthStore((s) => s.token)
+  const homePath = useHomePath()
+  return <Navigate to={token ? homePath : '/login'} replace />
 }
 
 function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -66,7 +73,7 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route index element={<SmartRedirect />} />
           <Route path="dashboard"        element={<DashboardPage />} />
           <Route path="sales"            element={<SalesPage />} />
           <Route path="sales/new"        element={<Navigate to="/pos" replace />} />
@@ -91,7 +98,7 @@ export default function App() {
           <Route path="settings"          element={<SettingsPage />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<SmartRedirect />} />
 
         {/* ── Super Admin ── */}
         <Route path="/admin/login" element={<AdminLoginPage />} />
