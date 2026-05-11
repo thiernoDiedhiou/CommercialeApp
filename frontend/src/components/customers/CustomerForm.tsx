@@ -49,10 +49,14 @@ export default function CustomerForm({ formId, customer, onSubmit }: CustomerFor
 
   return (
     <form id={formId} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <p className="text-xs text-gray-400">
+        Les champs marqués <span className="text-red-500">*</span> sont obligatoires
+      </p>
       <Input
         label="Nom complet"
         placeholder="Mamadou Diallo"
         error={errors.name?.message}
+        required
         autoFocus
         {...register('name')}
       />

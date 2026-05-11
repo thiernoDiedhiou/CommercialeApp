@@ -233,7 +233,10 @@ export default function SuppliersPage() {
           <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">Une erreur est survenue. Veuillez réessayer.</p>
         )}
         <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-          <Input label="Nom *" error={errors.name?.message} {...register('name')} />
+          <p className="text-xs text-gray-400">
+            Les champs marqués <span className="text-red-500">*</span> sont obligatoires
+          </p>
+          <Input label="Nom" error={errors.name?.message} required {...register('name')} />
           <Controller
             name="phone"
             control={control}

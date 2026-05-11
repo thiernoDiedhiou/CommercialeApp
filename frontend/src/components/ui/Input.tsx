@@ -8,7 +8,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, hint, className, id, ...props }, ref) => {
+  ({ label, error, hint, className, id, required, ...props }, ref) => {
     const generatedId = useId()
     const inputId = id ?? generatedId
 
@@ -20,6 +20,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             className="mb-1 block text-sm font-medium text-gray-700"
           >
             {label}
+            {required && <span className="ml-0.5 text-red-500" aria-hidden="true">*</span>}
           </label>
         )}
         <input
@@ -66,7 +67,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, error, hint, className, id, children, ...props }, ref) => {
+  ({ label, error, hint, className, id, required, children, ...props }, ref) => {
     const generatedId = useId()
     const selectId = id ?? generatedId
 
@@ -75,6 +76,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label htmlFor={selectId} className="mb-1 block text-sm font-medium text-gray-700">
             {label}
+            {required && <span className="ml-0.5 text-red-500" aria-hidden="true">*</span>}
           </label>
         )}
         <select
@@ -110,7 +112,7 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
 }
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ label, error, hint, className, id, ...props }, ref) => {
+  ({ label, error, hint, className, id, required, ...props }, ref) => {
     const generatedId = useId()
     const textareaId = id ?? generatedId
 
@@ -119,6 +121,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label && (
           <label htmlFor={textareaId} className="mb-1 block text-sm font-medium text-gray-700">
             {label}
+            {required && <span className="ml-0.5 text-red-500" aria-hidden="true">*</span>}
           </label>
         )}
         <textarea
