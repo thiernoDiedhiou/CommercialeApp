@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeftIcon, UserIcon, TrashIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, UserIcon, TrashIcon, ShoppingCartIcon, CameraIcon } from '@heroicons/react/24/outline'
 import axios from 'axios'
 
 import { useCartStore } from '@/store/cartStore'
+import { useAuthStore } from '@/store/authStore'
 import { useExitPosPath } from '@/hooks/useHomePath'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import type { Product, ProductVariant, Customer } from '@/types'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatDateTime } from '@/lib/utils'
 
 import { getCategories } from '@/services/api/categories'
 import { getCustomers } from '@/services/api/customers'
@@ -25,6 +26,8 @@ import { OfflineBanner } from '@/components/pos/OfflineBanner'
 import { VariantModal } from '@/components/pos/VariantModal'
 import { WeightModal } from '@/components/pos/WeightModal'
 import { PaymentModal } from '@/components/pos/PaymentModal'
+import { ReceiptModal, type SaleReceipt } from '@/components/pos/ReceiptModal'
+import { BarcodeScannerModal } from '@/components/pos/BarcodeScannerModal'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 
@@ -49,6 +52,9 @@ export default function PosPage() {
   const addToOfflineQueue = useCartStore((s) => s.addToOfflineQueue)
 
   // ── Local state ──────────────────────────────────────────────────────────
+  const tenant = useAuthStore((s) => s.tenant)
+  const user   = useAuthStore((s) => s.user)
+
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -60,6 +66,8 @@ export default function PosPage() {
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [clearOpen, setClearOpen]     = useState(false)
   const [note, setNote] = useState('')
+  const [receipt, setReceipt] = useState<SaleReceipt | null>(null)
+  const [scannerOpen, setScannerOpen] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
   const customerRef = useRef<HTMLDivElement>(null)
 
@@ -134,8 +142,16 @@ export default function PosPage() {
   const handlePaymentConfirm = async (
     payments: { method: string; amount: number; reference?: string }[],
   ) => {
+    // Snapshot avant clearCart
+    const itemsSnapshot = [...items]
+    const subtotalSnapshot = subtotal()
+    const discountAmountSnapshot = discountAmount()
+    const totalSnapshot = total()
+    const customerSnapshot = selectedCustomer
+    const noteSnapshot = note
+
     const payload: CreateSalePayload = {
-      items: items.map((item) => ({
+      items: itemsSnapshot.map((item) => ({
         product_id: item.product.id,
         variant_id: item.variant?.id ?? null,
         quantity: item.quantity,
@@ -152,11 +168,25 @@ export default function PosPage() {
     }
 
     try {
-      await createPosSale(payload)
+      const sale = await createPosSale(payload)
       clearCart()
       setSelectedCustomer(null)
       setNote('')
       setPaymentOpen(false)
+      setReceipt({
+        reference: sale?.data?.reference ?? sale?.reference ?? '—',
+        items: itemsSnapshot,
+        payments,
+        customer: customerSnapshot,
+        subtotal: subtotalSnapshot,
+        discountAmount: discountAmountSnapshot,
+        total: totalSnapshot,
+        note: noteSnapshot,
+        tenantName: tenant?.name ?? '',
+        tenantLogoUrl: tenant?.logo_url ?? null,
+        cashierName: user?.name ?? '',
+        soldAt: formatDateTime(new Date().toISOString()),
+      })
     } catch (e) {
       // Network failure → save offline
       if (!navigator.onLine || (axios.isAxiosError(e) && !e.response)) {
@@ -248,15 +278,25 @@ export default function PosPage() {
         <div className={`overflow-hidden ${mobileView === 'cart' ? 'hidden md:flex md:flex-col md:flex-1' : 'flex flex-col flex-1'}`}>
           {/* Search + categories */}
           <div className="shrink-0 bg-white border-b border-gray-200 px-4 py-3 space-y-2">
-            <input
-              ref={searchRef}
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un produit ou scanner un code-barres…"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-indigo-400 focus:bg-white transition"
-              autoFocus={!isMobile}
-            />
+            <div className="flex items-center gap-2">
+              <input
+                ref={searchRef}
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher un produit ou scanner un code-barres…"
+                className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-indigo-400 focus:bg-white transition"
+                autoFocus={!isMobile}
+              />
+              <button
+                type="button"
+                onClick={() => setScannerOpen(true)}
+                aria-label="Scanner un code-barres"
+                className="shrink-0 flex items-center justify-center rounded-xl border border-gray-200 bg-gray-50 p-2 text-gray-500 hover:border-indigo-400 hover:text-indigo-600 transition"
+              >
+                <CameraIcon className="h-5 w-5" />
+              </button>
+            </div>
             <div className="flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none]">
               <button
                 type="button"
@@ -509,6 +549,17 @@ export default function PosPage() {
         customerName={selectedCustomer?.name}
         onConfirm={handlePaymentConfirm}
         onClose={() => setPaymentOpen(false)}
+      />
+
+      <ReceiptModal
+        receipt={receipt}
+        onClose={() => setReceipt(null)}
+      />
+
+      <BarcodeScannerModal
+        isOpen={scannerOpen}
+        onScan={(barcode) => setSearch(barcode)}
+        onClose={() => setScannerOpen(false)}
       />
 
       <Modal
