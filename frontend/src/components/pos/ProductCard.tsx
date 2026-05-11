@@ -23,15 +23,15 @@ export function ProductCard({ product, onClick }: Props) {
       ].join(' ')}
     >
       {/* Image / placeholder */}
-      <div className="w-full h-24 bg-gray-100 shrink-0 overflow-hidden flex items-center justify-center">
+      <div className="w-full aspect-[4/3] bg-gray-50 shrink-0 overflow-hidden flex items-center justify-center">
         {product.image_url ? (
           <img
             src={product.image_url}
             alt={product.name}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain"
           />
         ) : (
-          <span className="text-3xl font-bold text-gray-300 select-none">
+          <span className="text-4xl font-bold text-gray-200 select-none">
             {product.name.charAt(0).toUpperCase()}
           </span>
         )}
