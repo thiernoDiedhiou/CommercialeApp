@@ -48,11 +48,18 @@ class PermissionSeeder extends Seeder
         ['name' => 'sales.delete',          'display_name' => 'Supprimer une vente',         'module' => 'sales',        'action' => 'delete'],
         ['name' => 'sales.pdf',             'display_name' => 'Télécharger une facture PDF', 'module' => 'sales',        'action' => 'pdf'],
 
+        // Retours
+        ['name' => 'returns.view',          'display_name' => 'Voir les retours',            'module' => 'returns',      'action' => 'view'],
+        ['name' => 'returns.create',        'display_name' => 'Créer un retour',             'module' => 'returns',      'action' => 'create'],
+
         // Clients
         ['name' => 'customers.view',        'display_name' => 'Voir les clients',            'module' => 'customers',    'action' => 'view'],
         ['name' => 'customers.create',      'display_name' => 'Créer un client',             'module' => 'customers',    'action' => 'create'],
         ['name' => 'customers.edit',        'display_name' => 'Modifier un client',          'module' => 'customers',    'action' => 'edit'],
         ['name' => 'customers.delete',      'display_name' => 'Supprimer un client',         'module' => 'customers',    'action' => 'delete'],
+
+        // Créances
+        ['name' => 'debts.view',            'display_name' => 'Voir les créances clients',   'module' => 'debts',        'action' => 'view'],
 
         // Utilisateurs
         ['name' => 'users.view',            'display_name' => 'Voir les utilisateurs',       'module' => 'users',        'action' => 'view'],
@@ -96,6 +103,13 @@ class PermissionSeeder extends Seeder
 
     public function run(): void
     {
+        // Nettoyage des permissions renommées (détacher des groupes avant suppression)
+        $obsolete = Permission::whereIn('name', ['customers.debts'])->get();
+        foreach ($obsolete as $p) {
+            $p->groups()->detach();
+            $p->delete();
+        }
+
         foreach (self::$permissions as $data) {
             Permission::firstOrCreate(
                 ['name' => $data['name']],

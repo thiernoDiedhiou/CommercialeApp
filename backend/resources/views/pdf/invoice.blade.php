@@ -79,6 +79,12 @@
             @if($tenant->phone ?? null)
                 <p class="sub">{{ $tenant->phone }}</p>
             @endif
+            @if($tenant->rccm ?? null)
+                <p class="sub">RCCM : {{ $tenant->rccm }}</p>
+            @endif
+            @if($tenant->ninea ?? null)
+                <p class="sub">NINEA : {{ $tenant->ninea }}</p>
+            @endif
         </div>
         <div class="header-right">
             <p class="invoice-title">Facture</p>

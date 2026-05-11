@@ -8,6 +8,8 @@ export interface TenantSettings {
   email:           string | null
   address:         string | null
   city:            string | null
+  rccm:            string | null
+  ninea:           string | null
   primary_color:   string | null
   secondary_color: string | null
   logo_url:        string | null

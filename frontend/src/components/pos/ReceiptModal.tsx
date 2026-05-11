@@ -24,6 +24,8 @@ export interface SaleReceipt {
   note: string
   tenantName: string
   tenantLogoUrl: string | null
+  tenantRccm: string | null
+  tenantNinea: string | null
   cashierName: string
   soldAt: string
 }
@@ -88,6 +90,8 @@ function buildPrintHTML(r: SaleReceipt): string {
   <div class="center">
     ${r.tenantLogoUrl ? `<div class="logo"><img src="${r.tenantLogoUrl}" alt="${r.tenantName}"></div>` : ''}
     <div class="shop-name">${r.tenantName}</div>
+    ${r.tenantRccm  ? `<div class="meta" style="text-align:center">RCCM : ${r.tenantRccm}</div>`  : ''}
+    ${r.tenantNinea ? `<div class="meta" style="text-align:center">NINEA : ${r.tenantNinea}</div>` : ''}
   </div>
   <hr class="dash">
   <div class="meta">Réf : <strong>${r.reference}</strong></div>
@@ -122,14 +126,15 @@ export function ReceiptModal({ receipt, onClose }: Props) {
   if (!receipt) return null
 
   const handlePrint = () => {
-    const win = window.open('', '_blank', 'width=400,height=650')
-    if (!win) return
-    win.document.write(buildPrintHTML(receipt))
-    win.document.close()
-    win.focus()
-    setTimeout(() => {
+    const blob = new Blob([buildPrintHTML(receipt)], { type: 'text/html;charset=utf-8' })
+    const url  = URL.createObjectURL(blob)
+    const win  = window.open(url, '_blank', 'width=400,height=650')
+    if (!win) { URL.revokeObjectURL(url); return }
+    win.addEventListener('load', () => {
+      win.focus()
       win.print()
-    }, 300)
+      setTimeout(() => URL.revokeObjectURL(url), 30_000)
+    })
   }
 
   return (

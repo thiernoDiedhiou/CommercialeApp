@@ -15,7 +15,7 @@ class SettingsController extends Controller
     private const CURRENCIES = ['XOF', 'XAF', 'GNF', 'EUR', 'USD', 'GBP', 'MAD', 'MRU'];
 
     // Secteurs supportés
-    private const SECTORS = ['general', 'food', 'fashion', 'cosmetic'];
+    private const SECTORS = ['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services'];
 
     public function __construct(private readonly TenantService $tenantService) {}
 
@@ -42,6 +42,8 @@ class SettingsController extends Controller
             'email'           => ['nullable', 'email', 'max:150'],
             'address'         => ['nullable', 'string', 'max:255'],
             'city'            => ['nullable', 'string', 'max:100'],
+            'rccm'            => ['nullable', 'string', 'max:100'],
+            'ninea'           => ['nullable', 'string', 'max:50'],
             // primary_color et secondary_color sont gérés exclusivement par le Super Admin
             'logo'            => ['nullable', 'mimes:jpeg,png,webp,svg', 'max:2048'],
             'remove_logo'     => ['boolean'],
@@ -79,6 +81,8 @@ class SettingsController extends Controller
             'email'           => $tenant->email,
             'address'         => $tenant->address,
             'city'            => $tenant->city,
+            'rccm'            => $tenant->rccm,
+            'ninea'           => $tenant->ninea,
             'primary_color'   => $tenant->primary_color,
             'secondary_color' => $tenant->secondary_color,
             'logo_url'        => $tenant->logo_path

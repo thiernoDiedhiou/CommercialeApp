@@ -2,6 +2,7 @@ import apiClient from '@/lib/axios'
 import type {
   Customer,
   CustomerDetail,
+  DebtRow,
   PaginatedResponse,
   Sale,
   CreateCustomerData,
@@ -52,11 +53,21 @@ export async function deleteCustomer(id: number): Promise<void> {
 
 export async function getCustomerSales(
   customerId: number,
-  params: { page?: number } = {},
+  params: { page?: number; per_page?: number } = {},
 ): Promise<PaginatedResponse<Sale>> {
   const { data } = await apiClient.get<PaginatedResponse<Sale>>(
     `/api/v1/customers/${customerId}/sales`,
     { params: clean(params) },
   )
+  return data
+}
+
+export async function getDebts(params: {
+  search?: string
+  page?: number
+} = {}): Promise<PaginatedResponse<DebtRow>> {
+  const { data } = await apiClient.get<PaginatedResponse<DebtRow>>('/api/v1/debts', {
+    params: clean(params as Record<string, unknown>),
+  })
   return data
 }

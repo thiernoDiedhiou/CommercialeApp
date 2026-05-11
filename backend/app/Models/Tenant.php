@@ -25,6 +25,8 @@ class Tenant extends Model
         'address',
         'city',
         'country',
+        'rccm',
+        'ninea',
         'logo_path',
         'primary_color',
         'secondary_color',

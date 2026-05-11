@@ -184,6 +184,8 @@ export default function PosPage() {
         note: noteSnapshot,
         tenantName: tenant?.name ?? '',
         tenantLogoUrl: tenant?.logo_url ?? null,
+        tenantRccm: tenant?.rccm ?? null,
+        tenantNinea: tenant?.ninea ?? null,
         cashierName: user?.name ?? '',
         soldAt: formatDateTime(new Date().toISOString()),
       })

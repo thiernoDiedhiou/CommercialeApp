@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AdminStatsController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Customer\CustomerController;
+use App\Http\Controllers\Customer\DebtController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Pos\PosDraftController;
 use App\Http\Controllers\Pos\PosController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Purchase\PurchaseOrderController;
 use App\Http\Controllers\Purchase\SupplierController;
 use App\Http\Controllers\Report\ReportController;
+use App\Http\Controllers\Sale\ReturnController;
 use App\Http\Controllers\Sale\SaleController;
 use App\Http\Controllers\Stock\StockController;
 use App\Http\Controllers\Users\GroupController;
@@ -191,6 +193,10 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:sales.view');
         });
 
+        // ── Créances clients ──────────────────────────────────────────────────
+        Route::get('debts', [DebtController::class, 'index'])
+            ->middleware('permission:debts.view');
+
         // ── Ventes ────────────────────────────────────────────────────────────
         Route::prefix('sales')->name('sales.')->group(function () {
             Route::get('/',               [SaleController::class, 'index'])
@@ -205,6 +211,16 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:sales.edit');
             Route::get('{sale}/pdf',      [SaleController::class, 'pdf'])
                 ->middleware('permission:sales.pdf');
+            Route::post('{sale}/returns', [ReturnController::class, 'store'])
+                ->middleware('permission:returns.create');
+        });
+
+        // ── Retours ───────────────────────────────────────────────────────────
+        Route::prefix('returns')->name('returns.')->group(function () {
+            Route::get('/',           [ReturnController::class, 'index'])
+                ->middleware('permission:returns.view');
+            Route::get('{return}',    [ReturnController::class, 'show'])
+                ->middleware('permission:returns.view');
         });
 
         // ── Utilisateurs ──────────────────────────────────────────────────────

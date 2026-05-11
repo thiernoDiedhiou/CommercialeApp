@@ -81,21 +81,26 @@ type GroupValues = z.infer<typeof groupSchema>
 
 const boutiqueSchema = z.object({
   name:          z.string().min(2, 'Nom requis'),
-  sector:        z.enum(['general', 'food', 'fashion', 'cosmetic']),
+  sector:        z.enum(['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services']),
   currency:      z.string().min(3).max(3),
   phone_country: z.string().length(2).default('SN'),
   phone:         z.string().optional(),
   email:         z.string().email('Email invalide').or(z.literal('')).optional(),
   address:       z.string().optional(),
   city:          z.string().optional(),
+  rccm:          z.string().optional(),
+  ninea:         z.string().optional(),
 })
 type BoutiqueValues = z.infer<typeof boutiqueSchema>
 
 const SECTOR_LABELS: Record<string, string> = {
-  general: 'Commerce général',
-  food:    'Alimentation / Restauration',
-  fashion: 'Mode / Vêtements',
-  cosmetic:'Beauté / Cosmétique',
+  general:     'Commerce général',
+  food:        'Alimentation / Restauration',
+  fashion:     'Mode / Vêtements',
+  cosmetic:    'Beauté / Cosmétique',
+  pharmacy:    'Pharmacie / Parapharmacie',
+  electronics: 'High-tech / Électronique',
+  services:    'Prestations de services',
 }
 
 function BoutiqueTab() {
@@ -132,6 +137,8 @@ function BoutiqueTab() {
         email:         data.email ?? '',
         address:       data.address ?? '',
         city:          data.city ?? '',
+        rccm:          data.rccm ?? '',
+        ninea:         data.ninea ?? '',
       })
       setLogoPreview(data.logo_url ?? null)
     }
@@ -172,6 +179,8 @@ function BoutiqueTab() {
         email:         vals.email || null,
         address:       vals.address || null,
         city:          vals.city || null,
+        rccm:          vals.rccm || null,
+        ninea:         vals.ninea || null,
       },
       logoFile,
       removeLogo,
@@ -182,6 +191,8 @@ function BoutiqueTab() {
           name:            updated.name,
           currency:        updated.currency,
           sector:          updated.sector,
+          rccm:            updated.rccm ?? null,
+          ninea:           updated.ninea ?? null,
           primary_color:   updated.primary_color,
           secondary_color: updated.secondary_color,
           logo_url:        updated.logo_url ?? null,
@@ -306,6 +317,24 @@ function BoutiqueTab() {
         <Input label="Email" type="email" {...register('email')} />
         <Input label="Adresse" {...register('address')} />
         <Input label="Ville" {...register('city')} />
+      </div>
+
+      <div>
+        <p className="mb-3 text-sm font-medium text-gray-700">Informations légales <span className="text-xs font-normal text-gray-400">(optionnel — apparaissent sur les factures)</span></p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input
+            label="RCCM"
+            placeholder="SN-DKR-2024-B-12345"
+            hint="Registre du Commerce et du Crédit Mobilier"
+            {...register('rccm')}
+          />
+          <Input
+            label="NINEA"
+            placeholder="012345678"
+            hint="Numéro d'Identification Nationale des Entreprises"
+            {...register('ninea')}
+          />
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

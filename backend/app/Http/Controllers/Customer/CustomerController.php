@@ -36,11 +36,24 @@ class CustomerController extends Controller
             ->selectRaw('COUNT(*) as sales_count, COALESCE(SUM(total), 0) as total_purchases, MAX(confirmed_at) as last_purchase_at')
             ->first();
 
+        // Créances : ventes confirmées non soldées
+        $unpaidSales = Sale::confirmed()
+            ->where('customer_id', $customer->id)
+            ->withSum('payments', 'amount')
+            ->get()
+            ->filter(fn($s) => (float) $s->total > (float) ($s->payments_sum_amount ?? 0));
+
+        $outstandingBalance = $unpaidSales->sum(
+            fn($s) => bcsub((string) $s->total, (string) ($s->payments_sum_amount ?? 0), 2)
+        );
+
         return response()->json([
             'data' => array_merge($customer->toArray(), [
-                'sales_count'      => (int) $stats->sales_count,
-                'total_purchases'  => (float) $stats->total_purchases,
-                'last_purchase_at' => $stats->last_purchase_at,
+                'sales_count'         => (int) $stats->sales_count,
+                'total_purchases'     => (float) $stats->total_purchases,
+                'last_purchase_at'    => $stats->last_purchase_at,
+                'outstanding_balance' => (float) $outstandingBalance,
+                'unpaid_sales_count'  => $unpaidSales->count(),
             ]),
         ]);
     }

@@ -35,7 +35,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               : 'border-gray-300 bg-white hover:border-gray-400',
             className,
           )}
-          aria-invalid={!!error}
+          aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
           {...props}
         />
@@ -88,7 +88,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             error ? 'border-red-300' : 'border-gray-300 hover:border-gray-400',
             className,
           )}
-          aria-invalid={!!error}
+          aria-invalid={error ? true : undefined}
           {...props}
         >
           {children}
@@ -135,7 +135,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             error ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white hover:border-gray-400',
             className,
           )}
-          aria-invalid={!!error}
+          aria-invalid={error ? true : undefined}
           {...props}
         />
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}

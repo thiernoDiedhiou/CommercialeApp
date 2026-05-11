@@ -12,6 +12,8 @@ export interface TenantInfo {
   name: string
   currency: string
   sector: string
+  rccm: string | null
+  ninea: string | null
   primary_color: string | null
   secondary_color: string | null
   logo_url: string | null
@@ -318,6 +320,18 @@ export interface CustomerDetail extends Customer {
   sales_count: number
   total_purchases: number
   last_purchase_at: string | null
+  outstanding_balance: number
+  unpaid_sales_count: number
+}
+
+/** Ligne du rapport créances GET /debts */
+export interface DebtRow {
+  id: number
+  name: string
+  phone: string | null
+  email: string | null
+  unpaid_sales_count: number
+  outstanding_balance: number
 }
 
 export interface CreateCustomerData {
@@ -581,6 +595,47 @@ export interface StockReport {
   period: ReportPeriod
   summary: StockReportSummary
   data: StockReportRow[]
+}
+
+// ── Sale Returns ──────────────────────────────────────────────────────────
+
+export type RefundMethod = 'cash' | 'credit' | 'none'
+
+export interface SaleReturnItem {
+  id: number
+  sale_return_id: number
+  sale_item_id: number
+  product_id: number
+  product_variant_id: number | null
+  lot_id: number | null
+  quantity: string
+  unit_weight: string | null
+  unit_price: string
+  total: string
+  product?: Pick<Product, 'id' | 'name' | 'unit'>
+  variant?: Pick<ProductVariant, 'id' | 'attribute_summary'>
+  lot?: Pick<ProductLot, 'id' | 'lot_number'>
+}
+
+export interface SaleReturn {
+  id: number
+  reference: string
+  sale_id: number
+  user_id: number
+  reason: string | null
+  refund_method: RefundMethod
+  total: string
+  items_count?: number
+  created_at: string
+  sale?: Pick<Sale, 'id' | 'reference' | 'confirmed_at'>
+  user?: Pick<User, 'id' | 'name'>
+  items?: SaleReturnItem[]
+}
+
+export interface CreateSaleReturnData {
+  reason?: string | null
+  refund_method: RefundMethod
+  items: { sale_item_id: number; quantity: number }[]
 }
 
 // ── API error ─────────────────────────────────────────────────────────────

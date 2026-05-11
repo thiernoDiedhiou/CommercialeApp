@@ -10,8 +10,15 @@ import {
   ShoppingBagIcon,
   BanknotesIcon,
   CalendarDaysIcon,
+  ExclamationCircleIcon,
 } from '@heroicons/react/24/outline'
 import { getCustomer, getCustomerSales, updateCustomer } from '@/services/api/customers'
+import { addPayment } from '@/services/api/sales'
+import Input from '@/components/ui/Input'
+import { Select } from '@/components/ui/Input'
+import { toast } from '@/store/toastStore'
+import { getApiErrorMessage } from '@/lib/errors'
+import { formatDateTime } from '@/lib/utils'
 import { Table } from '@/components/ui/Table'
 import type { Column } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
@@ -94,6 +101,10 @@ export default function CustomerDetailPage() {
 
   const [salesPage, setSalesPage] = useState(1)
   const [editOpen, setEditOpen] = useState(false)
+  const [payOpen, setPayOpen] = useState(false)
+  const [payingSale, setPayingSale] = useState<Sale | null>(null)
+  const [payMethod, setPayMethod] = useState('cash')
+  const [payAmount, setPayAmount] = useState('')
 
   // ── Données ───────────────────────────────────────────────────────────────
   const { data: customer, isLoading: customerLoading } = useQuery({
@@ -108,6 +119,38 @@ export default function CustomerDetailPage() {
     enabled: !!id,
     placeholderData: (prev) => prev,
   })
+
+  // Toutes les ventes confirmées pour la section créances (sans pagination)
+  const { data: allSalesData } = useQuery({
+    queryKey: ['customer-sales-all', Number(id)],
+    queryFn: () => getCustomerSales(Number(id), { page: 1, per_page: 200 }),
+    enabled: !!id && (customer?.outstanding_balance ?? 0) > 0,
+  })
+
+  // ── Mutation encaissement rapide ──────────────────────────────────────────
+  const payMutation = useMutation({
+    mutationFn: () => addPayment(payingSale!.id, {
+      method: payMethod,
+      amount: parseFloat(payAmount) || 0,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['customer', Number(id)] })
+      qc.invalidateQueries({ queryKey: ['customer-sales', Number(id)] })
+      qc.invalidateQueries({ queryKey: ['debts'] })
+      setPayOpen(false)
+      setPayAmount('')
+      toast.success('Paiement enregistré.')
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
+  })
+
+  const openPayModal = (sale: Sale) => {
+    const due = parseFloat(sale.total) - parseFloat(sale.paid_amount)
+    setPayingSale(sale)
+    setPayAmount(String(Math.round(due)))
+    setPayMethod('cash')
+    setPayOpen(true)
+  }
 
   // ── Mutation édition ──────────────────────────────────────────────────────
   const updateMutation = useMutation({
@@ -280,7 +323,7 @@ export default function CustomerDetailPage() {
       </div>
 
       {/* KPI cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           icon={<BanknotesIcon className="h-5 w-5" />}
           label="Total achats"
@@ -298,7 +341,81 @@ export default function CustomerDetailPage() {
           value={formatRelative(customer.last_purchase_at)}
           sub={customer.last_purchase_at ? formatDate(customer.last_purchase_at) : undefined}
         />
+        {customer.outstanding_balance > 0 ? (
+          <div className="flex items-center gap-4 rounded-xl bg-red-50 p-5 shadow-sm ring-1 ring-red-100">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-600">
+              <ExclamationCircleIcon className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-red-500">Solde dû</p>
+              <p className="truncate text-lg font-bold text-red-700">{formatCurrency(customer.outstanding_balance)}</p>
+              <p className="text-xs text-red-400">{customer.unpaid_sales_count} vente(s) impayée(s)</p>
+            </div>
+          </div>
+        ) : (
+          <KpiCard
+            icon={<ExclamationCircleIcon className="h-5 w-5" />}
+            label="Solde dû"
+            value="Soldé"
+            sub="Aucune créance"
+          />
+        )}
       </div>
+
+      {/* Section Créances */}
+      {customer.outstanding_balance > 0 && (
+        <div className="rounded-xl bg-white shadow-sm ring-1 ring-red-100 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-red-100 bg-red-50">
+            <div className="flex items-center gap-2">
+              <ExclamationCircleIcon className="h-4 w-4 text-red-500" />
+              <h2 className="text-sm font-semibold text-red-700">
+                Créances — {formatCurrency(customer.outstanding_balance)} dû
+              </h2>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-100 text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Référence</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Date</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Total</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Payé</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Reste dû</th>
+                  <th className="sr-only">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {(allSalesData?.data ?? salesData?.data ?? [])
+                  .filter((s) => s.status === 'confirmed' && parseFloat(s.total) > parseFloat(s.paid_amount))
+                  .map((sale) => {
+                    const due = parseFloat(sale.total) - parseFloat(sale.paid_amount)
+                    return (
+                      <tr key={sale.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 font-mono font-semibold text-gray-900">{sale.reference}</td>
+                        <td className="px-4 py-3 text-gray-500">{formatDateTime(sale.confirmed_at ?? sale.created_at)}</td>
+                        <td className="px-4 py-3 text-right text-gray-700">{formatCurrency(sale.total)}</td>
+                        <td className="px-4 py-3 text-right text-emerald-600">{formatCurrency(sale.paid_amount)}</td>
+                        <td className="px-4 py-3 text-right font-bold text-red-600">{formatCurrency(due)}</td>
+                        <td className="px-4 py-3 text-right">
+                          <CanDo permission="sales.create">
+                            <button
+                              type="button"
+                              onClick={() => openPayModal(sale)}
+                              className="rounded-md bg-brand-primary px-2.5 py-1 text-xs font-semibold text-white hover:opacity-90 transition"
+                            >
+                              Encaisser
+                            </button>
+                          </CanDo>
+                        </td>
+                      </tr>
+                    )
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Historique des ventes */}
       <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
@@ -326,6 +443,54 @@ export default function CustomerDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Modal encaissement rapide */}
+      <Modal
+        isOpen={payOpen}
+        onClose={() => setPayOpen(false)}
+        title="Encaisser un paiement"
+        size="sm"
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setPayOpen(false)}>Annuler</Button>
+            <Button
+              loading={payMutation.isPending}
+              disabled={!payAmount || parseFloat(payAmount) <= 0}
+              onClick={() => payMutation.mutate()}
+            >
+              Confirmer
+            </Button>
+          </>
+        }
+      >
+        {payingSale && (
+          <div className="space-y-4">
+            <div className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-600">
+              Vente <span className="font-mono font-semibold text-gray-900">{payingSale.reference}</span>
+              {' — '}Reste dû :{' '}
+              <span className="font-bold text-red-600">
+                {formatCurrency(parseFloat(payingSale.total) - parseFloat(payingSale.paid_amount))}
+              </span>
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Mode de paiement</label>
+              <Select value={payMethod} onChange={(e) => setPayMethod(e.target.value)}>
+                <option value="cash">Espèces</option>
+                <option value="mobile_money">Mobile Money</option>
+                <option value="card">Carte bancaire</option>
+                <option value="bank_transfer">Virement bancaire</option>
+              </Select>
+            </div>
+            <Input
+              label="Montant (FCFA)"
+              type="number"
+              min={1}
+              value={payAmount}
+              onChange={(e) => setPayAmount(e.target.value)}
+            />
+          </div>
+        )}
+      </Modal>
 
       {/* Modal édition */}
       <Modal

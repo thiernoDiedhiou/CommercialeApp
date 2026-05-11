@@ -6,8 +6,10 @@ import {
   XCircleIcon,
   CheckCircleIcon,
   BanknotesIcon,
+  ArrowUturnLeftIcon,
 } from '@heroicons/react/24/outline'
-import { getSale, cancelSale, openSalePdf, addPayment } from '@/services/api/sales'
+import { getSale, cancelSale, openSalePdf, addPayment, getReturns } from '@/services/api/sales'
+import { SaleReturnModal } from '@/components/sales/SaleReturnModal'
 import { SkeletonCard, SkeletonRow } from '@/components/ui/Skeleton'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
@@ -18,8 +20,19 @@ import CanDo from '@/components/ui/CanDo'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { getApiErrorMessage } from '@/lib/errors'
 import { toast } from '@/store/toastStore'
-import type { Sale } from '@/types'
+import type { Sale, RefundMethod } from '@/types'
 import { useState } from 'react'
+
+const REFUND_BADGE: Record<RefundMethod, 'success' | 'info' | 'default'> = {
+  cash:   'success',
+  credit: 'info',
+  none:   'default',
+}
+const REFUND_LABEL: Record<RefundMethod, string> = {
+  cash:   'Espèces',
+  credit: 'Avoir client',
+  none:   'Sans remboursement',
+}
 
 // ── Constantes ─────────────────────────────────────────────────────────────
 
@@ -77,6 +90,7 @@ export default function SaleDetailPage() {
 
   const [cancelOpen, setCancelOpen] = useState(false)
   const [paymentOpen, setPaymentOpen] = useState(false)
+  const [returnOpen, setReturnOpen] = useState(false)
   const [payMethod, setPayMethod] = useState('cash')
   const [payAmount, setPayAmount] = useState('')
   const [pdfLoading, setPdfLoading] = useState(false)
@@ -87,6 +101,13 @@ export default function SaleDetailPage() {
     queryFn: () => getSale(Number(id)),
     enabled: !!id,
   })
+
+  const { data: returnsData } = useQuery({
+    queryKey: ['returns', { sale_id: Number(id) }],
+    queryFn: () => getReturns({ sale_id: Number(id) }),
+    enabled: !!id,
+  })
+  const saleReturns = returnsData?.data ?? []
 
   // ── Mutations ─────────────────────────────────────────────────────────────
   const cancelMutation = useMutation({
@@ -185,6 +206,19 @@ export default function SaleDetailPage() {
                 onClick={() => { setPayAmount(String(due.toFixed(0))); setPaymentOpen(true) }}
               >
                 Encaisser le reste
+              </Button>
+            </CanDo>
+          )}
+
+          {sale.status === 'confirmed' && (
+            <CanDo permission="sales.edit">
+              <Button
+                variant="outline"
+                size="sm"
+                icon={<ArrowUturnLeftIcon className="h-4 w-4" />}
+                onClick={() => setReturnOpen(true)}
+              >
+                Retour
               </Button>
             </CanDo>
           )}
@@ -418,6 +452,44 @@ export default function SaleDetailPage() {
           )}
         </div>
       </Modal>
+
+      {/* Retours associés */}
+      {saleReturns.length > 0 && (
+        <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+            <ArrowUturnLeftIcon className="h-4 w-4 text-gray-400" />
+            <h2 className="text-sm font-semibold text-gray-700">
+              Retours associés ({saleReturns.length})
+            </h2>
+          </div>
+          <ul className="divide-y divide-gray-50">
+            {saleReturns.map((ret) => (
+              <li key={ret.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono font-semibold text-gray-900">{ret.reference}</span>
+                  <Badge variant={REFUND_BADGE[ret.refund_method]}>
+                    {REFUND_LABEL[ret.refund_method]}
+                  </Badge>
+                  <span className="text-gray-400 text-xs">{formatDateTime(ret.created_at)}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-gray-500 text-xs">{ret.items_count} article(s)</span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(ret.total)}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Modal retour */}
+      {sale.items && (
+        <SaleReturnModal
+          sale={sale}
+          isOpen={returnOpen}
+          onClose={() => setReturnOpen(false)}
+        />
+      )}
 
       {/* Modal annulation */}
       <Modal

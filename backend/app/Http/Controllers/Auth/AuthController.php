@@ -82,6 +82,8 @@ class AuthController extends Controller
                 'name'            => $tenant->name,
                 'currency'        => $tenant->currency,
                 'sector'          => $tenant->sector,
+                'rccm'            => $tenant->rccm,
+                'ninea'           => $tenant->ninea,
                 'primary_color'   => $tenant->primary_color,
                 'secondary_color' => $tenant->secondary_color,
                 'logo_url'        => $tenant->logo_path

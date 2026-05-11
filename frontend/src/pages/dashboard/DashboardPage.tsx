@@ -24,8 +24,9 @@ export default function DashboardPage() {
     refetchInterval: REFETCH_INTERVAL,
   })
 
-  const today = data?.today
-  const profit = today ? Number(today.profit) : 0
+  const today          = data?.today
+  const profit         = today ? Number(today.profit) : 0
+  const todayCollected = Object.values(data?.by_payment_method ?? {}).reduce((s, v) => s + v, 0)
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -60,8 +61,8 @@ export default function DashboardPage() {
             />
 
             <KpiCard
-              title="Paiements en attente"
-              value={formatCurrency(today?.pending_amount ?? 0)}
+              title="Encaissements du jour"
+              value={formatCurrency(todayCollected)}
               icon={<ClockIcon className="h-5 w-5" />}
               accent="secondary"
             >

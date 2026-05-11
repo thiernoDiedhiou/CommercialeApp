@@ -41,10 +41,12 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
     }
   }, [isOpen, total])
 
-  const totalPaid = lines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0)
-  const remaining = Math.max(0, total - totalPaid)
-  const overpaid = totalPaid - total
-  const canConfirm = totalPaid >= total && lines.every((l) => l.method)
+  const totalPaid   = lines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0)
+  const remaining   = Math.max(0, total - totalPaid)
+  const overpaid    = totalPaid - total
+  const hasCustomer = !!customerName
+  // Paiement partiel autorisé uniquement si un client est sélectionné (dette trackée)
+  const canConfirm  = totalPaid > 0 && lines.every((l) => l.method) && (totalPaid >= total || hasCustomer)
 
   const updateLine = (i: number, patch: Partial<PaymentLine>) =>
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)))
@@ -189,6 +191,12 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
           <PlusIcon className="h-4 w-4" />
           Ajouter un mode de paiement
         </button>
+      )}
+
+      {remaining > 0 && !hasCustomer && (
+        <p className="mt-3 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
+          Sélectionnez un client pour enregistrer le solde restant comme créance.
+        </p>
       )}
 
       {error && (
