@@ -18,7 +18,7 @@ class ProductController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $products = Product::with(['category:id,name'])
+        $products = Product::with(['category:id,name', 'brand:id,name'])
             ->withCount('variants')
             ->when($request->search, fn($q) => $q->where(function ($inner) use ($request) {
                 $inner->where('name', 'like', "%{$request->search}%")
@@ -53,7 +53,7 @@ class ProductController extends Controller
 
     public function show(Product $product): JsonResponse
     {
-        $product->load(['category:id,name', 'variants.attributeValues.attribute']);
+        $product->load(['category:id,name', 'brand:id,name', 'variants.attributeValues.attribute']);
 
         return response()->json(['data' => $product]);
     }

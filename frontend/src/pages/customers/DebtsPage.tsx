@@ -18,7 +18,7 @@ export default function DebtsPage() {
   })
 
   const rows = data?.data ?? []
-  const totalDebt = rows.reduce((sum, r) => sum + r.outstanding_balance, 0)
+  const totalDebt = data?.global_outstanding ?? 0
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -116,6 +116,8 @@ export default function DebtsPage() {
             <Pagination
               currentPage={data.current_page}
               lastPage={data.last_page}
+              total={data.total}
+              perPage={data.per_page}
               onPageChange={setPage}
             />
           </div>

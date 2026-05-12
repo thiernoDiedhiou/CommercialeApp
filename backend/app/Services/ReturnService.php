@@ -153,7 +153,7 @@ class ReturnService
                 );
 
             // Quantité originale vendue (poids ou unité)
-            $originalQty = $saleItem->unit_weight
+            $originalQty = $saleItem->unit_weight !== null
                 ? (float) $saleItem->unit_weight
                 : (float) $saleItem->quantity;
 

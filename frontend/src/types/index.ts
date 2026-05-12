@@ -134,6 +134,15 @@ export interface ProductAttribute {
 
 // ── Products ──────────────────────────────────────────────────────────────
 
+export interface Brand {
+  id: number
+  name: string
+}
+
+export interface CreateBrandData {
+  name: string
+}
+
 export interface Product {
   id: number
   name: string
@@ -151,9 +160,11 @@ export interface Product {
   has_expiry: boolean
   is_active: boolean
   category_id: number | null
+  brand_id: number | null
   image_path: string | null
   image_url: string | null
   category?: Category
+  brand?: Brand
   variants?: ProductVariant[]
 }
 
@@ -332,6 +343,10 @@ export interface DebtRow {
   email: string | null
   unpaid_sales_count: number
   outstanding_balance: number
+}
+
+export interface DebtPageResponse extends PaginatedResponse<DebtRow> {
+  global_outstanding: number
 }
 
 export interface CreateCustomerData {

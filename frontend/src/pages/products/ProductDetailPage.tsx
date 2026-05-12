@@ -208,9 +208,14 @@ export default function ProductDetailPage() {
             {product.sku && (
               <p className="text-xs font-mono text-gray-400 mt-0.5">SKU : {product.sku}</p>
             )}
-            {product.category && (
-              <p className="text-xs text-gray-500">{product.category.name}</p>
-            )}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+              {product.brand != null && (
+                <p className="text-xs font-medium text-gray-600">{product.brand.name}</p>
+              )}
+              {product.category && (
+                <p className="text-xs text-gray-500">{product.category.name}</p>
+              )}
+            </div>
           </div>
         </div>
 

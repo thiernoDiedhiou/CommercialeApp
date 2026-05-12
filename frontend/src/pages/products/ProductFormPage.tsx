@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Input'
 import CategorySelect from '@/components/products/CategorySelect'
+import BrandSelect from '@/components/products/BrandSelect'
 import VariantManager from '@/components/products/VariantManager'
 import type { CreateVariantData } from '@/types'
 
@@ -34,6 +35,7 @@ const schema = z.object({
     (v) => (typeof v === 'number' && isNaN(v) ? null : v),
     z.number().min(0).nullable().optional(),
   ),
+  brand_id: z.number().nullable().optional(),
   has_variants: z.boolean().default(false),
   is_weight_based: z.boolean().default(false),
   has_expiry: z.boolean().default(false),
@@ -231,6 +233,7 @@ export default function ProductFormPage() {
         price: Number(product.price),
         cost_price: product.cost_price ? Number(product.cost_price) : null,
         unit: product.unit ?? '',
+        brand_id: product.brand_id ?? null,
         alert_threshold: product.alert_threshold ?? null,
         has_variants: product.has_variants,
         is_weight_based: product.is_weight_based,
@@ -387,6 +390,17 @@ export default function ProductFormPage() {
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.category_id?.message}
+                    />
+                  )}
+                />
+                <Controller
+                  name="brand_id"
+                  control={control}
+                  render={({ field }) => (
+                    <BrandSelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      error={errors.brand_id?.message}
                     />
                   )}
                 />

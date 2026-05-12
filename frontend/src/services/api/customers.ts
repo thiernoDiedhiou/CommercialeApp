@@ -2,7 +2,7 @@ import apiClient from '@/lib/axios'
 import type {
   Customer,
   CustomerDetail,
-  DebtRow,
+  DebtPageResponse,
   PaginatedResponse,
   Sale,
   CreateCustomerData,
@@ -65,8 +65,8 @@ export async function getCustomerSales(
 export async function getDebts(params: {
   search?: string
   page?: number
-} = {}): Promise<PaginatedResponse<DebtRow>> {
-  const { data } = await apiClient.get<PaginatedResponse<DebtRow>>('/api/v1/debts', {
+} = {}): Promise<DebtPageResponse> {
+  const { data } = await apiClient.get<DebtPageResponse>('/api/v1/debts', {
     params: clean(params as Record<string, unknown>),
   })
   return data

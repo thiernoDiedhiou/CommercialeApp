@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminTenantController;
 use App\Http\Controllers\Admin\AdminStatsController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Brand\BrandController;
 use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Customer\DebtController;
@@ -95,6 +96,14 @@ Route::prefix('v1')->group(function () {
             Route::get('sales',    [ReportController::class, 'sales']);
             Route::get('products', [ReportController::class, 'products']);
             Route::get('stock',    [ReportController::class, 'stock']);
+        });
+
+        // ── Marques ───────────────────────────────────────────────────────────
+        Route::prefix('brands')->name('brands.')->group(function () {
+            Route::get('/',          [BrandController::class, 'index'])  ->middleware('permission:products.view');
+            Route::post('/',         [BrandController::class, 'store'])  ->middleware('permission:products.create');
+            Route::put('{brand}',    [BrandController::class, 'update']) ->middleware('permission:products.edit');
+            Route::delete('{brand}', [BrandController::class, 'destroy'])->middleware('permission:products.delete');
         });
 
         // ── Catégories ────────────────────────────────────────────────────────
