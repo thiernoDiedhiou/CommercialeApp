@@ -27,8 +27,7 @@ class AdminTenantController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $tenants = Tenant::withTrashed()
-            ->withCount('users')
+        $tenants = Tenant::withCount('users')
             ->when($request->search, fn ($q) =>
                 $q->where('name', 'like', "%{$request->search}%")
                   ->orWhere('email', 'like', "%{$request->search}%")
