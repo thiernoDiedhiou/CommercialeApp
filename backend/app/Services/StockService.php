@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\StockInsufficientException;
+use App\Jobs\SendStockAlertJob;
 use App\Models\Product;
 use App\Models\ProductLot;
 use App\Models\ProductVariant;
@@ -51,7 +52,7 @@ class StockService
             }
         }
 
-        return DB::transaction(function () use (
+        $movement = DB::transaction(function () use (
             $product, $type, $quantity, $source, $sourceId,
             $variant, $lot, $unitCost, $notes
         ) {
@@ -121,6 +122,11 @@ class StockService
 
             return $movement;
         });
+
+        // Alerte stock bas — dispatch hors transaction pour éviter les effets de bord
+        $this->dispatchStockAlertIfNeeded($movement, $product, $variant, $type, $quantity);
+
+        return $movement;
     }
 
     /**
@@ -202,6 +208,32 @@ class StockService
             'return' => $lot->increment('quantity_remaining', abs($quantity)),
             default  => null,  // adjustment : le lot n'est pas impacté automatiquement
         };
+    }
+
+    private function dispatchStockAlertIfNeeded(
+        StockMovement $movement,
+        Product $product,
+        ?ProductVariant $variant,
+        string $type,
+        float $quantity,
+    ): void {
+        // Seuls les mouvements sortants peuvent déclencher une alerte
+        $isOutbound = $type === 'out' || ($type === 'adjustment' && $quantity < 0);
+        if (! $isOutbound) {
+            return;
+        }
+
+        $threshold = (int) ($variant?->alert_threshold ?? $product->alert_threshold ?? 0);
+        $wasAbove  = $movement->stock_before > $threshold;
+        $isBelow   = $movement->stock_after  <= $threshold;
+
+        if ($wasAbove && $isBelow && $this->tenantService->hasCurrentTenant()) {
+            SendStockAlertJob::dispatchSync(
+                $this->tenantService->current(),
+                $product,
+                $variant,
+            );
+        }
     }
 
     private function validateAdjustInput(string $type, float $quantity): void

@@ -8,6 +8,7 @@ use App\Http\Requests\Invoice\StoreInvoiceRequest;
 use App\Http\Requests\Invoice\UpdateInvoiceRequest;
 use App\Models\Invoice;
 use App\Services\InvoiceService;
+use App\Services\MailService;
 use App\Services\TenantService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -22,6 +23,7 @@ class InvoiceController extends Controller
     public function __construct(
         private readonly InvoiceService $invoiceService,
         private readonly TenantService $tenantService,
+        private readonly MailService $mailService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -81,6 +83,11 @@ class InvoiceController extends Controller
             $invoice = $this->invoiceService->send($invoice);
         } catch (LogicException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        $invoice->loadMissing('customer');
+        if ($invoice->customer?->email) {
+            $this->mailService->sendInvoice($invoice);
         }
 
         return response()->json(['data' => $invoice]);

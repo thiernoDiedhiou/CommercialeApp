@@ -10,13 +10,15 @@
 2. [Tableau de bord](#2-tableau-de-bord)
 3. [Caisse POS](#3-caisse-pos)
 4. [Ventes](#4-ventes)
-5. [Factures](#5-factures)
-6. [Produits](#6-produits)
-7. [Fournisseurs et Achats](#7-fournisseurs-et-achats)
-8. [Clients](#8-clients)
-9. [Stock](#9-stock)
-10. [Rapports](#10-rapports)
-11. [Paramètres](#11-paramètres)
+5. [Retours et Avoirs](#5-retours-et-avoirs)
+6. [Factures](#6-factures)
+7. [Produits](#7-produits)
+8. [Fournisseurs et Achats](#8-fournisseurs-et-achats)
+9. [Clients](#9-clients)
+10. [Créances clients](#10-créances-clients)
+11. [Stock](#11-stock)
+12. [Rapports](#12-rapports)
+13. [Paramètres](#13-paramètres)
 
 ---
 
@@ -35,18 +37,18 @@
 Le menu latéral (sidebar) donne accès à tous les modules :
 
 | Icône | Module | Description rapide |
-|---|---|---|
+| --- | --- | --- |
 | 🏠 | Tableau de bord | Vue d'ensemble du jour |
 | 🛒 | Caisse POS | Point de vente |
-| 💰 | Ventes | Historique des ventes |
+| 💰 | Ventes | Historique des ventes — sous-menu **Retours** |
 | 📄 | Factures | Gestion des factures clients |
-| 📦 | Produits | Catalogue produits |
+| 📦 | Produits | Catalogue produits avec marques et variantes |
 | 🚛 | Fournisseurs | Gestion des fournisseurs |
 | 🛍️ | Achats | Bons de commande fournisseurs |
-| 👥 | Clients | Répertoire clients |
-| 📊 | Stock | Mouvements et alertes |
-| 📈 | Rapports | Analyses et exports |
-| ⚙️ | Paramètres | Configuration de la boutique |
+| 👥 | Clients | Répertoire clients — sous-menu **Créances** |
+| 📊 | Stock | Mouvements, alertes email, lots expirants |
+| 📈 | Rapports | Analyses et exports CSV |
+| ⚙️ | Paramètres | Configuration boutique, SMTP, utilisateurs |
 
 Cliquer sur le **logo** en haut à gauche retourne toujours au tableau de bord.
 
@@ -59,11 +61,11 @@ Le tableau de bord affiche un résumé en temps réel de votre activité.
 ### Indicateurs du jour (KPIs)
 
 | Indicateur | Description |
-|---|---|
+| --- | --- |
 | **Ventes du jour** | Nombre de transactions confirmées aujourd'hui |
 | **Chiffre d'affaires** | Total des ventes du jour en FCFA |
 | **Bénéfice** | CA du jour − coût d'achat des produits vendus |
-| **Paiements en attente** | Montant dû par les clients (crédit) |
+| **Encaissements du jour** | Total encaissé via toutes les méthodes de paiement |
 
 ### Graphique CA 7 jours
 
@@ -95,6 +97,7 @@ Cliquez sur **Caisse POS** dans le menu. La caisse s'ouvre en plein écran.
 ### Interface de la caisse
 
 L'écran est divisé en deux zones :
+
 - **Gauche** : catalogue des produits disponibles
 - **Droite** : panier en cours
 
@@ -115,6 +118,7 @@ L'écran est divisé en deux zones :
 #### Étape 3 — Gérer le panier
 
 Dans le panier (colonne droite) :
+
 - **−** / **+** : modifier la quantité
 - **Remise** : saisir une remise en FCFA sur une ligne
 - **Corbeille** : retirer un article
@@ -135,15 +139,11 @@ Dans le panier (colonne droite) :
 3. Saisissez le montant pour chaque mode
 4. Cliquez sur **Confirmer la vente**
 
+> **Paiement partiel :** si un client ne règle pas la totalité, saisissez le montant reçu et associez un client — le reste sera enregistré comme créance.
+
 #### Mode hors-ligne
 
 Si vous perdez la connexion internet, le POS continue de fonctionner. Les ventes sont mises en file d'attente et synchronisées automatiquement dès la reconnexion.
-
-### Raccourcis clavier
-
-| Touche | Action |
-|---|---|
-| Focus sur la barre de recherche | Cliquer sur la barre ou utiliser la souris |
 
 ---
 
@@ -154,11 +154,13 @@ Si vous perdez la connexion internet, le POS continue de fonctionner. Les ventes
 Accédez à **Ventes** pour voir l'historique complet.
 
 **Filtres disponibles :**
+
 - Recherche par référence (ex : VNT-2026-00019) ou nom client
 - Filtrer par statut : Confirmée / Brouillon / Annulée
 - Filtrer par période (dates de début et fin)
 
 **Colonnes du tableau :**
+
 - **Référence** : identifiant unique `VNT-YYYY-NNNNN`
 - **Client** : client associé ou "Anonyme"
 - **Date** : date de confirmation
@@ -169,7 +171,7 @@ Accédez à **Ventes** pour voir l'historique complet.
 
 ### Voir le détail d'une vente
 
-Cliquez sur une ligne pour ouvrir le détail complet : articles, paiements, client, etc.
+Cliquez sur une ligne pour ouvrir le détail complet : articles, paiements, client, retours associés, etc.
 
 ### Télécharger un reçu PDF
 
@@ -181,13 +183,54 @@ Sur le détail d'une vente **Confirmée**, cliquez sur **Annuler**. Le stock est
 
 ---
 
-## 5. Factures
+## 5. Retours et Avoirs
 
-Les factures permettent de facturer des clients avec des délais de paiement.
+Les retours permettent de traiter les articles renvoyés par un client suite à une vente. Chaque retour génère une référence unique `RET-YYYY-XXXXX` et réintègre automatiquement le stock.
+
+### Accéder aux retours
+
+Cliquez sur **Ventes** dans le menu latéral, puis sur le sous-menu **Retours**.
+
+### Consulter les retours
+
+**Filtres disponibles :**
+
+- Recherche par référence de retour ou de vente d'origine
+- Filtrer par type : Remboursement espèces / Avoir client / Sans remboursement
+- Filtrer par période
+
+### Créer un retour
+
+Un retour se crée depuis le **détail d'une vente** :
+
+1. Ouvrez la vente concernée (cliquez sur sa référence dans la liste)
+2. Faites défiler jusqu'à la section **Retours associés**
+3. Cliquez sur **+ Nouveau retour**
+4. Sélectionnez les articles à retourner et les quantités
+5. Choisissez le type de retour :
+   - **Remboursement espèces** : le client est remboursé immédiatement
+   - **Avoir client** : le montant est crédité sur le compte du client
+   - **Sans remboursement** : retour pour défaut sans compensation
+6. Ajoutez une note explicative (optionnel)
+7. Cliquez sur **Enregistrer le retour**
+
+> Le stock est automatiquement réintégré dès la validation du retour.
+
+### Règles importantes
+
+- Un retour ne peut pas dépasser la quantité vendue dans la vente d'origine
+- Le stock réintégré reflète la quantité réelle (poids ou pièces) de l'article retourné
+- Un retour est définitif — il ne peut pas être modifié ou supprimé
+
+---
+
+## 6. Factures
+
+Les factures permettent de facturer des clients avec des délais de paiement. Quand vous **envoyez** une facture dont le client a une adresse email, un email avec le PDF en pièce jointe lui est automatiquement envoyé.
 
 ### Statuts d'une facture
 
-```
+```text
 Brouillon → Envoyée → Payée
                     → En retard
          → Annulée
@@ -205,8 +248,8 @@ Brouillon → Envoyée → Payée
 ### Workflow d'une facture
 
 | Action | Résultat | Condition |
-|---|---|---|
-| **Envoyer** | Statut → "Envoyée" | Facture en brouillon |
+| --- | --- | --- |
+| **Envoyer** | Statut → "Envoyée" + email PDF au client (si email renseigné) | Facture en brouillon |
 | **Enregistrer un paiement** | Incrémente le montant payé | Facture envoyée ou en retard |
 | **Annuler** | Statut → "Annulée" | Facture brouillon ou envoyée |
 
@@ -216,11 +259,12 @@ Cliquez sur l'icône PDF sur la liste ou dans le détail.
 
 ---
 
-## 6. Produits
+## 7. Produits
 
 ### Consulter le catalogue
 
 La page **Produits** affiche tous vos produits avec filtres :
+
 - Recherche par nom, SKU ou code-barres
 - Filtrer par catégorie
 - Filtrer par statut (Actif / Inactif)
@@ -230,6 +274,7 @@ La page **Produits** affiche tous vos produits avec filtres :
 ### Page détail d'un produit
 
 La fiche détail affiche :
+
 - **Tarification** : prix de vente, prix d'achat, bénéfice unitaire et marge
 - **Stock** : quantité disponible, seuil d'alerte, alerte si stock bas
 - **Informations** : statut, code-barres, options actives
@@ -244,12 +289,13 @@ La fiche détail affiche :
    - **Nom** (obligatoire)
    - **SKU** : code unique du produit (facultatif)
    - **Catégorie** : pour organiser le catalogue
+   - **Marque** : fabricant ou fournisseur (facultatif)
    - **Image** : JPEG, PNG ou WebP, max 2 Mo
 3. Définissez les prix :
    - **Prix de vente** : prix affiché au client
    - **Prix d'achat** : coût d'acquisition (pour le calcul de la marge)
    - **Unité** : pièce, kg, L, etc.
-   - **Seuil d'alerte stock** : déclenche une alerte quand le stock descend en dessous
+   - **Seuil d'alerte stock** : déclenche une alerte email quand le stock descend en dessous
 4. Activez les options avancées si besoin (voir sections dédiées ci-dessous) :
    - **Produit à variantes** : pour les produits avec taille, couleur, format…
    - **Vendu au poids** : saisie du poids en kg au POS
@@ -269,16 +315,19 @@ Pour un produit vendu en plusieurs déclinaisons : T-shirt Blanc/M, T-shirt Blan
 
 Activez **Produit à variantes**, puis suivez les 3 étapes :
 
-**Étape 1 — Sélectionner les attributs**
+##### Étape 1 — Sélectionner les attributs
+
 - Cliquez sur les attributs existants (ex : COULEUR, TAILLE)
 - Ou créez un nouvel attribut en tapant son nom et en cliquant **Créer**
 
-**Étape 2 — Sélectionner les valeurs**
+##### Étape 2 — Sélectionner les valeurs
+
 - Cliquez sur les valeurs existantes (ex : Rouge, Bleu, XL, L)
 - Ou tapez une nouvelle valeur et cliquez sur **+** pour l'ajouter
 - Sélectionnez au moins une valeur par attribut
 
-**Étape 3 — Configurer les combinaisons**
+##### Étape 3 — Configurer les combinaisons
+
 - Le système génère automatiquement toutes les combinaisons possibles
 - Pour chaque combinaison, saisissez un SKU et/ou un prix spécifique (optionnel)
 - Supprimez les combinaisons non souhaitées avec la corbeille
@@ -288,7 +337,7 @@ Activez **Produit à variantes**, puis suivez les 3 étapes :
 Depuis la fiche détail du produit, la section **Variantes** liste toutes les déclinaisons :
 
 | Colonne | Description |
-|---|---|
+| --- | --- |
 | **Combinaison** | Ex : Blanc / M |
 | **SKU** | Code unique de cette variante |
 | **Prix** | Prix spécifique ou "Hérité" (= prix du produit parent) |
@@ -347,7 +396,7 @@ Pour les produits ayant une date de péremption : médicaments, produits aliment
 La section **Lots / Expiration** remplace l'affichage de stock simple. Elle affiche :
 
 | Colonne | Description |
-|---|---|
+| --- | --- |
 | **N° Lot** | Identifiant du lot (ex : LOT-2026-001) |
 | **Expiration** | Date de péremption (orange = expire dans 30 jours, rouge = expiré) |
 | **Reçu** | Quantité totale reçue pour ce lot |
@@ -364,7 +413,7 @@ La **carte Stock** affiche :
 Depuis la fiche détail, cliquez sur **+ Ajouter un lot** (bouton en haut à droite ou dans la section Lots).
 
 | Champ | Obligatoire | Description |
-|---|---|---|
+| --- | --- | --- |
 | **N° de lot** | Oui | Numéro figurant sur l'emballage fournisseur |
 | **Quantité** | Oui | Nombre d'unités de ce lot |
 | **Date d'expiration** | Non | Date de péremption (format JJ/MM/AAAA) |
@@ -406,7 +455,7 @@ Si aucun lot disponible n'a la quantité suffisante, la vente est bloquée avec 
 
 #### Réceptionner un bon de commande avec lots
 
-Lors de la réception d'un bon de commande (voir section 7), pour les articles avec suivi d'expiration, deux champs supplémentaires apparaissent :
+Lors de la réception d'un bon de commande (voir section 8), pour les articles avec suivi d'expiration, deux champs supplémentaires apparaissent :
 
 - **N° de lot** : numéro indiqué sur les cartons reçus
 - **Date d'expiration** : date de péremption du lot
@@ -432,27 +481,34 @@ Depuis la liste ou la fiche détail, cliquez sur l'icône **crayon** ou le bouto
 5. Consultez le rapport d'import (créés / mis à jour / erreurs)
 
 **Format du fichier CSV :**
-```
+
+```text
 nom;sku;categorie;prix_vente;prix_achat;stock;seuil_alerte;unite;description
 T-shirt blanc;TSH-BL;Mode;5000;2500;50;5;pièce;T-shirt en coton
 ```
 
-### Catégories
+### Catégories et Marques
 
-Depuis la création/modification d'un produit, cliquez sur **+ Nouvelle** à côté du champ Catégorie pour créer une catégorie directement.
+**Catégories :** depuis la création/modification d'un produit, cliquez sur **+ Nouvelle** à côté du champ Catégorie pour créer une catégorie directement.
+
+**Marques :** le champ **Marque** permet de rattacher un produit à une marque (ex : Samsung, Nestlé, Kirène). Cliquez sur **+ Nouvelle** à côté du champ Marque pour créer une marque à la volée. La marque s'affiche sous le nom du produit dans la liste.
+
+> Les marques sont partagées entre tous les produits de votre boutique. Si une marque est liée à des produits, elle ne peut pas être supprimée.
 
 ---
 
-## 7. Fournisseurs et Achats
+## 8. Fournisseurs et Achats
 
 ### Fournisseurs
 
 **Ajouter un fournisseur :**
+
 1. Cliquez sur **Nouveau fournisseur**
 2. Renseignez le nom, le pays, le téléphone et l'email
 3. Cliquez sur **Créer**
 
 **Actions disponibles :**
+
 - **Modifier** : mettre à jour les informations
 - **Désactiver / Activer** : gérer la disponibilité du fournisseur
 - **Supprimer** : suppression définitive
@@ -462,12 +518,14 @@ Depuis la création/modification d'un produit, cliquez sur **+ Nouvelle** à cô
 Les bons de commande permettent de gérer les approvisionnements auprès des fournisseurs.
 
 **Statuts d'un bon de commande :**
-```
+
+```text
 Brouillon → Commandé → Partiellement reçu → Reçu
           → Annulé
 ```
 
 **Créer un bon de commande :**
+
 1. Cliquez sur **+ Nouveau bon de commande**
 2. Sélectionnez le fournisseur (optionnel)
 3. Définissez la date de livraison prévue (optionnel)
@@ -477,7 +535,7 @@ Brouillon → Commandé → Partiellement reçu → Reçu
 **Workflow :**
 
 | Action | Résultat | Quand ? |
-|---|---|---|
+| --- | --- | --- |
 | **Confirmer** | Statut → Commandé | Bon en brouillon |
 | **Réceptionner** | Stock incrémenté automatiquement | Bon commandé ou partiel |
 | **Annuler** | Statut → Annulé | Bon brouillon ou commandé |
@@ -493,11 +551,12 @@ Renseignez ces informations pour que le lot soit automatiquement créé et immé
 
 ---
 
-## 8. Clients
+## 9. Clients
 
 ### Gérer les clients
 
 **Ajouter un client :**
+
 1. Cliquez sur **Nouveau client**
 2. Renseignez le nom, le pays, le téléphone et l'email
 3. Cliquez sur **Créer**
@@ -506,6 +565,7 @@ Renseignez ces informations pour que le lot soit automatiquement créé et immé
 Cliquez sur l'icône **œil** ou sur le nom du client pour accéder à son profil complet avec l'historique de ses achats.
 
 **Actions disponibles :**
+
 - **Modifier** les informations
 - **Désactiver / Activer** : un client désactivé n'apparaît plus dans la liste du POS
 - **Supprimer** : suppression définitive
@@ -516,7 +576,35 @@ Utilisez la barre de recherche pour filtrer par nom, email ou téléphone. Filtr
 
 ---
 
-## 9. Stock
+## 10. Créances clients
+
+La page **Créances** affiche tous les clients ayant un solde impayé sur leurs ventes à crédit.
+
+### Accéder aux créances
+
+Cliquez sur **Clients** dans le menu latéral, puis sur le sous-menu **Créances**.
+
+### Lire le tableau de créances
+
+| Colonne | Description |
+| --- | --- |
+| **Client** | Nom du client |
+| **Ventes à crédit** | Nombre de ventes avec solde restant dû |
+| **Montant dû** | Total impayé de ce client (hors trop-perçus) |
+
+En haut du tableau, la carte **Total dû** affiche la somme globale de toutes les créances, quelle que soit la page affichée.
+
+### Fonctionnement
+
+- Seules les ventes avec un reste à payer (`total − montant payé > 0`) apparaissent
+- Les trop-perçus (paiements supérieurs au total) ne créent pas de solde négatif
+- Cliquez sur un client pour accéder à sa fiche et voir le détail de ses ventes impayées
+
+> **Conseil :** pour régulariser une créance, ouvrez la vente concernée depuis la fiche client et enregistrez le paiement manquant.
+
+---
+
+## 11. Stock
 
 La page Stock centralise le suivi des mouvements, alertes et lots.
 
@@ -527,16 +615,18 @@ La page Stock centralise le suivi des mouvements, alertes et lots.
 Historique de tous les flux d'entrée et sortie :
 
 | Type | Description |
-|---|---|
+| --- | --- |
 | **Entrée** | Réception de marchandises (achat, retour) |
 | **Sortie** | Vente de produits |
 | **Inventaire** | Ajustement manuel du stock |
 
 Filtrez par type de mouvement et par période.
 
-#### Alertes stock
+#### Produits en alerte de stock
 
 Liste des produits dont le stock est en dessous du seuil d'alerte défini. Réapprovisionnez rapidement via un bon de commande.
+
+> **Email automatique :** quand le stock d'un produit franchit son seuil d'alerte à la baisse (suite à une vente ou un ajustement), un email est envoyé automatiquement à tous les utilisateurs ayant la permission de voir le stock. L'email indique le produit, le stock actuel et le seuil configuré.
 
 #### Lots expirants
 
@@ -559,13 +649,14 @@ Pour corriger manuellement le stock d'un produit :
 
 ---
 
-## 10. Rapports
+## 12. Rapports
 
 La page Rapports propose 3 analyses téléchargeables en CSV.
 
 ### Rapport Ventes
 
 Analyse du chiffre d'affaires sur une période donnée :
+
 - CA total, nombre de ventes, panier moyen
 - Répartition par méthode de paiement
 - Évolution jour par jour
@@ -575,26 +666,28 @@ Analyse du chiffre d'affaires sur une période donnée :
 ### Rapport Produits
 
 Top produits vendus sur la période :
+
 - Quantité vendue et chiffre d'affaires par produit
 - Permet d'identifier les best-sellers et les produits peu performants
 
 ### Rapport Stock
 
 Synthèse du stock actuel :
+
 - Valeur totale du stock (à prix d'achat)
 - Produits en rupture ou sous le seuil d'alerte
 - Liste complète avec quantités disponibles
 
 ---
 
-## 11. Paramètres
+## 13. Paramètres
 
 ### Onglet Boutique
 
 Configurez les informations de votre commerce :
 
 | Champ | Description |
-|---|---|
+| --- | --- |
 | **Logo** | Image affichée dans la barre latérale (JPEG, PNG, SVG, max 2 Mo) |
 | **Nom du commerce** | Affiché dans l'interface et sur les PDF |
 | **Secteur d'activité** | Commerce général, Alimentation, Mode, Cosmétique |
@@ -605,9 +698,25 @@ Configurez les informations de votre commerce :
 
 > **Note :** Les couleurs de l'interface (charte graphique) sont définies par l'administrateur de la plateforme et ne peuvent pas être modifiées ici.
 
+#### Configuration SMTP (emails sortants)
+
+Vous pouvez configurer votre propre serveur email pour que les notifications (alertes stock, factures) soient envoyées depuis votre adresse professionnelle :
+
+| Champ | Exemple |
+| --- | --- |
+| **Serveur SMTP** | `smtp.hostinger.com` |
+| **Port** | `587` (TLS) ou `465` (SSL) |
+| **Utilisateur** | `contact@ma-boutique.sn` |
+| **Mot de passe** | Mot de passe de la boîte email |
+| **Expéditeur (adresse)** | `contact@ma-boutique.sn` |
+| **Expéditeur (nom)** | `Ma Boutique Dakar` |
+
+Si ce champ est laissé vide, le serveur email de la plateforme est utilisé en fallback.
+
 ### Onglet Mon profil
 
 Modifiez vos informations personnelles :
+
 - Nom d'affichage
 - Adresse email
 - Mot de passe (laisser vide pour ne pas modifier)
@@ -617,6 +726,7 @@ Modifiez vos informations personnelles :
 Gérez les comptes de vos collaborateurs :
 
 **Ajouter un utilisateur :**
+
 1. Cliquez sur **Nouvel utilisateur**
 2. Renseignez nom, email, mot de passe
 3. Assignez un ou plusieurs **groupes** (définit les permissions)
@@ -631,12 +741,13 @@ Les groupes définissent ce que chaque collaborateur peut faire dans l'applicati
 **Groupes par défaut :**
 
 | Groupe | Accès typique |
-|---|---|
+| --- | --- |
 | **Administrateur** | Accès complet à toutes les fonctionnalités |
 | **Gestionnaire** | Tout sauf la suppression et les paramètres sensibles |
 | **Vendeur** | POS, consultation des ventes et du stock |
 
 **Créer un groupe personnalisé :**
+
 1. Cliquez sur **Nouveau groupe**
 2. Donnez-lui un nom
 3. Cliquez sur **Permissions** pour définir les accès
@@ -656,7 +767,7 @@ Les groupes définissent ce que chaque collaborateur peut faire dans l'applicati
 ### Raccourcis utiles
 
 | Raccourci | Action |
-|---|---|
+| --- | --- |
 | Clic sur le logo/nom boutique | Retour au tableau de bord |
 | Clic sur une ligne produit | Ouvrir la fiche détail |
 | Clic sur une ligne vente | Ouvrir le détail de la vente |
@@ -665,7 +776,7 @@ Les groupes définissent ce que chaque collaborateur peut faire dans l'applicati
 ### En cas de problème
 
 | Problème | Solution |
-|---|---|
+| --- | --- |
 | Le POS ne répond plus | Vérifiez votre connexion internet — le mode hors-ligne prend le relais |
 | Stock incorrect | Faites un ajustement d'inventaire depuis la page Stock |
 | Impossible de se connecter | Contactez votre administrateur |
@@ -673,4 +784,4 @@ Les groupes définissent ce que chaque collaborateur peut faire dans l'applicati
 
 ---
 
-*Document généré pour la plateforme SaaS Gestion Commerciale — Afrique de l'Ouest*
+Document généré pour la plateforme SaaS Gestion Commerciale — Afrique de l'Ouest

@@ -15,18 +15,19 @@ Plateforme SaaS multi-tenant de gestion commerciale pour PME — Afrique de l'Ou
 | --- | --- |
 | **Super Admin** | Interface dédiée `/admin` — CRUD tenants, charte graphique, utilisateurs, stats globales |
 | **Tableau de bord** | KPIs du jour, graphique CA 7 jours (couleurs bi-chrome tenant), top produits, alertes stock |
-| **Caisse POS** | Fullscreen, panier, variantes, pesée, paiement multi-méthode, mode hors-ligne |
-| **Ventes** | Liste paginée, détail, annulation, téléchargement PDF |
-| **Factures** | Workflow `draft→sent→paid/overdue/cancelled`, remise, TVA, paiement partiel, PDF |
-| **Produits** | CRUD, image upload, variantes, attributs, catégories imbriquées, import CSV, thumbnail dans la liste |
+| **Caisse POS** | Fullscreen, panier, variantes, pesée, paiement multi-méthode + partiel, mode hors-ligne |
+| **Ventes** | Liste paginée, détail, annulation, PDF — sous-menu **Retours/Avoirs** (`RET-YYYY-XXXXX`) |
+| **Factures** | Workflow `draft→sent→paid/overdue/cancelled`, remise, TVA, paiement partiel, PDF, envoi email auto |
+| **Produits** | CRUD, image upload, variantes, attributs, catégories, **marques**, import CSV, thumbnail dans la liste |
 | **Fournisseurs** | CRUD, activation/désactivation, sélecteur pays + téléphone international |
 | **Achats** | Bons de commande `ACH-YYYY-XXXXX`, workflow draft → ordered → partial → received, réception partielle idempotente |
-| **Clients** | CRUD, historique des achats, sélecteur pays + téléphone international |
-| **Stock** | Mouvements, ajustements, alertes seuil, lots expirants |
+| **Clients** | CRUD, historique des achats, sélecteur pays + téléphone — sous-menu **Créances** (`GREATEST(total-paid, 0)`) |
+| **Stock** | Mouvements, ajustements, alertes seuil, lots expirants — **alertes email automatiques** |
 | **Rapports** | CA par période, top produits, synthèse stock — export CSV (UTF-8 BOM, séparateur `;`) |
-| **Paramètres** | Logo boutique, devise, secteur, coordonnées, profil utilisateur, groupes & permissions (57 permissions) |
+| **Paramètres** | Logo boutique, devise, secteur, coordonnées, SMTP tenant, profil utilisateur, groupes & permissions |
 | **Toasts** | Notifications succès/erreur sur toutes les mutations — messages d'erreur Laravel traduits en français |
-| **Charte graphique** | `--brand-primary` / `--brand-secondary` CSS variables — appliquées sur sidebar, boutons, badges, graphe |
+| **Charte graphique** | `--brand-primary` / `--brand-secondary` CSS variables — sidebar, boutons, badges, graphe, emails |
+| **Notifications email** | 2 niveaux SMTP (global `.env` + par tenant), 3 jobs queue, templates HTML inline Gmail-compatible |
 
 ---
 
@@ -262,17 +263,20 @@ Interface accessible sur `/admin/login` — store Zustand `superAdminStore` sép
 | Dashboard | `/api/v1/dashboard` | summary |
 | Rapports | `/api/v1/reports` | sales, products, stock (+ `?format=csv`) |
 | Produits | `/api/v1/products` | CRUD + variantes + attributs + mouvements stock + import CSV |
+| Marques | `/api/v1/brands` | CRUD — permission `products.*` |
 | Catégories | `/api/v1/categories` | CRUD |
 | Fournisseurs | `/api/v1/suppliers` | CRUD |
 | Achats | `/api/v1/purchases` | CRUD + confirm + receive + cancel |
-| Factures | `/api/v1/invoices` | CRUD + send + payment + cancel + PDF |
+| Factures | `/api/v1/invoices` | CRUD + send (→ email auto) + payment + cancel + PDF |
 | Ventes | `/api/v1/sales` | CRUD + paiements + annulation + PDF |
+| Retours | `/api/v1/returns` | CRUD — permission `returns.*` |
 | Clients | `/api/v1/customers` | CRUD + historique |
+| Créances | `/api/v1/debts` | liste paginée + `global_outstanding` — permission `debts.view` |
 | Stock | `/api/v1/stock` | adjust + movements + alerts + expiring |
 | POS | `/api/v1/pos` | products + session + sync offline + drafts |
 | Utilisateurs | `/api/v1/users` | CRUD + syncGroups |
 | Groupes | `/api/v1/groups` | CRUD + permissions |
-| Paramètres | `/api/v1/settings` | GET + PUT/POST (logo upload multipart) |
+| Paramètres | `/api/v1/settings` | GET + PUT/POST (logo + SMTP tenant) |
 
 ### Routes Super Admin
 
@@ -334,6 +338,75 @@ docker compose exec app php artisan storage:link
 
 ---
 
+## Configuration email
+
+### Niveau 1 — SMTP global (`.env`)
+
+Utilisé comme fallback pour tous les tenants qui n'ont pas configuré leur propre SMTP, et pour les emails Super Admin (bienvenue tenant).
+
+```env
+# Production Hostinger
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.hostinger.com
+MAIL_PORT=587
+MAIL_USERNAME=noreply@votre-domaine.sn
+MAIL_PASSWORD=votre-mot-de-passe
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="noreply@votre-domaine.sn"
+MAIL_FROM_NAME="${APP_NAME}"
+
+# Dev — écriture dans storage/logs/laravel.log (pas d'envoi réel)
+MAIL_MAILER=log
+```
+
+### Niveau 2 — SMTP par tenant (Paramètres → Boutique)
+
+Chaque tenant peut configurer son propre serveur SMTP via l'interface **Paramètres → Boutique**. Ces valeurs sont stockées en base dans `tenant_settings` et prennent le pas sur le SMTP global.
+
+| Clé setting | Description |
+| --- | --- |
+| `smtp_host` | Serveur SMTP (ex: `smtp.hostinger.com`) |
+| `smtp_port` | Port (587 pour TLS, 465 pour SSL) |
+| `smtp_user` | Nom d'utilisateur SMTP |
+| `smtp_pass` | Mot de passe SMTP |
+| `smtp_from` | Adresse expéditeur (ex: `contact@boutique.sn`) |
+| `smtp_from_name` | Nom affiché (ex: `Boutique Dakar`) |
+
+### Emails envoyés automatiquement
+
+| Événement | Destinataire | Template |
+| --- | --- | --- |
+| Stock passe sous le seuil d'alerte | Utilisateurs avec permission `stock.view` | `emails.stock-alert` |
+| Facture envoyée (`POST /api/v1/invoices/{id}/send`) | Client de la facture | `emails.invoice-sent` + PDF en pièce jointe |
+| Nouveau tenant créé (Super Admin) | Admin du tenant | `emails.tenant-welcome` |
+
+### File d'attente
+
+Les emails passent par la queue `notifications`. Sur Hostinger (pas de `redis`), configurer :
+
+```env
+QUEUE_CONNECTION=database
+```
+
+Le scheduler lance `queue:work --stop-when-empty` chaque minute via `routes/console.php` — aucun worker permanent n'est nécessaire.
+
+### Tester l'envoi email en production
+
+```bash
+# Test SMTP global
+php artisan tinker
+Mail::raw('Test email', fn($m) => $m->to('votre@email.com')->subject('Test'));
+
+# Vérifier que le job est bien créé dans la table jobs
+php artisan tinker
+DB::table('jobs')->count(); // doit augmenter après une action déclenchante
+
+# Traiter la file manuellement (si le scheduler n'est pas encore actif)
+php artisan queue:work --queue=notifications --stop-when-empty
+```
+
+---
+
 ## Roadmap
 
 | Phase | Statut | Contenu |
@@ -352,3 +425,7 @@ docker compose exec app php artisan storage:link
 | UX — Toasts & notifications | ✅ Terminée | Toast success/error sur toutes les mutations, messages Laravel traduits FR |
 | UX — Charte graphique | ✅ Terminée | `brand-secondary` appliqué sur badges info, icônes KPI alternées, graphe bi-chrome |
 | UX — Téléphone international | ✅ Terminée | `PhoneInput` avec sélecteur pays, indicatif auto-préfixé, validation par pays |
+| Marques produits | ✅ Terminée | Table `brands` tenant-scoped, `BrandSelect` avec création inline, affiché sous le nom produit |
+| Retours / Avoirs | ✅ Terminée | `RET-YYYY-XXXXX`, réintégration stock idempotente, `ReturnsPage`, section dans `SaleDetailPage` |
+| Créances clients | ✅ Terminée | `DebtController` SQL LIMIT/OFFSET + `global_outstanding`, `DebtsPage`, sidebar accordion |
+| Notifications email | ✅ Terminée | 2 niveaux SMTP, 3 Jobs queue, 3 Mailables, templates HTML inline compatibles Gmail |

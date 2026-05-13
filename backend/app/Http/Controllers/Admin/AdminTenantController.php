@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Group;
+use App\Services\MailService;
 use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,7 +20,10 @@ class AdminTenantController extends Controller
     private const SECTORS    = ['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services'];
     private const CURRENCIES = ['XOF', 'XAF', 'GNF', 'EUR', 'USD', 'GBP', 'MAD', 'MRU'];
 
-    public function __construct(private readonly TenantService $tenantService) {}
+    public function __construct(
+        private readonly TenantService $tenantService,
+        private readonly MailService $mailService,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -57,7 +61,7 @@ class AdminTenantController extends Controller
             'admin_password'=> ['required', 'string', 'min:8'],
         ]);
 
-        $tenant = DB::transaction(function () use ($validated) {
+        [$tenant, $admin] = DB::transaction(function () use ($validated) {
             $tenant = Tenant::create([
                 'name'          => $validated['name'],
                 'sector'        => $validated['sector'],
@@ -92,8 +96,11 @@ class AdminTenantController extends Controller
                 $user->groups()->attach($adminGroup->id);
             }
 
-            return $tenant;
+            return [$tenant, $user];
         });
+
+        // Email de bienvenue avec le mot de passe en clair (disponible uniquement ici)
+        $this->mailService->sendTenantWelcome($tenant, $admin, $validated['admin_password']);
 
         return response()->json(['data' => $this->formatTenant($tenant)], 201);
     }
