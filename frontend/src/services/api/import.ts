@@ -14,6 +14,7 @@ export async function importProducts(
   if (updateExisting) form.append('update_existing', '1')
 
   const { data } = await apiClient.post<ImportResult>('/api/v1/products/import', form, {
+    headers: { 'Content-Type': undefined }, // laisse le navigateur générer la boundary multipart
     validateStatus: (s) => s === 200 || s === 207, // 207 = import partiel avec erreurs
   })
   return data

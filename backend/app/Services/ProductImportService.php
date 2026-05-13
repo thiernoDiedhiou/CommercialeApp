@@ -8,16 +8,18 @@ use InvalidArgumentException;
 
 class ProductImportService
 {
-    // Index des colonnes CSV (0-based)
-    private const COL_NAME        = 0;
-    private const COL_SKU         = 1;
-    private const COL_CATEGORY    = 2;
-    private const COL_PRICE       = 3;
-    private const COL_COST        = 4;
-    private const COL_STOCK       = 5;
-    private const COL_THRESHOLD   = 6;
-    private const COL_UNIT        = 7;
-    private const COL_DESCRIPTION = 8;
+    // Aliases acceptés pour chaque colonne (insensible à la casse)
+    private const COL_ALIASES = [
+        'name'        => ['nom', 'nom_produit', 'name', 'produit'],
+        'sku'         => ['sku', 'code', 'reference', 'ref'],
+        'category'    => ['categorie', 'category', 'cat'],
+        'price'       => ['prix_vente', 'prix', 'prix_fcfa', 'price', 'tarif'],
+        'cost'        => ['prix_achat', 'cost', 'cout', 'cout_achat'],
+        'stock'       => ['stock', 'quantite', 'quantité', 'qty', 'qte'],
+        'threshold'   => ['seuil_alerte', 'seuil', 'alert_threshold', 'threshold'],
+        'unit'        => ['unite', 'unité', 'unit'],
+        'description' => ['description', 'desc'],
+    ];
 
     public function __construct(private readonly TenantService $tenantService) {}
 
@@ -37,16 +39,28 @@ class ProductImportService
     public function import(string $filePath, bool $updateExisting = false): array
     {
         $tenantId = $this->tenantService->currentId();
-        $handle   = fopen($filePath, 'r');
 
-        // Retire le BOM UTF-8 si présent
-        $bom = fread($handle, 3);
-        if ($bom !== "\xEF\xBB\xBF") {
-            rewind($handle);
+        // ── Normalisation encodage ────────────────────────────────────────────
+        // Excel FR exporte souvent en Windows-1252 (Latin-1), pas en UTF-8.
+        // On lit tout le contenu, on retire le BOM si présent, puis on convertit.
+        $content = file_get_contents($filePath);
+
+        if (str_starts_with($content, "\xEF\xBB\xBF")) {
+            $content = substr($content, 3); // Strip BOM UTF-8
         }
 
-        // Ignore l'en-tête
-        fgetcsv($handle, 0, ';');
+        if (! mb_check_encoding($content, 'UTF-8')) {
+            $content = mb_convert_encoding($content, 'UTF-8', 'Windows-1252');
+        }
+
+        // Écrit dans un fichier temporaire pour réutiliser fgetcsv
+        $tempPath = tempnam(sys_get_temp_dir(), 'csv_import_');
+        file_put_contents($tempPath, $content);
+        $handle = fopen($tempPath, 'r');
+
+        // Détection dynamique des colonnes depuis l'en-tête
+        $rawHeader = fgetcsv($handle, 0, ';');
+        $colMap    = $this->detectColumns(array_map('trim', (array) $rawHeader));
 
         $created        = 0;
         $updated        = 0;
@@ -55,76 +69,79 @@ class ProductImportService
         $rowNum         = 2;
         $categoryCache  = []; // name → id (évite N+1)
 
-        while (($cols = fgetcsv($handle, 0, ';')) !== false) {
-            // Ignore les lignes entièrement vides
-            if (count(array_filter(array_map('trim', (array) $cols))) === 0) {
-                $rowNum++;
-                continue;
-            }
-
-            try {
-                $data = $this->parseRow($cols, $rowNum, $tenantId, $categoryCache);
-            } catch (InvalidArgumentException $e) {
-                $errors[] = ['row' => $rowNum, 'message' => $e->getMessage()];
-                $rowNum++;
-                continue;
-            }
-
-            // Gestion du SKU existant
-            if ($data['sku'] !== '') {
-                $existing = Product::withoutGlobalScopes()
-                    ->where('tenant_id', $tenantId)
-                    ->where('sku', $data['sku'])
-                    ->whereNull('deleted_at')
-                    ->first();
-
-                if ($existing) {
-                    if ($updateExisting) {
-                        $existing->update([
-                            'name'            => $data['name'],
-                            'price'           => $data['price'],
-                            'cost_price'      => $data['cost_price'],
-                            'description'     => $data['description'] ?: null,
-                            'unit'            => $data['unit'],
-                            'alert_threshold' => $data['alert_threshold'],
-                            'category_id'     => $data['category_id'],
-                        ]);
-                        $updated++;
-                    } else {
-                        $skipped++;
-                    }
+        try {
+            while (($cols = fgetcsv($handle, 0, ';')) !== false) {
+                // Ignore les lignes entièrement vides
+                if (count(array_filter(array_map('trim', (array) $cols))) === 0) {
                     $rowNum++;
                     continue;
                 }
-            }
 
-            // Création du produit
-            // alert_threshold omis quand null → le default DB s'applique (5)
-            $productData = [
-                'tenant_id'       => $tenantId,
-                'name'            => $data['name'],
-                'sku'             => $data['sku'] ?: null,
-                'category_id'     => $data['category_id'],
-                'price'           => $data['price'],
-                'cost_price'      => $data['cost_price'],
-                'stock_quantity'  => $data['stock'],
-                'unit'            => $data['unit'],
-                'description'     => $data['description'] ?: null,
-                'has_variants'    => false,
-                'is_weight_based' => false,
-                'has_expiry'      => false,
-                'is_active'       => true,
-            ];
-            if ($data['alert_threshold'] !== null) {
-                $productData['alert_threshold'] = $data['alert_threshold'];
-            }
-            Product::create($productData);
+                try {
+                    $data = $this->parseRow($cols, $rowNum, $tenantId, $categoryCache, $colMap);
+                } catch (InvalidArgumentException $e) {
+                    $errors[] = ['row' => $rowNum, 'message' => $e->getMessage()];
+                    $rowNum++;
+                    continue;
+                }
 
-            $created++;
-            $rowNum++;
+                // Gestion du SKU existant
+                if ($data['sku'] !== '') {
+                    $existing = Product::withoutGlobalScopes()
+                        ->where('tenant_id', $tenantId)
+                        ->where('sku', $data['sku'])
+                        ->whereNull('deleted_at')
+                        ->first();
+
+                    if ($existing) {
+                        if ($updateExisting) {
+                            $existing->update([
+                                'name'            => $data['name'],
+                                'price'           => $data['price'],
+                                'cost_price'      => $data['cost_price'],
+                                'description'     => $data['description'] ?: null,
+                                'unit'            => $data['unit'],
+                                'alert_threshold' => $data['alert_threshold'],
+                                'category_id'     => $data['category_id'],
+                            ]);
+                            $updated++;
+                        } else {
+                            $skipped++;
+                        }
+                        $rowNum++;
+                        continue;
+                    }
+                }
+
+                // Création du produit
+                // alert_threshold omis quand null → le default DB s'applique (5)
+                $productData = [
+                    'tenant_id'       => $tenantId,
+                    'name'            => $data['name'],
+                    'sku'             => $data['sku'] ?: null,
+                    'category_id'     => $data['category_id'],
+                    'price'           => $data['price'],
+                    'cost_price'      => $data['cost_price'],
+                    'stock_quantity'  => $data['stock'],
+                    'unit'            => $data['unit'],
+                    'description'     => $data['description'] ?: null,
+                    'has_variants'    => false,
+                    'is_weight_based' => false,
+                    'has_expiry'      => false,
+                    'is_active'       => true,
+                ];
+                if ($data['alert_threshold'] !== null) {
+                    $productData['alert_threshold'] = $data['alert_threshold'];
+                }
+                Product::create($productData);
+
+                $created++;
+                $rowNum++;
+            }
+        } finally {
+            fclose($handle);
+            @unlink($tempPath);
         }
-
-        fclose($handle);
 
         return compact('created', 'updated', 'skipped', 'errors');
     }
@@ -148,19 +165,51 @@ class ProductImportService
     // ─── Parsing interne ──────────────────────────────────────────────────────
 
     /**
+     * Mappe les noms de colonnes du CSV (insensible à la casse) vers leurs indices.
+     *
+     * @return array<string, int|null>
+     */
+    private function detectColumns(array $header): array
+    {
+        $normalized = array_map(
+            fn($h) => mb_strtolower(preg_replace('/[\s\-\']+/', '_', $h)),
+            $header
+        );
+
+        $result = [];
+        foreach (self::COL_ALIASES as $key => $aliases) {
+            $result[$key] = null;
+            foreach ($aliases as $alias) {
+                $pos = array_search($alias, $normalized, true);
+                if ($pos !== false) {
+                    $result[$key] = $pos;
+                    break;
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * @throws InvalidArgumentException  Si les données sont invalides
      */
-    private function parseRow(array $cols, int $rowNum, int $tenantId, array &$categoryCache): array
+    private function parseRow(array $cols, int $rowNum, int $tenantId, array &$categoryCache, array $colMap): array
     {
-        $name        = trim($cols[self::COL_NAME]        ?? '');
-        $sku         = trim($cols[self::COL_SKU]         ?? '');
-        $categoryStr = trim($cols[self::COL_CATEGORY]    ?? '');
-        $priceStr    = trim($cols[self::COL_PRICE]       ?? '');
-        $costStr     = trim($cols[self::COL_COST]        ?? '');
-        $stockStr    = trim($cols[self::COL_STOCK]       ?? '0');
-        $threshStr   = trim($cols[self::COL_THRESHOLD]   ?? '');
-        $unit        = trim($cols[self::COL_UNIT]        ?? '');
-        $description = trim($cols[self::COL_DESCRIPTION] ?? '');
+        $get = fn(string $key, string $default = '') =>
+            isset($colMap[$key]) && $colMap[$key] !== null
+                ? trim($cols[$colMap[$key]] ?? $default)
+                : $default;
+
+        $name        = $get('name');
+        $sku         = $get('sku');
+        $categoryStr = $get('category');
+        $priceStr    = $get('price');
+        $costStr     = $get('cost');
+        $stockStr    = $get('stock', '0');
+        $threshStr   = $get('threshold');
+        $unit        = $get('unit');
+        $description = $get('description');
 
         if ($name === '') {
             throw new InvalidArgumentException("Ligne {$rowNum} : le nom du produit est requis.");
