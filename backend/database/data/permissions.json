@@ -1,0 +1,160 @@
+[
+  {
+    "module": "dashboard",
+    "display_name": "Tableau de bord",
+    "permissions": [
+      { "name": "dashboard.view",   "display_name": "Voir le tableau de bord",    "action": "view" }
+    ]
+  },
+  {
+    "module": "products",
+    "display_name": "Produits",
+    "permissions": [
+      { "name": "products.view",    "display_name": "Voir les produits",           "action": "view"   },
+      { "name": "products.create",  "display_name": "Créer un produit",            "action": "create" },
+      { "name": "products.edit",    "display_name": "Modifier un produit",         "action": "edit"   },
+      { "name": "products.delete",  "display_name": "Supprimer un produit",        "action": "delete" },
+      { "name": "products.import",  "display_name": "Importer des produits CSV",   "action": "import" }
+    ]
+  },
+  {
+    "module": "categories",
+    "display_name": "Catégories",
+    "permissions": [
+      { "name": "categories.view",   "display_name": "Voir les catégories",        "action": "view"   },
+      { "name": "categories.create", "display_name": "Créer une catégorie",        "action": "create" },
+      { "name": "categories.edit",   "display_name": "Modifier une catégorie",     "action": "edit"   },
+      { "name": "categories.delete", "display_name": "Supprimer une catégorie",    "action": "delete" }
+    ]
+  },
+  {
+    "module": "stock",
+    "display_name": "Stock",
+    "permissions": [
+      { "name": "stock.view",   "display_name": "Voir le stock",    "action": "view"   },
+      { "name": "stock.adjust", "display_name": "Ajuster le stock", "action": "adjust" }
+    ]
+  },
+  {
+    "module": "variants",
+    "display_name": "Variantes",
+    "permissions": [
+      { "name": "variants.view",   "display_name": "Voir les variantes",     "action": "view"   },
+      { "name": "variants.create", "display_name": "Créer une variante",     "action": "create" },
+      { "name": "variants.edit",   "display_name": "Modifier une variante",  "action": "edit"   },
+      { "name": "variants.delete", "display_name": "Supprimer une variante", "action": "delete" }
+    ]
+  },
+  {
+    "module": "pos",
+    "display_name": "Point de vente",
+    "permissions": [
+      { "name": "pos.access",   "display_name": "Accéder au POS",             "action": "access"   },
+      { "name": "pos.discount", "display_name": "Appliquer une remise",       "action": "discount" },
+      { "name": "pos.refund",   "display_name": "Effectuer un remboursement", "action": "refund"   }
+    ]
+  },
+  {
+    "module": "sales",
+    "display_name": "Ventes",
+    "permissions": [
+      { "name": "sales.view",   "display_name": "Voir les ventes",             "action": "view"   },
+      { "name": "sales.create", "display_name": "Créer une vente",             "action": "create" },
+      { "name": "sales.edit",   "display_name": "Modifier une vente",          "action": "edit"   },
+      { "name": "sales.delete", "display_name": "Supprimer une vente",         "action": "delete" },
+      { "name": "sales.pdf",    "display_name": "Télécharger une facture PDF", "action": "pdf"    }
+    ]
+  },
+  {
+    "module": "returns",
+    "display_name": "Retours",
+    "permissions": [
+      { "name": "returns.view",   "display_name": "Voir les retours",  "action": "view"   },
+      { "name": "returns.create", "display_name": "Créer un retour",   "action": "create" }
+    ]
+  },
+  {
+    "module": "customers",
+    "display_name": "Clients",
+    "permissions": [
+      { "name": "customers.view",   "display_name": "Voir les clients",      "action": "view"   },
+      { "name": "customers.create", "display_name": "Créer un client",       "action": "create" },
+      { "name": "customers.edit",   "display_name": "Modifier un client",    "action": "edit"   },
+      { "name": "customers.delete", "display_name": "Supprimer un client",   "action": "delete" }
+    ]
+  },
+  {
+    "module": "debts",
+    "display_name": "Créances",
+    "permissions": [
+      { "name": "debts.view", "display_name": "Voir les créances clients", "action": "view" }
+    ]
+  },
+  {
+    "module": "suppliers",
+    "display_name": "Fournisseurs",
+    "permissions": [
+      { "name": "suppliers.view",   "display_name": "Voir les fournisseurs",      "action": "view"   },
+      { "name": "suppliers.create", "display_name": "Créer un fournisseur",       "action": "create" },
+      { "name": "suppliers.edit",   "display_name": "Modifier un fournisseur",    "action": "edit"   },
+      { "name": "suppliers.delete", "display_name": "Supprimer un fournisseur",   "action": "delete" }
+    ]
+  },
+  {
+    "module": "purchases",
+    "display_name": "Achats",
+    "permissions": [
+      { "name": "purchases.view",    "display_name": "Voir les bons de commande",    "action": "view"    },
+      { "name": "purchases.create",  "display_name": "Créer un bon de commande",     "action": "create"  },
+      { "name": "purchases.edit",    "display_name": "Modifier un bon de commande",  "action": "edit"    },
+      { "name": "purchases.delete",  "display_name": "Supprimer un bon de commande", "action": "delete"  },
+      { "name": "purchases.receive", "display_name": "Réceptionner une commande",    "action": "receive" }
+    ]
+  },
+  {
+    "module": "invoices",
+    "display_name": "Facturation",
+    "permissions": [
+      { "name": "invoices.view",   "display_name": "Voir les factures",            "action": "view"   },
+      { "name": "invoices.create", "display_name": "Créer une facture",            "action": "create" },
+      { "name": "invoices.edit",   "display_name": "Modifier une facture",         "action": "edit"   },
+      { "name": "invoices.delete", "display_name": "Supprimer une facture",        "action": "delete" },
+      { "name": "invoices.pdf",    "display_name": "Télécharger une facture PDF",  "action": "pdf"    }
+    ]
+  },
+  {
+    "module": "reports",
+    "display_name": "Rapports",
+    "permissions": [
+      { "name": "reports.view", "display_name": "Voir les rapports", "action": "view" }
+    ]
+  },
+  {
+    "module": "users",
+    "display_name": "Utilisateurs",
+    "permissions": [
+      { "name": "users.view",   "display_name": "Voir les utilisateurs",      "action": "view"   },
+      { "name": "users.create", "display_name": "Créer un utilisateur",       "action": "create" },
+      { "name": "users.edit",   "display_name": "Modifier un utilisateur",    "action": "edit"   },
+      { "name": "users.delete", "display_name": "Supprimer un utilisateur",   "action": "delete" }
+    ]
+  },
+  {
+    "module": "groups",
+    "display_name": "Groupes",
+    "permissions": [
+      { "name": "groups.view",   "display_name": "Voir les groupes",      "action": "view"   },
+      { "name": "groups.create", "display_name": "Créer un groupe",       "action": "create" },
+      { "name": "groups.edit",   "display_name": "Modifier un groupe",    "action": "edit"   },
+      { "name": "groups.delete", "display_name": "Supprimer un groupe",   "action": "delete" }
+    ]
+  },
+  {
+    "module": "settings",
+    "display_name": "Paramètres",
+    "permissions": [
+      { "name": "settings.view", "display_name": "Voir les paramètres",     "action": "view" },
+      { "name": "settings.edit", "display_name": "Modifier les paramètres", "action": "edit" }
+    ]
+  }
+]
