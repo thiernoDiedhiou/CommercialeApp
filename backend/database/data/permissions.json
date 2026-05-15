@@ -156,5 +156,14 @@
       { "name": "settings.view", "display_name": "Voir les paramètres",     "action": "view" },
       { "name": "settings.edit", "display_name": "Modifier les paramètres", "action": "edit" }
     ]
+  },
+  {
+    "module": "shop",
+    "display_name": "Boutique en ligne",
+    "permissions": [
+      { "name": "shop.view",   "display_name": "Voir la boutique",              "action": "view"   },
+      { "name": "shop.manage", "display_name": "Gérer les paramètres boutique", "action": "manage" },
+      { "name": "shop.orders", "display_name": "Gérer les commandes boutique",  "action": "orders" }
+    ]
   }
 ]

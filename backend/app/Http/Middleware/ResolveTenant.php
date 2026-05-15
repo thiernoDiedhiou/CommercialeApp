@@ -15,8 +15,9 @@ class ResolveTenant
 
     public function handle(Request $request, Closure $next): Response
     {
-        // Les routes super admin ont leur propre auth — pas de tenant requis
-        if (str_starts_with($request->getPathInfo(), '/api/v1/admin')) {
+        // Les routes super admin et boutique publique ont leur propre résolution
+        if (str_starts_with($request->getPathInfo(), '/api/v1/admin') ||
+            str_starts_with($request->getPathInfo(), '/api/v1/public')) {
             return $next($request);
         }
 

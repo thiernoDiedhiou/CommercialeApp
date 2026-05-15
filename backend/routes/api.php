@@ -24,6 +24,8 @@ use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\Sale\ReturnController;
 use App\Http\Controllers\Sale\SaleController;
 use App\Http\Controllers\Stock\StockController;
+use App\Http\Controllers\Shop\PublicShopController;
+use App\Http\Controllers\Shop\ShopAdminController;
 use App\Http\Controllers\Users\GroupController;
 use App\Http\Controllers\Users\UserController;
 use Illuminate\Support\Facades\Route;
@@ -39,6 +41,19 @@ use Illuminate\Support\Facades\Route;
 | Auth : Laravel Sanctum (token Bearer)
 | Permissions : middleware permission:{name} → CheckPermission
 */
+
+// ── Boutique publique (sans auth, sans X-Tenant-ID) ──────────────────────────
+Route::prefix('v1/public/{slug}')
+    ->middleware(['throttle:60,1', 'shop.public'])
+    ->group(function () {
+        Route::get('config',               [PublicShopController::class, 'config']);
+        Route::get('products',             [PublicShopController::class, 'products']);
+        Route::get('products/{productId}', [PublicShopController::class, 'product'])
+             ->where('productId', '[0-9]+');
+        Route::get('categories',           [PublicShopController::class, 'categories']);
+        Route::post('orders',              [PublicShopController::class, 'order'])
+             ->middleware('throttle:10,1');
+    });
 
 Route::prefix('v1')->group(function () {
 
@@ -326,6 +341,22 @@ Route::prefix('v1')->group(function () {
             Route::post('session/{session}/close', [PosController::class, 'closeSession'])->name('session.close');
             Route::post('sync',                    [PosController::class, 'syncOffline'])->name('sync');
             Route::apiResource('drafts',           PosDraftController::class)->names('drafts');
+        });
+
+        // ── Boutique en ligne (admin) ─────────────────────────────────────────
+        Route::prefix('shop')->name('shop.')->group(function () {
+            Route::get('settings',                 [ShopAdminController::class, 'settings'])
+                ->middleware('permission:shop.manage');
+            Route::post('settings/update',         [ShopAdminController::class, 'updateSettings'])
+                ->middleware('permission:shop.manage');
+            Route::post('settings/toggle-active',  [ShopAdminController::class, 'toggleActive'])
+                ->middleware('permission:shop.manage');
+            Route::get('orders',                   [ShopAdminController::class, 'orders'])
+                ->middleware('permission:shop.orders');
+            Route::get('orders/{order}',           [ShopAdminController::class, 'showOrder'])
+                ->middleware('permission:shop.orders');
+            Route::put('orders/{order}/status',    [ShopAdminController::class, 'updateStatus'])
+                ->middleware('permission:shop.orders');
         });
 
     });

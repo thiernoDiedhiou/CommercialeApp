@@ -11,6 +11,7 @@ import {
   ShoppingBagIcon,
   ChartBarIcon,
   DocumentTextIcon,
+  BuildingStorefrontIcon,
 } from '@heroicons/react/24/outline'
 
 export interface NavChild {
@@ -48,5 +49,12 @@ export const NAV_ITEMS: NavItem[] = [
   },
   { label: 'Stock',           path: '/stock',        icon: ClipboardDocumentListIcon,  permission: 'stock.view' },
   { label: 'Rapports',        path: '/reports',      icon: ChartBarIcon,               permission: 'reports.view' },
+  {
+    label: 'Boutique',         path: '/shop-orders',  icon: BuildingStorefrontIcon,     permission: 'shop.view',
+    children: [
+      { label: 'Commandes',            path: '/shop-orders',   permission: 'shop.orders' },
+      { label: 'Paramètres boutique',  path: '/shop-settings', permission: 'shop.manage' },
+    ],
+  },
   { label: 'Paramètres',      path: '/settings',     icon: Cog6ToothIcon,              permission: 'users.view' },
 ]

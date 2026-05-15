@@ -37,6 +37,7 @@ class Product extends Model
         'alert_threshold',
         'unit',
         'is_active',
+        'is_for_sale',
     ];
 
     protected $casts = [
@@ -46,6 +47,7 @@ class Product extends Model
         'is_weight_based' => 'boolean',
         'has_expiry'      => 'boolean',
         'is_active'       => 'boolean',
+        'is_for_sale'     => 'boolean',
         'stock_quantity'  => 'float',
         'alert_threshold' => 'integer',
     ];

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\ResolvePublicShop;
 use App\Http\Middleware\ResolveTenant;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -18,6 +19,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
             'tenant'       => ResolveTenant::class,
             'permission'   => CheckPermission::class,
             'super_admin'  => \App\Http\Middleware\EnsureSuperAdmin::class,
+            'shop.public'  => ResolvePublicShop::class,
         ]);
 
         // ResolveTenant s'exécute en premier sur toutes les routes API

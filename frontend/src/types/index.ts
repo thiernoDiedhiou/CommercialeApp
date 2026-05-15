@@ -10,6 +10,7 @@ export interface User {
 
 export interface TenantInfo {
   name: string
+  slug: string
   currency: string
   sector: string
   rccm: string | null
