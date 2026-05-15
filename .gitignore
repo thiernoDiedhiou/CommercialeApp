@@ -51,6 +51,11 @@ CLAUDE.md
 /backend/storage/logs/*.log
 /backend/storage/*.key
 
+# Cache framework Laravel (vues compilées, cache config, cache données)
+/backend/storage/framework/cache/
+/backend/storage/framework/views/
+/backend/storage/framework/sessions/
+
 # Fichiers de compilation frontend (si mix/vite dans Laravel)
 /backend/public/hot
 /backend/public/storage

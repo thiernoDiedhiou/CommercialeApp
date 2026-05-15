@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import ShopApp from '@/shop/ShopApp'
 import { useAuthStore } from '@/store/authStore'
 import { useSuperAdminStore } from '@/store/superAdminStore'
 import { useHomePath } from '@/hooks/useHomePath'
@@ -31,6 +32,8 @@ import SuppliersPage from '@/pages/purchases/SuppliersPage'
 import PurchaseOrdersPage from '@/pages/purchases/PurchaseOrdersPage'
 import PurchaseFormPage from '@/pages/purchases/PurchaseFormPage'
 import PurchaseDetailPage from '@/pages/purchases/PurchaseDetailPage'
+import ShopSettingsPage from '@/pages/shop/ShopSettingsPage'
+import ShopOrdersPage from '@/pages/shop/ShopOrdersPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
@@ -100,7 +103,12 @@ export default function App() {
           <Route path="purchases/:id"     element={<PurchaseDetailPage />} />
           <Route path="purchases/:id/edit" element={<PurchaseFormPage />} />
           <Route path="settings"          element={<SettingsPage />} />
+          <Route path="shop-settings"     element={<ShopSettingsPage />} />
+          <Route path="shop-orders"       element={<ShopOrdersPage />} />
         </Route>
+
+        {/* ── Boutique publique — pas d'auth requise ── */}
+        <Route path="/shop/:slug/*" element={<ShopApp />} />
 
         <Route path="*" element={<SmartRedirect />} />
 

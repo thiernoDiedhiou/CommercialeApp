@@ -99,6 +99,11 @@ class PermissionSeeder extends Seeder
         // Paramètres
         ['name' => 'settings.view',         'display_name' => 'Voir les paramètres',         'module' => 'settings',     'action' => 'view'],
         ['name' => 'settings.edit',         'display_name' => 'Modifier les paramètres',     'module' => 'settings',     'action' => 'edit'],
+
+        // Boutique en ligne
+        ['name' => 'shop.view',             'display_name' => 'Voir la boutique',             'module' => 'shop',         'action' => 'view'],
+        ['name' => 'shop.manage',           'display_name' => 'Gérer les paramètres boutique','module' => 'shop',         'action' => 'manage'],
+        ['name' => 'shop.orders',           'display_name' => 'Gérer les commandes boutique', 'module' => 'shop',         'action' => 'orders'],
     ];
 
     public function run(): void

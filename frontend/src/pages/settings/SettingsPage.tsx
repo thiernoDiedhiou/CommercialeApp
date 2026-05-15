@@ -108,6 +108,7 @@ function BoutiqueTab() {
   const token     = useAuthStore((s) => s.token)
   const user      = useAuthStore((s) => s.user)
   const perms     = useAuthStore((s) => s.permissions)
+  const tenant    = useAuthStore((s) => s.tenant)
   const [saved, setSaved] = useState(false)
 
   const [logoFile, setLogoFile]       = useState<File | null>(null)
@@ -196,6 +197,7 @@ function BoutiqueTab() {
           primary_color:   updated.primary_color,
           secondary_color: updated.secondary_color,
           logo_url:        updated.logo_url ?? null,
+          slug:            tenant?.slug ?? '',
         })
       }
       setLogoFile(null)
