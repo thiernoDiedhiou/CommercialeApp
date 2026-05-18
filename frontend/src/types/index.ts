@@ -105,6 +105,7 @@ export interface Category {
   slug: string
   parent_id: number | null
   description: string | null
+  products_count?: number
   children?: Category[]
 }
 

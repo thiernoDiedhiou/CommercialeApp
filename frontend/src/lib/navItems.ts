@@ -38,7 +38,14 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { label: 'Factures',        path: '/invoices',     icon: DocumentTextIcon,           permission: 'invoices.view' },
-  { label: 'Produits',        path: '/products',     icon: ArchiveBoxIcon,             permission: 'products.view' },
+  {
+    label: 'Produits',          path: '/products',     icon: ArchiveBoxIcon,             permission: 'products.view',
+    children: [
+      { label: 'Catalogue',  path: '/products',    permission: 'products.view' },
+      { label: 'Catégories', path: '/categories',  permission: 'categories.view' },
+      { label: 'Marques',    path: '/brands',       permission: 'products.view' },
+    ],
+  },
   { label: 'Fournisseurs',    path: '/suppliers',    icon: TruckIcon,                  permission: 'suppliers.view' },
   { label: 'Achats',          path: '/purchases',    icon: ShoppingBagIcon,            permission: 'purchases.view' },
   {

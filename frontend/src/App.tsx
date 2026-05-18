@@ -34,6 +34,8 @@ import PurchaseFormPage from '@/pages/purchases/PurchaseFormPage'
 import PurchaseDetailPage from '@/pages/purchases/PurchaseDetailPage'
 import ShopSettingsPage from '@/pages/shop/ShopSettingsPage'
 import ShopOrdersPage from '@/pages/shop/ShopOrdersPage'
+import CategoriesPage from '@/pages/products/CategoriesPage'
+import BrandsPage from '@/pages/products/BrandsPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
@@ -88,6 +90,8 @@ export default function App() {
           <Route path="products/new"       element={<ProductFormPage />} />
           <Route path="products/:id"       element={<ProductDetailPage />} />
           <Route path="products/:id/edit"  element={<ProductFormPage />} />
+          <Route path="categories"         element={<CategoriesPage />} />
+          <Route path="brands"             element={<BrandsPage />} />
           <Route path="customers"         element={<CustomersPage />} />
           <Route path="customers/:id"    element={<CustomerDetailPage />} />
           <Route path="debts"            element={<DebtsPage />} />
