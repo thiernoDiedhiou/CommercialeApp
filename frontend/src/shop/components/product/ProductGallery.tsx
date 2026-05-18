@@ -5,7 +5,7 @@ interface Props {
 
 export default function ProductGallery({ imageUrl, productName }: Props) {
   return (
-    <div className="rounded-2xl overflow-hidden aspect-square sm:aspect-auto sm:h-[400px] w-full">
+    <div className="rounded-2xl overflow-hidden aspect-square sm:aspect-[4/3] lg:aspect-auto lg:h-full w-full min-h-[280px]">
       {imageUrl ? (
         <img
           src={imageUrl}

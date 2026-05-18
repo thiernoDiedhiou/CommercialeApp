@@ -33,6 +33,7 @@ export default function WeightInputModal({ product, isOpen, onClose }: Props) {
   const openCart = useShopStore((s) => s.openCart)
 
   const { step, min } = getUnitConfig(product.unit)
+  const maxStock = product.stock_quantity ?? Number.MAX_SAFE_INTEGER
   const [weight, setWeight] = useState(min)
 
   // Réinitialise le poids à l'ouverture
@@ -47,11 +48,11 @@ export default function WeightInputModal({ product, isOpen, onClose }: Props) {
   const unitLabel   = product.unit ?? 'unité'
 
   const decrement = () => setWeight((w) => Math.max(min, parseFloat((w - step).toFixed(3))))
-  const increment = () => setWeight((w) => parseFloat((w + step).toFixed(3)))
+  const increment = () => setWeight((w) => Math.min(maxStock, parseFloat((w + step).toFixed(3))))
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = parseFloat(e.target.value)
-    if (!isNaN(val) && val > 0) setWeight(val)
+    if (!isNaN(val) && val > 0) setWeight(Math.min(maxStock, val))
   }
 
   const handleConfirm = () => {
@@ -66,6 +67,7 @@ export default function WeightInputModal({ product, isOpen, onClose }: Props) {
       total          : total,
       is_weight_based: true,
       unit           : product.unit,
+      stock_quantity : maxStock,
     })
     openCart()
     onClose()
@@ -135,7 +137,7 @@ export default function WeightInputModal({ product, isOpen, onClose }: Props) {
         </div>
 
         {/* ── Prix calculé ────────────────────────────────────────────────── */}
-        <p className="mt-4 text-center text-xl font-bold" style={{ color: 'var(--shop-primary, #111827)' }}>
+        <p className="mt-4 text-center text-xl font-bold text-[var(--shop-accent,#111827)]">
           Total : {formatPrice(total)} FCFA
         </p>
 
@@ -144,8 +146,7 @@ export default function WeightInputModal({ product, isOpen, onClose }: Props) {
           type="button"
           onClick={handleConfirm}
           disabled={!canConfirm}
-          className="mt-6 w-full h-14 rounded-xl text-white font-semibold text-base transition-opacity disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90"
-          style={{ backgroundColor: 'var(--shop-primary, #111827)' }}
+          className="mt-6 w-full h-14 rounded-xl text-white font-semibold text-base transition-opacity disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 bg-[var(--shop-accent,#111827)]"
         >
           Ajouter — {formatPrice(total)} FCFA
         </button>

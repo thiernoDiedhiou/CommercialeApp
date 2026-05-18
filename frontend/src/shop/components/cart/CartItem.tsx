@@ -52,36 +52,41 @@ export default function CartItem({ item, index }: Props) {
 
         {/* Quantité — TYPE 0/1/3 uniquement */}
         {!item.is_weight_based && (
-          <div className="flex items-center gap-1.5 mt-2">
-            <button
-              type="button"
-              onClick={() => updateQuantity(index, item.quantity - 1)}
-              aria-label="Diminuer"
-              className="h-8 w-8 rounded-lg bg-gray-100 text-gray-700 text-base font-medium hover:bg-gray-200 transition-colors flex items-center justify-center"
-            >
-              −
-            </button>
-            <span className="w-6 text-center text-sm font-semibold text-gray-900">
-              {item.quantity}
-            </span>
-            <button
-              type="button"
-              onClick={() => updateQuantity(index, Math.min(99, item.quantity + 1))}
-              aria-label="Augmenter"
-              className="h-8 w-8 rounded-lg bg-gray-100 text-gray-700 text-base font-medium hover:bg-gray-200 transition-colors flex items-center justify-center"
-            >
-              +
-            </button>
+          <div className="mt-2">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => updateQuantity(index, item.quantity - 1)}
+                aria-label="Diminuer"
+                className="h-8 w-8 rounded-lg bg-gray-100 text-gray-700 text-base font-medium hover:bg-gray-200 transition-colors flex items-center justify-center"
+              >
+                −
+              </button>
+              <span className="w-6 text-center text-sm font-semibold text-gray-900">
+                {item.quantity}
+              </span>
+              <button
+                type="button"
+                onClick={() => updateQuantity(index, Math.min(item.stock_quantity, item.quantity + 1))}
+                disabled={item.quantity >= item.stock_quantity}
+                aria-label="Augmenter"
+                className="h-8 w-8 rounded-lg bg-gray-100 text-gray-700 text-base font-medium hover:bg-gray-200 transition-colors flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                +
+              </button>
+            </div>
+            {item.quantity >= item.stock_quantity && (
+              <p className="text-[11px] text-amber-600 mt-1">
+                Stock max atteint ({item.stock_quantity})
+              </p>
+            )}
           </div>
         )}
       </div>
 
       {/* ── Prix + Supprimer ───────────────────────────────────────────────── */}
       <div className="flex flex-col items-end gap-2 shrink-0">
-        <span
-          className="text-sm font-semibold"
-          style={{ color: 'var(--shop-primary, #111827)' }}
-        >
+        <span className="text-sm font-semibold text-[var(--shop-accent,#111827)]">
           {formatPrice(item.total)} FCFA
         </span>
 

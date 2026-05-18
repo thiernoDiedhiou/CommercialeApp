@@ -14,6 +14,7 @@ export interface ShopCartItem {
   total           : number
   is_weight_based : boolean
   unit            : string | null
+  stock_quantity  : number
 }
 
 export interface ShopTheme {

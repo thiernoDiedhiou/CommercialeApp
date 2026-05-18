@@ -93,8 +93,10 @@ class PublicShopController extends Controller
 
     // ── GET /api/v1/public/{slug}/products/{productId} ────────────────────────
 
-    public function product(int $productId): JsonResponse
+    public function product(Request $request): JsonResponse
     {
+        $productId = (int) $request->route('productId');
+
         $product = Product::with(['category', 'activeVariants'])
             ->where('is_active', true)
             ->where('is_for_sale', true)
@@ -170,6 +172,7 @@ class PublicShopController extends Controller
             $variantName = null;
             $unitPrice   = (float) $product->price;
             $lotId       = null;
+            $variant     = null;
 
             // TYPE 1 — Variante
             if ($variantId) {
@@ -201,7 +204,22 @@ class PublicShopController extends Controller
                 $lotId = $lot?->id;
             }
 
-            $qty   = (float) $item['quantity'];
+            $qty = (float) $item['quantity'];
+
+            // ── Vérification stock disponible ──────────────────────────────
+            $availableStock = $variant !== null
+                ? (float) $variant->stock_quantity
+                : (float) $product->stock_quantity;
+
+            if ($qty > $availableStock) {
+                $label = $variant !== null
+                    ? "{$product->name} ({$variantName})"
+                    : $product->name;
+                return response()->json([
+                    'message' => "Stock insuffisant pour « {$label} ». Stock disponible : {$availableStock}.",
+                ], 422);
+            }
+
             $total = round($qty * $unitPrice, 2);
 
             $itemsData[] = [

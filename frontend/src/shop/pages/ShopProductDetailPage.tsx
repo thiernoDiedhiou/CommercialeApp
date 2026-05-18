@@ -49,6 +49,7 @@ export default function ShopProductDetailPage() {
       total          : price * quantity,
       is_weight_based: false,
       unit           : product.unit,
+      stock_quantity : variant?.stock_quantity ?? product.stock_quantity ?? 0,
     })
     openCart()
   }
@@ -92,67 +93,73 @@ export default function ShopProductDetailPage() {
         <ProductGallery imageUrl={product.image_url} productName={product.name} />
 
         {/* ── Colonne droite — Infos ─────────────────────────────────────── */}
-        <div className="flex flex-col gap-4 pb-24 lg:pb-0">
+        <div className="flex flex-col pb-24 lg:pb-0">
 
-          {/* Catégorie */}
-          {product.category && (
-            <span className="text-xs text-gray-400 uppercase tracking-wide">
-              {product.category.name}
-            </span>
-          )}
+          {/* Bloc contenu — reste en haut */}
+          <div className="flex flex-col gap-4">
 
-          {/* Nom */}
-          <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-            {product.name}
-          </h1>
+            {/* Catégorie */}
+            {product.category && (
+              <span className="text-xs text-gray-400 uppercase tracking-wide">
+                {product.category.name}
+              </span>
+            )}
 
-          {/* Description */}
-          {product.description && (
-            <p className="text-sm text-gray-600 leading-relaxed">
-              {product.description}
-            </p>
-          )}
+            {/* Nom */}
+            <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+              {product.name}
+            </h1>
 
-          <hr className="border-gray-100" />
+            {/* Description */}
+            {product.description && (
+              <p className="text-sm text-gray-600 leading-relaxed">
+                {product.description}
+              </p>
+            )}
 
-          {/* VariantPicker */}
-          {product.has_variants && (
-            <VariantPicker
+            <hr className="border-gray-100" />
+
+            {/* VariantPicker */}
+            {product.has_variants && (
+              <VariantPicker
+                product={product}
+                selectedVariantId={selectedVariantId}
+                onSelect={setSelectedVariantId}
+              />
+            )}
+
+            {/* Badge stock */}
+            {resolvedStock !== null && (
+              resolvedStock > 0 ? (
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
+                  <span className="w-2 h-2 rounded-full bg-green-500" />
+                  En stock
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600">
+                  <span className="w-2 h-2 rounded-full bg-red-500" />
+                  Rupture de stock
+                </span>
+              )
+            )}
+
+            {product.has_variants && !selectedVariantId && (
+              <span className="text-sm text-gray-400 italic">
+                Sélectionnez une option pour voir la disponibilité
+              </span>
+            )}
+          </div>
+
+          {/* AddToCartBar ancré en bas de la colonne */}
+          <div className="mt-auto pt-6">
+            <AddToCartBar
               product={product}
               selectedVariantId={selectedVariantId}
-              onSelect={setSelectedVariantId}
+              quantity={quantity}
+              onQuantityChange={setQuantity}
+              onAddToCart={handleAddToCart}
             />
-          )}
-
-          {/* Badge stock */}
-          {resolvedStock !== null && (
-            resolvedStock > 0 ? (
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
-                <span className="w-2 h-2 rounded-full bg-green-500" />
-                En stock
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600">
-                <span className="w-2 h-2 rounded-full bg-red-500" />
-                Rupture de stock
-              </span>
-            )
-          )}
-
-          {product.has_variants && !selectedVariantId && (
-            <span className="text-sm text-gray-400 italic">
-              Sélectionnez une option pour voir la disponibilité
-            </span>
-          )}
-
-          {/* AddToCartBar */}
-          <AddToCartBar
-            product={product}
-            selectedVariantId={selectedVariantId}
-            quantity={quantity}
-            onQuantityChange={setQuantity}
-            onAddToCart={handleAddToCart}
-          />
+          </div>
         </div>
       </div>
     </div>

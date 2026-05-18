@@ -72,6 +72,7 @@ export default function ShopProductCard({ product, slug }: Props) {
       total          : product.price,
       is_weight_based: false,
       unit           : product.unit,
+      stock_quantity : product.stock_quantity ?? 0,
     })
     openCart()
   }
