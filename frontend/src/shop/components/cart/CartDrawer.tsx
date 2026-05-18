@@ -98,7 +98,7 @@ export default function CartDrawer() {
             <button
               type="button"
               onClick={() => setIsCheckoutOpen(true)}
-              className="w-full h-12 rounded-xl mt-4 text-white font-semibold text-base transition-opacity hover:opacity-90 bg-[var(--shop-primary,#111827)]"
+              className="w-full h-12 rounded-xl mt-4 text-white font-semibold text-base transition-opacity hover:opacity-90 bg-[var(--shop-accent,#111827)]"
             >
               Commander
             </button>

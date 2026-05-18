@@ -136,10 +136,7 @@ export default function ShopProductCard({ product, slug }: Props) {
             <span className="text-xs text-gray-400">Vendu au {product.unit ?? 'poids'}</span>
           )}
 
-          <p
-            className="text-base font-bold mt-1"
-            style={{ color: 'var(--shop-primary, #111827)' }}
-          >
+          <p className="text-base font-bold mt-1 text-[var(--shop-accent,#111827)]">
             {priceLabel}
           </p>
 
@@ -151,9 +148,8 @@ export default function ShopProductCard({ product, slug }: Props) {
             className={`mt-auto h-10 w-full rounded-xl text-sm font-medium transition-all duration-150 ${
               outOfStock
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'text-white hover:opacity-90 active:scale-95'
+                : 'text-white hover:opacity-90 active:scale-95 bg-[var(--shop-accent,#111827)]'
             }`}
-            style={outOfStock ? undefined : { backgroundColor: 'var(--shop-primary, #111827)' }}
           >
             {buttonLabel()}
           </button>

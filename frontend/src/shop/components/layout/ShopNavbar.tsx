@@ -134,8 +134,7 @@ export default function ShopNavbar({ slug }: Props) {
                 <ShoppingCartIcon className="h-6 w-6" />
                 {itemCount > 0 && (
                   <span
-                    className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white"
-                    style={{ backgroundColor: 'var(--shop-primary, #111827)' }}
+                    className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white bg-[var(--shop-primary,#111827)]"
                   >
                     {itemCount > 99 ? '99+' : itemCount}
                   </span>

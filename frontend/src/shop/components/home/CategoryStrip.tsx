@@ -20,13 +20,9 @@ export default function CategoryStrip({ categories, selectedId, onSelect }: Prop
             onClick={() => onSelect(null)}
             className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
               selectedId === null
-                ? 'text-white'
+                ? 'text-white bg-[var(--shop-secondary,#374151)]'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
-            style={selectedId === null
-              ? { backgroundColor: 'var(--shop-primary, #111827)' }
-              : undefined
-            }
           >
             Tous
           </button>
@@ -41,13 +37,9 @@ export default function CategoryStrip({ categories, selectedId, onSelect }: Prop
                 onClick={() => onSelect(cat.id)}
                 className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
                   isSelected
-                    ? 'text-white'
+                    ? 'text-white bg-[var(--shop-secondary,#374151)]'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
-                style={isSelected
-                  ? { backgroundColor: 'var(--shop-primary, #111827)' }
-                  : undefined
-                }
               >
                 {cat.name}
               </button>

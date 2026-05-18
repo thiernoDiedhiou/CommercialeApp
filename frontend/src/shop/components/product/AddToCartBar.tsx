@@ -39,10 +39,7 @@ export default function AddToCartBar({
   return (
     <div className="sticky bottom-0 lg:static bg-white border-t border-gray-100 lg:border-t-0 p-4 lg:p-0 z-30">
       {/* Prix */}
-      <p
-        className="text-2xl font-bold mb-3"
-        style={{ color: 'var(--shop-primary, #111827)' }}
-      >
+      <p className="text-2xl font-bold mb-3 text-[var(--shop-accent,#111827)]">
         {formatPrice(price * quantity)} FCFA
       </p>
 
@@ -76,8 +73,7 @@ export default function AddToCartBar({
           type="button"
           onClick={onAddToCart}
           disabled={isDisabled}
-          className="flex-1 h-12 rounded-xl text-white font-semibold text-base transition-opacity disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
-          style={{ backgroundColor: 'var(--shop-primary, #111827)' }}
+          className="flex-1 h-12 rounded-xl text-white font-semibold text-base transition-opacity disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 bg-[var(--shop-accent,#111827)]"
         >
           {buttonLabel}
         </button>

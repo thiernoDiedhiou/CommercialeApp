@@ -45,11 +45,10 @@ function StepIndicator({ current }: { current: number }) {
             <div className="flex flex-col items-center gap-1">
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-                  isPast  ? 'bg-green-500 text-white'
-                  : isActive ? 'text-white'
+                  isPast    ? 'bg-green-500 text-white'
+                  : isActive ? 'text-white bg-[var(--shop-primary,#111827)]'
                   : 'bg-gray-200 text-gray-500'
                 }`}
-                style={isActive ? { backgroundColor: 'var(--shop-primary, #111827)' } : undefined}
               >
                 {isPast ? <CheckIcon className="h-4 w-4" /> : num}
               </div>
@@ -102,7 +101,7 @@ function OrderSummary({ deliveryFee }: { deliveryFee: number }) {
         )}
         <div className="flex justify-between text-sm font-bold pt-1">
           <span>Total</span>
-          <span className="text-[var(--shop-primary,#111827)]">
+          <span className="text-[var(--shop-accent,#111827)]">
             {total.toLocaleString('fr-FR')} FCFA
           </span>
         </div>
@@ -330,14 +329,10 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
                               : 'border-gray-200 bg-white hover:border-gray-300'
                           }`}
                         >
-                          <span className={`font-medium ${isSelected ? '' : 'text-gray-700'}`}
-                            style={isSelected ? { color: 'var(--shop-primary, #111827)' } : undefined}
-                          >
+                          <span className={`font-medium ${isSelected ? 'text-[var(--shop-primary,#111827)]' : 'text-gray-700'}`}>
                             {zone.name}
                           </span>
-                          <span className={`font-semibold ${isSelected ? '' : 'text-gray-900'}`}
-                            style={isSelected ? { color: 'var(--shop-primary, #111827)' } : undefined}
-                          >
+                          <span className={`font-semibold ${isSelected ? 'text-[var(--shop-primary,#111827)]' : 'text-gray-900'}`}>
                             {zone.fee === 0 ? 'Gratuit' : `${zone.fee.toLocaleString('fr-FR')} FCFA`}
                           </span>
                         </button>
@@ -369,9 +364,7 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
                             : 'border-gray-200 bg-white hover:border-gray-300'
                         }`}
                       >
-                        <span className={`font-semibold ${isSelected ? '' : 'text-gray-800'}`}
-                          style={isSelected ? { color: 'var(--shop-primary, #111827)' } : undefined}
-                        >
+                        <span className={`font-semibold ${isSelected ? 'text-[var(--shop-primary,#111827)]' : 'text-gray-800'}`}>
                           {label}
                         </span>
                         <span className="text-xs text-gray-400 mt-0.5">{sub}</span>
@@ -425,7 +418,7 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
               <button
                 type="button"
                 onClick={step === 1 ? goNext : () => setStep((s) => (s + 1) as 2 | 3)}
-                className="flex-1 h-12 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90 bg-[var(--shop-primary,#111827)]"
+                className="flex-1 h-12 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90 bg-[var(--shop-accent,#111827)]"
               >
                 Suivant
               </button>
@@ -436,7 +429,7 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
                 type="button"
                 onClick={handleConfirm}
                 disabled={!paymentMethod || isSubmitting}
-                className="flex-1 h-12 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--shop-primary,#111827)]"
+                className="flex-1 h-12 rounded-xl text-white font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed bg-[var(--shop-accent,#111827)]"
               >
                 {isSubmitting ? 'Envoi en cours…' : 'Confirmer la commande'}
               </button>
