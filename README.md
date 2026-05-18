@@ -160,7 +160,7 @@ saas-commercial/
 │   │   │                       # InvoiceService, ProductImportService
 │   │   └── Traits/             # BelongsToTenant
 │   ├── database/
-│   │   ├── migrations/         # 32 migrations (préfixe 2026_MM_DD)
+│   │   ├── migrations/         # 33 migrations (préfixe 2026_MM_DD)
 │   │   └── seeders/            # DatabaseSeeder, DemoDataSeeder, SuperAdminSeeder
 │   ├── resources/views/pdf/    # invoice.blade.php, invoice_doc.blade.php
 │   ├── routes/api.php          # Routes tenant + routes super admin /api/v1/admin/*
@@ -176,6 +176,7 @@ saas-commercial/
         │   ├── pos/            # PosPage
         │   ├── sales/          # SalesPage, SaleDetailPage
         │   ├── products/       # ProductsPage (import CSV + thumbnails), ProductFormPage
+        │   │                   # CategoriesPage (CRUD arbre), BrandsPage (CRUD)
         │   ├── purchases/      # SuppliersPage, PurchaseOrdersPage,
         │   │                   # PurchaseFormPage, PurchaseDetailPage
         │   ├── invoices/       # InvoicesPage, InvoiceFormPage, InvoiceDetailPage
@@ -272,7 +273,7 @@ Interface accessible sur `/admin/login` — store Zustand `superAdminStore` sép
 | Retours | `/api/v1/returns` | CRUD — permission `returns.*` |
 | Clients | `/api/v1/customers` | CRUD + historique |
 | Créances | `/api/v1/debts` | liste paginée + `global_outstanding` — permission `debts.view` |
-| Stock | `/api/v1/stock` | adjust + movements + alerts + expiring |
+| Stock | `/api/v1/stock` | adjust + movements + alerts + expiring (`?search=`, `?days=7\|15\|30\|60`) |
 | POS | `/api/v1/pos` | products + session + sync offline + drafts |
 | Utilisateurs | `/api/v1/users` | CRUD + syncGroups |
 | Groupes | `/api/v1/groups` | CRUD + permissions |
@@ -429,3 +430,6 @@ php artisan queue:work --queue=notifications --stop-when-empty
 | Retours / Avoirs | ✅ Terminée | `RET-YYYY-XXXXX`, réintégration stock idempotente, `ReturnsPage`, section dans `SaleDetailPage` |
 | Créances clients | ✅ Terminée | `DebtController` SQL LIMIT/OFFSET + `global_outstanding`, `DebtsPage`, sidebar accordion |
 | Notifications email | ✅ Terminée | 2 niveaux SMTP, 3 Jobs queue, 3 Mailables, templates HTML inline compatibles Gmail |
+| CRUD Catégories & Marques | ✅ Terminée | Pages dédiées `/categories` (arbre parent/enfant, description) et `/brands` — sous-menu accordéon "Produits" dans la sidebar |
+| Filtres Lots expirants | ✅ Terminée | Recherche par nom produit + sélecteur fenêtre (7 / 15 / 30 / 60 jours) + message vide dynamique |
+| Charte graphique POS | ✅ Terminée | `applyBrandColors()` appelé au montage du POS — couleurs tenant cohérentes même après rechargement direct de la page |

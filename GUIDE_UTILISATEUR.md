@@ -42,7 +42,7 @@ Le menu latéral (sidebar) donne accès à tous les modules :
 | 🛒 | Caisse POS | Point de vente |
 | 💰 | Ventes | Historique des ventes — sous-menu **Retours** |
 | 📄 | Factures | Gestion des factures clients |
-| 📦 | Produits | Catalogue produits avec marques et variantes |
+| 📦 | Produits | Sous-menu : **Catalogue** · **Catégories** · **Marques** |
 | 🚛 | Fournisseurs | Gestion des fournisseurs |
 | 🛍️ | Achats | Bons de commande fournisseurs |
 | 👥 | Clients | Répertoire clients — sous-menu **Créances** |
@@ -487,13 +487,32 @@ nom;sku;categorie;prix_vente;prix_achat;stock;seuil_alerte;unite;description
 T-shirt blanc;TSH-BL;Mode;5000;2500;50;5;pièce;T-shirt en coton
 ```
 
-### Catégories et Marques
+### Gérer les catégories
 
-**Catégories :** depuis la création/modification d'un produit, cliquez sur **+ Nouvelle** à côté du champ Catégorie pour créer une catégorie directement.
+Accédez à **Produits → Catégories** dans le menu latéral pour gérer l'arborescence complète de vos catégories.
 
-**Marques :** le champ **Marque** permet de rattacher un produit à une marque (ex : Samsung, Nestlé, Kirène). Cliquez sur **+ Nouvelle** à côté du champ Marque pour créer une marque à la volée. La marque s'affiche sous le nom du produit dans la liste.
+**Créer une catégorie :**
 
-> Les marques sont partagées entre tous les produits de votre boutique. Si une marque est liée à des produits, elle ne peut pas être supprimée.
+1. Cliquez sur **+ Nouvelle catégorie**
+2. Saisissez le nom (obligatoire) et une description (optionnelle)
+3. Choisissez une catégorie parente si vous souhaitez créer une sous-catégorie
+4. Cliquez sur **Enregistrer**
+
+Le tableau affiche les catégories en arbre : les sous-catégories apparaissent indentées sous leur parent.
+
+> Si une catégorie contient des produits, vous pouvez quand même la supprimer — les produits perdront leur catégorie. Si elle a des sous-catégories, celles-ci devront d'abord être déplacées ou supprimées.
+
+**Depuis un formulaire produit :** vous pouvez également créer une catégorie à la volée en cliquant sur **+ Nouvelle** à côté du champ Catégorie.
+
+### Gérer les marques
+
+Accédez à **Produits → Marques** dans le menu latéral pour gérer la liste de vos marques (fabricants, fournisseurs, labels, etc.).
+
+**Créer une marque :** cliquez sur **+ Nouvelle marque**, saisissez le nom et enregistrez. La marque s'affiche sous le nom du produit dans le catalogue et la liste.
+
+> Si une marque est liée à des produits, elle ne peut pas être supprimée — modifiez d'abord les produits concernés.
+
+**Depuis un formulaire produit :** cliquez sur **+ Nouvelle** à côté du champ Marque pour créer une marque à la volée sans quitter le formulaire.
 
 ---
 
@@ -631,6 +650,12 @@ Liste des produits dont le stock est en dessous du seuil d'alerte défini. Réap
 #### Lots expirants
 
 Liste des lots de produits dont la date de péremption approche (pour les produits avec suivi d'expiration activé).
+
+**Filtres disponibles :**
+
+- **Recherche** : tapez le nom d'un produit pour filtrer les lots affichés
+- **Fenêtre** : choisissez l'horizon d'alerte — 7, 15, 30 ou 60 prochains jours (défaut : 30)
+- Cliquez sur **Réinitialiser** pour effacer les filtres actifs
 
 ### Ajustement de stock
 
