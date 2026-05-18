@@ -112,7 +112,7 @@ export default function CategoriesPage() {
       key   : 'name',
       header: 'Nom',
       render: (c) => (
-        <div className="flex items-center gap-1" style={{ paddingLeft: `${c.depth * 20}px` }}>
+        <div className={`flex items-center gap-1${c.depth > 0 ? ' pl-5' : ''}`}>
           {c.depth > 0 && <span className="text-gray-300 text-xs select-none">└</span>}
           <span className="font-medium text-gray-900">{c.name}</span>
         </div>

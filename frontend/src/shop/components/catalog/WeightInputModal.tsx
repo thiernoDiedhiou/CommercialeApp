@@ -117,6 +117,7 @@ export default function WeightInputModal({ product, isOpen, onClose }: Props) {
             <input
               type="number"
               inputMode="decimal"
+              aria-label="Quantité"
               value={weight}
               min={min}
               step={step}

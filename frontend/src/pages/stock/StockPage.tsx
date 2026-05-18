@@ -100,8 +100,9 @@ function MovementsTab() {
         </div>
         {(type || from || to) && (
           <button
+            type="button"
             onClick={() => { setType(''); setFrom(''); setTo('') }}
-            className="text-xs text-indigo-500 hover:underline self-end pb-2"
+            className="text-xs text-brand-primary hover:underline self-end pb-2"
           >
             Réinitialiser
           </button>
@@ -211,7 +212,7 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Rechercher un produit…"
-        className="w-full max-w-xs rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition"
+        className="w-full max-w-xs rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition"
       />
 
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
@@ -259,13 +260,14 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
                   <td className="px-4 py-3">
                     <CanDo permission="stock.adjust">
                       <button
+                        type="button"
                         onClick={() => onAdjust({
                           product_id: alert.product_id,
                           product_name: alert.product_name,
                           variant_id: alert.variant_id,
                           variant_summary: alert.variant_summary,
                         })}
-                        className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium transition"
+                        className="flex items-center gap-1 text-xs text-brand-primary hover:opacity-70 font-medium transition"
                       >
                         <AdjustmentsHorizontalIcon className="h-3.5 w-3.5" />
                         Ajuster
@@ -292,16 +294,69 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
   )
 }
 
+const DAYS_OPTIONS = [
+  { value: 7,  label: '7 prochains jours' },
+  { value: 15, label: '15 prochains jours' },
+  { value: 30, label: '30 prochains jours' },
+  { value: 60, label: '60 prochains jours' },
+]
+
 function ExpiringTab() {
-  const [page, setPage] = useState(1)
+  const [search, setSearch]               = useState('')
+  const [debouncedSearch, setDebounced]   = useState('')
+  const [days, setDays]                   = useState(30)
+  const [page, setPage]                   = useState(1)
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(search), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
+  useEffect(() => setPage(1), [debouncedSearch, days])
 
   const { data, isLoading } = useQuery({
-    queryKey: ['stock', 'expiring', page],
-    queryFn: () => getExpiring({ page }),
+    queryKey: ['stock', 'expiring', debouncedSearch, days, page],
+    queryFn: () => getExpiring({ search: debouncedSearch || undefined, days, page }),
   })
+
+  const hasFilters = !!search || days !== 30
 
   return (
     <div className="space-y-4">
+      {/* Filters */}
+      <div className="flex flex-wrap items-end gap-3">
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Rechercher un produit…"
+          className="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition w-full max-w-xs"
+        />
+        <div>
+          <label htmlFor="expiring-days" className="block text-xs text-gray-500 mb-1">Fenêtre</label>
+          <select
+            id="expiring-days"
+            title="Filtrer par nombre de jours"
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
+            className="rounded-lg border border-gray-200 py-2 px-3 text-sm bg-white"
+          >
+            {DAYS_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+        {hasFilters && (
+          <button
+            type="button"
+            onClick={() => { setSearch(''); setDays(30) }}
+            className="text-xs text-brand-primary hover:underline self-end pb-2"
+          >
+            Réinitialiser
+          </button>
+        )}
+      </div>
+
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
         <table className="min-w-full divide-y divide-gray-100 text-sm">
           <thead className="bg-gray-50">
@@ -325,12 +380,15 @@ function ExpiringTab() {
             ) : data?.data.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400">
-                  Aucun lot expirant dans les 30 prochains jours
+                  {debouncedSearch
+                    ? `Aucun lot expirant pour « ${debouncedSearch} » dans les ${days} prochains jours`
+                    : `Aucun lot expirant dans les ${days} prochains jours`}
                 </td>
               </tr>
             ) : (
               data?.data.map((lot) => {
-                const urgent = lot.days_remaining <= 7
+                const expired = lot.days_remaining < 0
+                const urgent  = lot.days_remaining <= 7
                 return (
                   <tr key={`${lot.product_id}-${lot.lot_number}`} className="hover:bg-gray-50 transition">
                     <td className="px-4 py-3 font-medium text-gray-900">{lot.product_name}</td>
@@ -338,8 +396,8 @@ function ExpiringTab() {
                     <td className="px-4 py-3 font-mono text-xs text-gray-600">{lot.lot_number}</td>
                     <td className="px-4 py-3 text-gray-700">{formatDate(lot.expiry_date)}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={urgent ? 'danger' : 'warning'}>
-                        {lot.days_remaining} j
+                      <Badge variant={expired || urgent ? 'danger' : 'warning'}>
+                        {expired ? 'Expiré' : lot.days_remaining === 0 ? "Aujourd'hui" : `${lot.days_remaining} j`}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 font-semibold tabular-nums text-gray-900">
@@ -397,11 +455,12 @@ export default function StockPage() {
           {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
             <button
               key={t}
+              type="button"
               onClick={() => setTab(t)}
               className={[
                 'pb-3 text-sm font-medium border-b-2 transition',
                 tab === t
-                  ? 'border-indigo-600 text-indigo-600'
+                  ? 'border-brand-primary text-brand-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
               ].join(' ')}
             >

@@ -38,7 +38,7 @@ export async function getAlerts(
 }
 
 export async function getExpiring(
-  params: { page?: number } = {},
+  params: { page?: number; search?: string; days?: number } = {},
 ): Promise<PaginatedResponse<ExpiringSoon>> {
   const { data } = await apiClient.get<PaginatedResponse<ExpiringSoon>>(
     '/api/v1/stock/expiring',

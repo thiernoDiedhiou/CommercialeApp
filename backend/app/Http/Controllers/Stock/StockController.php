@@ -200,7 +200,18 @@ class StockController extends Controller
             );
         }
 
-        $days = (int) ($this->tenantService->setting('expiry_alert_days') ?? 30);
+        $allowedDays = [7, 15, 30, 60];
+        $days        = in_array($request->integer('days'), $allowedDays, true)
+            ? $request->integer('days')
+            : (int) ($this->tenantService->setting('expiry_alert_days') ?? 30);
+        $search      = $request->input('search');
+        $bindings = [$tenantId, $days];
+
+        $searchClause = '';
+        if ($search) {
+            $searchClause  = ' AND p.name LIKE ?';
+            $bindings[]    = "%{$search}%";
+        }
 
         $rows = DB::select('
             SELECT
@@ -219,8 +230,9 @@ class StockController extends Controller
               AND pl.is_active           = 1
               AND pl.quantity_remaining  > 0
               AND pl.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
+              ' . $searchClause . '
             ORDER BY pl.expiry_date ASC
-        ', [$tenantId, $days]);
+        ', $bindings);
 
         $collection = collect($rows)->map(fn($r) => [
             'product_id'         => $r->product_id,
