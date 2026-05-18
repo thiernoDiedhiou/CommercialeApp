@@ -6,6 +6,7 @@ import axios from 'axios'
 
 import { useCartStore } from '@/store/cartStore'
 import { useAuthStore } from '@/store/authStore'
+import { useTenantStore } from '@/store/tenantStore'
 import { useExitPosPath } from '@/hooks/useHomePath'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import type { Product, ProductVariant, Customer } from '@/types'
@@ -52,8 +53,14 @@ export default function PosPage() {
   const addToOfflineQueue = useCartStore((s) => s.addToOfflineQueue)
 
   // ── Local state ──────────────────────────────────────────────────────────
-  const tenant = useAuthStore((s) => s.tenant)
-  const user   = useAuthStore((s) => s.user)
+  const tenant           = useAuthStore((s) => s.tenant)
+  const user             = useAuthStore((s) => s.user)
+  const applyBrandColors = useTenantStore((s) => s.applyBrandColors)
+
+  // Réapplique les variables CSS brand au rechargement direct sur /pos (hors Layout)
+  useEffect(() => {
+    if (tenant) applyBrandColors(tenant.primary_color, tenant.secondary_color)
+  }, [tenant, applyBrandColors])
 
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products')
   const [search, setSearch] = useState('')
@@ -266,7 +273,7 @@ export default function PosPage() {
           >
             <ShoppingCartIcon className="h-5 w-5" />
             {items.length > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white">
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-primary text-[10px] font-bold text-white">
                 {items.length}
               </span>
             )}
@@ -287,14 +294,14 @@ export default function PosPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Rechercher un produit ou scanner un code-barres…"
-                className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-indigo-400 focus:bg-white transition"
+                className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-brand-primary focus:bg-white transition"
                 autoFocus={!isMobile}
               />
               <button
                 type="button"
                 onClick={() => setScannerOpen(true)}
                 aria-label="Scanner un code-barres"
-                className="shrink-0 flex items-center justify-center rounded-xl border border-gray-200 bg-gray-50 p-2 text-gray-500 hover:border-indigo-400 hover:text-indigo-600 transition"
+                className="shrink-0 flex items-center justify-center rounded-xl border border-gray-200 bg-gray-50 p-2 text-gray-500 hover:border-brand-primary hover:text-brand-primary transition"
               >
                 <CameraIcon className="h-5 w-5" />
               </button>
@@ -305,7 +312,7 @@ export default function PosPage() {
                 onClick={() => setCategoryId(null)}
                 className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
                   categoryId === null
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-brand-primary text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
@@ -318,7 +325,7 @@ export default function PosPage() {
                   onClick={() => setCategoryId(cat.id === categoryId ? null : cat.id)}
                   className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
                     categoryId === cat.id
-                      ? 'bg-indigo-600 text-white'
+                      ? 'bg-brand-primary text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -357,7 +364,7 @@ export default function PosPage() {
             <button
               type="button"
               onClick={() => setMobileView('products')}
-              className="flex items-center gap-1.5 text-sm text-indigo-600 font-medium"
+              className="flex items-center gap-1.5 text-sm text-brand-primary font-medium"
             >
               <ArrowLeftIcon className="h-4 w-4" />
               Produits
@@ -466,7 +473,7 @@ export default function PosPage() {
                     onClick={() => setGlobalDiscount('percent', discountValue)}
                     className={`px-2 py-1 transition ${
                       discountType === 'percent'
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-brand-primary text-white'
                         : 'bg-white text-gray-500 hover:bg-gray-50'
                     }`}
                   >
@@ -477,7 +484,7 @@ export default function PosPage() {
                     onClick={() => setGlobalDiscount('fixed', discountValue)}
                     className={`px-2 py-1 transition ${
                       discountType === 'fixed'
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-brand-primary text-white'
                         : 'bg-white text-gray-500 hover:bg-gray-50'
                     }`}
                   >
@@ -500,7 +507,7 @@ export default function PosPage() {
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Note (optionnel)"
-                className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-xs outline-none focus:border-indigo-300 transition"
+                className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-xs outline-none focus:border-brand-primary transition"
               />
 
               {/* Totals */}
@@ -517,7 +524,7 @@ export default function PosPage() {
                 )}
                 <div className="flex justify-between text-base font-bold text-gray-900 border-t border-gray-100 pt-1.5">
                   <span>Total</span>
-                  <span className="text-indigo-700">{formatCurrency(total())}</span>
+                  <span className="text-brand-primary">{formatCurrency(total())}</span>
                 </div>
               </div>
 
@@ -525,7 +532,7 @@ export default function PosPage() {
               <button
                 type="button"
                 onClick={() => setPaymentOpen(true)}
-                className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white hover:bg-indigo-700 active:scale-[0.98] transition-all"
+                className="w-full rounded-xl bg-brand-primary py-3 text-sm font-semibold text-white hover:opacity-90 active:scale-[0.98] transition-all"
               >
                 Encaisser — {formatCurrency(total())}
               </button>

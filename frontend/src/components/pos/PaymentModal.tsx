@@ -107,14 +107,14 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
       }
     >
       {/* Total */}
-      <div className="mb-4 rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-3 flex items-center justify-between">
+      <div className="mb-4 rounded-xl bg-brand-primary/10 border border-brand-primary/20 px-4 py-3 flex items-center justify-between">
         <div>
-          <p className="text-xs text-indigo-400 uppercase tracking-wide font-medium">
+          <p className="text-xs text-brand-primary/70 uppercase tracking-wide font-medium">
             Total à encaisser
           </p>
-          {customerName && <p className="mt-0.5 text-sm text-indigo-600">{customerName}</p>}
+          {customerName && <p className="mt-0.5 text-sm text-brand-primary">{customerName}</p>}
         </div>
-        <p className="text-2xl font-bold text-indigo-700">{formatCurrency(total)}</p>
+        <p className="text-2xl font-bold text-brand-primary">{formatCurrency(total)}</p>
       </div>
 
       {/* Payment lines */}
@@ -144,7 +144,7 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
             <button
               type="button"
               onClick={() => fillExact(i)}
-              className="text-xs text-indigo-500 hover:underline whitespace-nowrap shrink-0"
+              className="text-xs text-brand-primary hover:underline whitespace-nowrap shrink-0"
               title="Montant exact"
             >
               Exact
@@ -186,7 +186,7 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
         <button
           type="button"
           onClick={addLine}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 py-2 text-sm text-gray-400 hover:border-indigo-300 hover:text-indigo-500 transition-colors"
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 py-2 text-sm text-gray-400 hover:border-brand-primary hover:text-brand-primary transition-colors"
         >
           <PlusIcon className="h-4 w-4" />
           Ajouter un mode de paiement

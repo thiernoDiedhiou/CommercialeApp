@@ -19,7 +19,7 @@ export function ProductCard({ product, onClick }: Props) {
         'active:scale-95',
         outOfStock
           ? 'cursor-not-allowed border-gray-200 bg-gray-50 opacity-50'
-          : 'border-gray-200 bg-white cursor-pointer hover:border-indigo-400 hover:shadow-sm',
+          : 'border-gray-200 bg-white cursor-pointer hover:border-brand-primary hover:shadow-sm',
       ].join(' ')}
     >
       {/* Image / placeholder */}
@@ -40,7 +40,7 @@ export function ProductCard({ product, onClick }: Props) {
       {/* Contenu */}
       <div className="flex flex-col items-start w-full p-2.5 gap-0.5">
         {product.category && (
-          <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-600">
+          <span className="rounded-full bg-brand-primary/10 px-2 py-0.5 text-[10px] font-medium text-brand-primary">
             {product.category.name}
           </span>
         )}
@@ -50,10 +50,10 @@ export function ProductCard({ product, onClick }: Props) {
         </p>
 
         {product.has_variants ? (
-          <p className="mt-1 text-xs text-indigo-500 font-medium">Choisir variante →</p>
+          <p className="mt-1 text-xs text-brand-primary font-medium">Choisir variante →</p>
         ) : (
           <>
-            <p className="text-base font-bold text-indigo-700">
+            <p className="text-base font-bold text-brand-primary">
               {formatCurrency(Number(product.price))}
             </p>
             <p className={`text-[11px] ${outOfStock ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
