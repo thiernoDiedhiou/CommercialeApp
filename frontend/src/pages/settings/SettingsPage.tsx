@@ -13,6 +13,8 @@ import {
   BuildingStorefrontIcon,
   PhotoIcon,
   XMarkIcon,
+  EyeIcon,
+  EyeSlashIcon,
 } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/authStore'
 import { getTenantSettings, updateTenantSettings } from '@/services/api/settings'
@@ -76,6 +78,151 @@ const groupSchema = z.object({
   description: z.string().nullable().optional(),
 })
 type GroupValues = z.infer<typeof groupSchema>
+
+// ─── SmtpSection ─────────────────────────────────────────────────────────────
+
+const smtpSchema = z.object({
+  smtp_host:         z.string().max(255).optional(),
+  smtp_port:         z.string().regex(/^\d*$/, 'Port invalide').optional(),
+  smtp_encryption:   z.enum(['tls', 'ssl']).default('tls'),
+  smtp_username:     z.string().max(255).optional(),
+  smtp_password:     z.string().max(255).optional(),
+  smtp_from_address: z.string().email('Email invalide').or(z.literal('')).optional(),
+  smtp_from_name:    z.string().max(255).optional(),
+})
+type SmtpValues = z.infer<typeof smtpSchema>
+
+function SmtpSection() {
+  const qc = useQueryClient()
+  const [showPassword, setShowPassword] = useState(false)
+  const [saved, setSaved]               = useState(false)
+
+  const { data } = useQuery({
+    queryKey: ['tenant-settings'],
+    queryFn:  getTenantSettings,
+  })
+
+  const { register, handleSubmit, reset, formState: { errors, isDirty } } = useForm<SmtpValues>({
+    resolver: zodResolver(smtpSchema),
+    defaultValues: { smtp_encryption: 'tls' },
+  })
+
+  useEffect(() => {
+    if (data) {
+      reset({
+        smtp_host:         data.smtp_host         ?? '',
+        smtp_port:         data.smtp_port         ? String(data.smtp_port) : '',
+        smtp_encryption:   (['tls', 'ssl'] as const).includes(data.smtp_encryption as 'tls' | 'ssl') ? (data.smtp_encryption as 'tls' | 'ssl') : 'tls',
+        smtp_username:     data.smtp_username     ?? '',
+        smtp_password:     data.smtp_password     ?? '',
+        smtp_from_address: data.smtp_from_address ?? '',
+        smtp_from_name:    data.smtp_from_name    ?? '',
+      })
+    }
+  }, [data, reset])
+
+  const mutation = useMutation({
+    mutationFn: (vals: SmtpValues) => updateTenantSettings({
+      smtp_host:         vals.smtp_host         || null,
+      smtp_port:         vals.smtp_port         ? Number(vals.smtp_port) : null,
+      smtp_encryption:   vals.smtp_encryption,
+      smtp_username:     vals.smtp_username     || null,
+      smtp_password:     vals.smtp_password     || null,
+      smtp_from_address: vals.smtp_from_address || null,
+      smtp_from_name:    vals.smtp_from_name    || null,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['tenant-settings'] })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+      toast.success('Configuration SMTP enregistrée.')
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
+  })
+
+  const clearSmtp = () => {
+    mutation.mutate({
+      smtp_host: '', smtp_port: '', smtp_encryption: 'tls',
+      smtp_username: '', smtp_password: '', smtp_from_address: '', smtp_from_name: '',
+    })
+    reset({ smtp_host: '', smtp_port: '', smtp_encryption: 'tls', smtp_username: '', smtp_password: '', smtp_from_address: '', smtp_from_name: '' })
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-sm font-semibold text-gray-800">Configuration email (SMTP)</h2>
+        <p className="mt-0.5 text-xs text-gray-500">
+          Configurez votre propre serveur email pour que les notifications (alertes stock, factures) soient
+          envoyées depuis votre adresse professionnelle. Si non renseigné, le serveur de la plateforme est utilisé.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Input label="Serveur SMTP" placeholder="smtp.hostinger.com" {...register('smtp_host')} />
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <Input label="Port" type="number" placeholder="587" {...register('smtp_port')} />
+            </div>
+            <div>
+              <label htmlFor="smtp-enc" className="mb-1.5 block text-sm font-medium text-gray-700">Chiffrement</label>
+              <Select id="smtp-enc" {...register('smtp_encryption')}>
+                <option value="tls">TLS</option>
+                <option value="ssl">SSL</option>
+              </Select>
+            </div>
+          </div>
+          <Input label="Utilisateur SMTP" placeholder="contact@ma-boutique.sn" {...register('smtp_username')} />
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">Mot de passe SMTP</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
+                aria-label="Mot de passe SMTP"
+                {...register('smtp_password')}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 pr-9 text-sm outline-none focus:border-brand-primary transition"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+          <Input
+            label="Adresse expéditeur"
+            type="email"
+            placeholder="contact@ma-boutique.sn"
+            error={errors.smtp_from_address?.message}
+            {...register('smtp_from_address')}
+          />
+          <Input label="Nom expéditeur" placeholder="Ma Boutique Dakar" {...register('smtp_from_name')} />
+        </div>
+
+        <div className="flex items-center gap-4">
+          <Button type="submit" loading={mutation.isPending} disabled={!isDirty}>
+            Enregistrer
+          </Button>
+          {data?.smtp_host && (
+            <button
+              type="button"
+              onClick={clearSmtp}
+              className="text-xs text-red-500 hover:underline"
+            >
+              Supprimer la config SMTP
+            </button>
+          )}
+          {saved && <span className="text-sm text-emerald-600 font-medium">SMTP enregistré ✓</span>}
+        </div>
+      </form>
+    </div>
+  )
+}
 
 // ─── BoutiqueTab ─────────────────────────────────────────────────────────────
 
@@ -213,6 +360,7 @@ function BoutiqueTab() {
   if (isLoading) return <div className="text-sm text-gray-400">Chargement…</div>
 
   return (
+    <div className="space-y-8">
     <form onSubmit={handleSubmit((v) => { if (!logoError) mutation.mutate(v) })} className="space-y-6">
       {/* Logo */}
       <div>
@@ -346,6 +494,10 @@ function BoutiqueTab() {
         {saved && <span className="text-sm text-emerald-600 font-medium">Paramètres enregistrés ✓</span>}
       </div>
     </form>
+
+    <hr className="border-gray-100" />
+    <SmtpSection />
+    </div>
   )
 }
 
@@ -620,7 +772,7 @@ function UsersTab() {
                 <th className="px-4 py-3 text-left hidden sm:table-cell">Email</th>
                 <th className="px-4 py-3 text-left hidden md:table-cell">Groupes</th>
                 <th className="px-4 py-3 text-left">Statut</th>
-                <th className="px-4 py-3" aria-label="Actions"></th>
+                <th className="px-4 py-3 sr-only">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 bg-white">

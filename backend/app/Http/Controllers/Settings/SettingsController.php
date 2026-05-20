@@ -11,11 +11,13 @@ use Illuminate\Validation\Rule;
 
 class SettingsController extends Controller
 {
-    // Devises supportées
     private const CURRENCIES = ['XOF', 'XAF', 'GNF', 'EUR', 'USD', 'GBP', 'MAD', 'MRU'];
 
-    // Secteurs supportés
     private const SECTORS = ['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services'];
+
+    // Clés des settings SMTP stockés dans tenant_settings (group='smtp').
+    // Note : smtp_password est stocké en clair — envisager un chiffrement applicatif en production.
+    private const SMTP_KEYS = ['smtp_host', 'smtp_port', 'smtp_encryption', 'smtp_username', 'smtp_password', 'smtp_from_address', 'smtp_from_name'];
 
     public function __construct(private readonly TenantService $tenantService) {}
 
@@ -47,12 +49,21 @@ class SettingsController extends Controller
             // primary_color et secondary_color sont gérés exclusivement par le Super Admin
             'logo'            => ['nullable', 'mimes:jpeg,png,webp,svg', 'max:2048'],
             'remove_logo'     => ['boolean'],
+            // SMTP tenant
+            'smtp_host'         => ['nullable', 'string', 'max:255'],
+            'smtp_port'         => ['nullable', 'integer', 'min:1', 'max:65535'],
+            'smtp_encryption'   => ['nullable', Rule::in(['tls', 'ssl'])],
+            'smtp_username'     => ['nullable', 'string', 'max:255'],
+            'smtp_password'     => ['nullable', 'string', 'max:255'],
+            'smtp_from_address' => ['nullable', 'email', 'max:255'],
+            'smtp_from_name'    => ['nullable', 'string', 'max:255'],
         ]);
 
         $tenant = $this->tenantService->current();
         /** @var string $apiKey */
         $apiKey = $tenant->api_key;
 
+        // ── Logo ────────────────────────────────────────────────────────────
         if ($request->hasFile('logo')) {
             if ($tenant->logo_path) {
                 Storage::disk('public')->delete($tenant->logo_path);
@@ -63,8 +74,24 @@ class SettingsController extends Controller
             $validated['logo_path'] = null;
         }
 
-        unset($validated['logo'], $validated['remove_logo']);
-        $tenant->update($validated);
+        // ── Séparer champs tenant et champs SMTP ────────────────────────────
+        $smtpData   = array_intersect_key($validated, array_flip(self::SMTP_KEYS));
+        $tenantData = array_diff_key($validated, array_flip(self::SMTP_KEYS));
+        unset($tenantData['logo'], $tenantData['remove_logo']);
+
+        $tenant->update($tenantData);
+
+        // ── Upsert SMTP dans tenant_settings ────────────────────────────────
+        foreach ($smtpData as $key => $val) {
+            if ($val === null || $val === '') {
+                $tenant->settings()->where('key', $key)->delete();
+            } else {
+                $tenant->settings()->updateOrCreate(
+                    ['key' => $key],
+                    ['value' => (string) $val, 'type' => 'string', 'group' => 'smtp'],
+                );
+            }
+        }
 
         $this->tenantService->flushCache($apiKey);
 
@@ -73,6 +100,10 @@ class SettingsController extends Controller
 
     private function formatTenant(\App\Models\Tenant $tenant): array
     {
+        $smtp = $tenant->settings()
+            ->whereIn('key', self::SMTP_KEYS)
+            ->pluck('value', 'key');
+
         return [
             'name'            => $tenant->name,
             'sector'          => $tenant->sector,
@@ -88,6 +119,14 @@ class SettingsController extends Controller
             'logo_url'        => $tenant->logo_path
                 ? Storage::disk('public')->url($tenant->logo_path)
                 : null,
+            // SMTP
+            'smtp_host'         => $smtp['smtp_host'] ?? null,
+            'smtp_port'         => isset($smtp['smtp_port']) ? (int) $smtp['smtp_port'] : null,
+            'smtp_encryption'   => $smtp['smtp_encryption'] ?? 'tls',
+            'smtp_username'     => $smtp['smtp_username'] ?? null,
+            'smtp_password'     => $smtp['smtp_password'] ?? null,
+            'smtp_from_address' => $smtp['smtp_from_address'] ?? null,
+            'smtp_from_name'    => $smtp['smtp_from_name'] ?? null,
         ];
     }
 }
