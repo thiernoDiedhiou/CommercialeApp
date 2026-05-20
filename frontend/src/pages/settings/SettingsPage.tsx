@@ -141,11 +141,10 @@ function SmtpSection() {
   })
 
   const clearSmtp = () => {
-    mutation.mutate({
-      smtp_host: '', smtp_port: '', smtp_encryption: 'tls',
-      smtp_username: '', smtp_password: '', smtp_from_address: '', smtp_from_name: '',
-    })
-    reset({ smtp_host: '', smtp_port: '', smtp_encryption: 'tls', smtp_username: '', smtp_password: '', smtp_from_address: '', smtp_from_name: '' })
+    mutation.mutate(
+      { smtp_host: '', smtp_port: '', smtp_encryption: 'tls', smtp_username: '', smtp_password: '', smtp_from_address: '', smtp_from_name: '' },
+      { onSuccess: () => reset({ smtp_host: '', smtp_port: '', smtp_encryption: 'tls', smtp_username: '', smtp_password: '', smtp_from_address: '', smtp_from_name: '' }) },
+    )
   }
 
   return (

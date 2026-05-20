@@ -4,9 +4,11 @@ interface SkeletonGridProps {
 
 function ProductSkeleton() {
   return (
-    <div className="rounded-2xl overflow-hidden bg-white border border-gray-100">
+    <div className="rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm">
       {/* Image placeholder */}
-      <div className="aspect-square animate-pulse bg-gray-200" />
+      <div className="aspect-square p-4 flex items-center justify-center">
+        <div className="w-full h-full animate-pulse bg-gray-200 rounded-lg" />
+      </div>
 
       {/* Infos */}
       <div className="p-3 space-y-2">

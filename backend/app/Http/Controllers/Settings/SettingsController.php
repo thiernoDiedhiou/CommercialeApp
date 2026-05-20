@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
@@ -79,20 +80,23 @@ class SettingsController extends Controller
         $tenantData = array_diff_key($validated, array_flip(self::SMTP_KEYS));
         unset($tenantData['logo'], $tenantData['remove_logo']);
 
-        $tenant->update($tenantData);
+        DB::transaction(function () use ($tenant, $tenantData, $smtpData) {
+            $tenant->update($tenantData);
 
-        // ── Upsert SMTP dans tenant_settings ────────────────────────────────
-        foreach ($smtpData as $key => $val) {
-            if ($val === null || $val === '') {
-                $tenant->settings()->where('key', $key)->delete();
-            } else {
-                $tenant->settings()->updateOrCreate(
-                    ['key' => $key],
-                    ['value' => (string) $val, 'type' => 'string', 'group' => 'smtp'],
-                );
+            // ── Upsert SMTP dans tenant_settings ────────────────────────────
+            foreach ($smtpData as $key => $val) {
+                if ($val === null || $val === '') {
+                    $tenant->settings()->where('key', $key)->delete();
+                } else {
+                    $tenant->settings()->updateOrCreate(
+                        ['key' => $key],
+                        ['value' => (string) $val, 'type' => 'string', 'group' => 'smtp'],
+                    );
+                }
             }
-        }
+        });
 
+        $tenant->refresh();
         $this->tenantService->flushCache($apiKey);
 
         return response()->json(['data' => $this->formatTenant($tenant)]);

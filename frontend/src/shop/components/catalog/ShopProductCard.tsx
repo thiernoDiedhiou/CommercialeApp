@@ -78,7 +78,7 @@ export default function ShopProductCard({ product, slug }: Props) {
   }
 
   const buttonLabel = () => {
-    if (outOfStock)              return 'Rupture de stock'
+    if (outOfStock)              return 'Indisponible'
     if (product.has_variants)    return 'Voir les options'
     if (product.is_weight_based) return 'Choisir la quantité'
     return 'Ajouter'
@@ -88,19 +88,19 @@ export default function ShopProductCard({ product, slug }: Props) {
     <>
       <article
         onClick={handleCardClick}
-        className={`group flex flex-col h-full rounded-2xl overflow-hidden bg-white border border-gray-100 transition-all duration-200 hover:-translate-y-1 hover:shadow-xl ${
+        className={`group flex flex-col h-full rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl ${
           product.has_variants ? 'cursor-pointer' : 'cursor-default'
         }`}
       >
         {/* ── Image ─────────────────────────────────────────────────────────── */}
-        <div className="relative aspect-square overflow-hidden bg-gray-50">
+        <div className="relative aspect-square bg-white p-4 overflow-hidden">
           {product.image_url ? (
             <img
               src={product.image_url}
               alt={product.name}
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="w-full h-full object-contain"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
