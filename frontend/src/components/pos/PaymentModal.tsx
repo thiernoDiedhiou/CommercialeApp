@@ -41,10 +41,12 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
     }
   }, [isOpen, total])
 
-  const totalPaid = lines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0)
-  const remaining = Math.max(0, total - totalPaid)
-  const overpaid = totalPaid - total
-  const canConfirm = totalPaid >= total && lines.every((l) => l.method)
+  const totalPaid   = lines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0)
+  const remaining   = Math.max(0, total - totalPaid)
+  const overpaid    = totalPaid - total
+  const hasCustomer = !!customerName
+  // Paiement partiel autorisé uniquement si un client est sélectionné (dette trackée)
+  const canConfirm  = totalPaid > 0 && lines.every((l) => l.method) && (totalPaid >= total || hasCustomer)
 
   const updateLine = (i: number, patch: Partial<PaymentLine>) =>
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)))
@@ -105,14 +107,14 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
       }
     >
       {/* Total */}
-      <div className="mb-4 rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-3 flex items-center justify-between">
+      <div className="mb-4 rounded-xl bg-brand-primary/10 border border-brand-primary/20 px-4 py-3 flex items-center justify-between">
         <div>
-          <p className="text-xs text-indigo-400 uppercase tracking-wide font-medium">
+          <p className="text-xs text-brand-primary/70 uppercase tracking-wide font-medium">
             Total à encaisser
           </p>
-          {customerName && <p className="mt-0.5 text-sm text-indigo-600">{customerName}</p>}
+          {customerName && <p className="mt-0.5 text-sm text-brand-primary">{customerName}</p>}
         </div>
-        <p className="text-2xl font-bold text-indigo-700">{formatCurrency(total)}</p>
+        <p className="text-2xl font-bold text-brand-primary">{formatCurrency(total)}</p>
       </div>
 
       {/* Payment lines */}
@@ -122,6 +124,7 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
             <select
               value={line.method}
               onChange={(e) => updateLine(i, { method: e.target.value })}
+              aria-label="Méthode de paiement"
               className="flex-1 rounded-lg border border-gray-200 py-2 px-2 text-sm text-gray-700 bg-white"
             >
               {METHODS.map((m) => (
@@ -141,7 +144,7 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
             <button
               type="button"
               onClick={() => fillExact(i)}
-              className="text-xs text-indigo-500 hover:underline whitespace-nowrap shrink-0"
+              className="text-xs text-brand-primary hover:underline whitespace-nowrap shrink-0"
               title="Montant exact"
             >
               Exact
@@ -150,6 +153,7 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
               <button
                 type="button"
                 onClick={() => removeLine(i)}
+                aria-label="Supprimer ce mode de paiement"
                 className="text-gray-400 hover:text-red-500 shrink-0"
               >
                 <TrashIcon className="h-4 w-4" />
@@ -182,11 +186,17 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
         <button
           type="button"
           onClick={addLine}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 py-2 text-sm text-gray-400 hover:border-indigo-300 hover:text-indigo-500 transition-colors"
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 py-2 text-sm text-gray-400 hover:border-brand-primary hover:text-brand-primary transition-colors"
         >
           <PlusIcon className="h-4 w-4" />
           Ajouter un mode de paiement
         </button>
+      )}
+
+      {remaining > 0 && !hasCustomer && (
+        <p className="mt-3 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
+          Sélectionnez un client pour enregistrer le solde restant comme créance.
+        </p>
       )}
 
       {error && (

@@ -16,6 +16,7 @@ interface CombinationRow {
 
 interface VariantManagerProps {
   productPrice: number
+  productSku?: string
   onChange: (variants: CreateVariantData[]) => void
 }
 
@@ -27,7 +28,7 @@ function cartesian(groups: AttributeValue[][]): AttributeValue[][] {
   )
 }
 
-export default function VariantManager({ productPrice, onChange }: VariantManagerProps) {
+export default function VariantManager({ productPrice, productSku, onChange }: VariantManagerProps) {
   const qc = useQueryClient()
 
   const { data: attributes = [] } = useQuery({
@@ -91,13 +92,18 @@ export default function VariantManager({ productPrice, onChange }: VariantManage
       attr.values.filter((v) => (selectedValueIds[attr.id] ?? []).includes(v.id)),
     )
     const combos = cartesian(valueGroups)
-    const rows: CombinationRow[] = combos.map((combo) => ({
-      key: combo.map((v) => v.id).join('-'),
-      attribute_value_ids: combo.map((v) => v.id),
-      label: combo.map((v) => v.value).join(' / '),
-      sku: '',
-      price: '',
-    }))
+    const rows: CombinationRow[] = combos.map((combo) => {
+      const label = combo.map((v) => v.value).join(' / ')
+      const suffix = label.replace(/\s*\/\s*/g, '-').replace(/\s+/g, '-').toUpperCase()
+      const sku = productSku ? `${productSku}-${suffix}` : suffix
+      return {
+        key: combo.map((v) => v.id).join('-'),
+        attribute_value_ids: combo.map((v) => v.id),
+        label,
+        sku,
+        price: '',
+      }
+    })
     setCombinations(rows)
     setStep(3)
     pushUp(rows)
@@ -300,7 +306,7 @@ export default function VariantManager({ productPrice, onChange }: VariantManage
                       Combinaison
                     </th>
                     <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-gray-500">
-                      SKU
+                      SKU <span className="text-gray-400 normal-case font-normal">(modifiable)</span>
                     </th>
                     <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-gray-500">
                       Prix (FCFA)

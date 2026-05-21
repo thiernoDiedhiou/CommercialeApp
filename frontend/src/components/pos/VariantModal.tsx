@@ -32,7 +32,7 @@ export function VariantModal({ product, onSelect, onClose }: Props) {
                 'w-full flex items-center justify-between rounded-lg border px-4 py-3 text-left transition',
                 outOfStock
                   ? 'cursor-not-allowed border-gray-200 bg-gray-50 opacity-50'
-                  : 'border-gray-200 hover:border-indigo-400 hover:bg-indigo-50 cursor-pointer',
+                  : 'border-gray-200 hover:border-brand-primary hover:bg-brand-primary/10 cursor-pointer',
               ].join(' ')}
             >
               <div>
@@ -40,7 +40,7 @@ export function VariantModal({ product, onSelect, onClose }: Props) {
                 {v.sku && <p className="text-xs text-gray-400">SKU : {v.sku}</p>}
               </div>
               <div className="text-right shrink-0 ml-4">
-                <p className="font-bold text-indigo-700">{formatCurrency(Number(v.price))}</p>
+                <p className="font-bold text-brand-primary">{formatCurrency(Number(v.price))}</p>
                 <p
                   className={`text-xs ${outOfStock ? 'text-red-500 font-medium' : 'text-gray-400'}`}
                 >

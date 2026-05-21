@@ -78,6 +78,8 @@
             @if($tenant->address ?? null) <p class="sub">{{ $tenant->address }}</p> @endif
             @if($tenant->phone   ?? null) <p class="sub">{{ $tenant->phone }}</p>   @endif
             @if($tenant->email   ?? null) <p class="sub">{{ $tenant->email }}</p>   @endif
+            @if($tenant->rccm    ?? null) <p class="sub">RCCM : {{ $tenant->rccm }}</p> @endif
+            @if($tenant->ninea   ?? null) <p class="sub">NINEA : {{ $tenant->ninea }}</p> @endif
         </div>
         <div class="header-right">
             <p class="doc-title">Facture</p>

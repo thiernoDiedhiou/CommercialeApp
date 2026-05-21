@@ -79,6 +79,12 @@
             <?php if($tenant->phone ?? null): ?>
                 <p class="sub"><?php echo e($tenant->phone); ?></p>
             <?php endif; ?>
+            <?php if($tenant->rccm ?? null): ?>
+                <p class="sub">RCCM : <?php echo e($tenant->rccm); ?></p>
+            <?php endif; ?>
+            <?php if($tenant->ninea ?? null): ?>
+                <p class="sub">NINEA : <?php echo e($tenant->ninea); ?></p>
+            <?php endif; ?>
         </div>
         <div class="header-right">
             <p class="invoice-title">Facture</p>

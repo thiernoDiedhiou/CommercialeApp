@@ -46,7 +46,9 @@ export default function PurchaseDetailPage() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [showCancel, setShowCancel]   = useState(false)
   const [showReceive, setShowReceive] = useState(false)
-  const [receivedQtys, setReceivedQtys] = useState<Record<number, string>>({})
+  const [receivedQtys, setReceivedQtys]     = useState<Record<number, string>>({})
+  const [lotNumbers, setLotNumbers]         = useState<Record<number, string>>({})
+  const [expiryDates, setExpiryDates]       = useState<Record<number, string>>({})
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['purchase', id] })
@@ -68,11 +70,23 @@ export default function PurchaseDetailPage() {
   const receiveMutation = useMutation({
     mutationFn: () => {
       const receptions = Object.entries(receivedQtys)
-        .map(([itemId, qty]) => ({ id: Number(itemId), quantity_received: parseFloat(qty) || 0 }))
+        .map(([itemId, qty]) => ({
+          id:                Number(itemId),
+          quantity_received: parseFloat(qty) || 0,
+          lot_number:        lotNumbers[Number(itemId)] || undefined,
+          expiry_date:       expiryDates[Number(itemId)] || undefined,
+        }))
         .filter((r) => r.quantity_received > 0)
       return receivePurchaseOrder(Number(id), receptions)
     },
-    onSuccess: () => { invalidate(); setShowReceive(false); setReceivedQtys({}); toast.success('Réception enregistrée.') },
+    onSuccess: () => {
+      invalidate()
+      setShowReceive(false)
+      setReceivedQtys({})
+      setLotNumbers({})
+      setExpiryDates({})
+      toast.success('Réception enregistrée.')
+    },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
@@ -214,11 +228,11 @@ export default function PurchaseDetailPage() {
       {/* Modal réception */}
       <Modal
         isOpen={showReceive}
-        onClose={() => { setShowReceive(false); setReceivedQtys({}) }}
+        onClose={() => { setShowReceive(false); setReceivedQtys({}); setLotNumbers({}); setExpiryDates({}) }}
         title="Réceptionner les articles"
-        size="md"
+        size="lg"
         footer={<>
-          <Button variant="outline" onClick={() => { setShowReceive(false); setReceivedQtys({}) }}>Annuler</Button>
+          <Button variant="outline" onClick={() => { setShowReceive(false); setReceivedQtys({}); setLotNumbers({}); setExpiryDates({}) }}>Annuler</Button>
           <Button loading={receiveMutation.isPending} onClick={() => receiveMutation.mutate()}>
             Valider la réception
           </Button>
@@ -228,23 +242,51 @@ export default function PurchaseDetailPage() {
           <p className="text-sm text-gray-500">Saisissez les quantités effectivement reçues.</p>
           <div className="divide-y divide-gray-100">
             {receivableItems.map((item) => {
-              const remaining = parseFloat(item.quantity_ordered) - parseFloat(item.quantity_received)
+              const remaining  = parseFloat(item.quantity_ordered) - parseFloat(item.quantity_received)
+              const hasExpiry  = item.product?.has_expiry === true
               return (
-                <div key={item.id} className="flex items-center gap-4 py-3">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{item.product?.name ?? `Produit #${item.product_id}`}</p>
-                    <p className="text-xs text-gray-500">Reliquat : {String(parseFloat(remaining.toFixed(3)))}</p>
+                <div key={item.id} className="py-3 space-y-2">
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">{item.product?.name ?? `Produit #${item.product_id}`}</p>
+                      <p className="text-xs text-gray-500">Reliquat : {String(parseFloat(remaining.toFixed(3)))}</p>
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      max={remaining}
+                      step="0.001"
+                      value={receivedQtys[item.id] ?? ''}
+                      onChange={(e) => setReceivedQtys((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                      placeholder={`Max ${parseFloat(remaining.toFixed(3))}`}
+                      className="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                    />
                   </div>
-                  <input
-                    type="number"
-                    min="0"
-                    max={remaining}
-                    step="0.001"
-                    value={receivedQtys[item.id] ?? ''}
-                    onChange={(e) => setReceivedQtys((prev) => ({ ...prev, [item.id]: e.target.value }))}
-                    placeholder={`Max ${parseFloat(remaining.toFixed(3))}`}
-                    className="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
-                  />
+                  {hasExpiry && (
+                    <div className="ml-0 flex flex-wrap gap-3 pl-0">
+                      <div className="flex-1 min-w-[160px]">
+                        <label className="block text-xs text-gray-500 mb-0.5">N° de lot</label>
+                        <input
+                          type="text"
+                          title="Numéro de lot"
+                          placeholder="LOT-2024-001"
+                          value={lotNumbers[item.id] ?? ''}
+                          onChange={(e) => setLotNumbers((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-[160px]">
+                        <label className="block text-xs text-gray-500 mb-0.5">Date d'expiration</label>
+                        <input
+                          type="date"
+                          title="Date d'expiration"
+                          value={expiryDates[item.id] ?? ''}
+                          onChange={(e) => setExpiryDates((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })}

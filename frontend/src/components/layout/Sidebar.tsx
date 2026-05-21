@@ -1,56 +1,44 @@
-import { NavLink } from 'react-router-dom'
-import {
-  HomeIcon,
-  ShoppingCartIcon,
-  ArchiveBoxIcon,
-  UsersIcon,
-  ClipboardDocumentListIcon,
-  CurrencyDollarIcon,
-  Cog6ToothIcon,
-  XMarkIcon,
-  TruckIcon,
-  ShoppingBagIcon,
-  ChartBarIcon,
-  DocumentTextIcon,
-} from '@heroicons/react/24/outline'
+import { useState, useEffect } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
+import { XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/authStore'
+import { useHomePath } from '@/hooks/useHomePath'
+import { NAV_ITEMS } from '@/lib/navItems'
 import { cn } from '@/lib/utils'
-
-interface NavItem {
-  label: string
-  path: string
-  icon: React.ComponentType<{ className?: string }>
-  permission: string
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { label: 'Tableau de bord', path: '/dashboard',  icon: HomeIcon,                  permission: 'dashboard.view' },
-  { label: 'Caisse POS',      path: '/pos',         icon: ShoppingCartIcon,          permission: 'pos.access' },
-  { label: 'Ventes',          path: '/sales',        icon: CurrencyDollarIcon,        permission: 'sales.view' },
-  { label: 'Factures',        path: '/invoices',     icon: DocumentTextIcon,          permission: 'invoices.view' },
-  { label: 'Produits',        path: '/products',     icon: ArchiveBoxIcon,            permission: 'products.view' },
-  { label: 'Fournisseurs',    path: '/suppliers',    icon: TruckIcon,                 permission: 'suppliers.view' },
-  { label: 'Achats',          path: '/purchases',    icon: ShoppingBagIcon,           permission: 'purchases.view' },
-  { label: 'Clients',         path: '/customers',    icon: UsersIcon,                 permission: 'customers.view' },
-  { label: 'Stock',           path: '/stock',        icon: ClipboardDocumentListIcon, permission: 'stock.view' },
-  { label: 'Rapports',        path: '/reports',      icon: ChartBarIcon,              permission: 'reports.view' },
-  { label: 'Paramètres',      path: '/settings',     icon: Cog6ToothIcon,             permission: 'users.view' },
-]
 
 interface SidebarContentProps {
   onClose: () => void
 }
 
+function findParentPath(pathname: string): string | null {
+  for (const item of NAV_ITEMS) {
+    if (item.children?.some((c) => c.path === pathname)) return item.path
+  }
+  return null
+}
+
 function SidebarContent({ onClose }: SidebarContentProps) {
   const permissions  = useAuthStore((s) => s.permissions)
   const tenant       = useAuthStore((s) => s.tenant)
+  const location     = useLocation()
+  const homePath     = useHomePath()
   const visibleItems = NAV_ITEMS.filter((item) => permissions.includes(item.permission))
+
+  const [expandedPath, setExpandedPath] = useState<string | null>(
+    () => findParentPath(location.pathname),
+  )
+
+  // Auto-expand quand on navigue vers un sous-menu depuis ailleurs dans l'app
+  useEffect(() => {
+    const parent = findParentPath(location.pathname)
+    if (parent) setExpandedPath(parent)
+  }, [location.pathname])
 
   return (
     <div className="flex h-full flex-col bg-white border-r border-gray-200">
       {/* En-tête tenant */}
       <NavLink
-        to="/dashboard"
+        to={homePath}
         className="flex h-16 shrink-0 items-center gap-3 px-4 border-b border-gray-200 hover:bg-gray-50 transition-colors"
         onClick={onClose}
       >
@@ -68,24 +56,68 @@ function SidebarContent({ onClose }: SidebarContentProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-        {visibleItems.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            onClick={onClose}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-brand-primary text-white'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
-              )
-            }
-          >
-            <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-            {item.label}
-          </NavLink>
-        ))}
+        {visibleItems.map((item) => {
+          const visibleChildren = item.children?.filter((c) => permissions.includes(c.permission)) ?? []
+          const hasChildren     = visibleChildren.length > 0
+          const isExpanded      = hasChildren && expandedPath === item.path
+
+          return (
+            <div key={item.path}>
+              <NavLink
+                to={item.path}
+                onClick={() => {
+                  if (hasChildren) {
+                    setExpandedPath((prev) => (prev === item.path ? null : item.path))
+                  } else {
+                    onClose()
+                  }
+                }}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    (!hasChildren && isActive) || (hasChildren && isExpanded)
+                      ? 'bg-brand-primary text-white'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+                  )
+                }
+              >
+                <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <span className="flex-1">{item.label}</span>
+                {hasChildren && (
+                  <ChevronDownIcon
+                    className={cn(
+                      'h-4 w-4 shrink-0 transition-transform duration-200',
+                      isExpanded && 'rotate-180',
+                    )}
+                  />
+                )}
+              </NavLink>
+
+              {hasChildren && isExpanded && (
+                <div className="mt-0.5 ml-4 space-y-0.5 border-l-2 border-gray-100 pl-3">
+                  {visibleChildren.map((child) => (
+                    <NavLink
+                      key={child.path}
+                      to={child.path}
+                      end
+                      onClick={onClose}
+                      className={({ isActive }) =>
+                        cn(
+                          'flex items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                          isActive
+                            ? 'text-brand-primary font-semibold'
+                            : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900',
+                        )
+                      }
+                    >
+                      {child.label}
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })}
       </nav>
     </div>
   )
@@ -111,13 +143,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
         )}
       >
-        {/* Backdrop */}
-        <div
-          className="absolute inset-0 bg-gray-900/60"
-          onClick={onClose}
-        />
+        <div className="absolute inset-0 bg-gray-900/60" onClick={onClose} />
 
-        {/* Panneau */}
         <div
           className={cn(
             'absolute inset-y-0 left-0 flex w-64 flex-col',
@@ -125,7 +152,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             isOpen ? 'translate-x-0' : '-translate-x-full',
           )}
         >
-          {/* Bouton fermer */}
           <div className="absolute right-[-44px] top-3">
             <button
               type="button"

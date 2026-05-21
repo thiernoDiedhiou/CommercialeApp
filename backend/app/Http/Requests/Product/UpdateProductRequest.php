@@ -23,6 +23,7 @@ class UpdateProductRequest extends FormRequest
 
         return [
             'category_id'     => ['nullable', 'integer', Rule::exists('categories', 'id')->where('tenant_id', $tenantId)],
+            'brand_id'        => ['nullable', 'integer', Rule::exists('brands', 'id')->where('tenant_id', $tenantId)],
             'name'            => ['sometimes', 'string', 'max:200'],
             'description'     => ['nullable', 'string'],
             'image'           => ['nullable', 'mimes:jpeg,png,webp', 'max:2048'],

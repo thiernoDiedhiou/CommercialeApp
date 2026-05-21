@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import ShopApp from '@/shop/ShopApp'
 import { useAuthStore } from '@/store/authStore'
 import { useSuperAdminStore } from '@/store/superAdminStore'
+import { useHomePath } from '@/hooks/useHomePath'
 import LoginPage from '@/pages/auth/LoginPage'
 import Layout from '@/components/layout/Layout'
 import AdminLayout from '@/components/admin/AdminLayout'
@@ -16,7 +18,9 @@ import CustomersPage from '@/pages/customers/CustomersPage'
 import CustomerDetailPage from '@/pages/customers/CustomerDetailPage'
 import SalesPage from '@/pages/sales/SalesPage'
 import SaleDetailPage from '@/pages/sales/SaleDetailPage'
-import PosPage from '@/pages/pos/PosPage'
+import ReturnsPage from '@/pages/sales/ReturnsPage'
+import DebtsPage from '@/pages/customers/DebtsPage'
+import PosPage from '@/pages/pos/POSPage'
 import StockPage from '@/pages/stock/StockPage'
 import ReportsPage from '@/pages/reports/ReportsPage'
 import ToastContainer from '@/components/ui/ToastContainer'
@@ -28,11 +32,21 @@ import SuppliersPage from '@/pages/purchases/SuppliersPage'
 import PurchaseOrdersPage from '@/pages/purchases/PurchaseOrdersPage'
 import PurchaseFormPage from '@/pages/purchases/PurchaseFormPage'
 import PurchaseDetailPage from '@/pages/purchases/PurchaseDetailPage'
+import ShopSettingsPage from '@/pages/shop/ShopSettingsPage'
+import ShopOrdersPage from '@/pages/shop/ShopOrdersPage'
+import CategoriesPage from '@/pages/products/CategoriesPage'
+import BrandsPage from '@/pages/products/BrandsPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
   if (!token) return <Navigate to="/login" replace />
   return <>{children}</>
+}
+
+function SmartRedirect() {
+  const token    = useAuthStore((s) => s.token)
+  const homePath = useHomePath()
+  return <Navigate to={token ? homePath : '/login'} replace />
 }
 
 function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -66,17 +80,21 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route index element={<SmartRedirect />} />
           <Route path="dashboard"        element={<DashboardPage />} />
           <Route path="sales"            element={<SalesPage />} />
           <Route path="sales/new"        element={<Navigate to="/pos" replace />} />
           <Route path="sales/:id"        element={<SaleDetailPage />} />
+          <Route path="returns"          element={<ReturnsPage />} />
           <Route path="products"           element={<ProductsPage />} />
           <Route path="products/new"       element={<ProductFormPage />} />
           <Route path="products/:id"       element={<ProductDetailPage />} />
           <Route path="products/:id/edit"  element={<ProductFormPage />} />
+          <Route path="categories"         element={<CategoriesPage />} />
+          <Route path="brands"             element={<BrandsPage />} />
           <Route path="customers"         element={<CustomersPage />} />
           <Route path="customers/:id"    element={<CustomerDetailPage />} />
+          <Route path="debts"            element={<DebtsPage />} />
           <Route path="stock"               element={<StockPage />} />
           <Route path="reports"               element={<ReportsPage />} />
           <Route path="invoices"             element={<InvoicesPage />} />
@@ -89,9 +107,14 @@ export default function App() {
           <Route path="purchases/:id"     element={<PurchaseDetailPage />} />
           <Route path="purchases/:id/edit" element={<PurchaseFormPage />} />
           <Route path="settings"          element={<SettingsPage />} />
+          <Route path="shop-settings"     element={<ShopSettingsPage />} />
+          <Route path="shop-orders"       element={<ShopOrdersPage />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        {/* ── Boutique publique — pas d'auth requise ── */}
+        <Route path="/shop/:slug/*" element={<ShopApp />} />
+
+        <Route path="*" element={<SmartRedirect />} />
 
         {/* ── Super Admin ── */}
         <Route path="/admin/login" element={<AdminLoginPage />} />

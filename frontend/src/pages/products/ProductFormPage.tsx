@@ -5,13 +5,14 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
-import { getProduct, createProduct, updateProduct, createVariant } from '@/services/api/products'
+import { getProduct, createProduct, updateProduct, createVariant, deleteProduct } from '@/services/api/products'
 import { getApiErrorMessage } from '@/lib/errors'
 import { toast } from '@/store/toastStore'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Input'
 import CategorySelect from '@/components/products/CategorySelect'
+import BrandSelect from '@/components/products/BrandSelect'
 import VariantManager from '@/components/products/VariantManager'
 import type { CreateVariantData } from '@/types'
 
@@ -20,13 +21,21 @@ import type { CreateVariantData } from '@/types'
 const schema = z.object({
   name: z.string().min(2, 'Au moins 2 caractères'),
   sku: z.string().optional(),
+  barcode: z.string().optional(),
   category_id: z.number().nullable().optional(),
   price: z
     .number({ invalid_type_error: 'Prix requis' })
     .positive('Le prix doit être supérieur à 0'),
-  cost_price: z.number().min(0).nullable().optional(),
+  cost_price: z.preprocess(
+    (v) => (typeof v === 'number' && isNaN(v) ? null : v),
+    z.number().min(0).nullable().optional(),
+  ),
   unit: z.string().optional(),
-  alert_threshold: z.number().min(0).nullable().optional(),
+  alert_threshold: z.preprocess(
+    (v) => (typeof v === 'number' && isNaN(v) ? null : v),
+    z.number().min(0).nullable().optional(),
+  ),
+  brand_id: z.number().nullable().optional(),
   has_variants: z.boolean().default(false),
   is_weight_based: z.boolean().default(false),
   has_expiry: z.boolean().default(false),
@@ -219,10 +228,12 @@ export default function ProductFormPage() {
       reset({
         name: product.name,
         sku: product.sku ?? '',
+        barcode: product.barcode ?? '',
         category_id: product.category_id,
         price: Number(product.price),
         cost_price: product.cost_price ? Number(product.cost_price) : null,
         unit: product.unit ?? '',
+        brand_id: product.brand_id ?? null,
         alert_threshold: product.alert_threshold ?? null,
         has_variants: product.has_variants,
         is_weight_based: product.is_weight_based,
@@ -235,6 +246,7 @@ export default function ProductFormPage() {
 
   const hasVariants = watch('has_variants')
   const price = watch('price') ?? 0
+  const sku = watch('sku') ?? ''
 
   const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
   const MAX_SIZE_BYTES = 2 * 1024 * 1024 // 2 Mo
@@ -268,9 +280,19 @@ export default function ProductFormPage() {
       const { variants, ...productData } = values
       const created = await createProduct(productData, imageFile)
       if (created.has_variants && variants?.length) {
-        await Promise.all(
+        // allSettled : tente toutes les variantes avant de décider du rollback
+        const results = await Promise.allSettled(
           variants.map((v) => createVariant(created.id, v as CreateVariantData)),
         )
+        const failures = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+        if (failures.length > 0) {
+          // Rollback complet — cascade supprime les variantes déjà créées
+          await deleteProduct(created.id).catch(() => {})
+          // Agrège tous les messages pour que l'utilisateur voie tous les conflits d'un coup
+          const messages = failures.map((f) => getApiErrorMessage(f.reason))
+          const unique = [...new Set(messages)]
+          throw new Error(unique.join('\n'))
+        }
       }
       return created
     },
@@ -312,9 +334,14 @@ export default function ProductFormPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">
-          {isEdit ? 'Modifier le produit' : 'Nouveau produit'}
-        </h1>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">
+            {isEdit ? 'Modifier le produit' : 'Nouveau produit'}
+          </h1>
+          <p className="mt-0.5 text-xs text-gray-400">
+            Les champs marqués <span className="text-red-500">*</span> sont obligatoires
+          </p>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -337,6 +364,7 @@ export default function ProductFormPage() {
                 label="Nom du produit"
                 placeholder="Ex : T-shirt coton"
                 error={errors.name?.message}
+                required
                 {...register('name')}
               />
               <div className="grid grid-cols-2 gap-4">
@@ -346,6 +374,14 @@ export default function ProductFormPage() {
                   error={errors.sku?.message}
                   {...register('sku')}
                 />
+                <Input
+                  label="Code-barres"
+                  placeholder="3012345678901"
+                  error={errors.barcode?.message}
+                  {...register('barcode')}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <Controller
                   name="category_id"
                   control={control}
@@ -354,6 +390,17 @@ export default function ProductFormPage() {
                       value={field.value}
                       onChange={field.onChange}
                       error={errors.category_id?.message}
+                    />
+                  )}
+                />
+                <Controller
+                  name="brand_id"
+                  control={control}
+                  render={({ field }) => (
+                    <BrandSelect
+                      value={field.value}
+                      onChange={field.onChange}
+                      error={errors.brand_id?.message}
                     />
                   )}
                 />
@@ -376,6 +423,7 @@ export default function ProductFormPage() {
               min={0}
               placeholder="0"
               error={errors.price?.message}
+              required
               {...register('price', { valueAsNumber: true })}
             />
             <Input
@@ -450,6 +498,7 @@ export default function ProductFormPage() {
           <Section title="Variantes">
             <VariantManager
               productPrice={price}
+              productSku={sku}
               onChange={(variants) => setValue('variants', variants)}
             />
           </Section>
@@ -457,7 +506,7 @@ export default function ProductFormPage() {
 
         {/* Erreur globale */}
         {mutationError && (
-          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+          <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 whitespace-pre-wrap">
             {getApiErrorMessage(mutationError)}
           </p>
         )}

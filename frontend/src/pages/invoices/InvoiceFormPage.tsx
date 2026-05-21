@@ -11,8 +11,7 @@ import { getInvoice, createInvoice, updateInvoice } from '@/services/api/invoice
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
 import Button from '@/components/ui/Button'
-import Input from '@/components/ui/Input'
-import { Textarea, Select } from '@/components/ui/Input'
+import Input, { Textarea, Select } from '@/components/ui/Input'
 import { formatCurrency } from '@/lib/utils'
 import type { Product } from '@/types'
 
@@ -103,6 +102,79 @@ function ProductPicker({ onSelect }: { onSelect: (p: Product) => void }) {
   )
 }
 
+// ── Sélecteur client avec recherche ──────────────────────────────────────
+
+function CustomerPicker({ initialName = '', onChange }: { initialName?: string; onChange: (id: number | null) => void }) {
+  const [text, setText]   = useState(initialName)
+  const [open, setOpen]   = useState(false)
+  const [deb, setDeb]     = useState('')
+  const debRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => { setText(initialName) }, [initialName])
+
+  useEffect(() => {
+    if (debRef.current) clearTimeout(debRef.current)
+    debRef.current = setTimeout(() => setDeb(text), 300)
+  }, [text])
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const { data } = useQuery({
+    queryKey: ['customers-picker', deb],
+    queryFn:  () => getCustomers({ search: deb || undefined, is_active: true }),
+    placeholderData: (prev) => prev,
+  })
+
+  const customers = data?.data ?? []
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <input
+        type="text"
+        value={text}
+        onChange={(e) => { const v = e.target.value; setText(v); setOpen(true); if (v === '') onChange(null) }}
+        onFocus={() => setOpen(true)}
+        placeholder="Rechercher un client…"
+        aria-label="Rechercher un client"
+        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+      />
+      {open && (
+        <ul className="absolute top-full left-0 z-20 mt-1 max-h-52 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+          <li>
+            <button type="button"
+              onClick={() => { onChange(null); setText(''); setOpen(false) }}
+              className="w-full px-3 py-2 text-left text-sm italic text-gray-400 hover:bg-gray-50"
+            >
+              Aucun client
+            </button>
+          </li>
+          {customers.map((c) => (
+            <li key={c.id}>
+              <button type="button"
+                onClick={() => { onChange(c.id); setText(c.name); setOpen(false) }}
+                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+              >
+                <span className="font-medium text-gray-900">{c.name}</span>
+                {c.phone && <span className="ml-2 text-xs text-gray-400">{c.phone}</span>}
+              </button>
+            </li>
+          ))}
+          {customers.length === 0 && deb.length > 0 && (
+            <li className="px-3 py-2 text-sm text-gray-400">Aucun résultat</li>
+          )}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export default function InvoiceFormPage() {
@@ -113,20 +185,15 @@ export default function InvoiceFormPage() {
 
   const [items, setItems] = useState<LineItem[]>([emptyLine()])
 
-  const { data: customersData } = useQuery({
-    queryKey: ['customers-select'],
-    queryFn: () => getCustomers({ is_active: true }),
-  })
-
   const { data: invoiceData, isLoading } = useQuery({
     queryKey: ['invoice', id],
     queryFn: () => getInvoice(Number(id)),
     enabled: isEdit,
   })
 
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { issue_date: new Date().toISOString().split('T')[0] },
+    defaultValues: { issue_date: new Date().toISOString().split('T')[0], tax_rate: 0 },
   })
 
   const discountType = watch('discount_type')
@@ -231,12 +298,10 @@ export default function InvoiceFormPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Client</label>
-              <Select {...register('customer_id', { setValueAs: (v) => v === '' ? null : Number(v) })}>
-                <option value="">Aucun client</option>
-                {customersData?.data.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </Select>
+              <CustomerPicker
+                initialName={invoiceData?.customer?.name ?? ''}
+                onChange={(id) => setValue('customer_id', id)}
+              />
             </div>
             <Input label="Date d'émission *" type="date" error={errors.issue_date?.message} {...register('issue_date')} />
             <Input label="Date d'échéance" type="date" {...register('due_date')} />
@@ -287,7 +352,7 @@ export default function InvoiceFormPage() {
                   <th className="pb-2 pr-3 w-28 font-medium">Prix unit.</th>
                   <th className="pb-2 pr-3 w-24 font-medium">Remise</th>
                   <th className="pb-2 w-24 text-right font-medium">Total</th>
-                  <th className="pb-2 w-10" aria-label="Actions" />
+                  <th className="pb-2 w-10"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">

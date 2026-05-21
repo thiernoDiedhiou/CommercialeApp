@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeftIcon, UserIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, UserIcon, TrashIcon, ShoppingCartIcon, CameraIcon } from '@heroicons/react/24/outline'
 import axios from 'axios'
 
 import { useCartStore } from '@/store/cartStore'
+import { useAuthStore } from '@/store/authStore'
+import { useTenantStore } from '@/store/tenantStore'
+import { useExitPosPath } from '@/hooks/useHomePath'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import type { Product, ProductVariant, Customer } from '@/types'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatDateTime } from '@/lib/utils'
 
 import { getCategories } from '@/services/api/categories'
 import { getCustomers } from '@/services/api/customers'
@@ -23,11 +27,15 @@ import { OfflineBanner } from '@/components/pos/OfflineBanner'
 import { VariantModal } from '@/components/pos/VariantModal'
 import { WeightModal } from '@/components/pos/WeightModal'
 import { PaymentModal } from '@/components/pos/PaymentModal'
+import { ReceiptModal, type SaleReceipt } from '@/components/pos/ReceiptModal'
+import { BarcodeScannerModal } from '@/components/pos/BarcodeScannerModal'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 
 export default function PosPage() {
-  const navigate = useNavigate()
+  const navigate    = useNavigate()
+  const exitPosPath = useExitPosPath()
+  const isMobile    = useIsMobile()
 
   // ── Cart store ───────────────────────────────────────────────────────────
   const items = useCartStore((s) => s.items)
@@ -45,6 +53,16 @@ export default function PosPage() {
   const addToOfflineQueue = useCartStore((s) => s.addToOfflineQueue)
 
   // ── Local state ──────────────────────────────────────────────────────────
+  const tenant           = useAuthStore((s) => s.tenant)
+  const user             = useAuthStore((s) => s.user)
+  const applyBrandColors = useTenantStore((s) => s.applyBrandColors)
+
+  // Réapplique les variables CSS brand au rechargement direct sur /pos (hors Layout)
+  useEffect(() => {
+    if (tenant) applyBrandColors(tenant.primary_color, tenant.secondary_color)
+  }, [tenant, applyBrandColors])
+
+  const [mobileView, setMobileView] = useState<'products' | 'cart'>('products')
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [categoryId, setCategoryId] = useState<number | null>(null)
@@ -55,6 +73,8 @@ export default function PosPage() {
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [clearOpen, setClearOpen]     = useState(false)
   const [note, setNote] = useState('')
+  const [receipt, setReceipt] = useState<SaleReceipt | null>(null)
+  const [scannerOpen, setScannerOpen] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
   const customerRef = useRef<HTMLDivElement>(null)
 
@@ -111,6 +131,7 @@ export default function PosPage() {
       setWeightProduct(product)
     } else {
       addItem(product)
+      if (isMobile) setMobileView('cart')
     }
   }
 
@@ -128,8 +149,16 @@ export default function PosPage() {
   const handlePaymentConfirm = async (
     payments: { method: string; amount: number; reference?: string }[],
   ) => {
+    // Snapshot avant clearCart
+    const itemsSnapshot = [...items]
+    const subtotalSnapshot = subtotal()
+    const discountAmountSnapshot = discountAmount()
+    const totalSnapshot = total()
+    const customerSnapshot = selectedCustomer
+    const noteSnapshot = note
+
     const payload: CreateSalePayload = {
-      items: items.map((item) => ({
+      items: itemsSnapshot.map((item) => ({
         product_id: item.product.id,
         variant_id: item.variant?.id ?? null,
         quantity: item.quantity,
@@ -146,11 +175,27 @@ export default function PosPage() {
     }
 
     try {
-      await createPosSale(payload)
+      const sale = await createPosSale(payload)
       clearCart()
       setSelectedCustomer(null)
       setNote('')
       setPaymentOpen(false)
+      setReceipt({
+        reference: sale?.data?.reference ?? sale?.reference ?? '—',
+        items: itemsSnapshot,
+        payments,
+        customer: customerSnapshot,
+        subtotal: subtotalSnapshot,
+        discountAmount: discountAmountSnapshot,
+        total: totalSnapshot,
+        note: noteSnapshot,
+        tenantName: tenant?.name ?? '',
+        tenantLogoUrl: tenant?.logo_url ?? null,
+        tenantRccm: tenant?.rccm ?? null,
+        tenantNinea: tenant?.ninea ?? null,
+        cashierName: user?.name ?? '',
+        soldAt: formatDateTime(new Date().toISOString()),
+      })
     } catch (e) {
       // Network failure → save offline
       if (!navigator.onLine || (axios.isAxiosError(e) && !e.response)) {
@@ -187,58 +232,87 @@ export default function PosPage() {
       {/* Header */}
       <header className="flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 shrink-0">
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            aria-label="Retour au tableau de bord"
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
-          >
-            <ArrowLeftIcon className="h-5 w-5" aria-hidden="true" />
-          </button>
+          {exitPosPath && (
+            <button
+              type="button"
+              onClick={() => navigate(exitPosPath)}
+              aria-label="Retour"
+              className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+            >
+              <ArrowLeftIcon className="h-5 w-5" aria-hidden="true" />
+            </button>
+          )}
           <h1 className="text-base font-semibold text-gray-800">Caisse POS</h1>
           {session ? (
-            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
+            <span className="hidden sm:inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
               Session ouverte
             </span>
           ) : (
-            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+            <span className="hidden sm:inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
               Pas de session
             </span>
           )}
         </div>
-        {items.length > 0 && (
+        <div className="flex items-center gap-2">
+          {items.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setClearOpen(true)}
+              className="hidden md:flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition"
+            >
+              <TrashIcon className="h-3.5 w-3.5" />
+              Vider
+            </button>
+          )}
+          {/* Mobile: cart toggle button */}
           <button
             type="button"
-            onClick={() => setClearOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition"
+            onClick={() => setMobileView(mobileView === 'cart' ? 'products' : 'cart')}
+            aria-label={mobileView === 'cart' ? 'Voir les produits' : 'Voir le panier'}
+            className="relative md:hidden rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 transition"
           >
-            <TrashIcon className="h-3.5 w-3.5" />
-            Vider
+            <ShoppingCartIcon className="h-5 w-5" />
+            {items.length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-primary text-[10px] font-bold text-white">
+                {items.length}
+              </span>
+            )}
           </button>
-        )}
+        </div>
       </header>
 
       {/* Main */}
       <div className="flex flex-1 overflow-hidden">
         {/* ── Left: Product browser ────────────────────────────────────── */}
-        <div className="flex flex-1 flex-col overflow-hidden">
+        <div className={`overflow-hidden ${mobileView === 'cart' ? 'hidden md:flex md:flex-col md:flex-1' : 'flex flex-col flex-1'}`}>
           {/* Search + categories */}
           <div className="shrink-0 bg-white border-b border-gray-200 px-4 py-3 space-y-2">
-            <input
-              ref={searchRef}
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un produit ou scanner un code-barres…"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-indigo-400 focus:bg-white transition"
-              autoFocus
-            />
+            <div className="flex items-center gap-2">
+              <input
+                ref={searchRef}
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher un produit ou scanner un code-barres…"
+                className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-brand-primary focus:bg-white transition"
+                autoFocus={!isMobile}
+              />
+              <button
+                type="button"
+                onClick={() => setScannerOpen(true)}
+                aria-label="Scanner un code-barres"
+                className="shrink-0 flex items-center justify-center rounded-xl border border-gray-200 bg-gray-50 p-2 text-gray-500 hover:border-brand-primary hover:text-brand-primary transition"
+              >
+                <CameraIcon className="h-5 w-5" />
+              </button>
+            </div>
             <div className="flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none]">
               <button
+                type="button"
                 onClick={() => setCategoryId(null)}
                 className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
                   categoryId === null
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-brand-primary text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
@@ -246,11 +320,12 @@ export default function PosPage() {
               </button>
               {categories.map((cat) => (
                 <button
+                  type="button"
                   key={cat.id}
                   onClick={() => setCategoryId(cat.id === categoryId ? null : cat.id)}
                   className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
                     categoryId === cat.id
-                      ? 'bg-indigo-600 text-white'
+                      ? 'bg-brand-primary text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   }`}
                 >
@@ -283,7 +358,28 @@ export default function PosPage() {
         </div>
 
         {/* ── Right: Cart panel ────────────────────────────────────────── */}
-        <div className="flex w-[380px] shrink-0 flex-col bg-white border-l border-gray-200 overflow-hidden">
+        <div className={`bg-white border-l border-gray-200 overflow-hidden ${mobileView === 'cart' ? 'flex flex-col flex-1 md:flex-none md:w-[380px] md:shrink-0' : 'hidden md:flex md:flex-col md:w-[380px] md:shrink-0'}`}>
+          {/* Mobile back button */}
+          <div className="md:hidden shrink-0 flex items-center justify-between border-b border-gray-100 px-4 py-2">
+            <button
+              type="button"
+              onClick={() => setMobileView('products')}
+              className="flex items-center gap-1.5 text-sm text-brand-primary font-medium"
+            >
+              <ArrowLeftIcon className="h-4 w-4" />
+              Produits
+            </button>
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setClearOpen(true)}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition"
+              >
+                <TrashIcon className="h-3.5 w-3.5" />
+                Vider
+              </button>
+            )}
+          </div>
           {/* Customer selector */}
           <div className="shrink-0 border-b border-gray-100 px-4 py-3" ref={customerRef}>
             <div className="relative">
@@ -293,6 +389,7 @@ export default function PosPage() {
                   <div className="flex flex-1 items-center justify-between">
                     <span className="text-sm font-medium text-gray-800">{selectedCustomer.name}</span>
                     <button
+                      type="button"
                       onClick={() => {
                         setSelectedCustomer(null)
                         setCustomerSearch('')
@@ -372,20 +469,22 @@ export default function PosPage() {
                 <span className="text-xs text-gray-500 shrink-0">Remise globale</span>
                 <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
                   <button
+                    type="button"
                     onClick={() => setGlobalDiscount('percent', discountValue)}
                     className={`px-2 py-1 transition ${
                       discountType === 'percent'
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-brand-primary text-white'
                         : 'bg-white text-gray-500 hover:bg-gray-50'
                     }`}
                   >
                     %
                   </button>
                   <button
+                    type="button"
                     onClick={() => setGlobalDiscount('fixed', discountValue)}
                     className={`px-2 py-1 transition ${
                       discountType === 'fixed'
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-brand-primary text-white'
                         : 'bg-white text-gray-500 hover:bg-gray-50'
                     }`}
                   >
@@ -408,7 +507,7 @@ export default function PosPage() {
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Note (optionnel)"
-                className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-xs outline-none focus:border-indigo-300 transition"
+                className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-xs outline-none focus:border-brand-primary transition"
               />
 
               {/* Totals */}
@@ -425,14 +524,15 @@ export default function PosPage() {
                 )}
                 <div className="flex justify-between text-base font-bold text-gray-900 border-t border-gray-100 pt-1.5">
                   <span>Total</span>
-                  <span className="text-indigo-700">{formatCurrency(total())}</span>
+                  <span className="text-brand-primary">{formatCurrency(total())}</span>
                 </div>
               </div>
 
               {/* Encaisser */}
               <button
+                type="button"
                 onClick={() => setPaymentOpen(true)}
-                className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white hover:bg-indigo-700 active:scale-[0.98] transition-all"
+                className="w-full rounded-xl bg-brand-primary py-3 text-sm font-semibold text-white hover:opacity-90 active:scale-[0.98] transition-all"
               >
                 Encaisser — {formatCurrency(total())}
               </button>
@@ -458,6 +558,17 @@ export default function PosPage() {
         customerName={selectedCustomer?.name}
         onConfirm={handlePaymentConfirm}
         onClose={() => setPaymentOpen(false)}
+      />
+
+      <ReceiptModal
+        receipt={receipt}
+        onClose={() => setReceipt(null)}
+      />
+
+      <BarcodeScannerModal
+        isOpen={scannerOpen}
+        onScan={(barcode) => setSearch(barcode)}
+        onClose={() => setScannerOpen(false)}
       />
 
       <Modal

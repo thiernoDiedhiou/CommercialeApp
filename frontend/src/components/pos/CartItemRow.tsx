@@ -26,6 +26,7 @@ export function CartItemRow({ item, index, onRemove, onUpdateQty, onUpdateDiscou
         <button
           type="button"
           onClick={() => onRemove(index)}
+          aria-label="Retirer l'article"
           className="shrink-0 text-gray-400 hover:text-red-500 transition-colors"
         >
           <TrashIcon className="h-4 w-4" />
@@ -35,13 +36,14 @@ export function CartItemRow({ item, index, onRemove, onUpdateQty, onUpdateDiscou
       <div className="mt-1.5 flex items-center gap-2 flex-wrap">
         {item.unit_weight !== null ? (
           <span className="text-xs text-gray-500">
-            {item.unit_weight} kg × {formatCurrency(item.unit_price)}
+            {item.unit_weight} {item.product.unit ?? 'kg'} × {formatCurrency(item.unit_price)}
           </span>
         ) : (
           <div className="flex items-center gap-1">
             <button
               type="button"
               onClick={() => onUpdateQty(index, item.quantity - 1)}
+              aria-label="Diminuer la quantité"
               className="h-6 w-6 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition"
             >
               <MinusIcon className="h-3 w-3" />
@@ -50,12 +52,14 @@ export function CartItemRow({ item, index, onRemove, onUpdateQty, onUpdateDiscou
               type="number"
               min={1}
               value={item.quantity}
+              aria-label="Quantité"
               onChange={(e) => onUpdateQty(index, parseInt(e.target.value) || 1)}
               className="w-10 rounded border border-gray-200 text-center text-sm py-0.5"
             />
             <button
               type="button"
               onClick={() => onUpdateQty(index, item.quantity + 1)}
+              aria-label="Augmenter la quantité"
               className="h-6 w-6 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition"
             >
               <PlusIcon className="h-3 w-3" />

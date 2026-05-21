@@ -125,6 +125,9 @@ export default function ProductsPage() {
           </div>
           <div>
             <p className="font-medium text-gray-900">{p.name}</p>
+            {p.brand && (
+              <p className="text-xs text-gray-400 leading-none mt-0.5">{p.brand.name}</p>
+            )}
             <div className="flex flex-wrap gap-1 mt-0.5">
               {p.has_variants && <Badge variant="info" dot>Variantes</Badge>}
               {p.is_weight_based && <Badge variant="default">Poids</Badge>}

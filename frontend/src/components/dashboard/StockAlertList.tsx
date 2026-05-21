@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import Badge from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
 import type { StockAlert, ExpiringSoon } from '@/types'
@@ -32,22 +33,24 @@ export default function StockAlertList({ alerts, expiring, loading }: StockAlert
         ) : (
           <ul className="divide-y divide-gray-50">
             {alerts.map((item) => (
-              <li
-                key={item.variant_id ?? item.product_id}
-                className="flex items-center justify-between py-2"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-gray-900">{item.product_name}</p>
-                  {item.variant_summary && (
-                    <p className="truncate text-xs text-gray-400">{item.variant_summary}</p>
-                  )}
-                </div>
-                <div className="ml-3 flex shrink-0 items-center gap-2">
-                  <span className="text-sm text-gray-600">{item.current_stock}</span>
-                  <Badge variant={item.current_stock === 0 ? 'danger' : 'warning'}>
-                    {item.current_stock === 0 ? 'Rupture' : 'Bas'}
-                  </Badge>
-                </div>
+              <li key={item.variant_id ?? item.product_id}>
+                <Link
+                  to={`/products/${item.product_id}`}
+                  className="flex items-center justify-between py-2 transition-colors hover:bg-gray-50"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-gray-900">{item.product_name}</p>
+                    {item.variant_summary && (
+                      <p className="truncate text-xs text-gray-400">{item.variant_summary}</p>
+                    )}
+                  </div>
+                  <div className="ml-3 flex shrink-0 items-center gap-2">
+                    <span className="text-sm text-gray-600">{item.current_stock}</span>
+                    <Badge variant={item.current_stock === 0 ? 'danger' : 'warning'}>
+                      {item.current_stock === 0 ? 'Rupture' : 'Bas'}
+                    </Badge>
+                  </div>
+                </Link>
               </li>
             ))}
           </ul>

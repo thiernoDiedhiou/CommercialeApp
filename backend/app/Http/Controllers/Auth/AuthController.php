@@ -80,8 +80,11 @@ class AuthController extends Controller
             'permissions' => $this->permissionService->getPermissions($user),
             'tenant' => [
                 'name'            => $tenant->name,
+                'slug'            => $tenant->slug,
                 'currency'        => $tenant->currency,
                 'sector'          => $tenant->sector,
+                'rccm'            => $tenant->rccm,
+                'ninea'           => $tenant->ninea,
                 'primary_color'   => $tenant->primary_color,
                 'secondary_color' => $tenant->secondary_color,
                 'logo_url'        => $tenant->logo_path

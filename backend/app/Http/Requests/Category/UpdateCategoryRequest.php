@@ -18,10 +18,11 @@ class UpdateCategoryRequest extends FormRequest
         $categoryId = $this->route('category')?->id;
 
         return [
-            'name'      => ['sometimes', 'string', 'max:100'],
-            'slug'      => ['nullable', 'string', 'max:100', 'alpha_dash', Rule::unique('categories')->where('tenant_id', $tenantId)->ignore($categoryId)],
-            'parent_id' => ['nullable', 'integer', Rule::exists('categories', 'id')->where('tenant_id', $tenantId)],
-            'image'     => ['nullable', 'string', 'max:255'],
+            'name'        => ['sometimes', 'string', 'max:100'],
+            'slug'        => ['nullable', 'string', 'max:100', 'alpha_dash', Rule::unique('categories')->where('tenant_id', $tenantId)->ignore($categoryId)],
+            'parent_id'   => ['nullable', 'integer', Rule::exists('categories', 'id')->where('tenant_id', $tenantId)],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'image'       => ['nullable', 'string', 'max:255'],
         ];
     }
 }

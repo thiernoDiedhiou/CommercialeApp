@@ -8,9 +8,19 @@ export interface TenantSettings {
   email:           string | null
   address:         string | null
   city:            string | null
+  rccm:            string | null
+  ninea:           string | null
   primary_color:   string | null
   secondary_color: string | null
   logo_url:        string | null
+  // SMTP tenant
+  smtp_host:         string | null
+  smtp_port:         number | null
+  smtp_encryption:   string | null
+  smtp_username:     string | null
+  smtp_password:     string | null
+  smtp_from_address: string | null
+  smtp_from_name:    string | null
 }
 
 export async function getTenantSettings(): Promise<TenantSettings> {

@@ -21,6 +21,7 @@ class DefaultGroupSeeder extends Seeder
         'pos.discount',
         'sales.view',
         'sales.create',
+        'returns.view',
         'products.view',
         'customers.view',
         'customers.create',

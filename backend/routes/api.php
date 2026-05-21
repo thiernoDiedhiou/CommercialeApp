@@ -4,13 +4,16 @@ use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminTenantController;
 use App\Http\Controllers\Admin\AdminStatsController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Brand\BrandController;
 use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Customer\CustomerController;
+use App\Http\Controllers\Customer\DebtController;
 use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Pos\PosDraftController;
 use App\Http\Controllers\Pos\PosController;
 use App\Http\Controllers\Product\AttributeController;
 use App\Http\Controllers\Product\ProductController;
+use App\Http\Controllers\Product\ProductLotController;
 use App\Http\Controllers\Product\VariantController;
 use App\Http\Controllers\Invoice\InvoiceController;
 use App\Http\Controllers\Product\ProductImportController;
@@ -18,8 +21,11 @@ use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Purchase\PurchaseOrderController;
 use App\Http\Controllers\Purchase\SupplierController;
 use App\Http\Controllers\Report\ReportController;
+use App\Http\Controllers\Sale\ReturnController;
 use App\Http\Controllers\Sale\SaleController;
 use App\Http\Controllers\Stock\StockController;
+use App\Http\Controllers\Shop\PublicShopController;
+use App\Http\Controllers\Shop\ShopAdminController;
 use App\Http\Controllers\Users\GroupController;
 use App\Http\Controllers\Users\UserController;
 use Illuminate\Support\Facades\Route;
@@ -35,6 +41,19 @@ use Illuminate\Support\Facades\Route;
 | Auth : Laravel Sanctum (token Bearer)
 | Permissions : middleware permission:{name} → CheckPermission
 */
+
+// ── Boutique publique (sans auth, sans X-Tenant-ID) ──────────────────────────
+Route::prefix('v1/public/{slug}')
+    ->middleware(['throttle:60,1', 'shop.public'])
+    ->group(function () {
+        Route::get('config',               [PublicShopController::class, 'config']);
+        Route::get('products',             [PublicShopController::class, 'products']);
+        Route::get('products/{productId}', [PublicShopController::class, 'product'])
+             ->where('productId', '[0-9]+');
+        Route::get('categories',           [PublicShopController::class, 'categories']);
+        Route::post('orders',              [PublicShopController::class, 'order'])
+             ->middleware('throttle:10,1');
+    });
 
 Route::prefix('v1')->group(function () {
 
@@ -94,6 +113,14 @@ Route::prefix('v1')->group(function () {
             Route::get('stock',    [ReportController::class, 'stock']);
         });
 
+        // ── Marques ───────────────────────────────────────────────────────────
+        Route::prefix('brands')->name('brands.')->group(function () {
+            Route::get('/',          [BrandController::class, 'index'])  ->middleware('permission:products.view');
+            Route::post('/',         [BrandController::class, 'store'])  ->middleware('permission:products.create');
+            Route::put('{brand}',    [BrandController::class, 'update']) ->middleware('permission:products.edit');
+            Route::delete('{brand}', [BrandController::class, 'destroy'])->middleware('permission:products.delete');
+        });
+
         // ── Catégories ────────────────────────────────────────────────────────
         Route::prefix('categories')->name('categories.')->group(function () {
             Route::get('/',             [CategoryController::class, 'index'])
@@ -136,6 +163,16 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:variants.edit');
             Route::delete('{product}/variants/{variant}',     [VariantController::class, 'destroy'])
                 ->middleware('permission:variants.delete');
+
+            // Lots (produits avec suivi d'expiration)
+            Route::get('{product}/lots',                   [ProductLotController::class, 'index'])
+                ->middleware('permission:stock.view');
+            Route::post('{product}/lots',                  [ProductLotController::class, 'store'])
+                ->middleware('permission:stock.adjust');
+            Route::post('{product}/lots/regularize',       [ProductLotController::class, 'regularize'])
+                ->middleware('permission:stock.adjust');
+            Route::put('{product}/lots/{lot}',             [ProductLotController::class, 'update'])
+                ->middleware('permission:stock.adjust');
         });
 
         // ── Attributs ─────────────────────────────────────────────────────────
@@ -180,6 +217,10 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:sales.view');
         });
 
+        // ── Créances clients ──────────────────────────────────────────────────
+        Route::get('debts', [DebtController::class, 'index'])
+            ->middleware('permission:debts.view');
+
         // ── Ventes ────────────────────────────────────────────────────────────
         Route::prefix('sales')->name('sales.')->group(function () {
             Route::get('/',               [SaleController::class, 'index'])
@@ -194,6 +235,16 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:sales.edit');
             Route::get('{sale}/pdf',      [SaleController::class, 'pdf'])
                 ->middleware('permission:sales.pdf');
+            Route::post('{sale}/returns', [ReturnController::class, 'store'])
+                ->middleware('permission:returns.create');
+        });
+
+        // ── Retours ───────────────────────────────────────────────────────────
+        Route::prefix('returns')->name('returns.')->group(function () {
+            Route::get('/',           [ReturnController::class, 'index'])
+                ->middleware('permission:returns.view');
+            Route::get('{return}',    [ReturnController::class, 'show'])
+                ->middleware('permission:returns.view');
         });
 
         // ── Utilisateurs ──────────────────────────────────────────────────────
@@ -290,6 +341,22 @@ Route::prefix('v1')->group(function () {
             Route::post('session/{session}/close', [PosController::class, 'closeSession'])->name('session.close');
             Route::post('sync',                    [PosController::class, 'syncOffline'])->name('sync');
             Route::apiResource('drafts',           PosDraftController::class)->names('drafts');
+        });
+
+        // ── Boutique en ligne (admin) ─────────────────────────────────────────
+        Route::prefix('shop')->name('shop.')->group(function () {
+            Route::get('settings',                 [ShopAdminController::class, 'settings'])
+                ->middleware('permission:shop.manage');
+            Route::post('settings/update',         [ShopAdminController::class, 'updateSettings'])
+                ->middleware('permission:shop.manage');
+            Route::post('settings/toggle-active',  [ShopAdminController::class, 'toggleActive'])
+                ->middleware('permission:shop.manage');
+            Route::get('orders',                   [ShopAdminController::class, 'orders'])
+                ->middleware('permission:shop.orders');
+            Route::get('orders/{order}',           [ShopAdminController::class, 'showOrder'])
+                ->middleware('permission:shop.orders');
+            Route::put('orders/{order}/status',    [ShopAdminController::class, 'updateStatus'])
+                ->middleware('permission:shop.orders');
         });
 
     });

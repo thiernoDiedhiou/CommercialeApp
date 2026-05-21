@@ -10,8 +10,11 @@ export interface User {
 
 export interface TenantInfo {
   name: string
+  slug: string
   currency: string
   sector: string
+  rccm: string | null
+  ninea: string | null
   primary_color: string | null
   secondary_color: string | null
   logo_url: string | null
@@ -102,6 +105,7 @@ export interface Category {
   slug: string
   parent_id: number | null
   description: string | null
+  products_count?: number
   children?: Category[]
 }
 
@@ -132,6 +136,15 @@ export interface ProductAttribute {
 
 // ── Products ──────────────────────────────────────────────────────────────
 
+export interface Brand {
+  id: number
+  name: string
+}
+
+export interface CreateBrandData {
+  name: string
+}
+
 export interface Product {
   id: number
   name: string
@@ -149,9 +162,11 @@ export interface Product {
   has_expiry: boolean
   is_active: boolean
   category_id: number | null
+  brand_id: number | null
   image_path: string | null
   image_url: string | null
   category?: Category
+  brand?: Brand
   variants?: ProductVariant[]
 }
 
@@ -175,8 +190,11 @@ export interface ProductLot {
   product_variant_id: number | null
   lot_number: string
   expiry_date: string | null
+  quantity_received: number
   quantity_remaining: number
+  purchase_price: string | null
   is_active: boolean
+  notes: string | null
 }
 
 export interface CreateProductData {
@@ -206,6 +224,7 @@ export interface CreateVariantData {
   price?: number | null
   cost_price?: number | null
   alert_threshold?: number | null
+  is_active?: boolean
 }
 
 // ── Product Import ────────────────────────────────────────────────────────
@@ -257,7 +276,7 @@ export interface PurchaseOrderItem {
   quantity_ordered: string
   quantity_received: string
   unit_cost: string
-  product?: Pick<Product, 'id' | 'name' | 'unit'>
+  product?: Pick<Product, 'id' | 'name' | 'unit' | 'has_expiry'>
   variant?: Pick<ProductVariant, 'id' | 'attribute_summary'>
 }
 
@@ -292,6 +311,8 @@ export type UpdatePurchaseOrderData = Partial<CreatePurchaseOrderData>
 export interface ReceiveItemData {
   id: number
   quantity_received: number
+  lot_number?: string
+  expiry_date?: string
 }
 
 // ── Customers ─────────────────────────────────────────────────────────────
@@ -312,6 +333,22 @@ export interface CustomerDetail extends Customer {
   sales_count: number
   total_purchases: number
   last_purchase_at: string | null
+  outstanding_balance: number
+  unpaid_sales_count: number
+}
+
+/** Ligne du rapport créances GET /debts */
+export interface DebtRow {
+  id: number
+  name: string
+  phone: string | null
+  email: string | null
+  unpaid_sales_count: number
+  outstanding_balance: number
+}
+
+export interface DebtPageResponse extends PaginatedResponse<DebtRow> {
+  global_outstanding: number
 }
 
 export interface CreateCustomerData {
@@ -575,6 +612,47 @@ export interface StockReport {
   period: ReportPeriod
   summary: StockReportSummary
   data: StockReportRow[]
+}
+
+// ── Sale Returns ──────────────────────────────────────────────────────────
+
+export type RefundMethod = 'cash' | 'credit' | 'none'
+
+export interface SaleReturnItem {
+  id: number
+  sale_return_id: number
+  sale_item_id: number
+  product_id: number
+  product_variant_id: number | null
+  lot_id: number | null
+  quantity: string
+  unit_weight: string | null
+  unit_price: string
+  total: string
+  product?: Pick<Product, 'id' | 'name' | 'unit'>
+  variant?: Pick<ProductVariant, 'id' | 'attribute_summary'>
+  lot?: Pick<ProductLot, 'id' | 'lot_number'>
+}
+
+export interface SaleReturn {
+  id: number
+  reference: string
+  sale_id: number
+  user_id: number
+  reason: string | null
+  refund_method: RefundMethod
+  total: string
+  items_count?: number
+  created_at: string
+  sale?: Pick<Sale, 'id' | 'reference' | 'confirmed_at'>
+  user?: Pick<User, 'id' | 'name'>
+  items?: SaleReturnItem[]
+}
+
+export interface CreateSaleReturnData {
+  reason?: string | null
+  refund_method: RefundMethod
+  items: { sale_item_id: number; quantity: number }[]
 }
 
 // ── API error ─────────────────────────────────────────────────────────────
