@@ -75,7 +75,11 @@ export default function ShopLayout() {
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
       {shopConfig?.announcement_bar_active && shopConfig.announcement_bar && (
-        <AnnouncementBar text={shopConfig.announcement_bar} />
+        <AnnouncementBar
+          text={shopConfig.announcement_bar}
+          phone={shopConfig.whatsapp_number}
+          marquee={(shopConfig.announcement_bar?.length ?? 0) > 60}
+        />
       )}
 
       <ShopNavbar slug={slug} />

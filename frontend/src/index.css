@@ -11,3 +11,24 @@
 body {
   @apply bg-gray-50 text-gray-900 antialiased;
 }
+
+/* ── Shop AnnouncementBar ──────────────────────────────────────────────────── */
+.shop-announcement-bg {
+  background: linear-gradient(
+    90deg,
+    var(--shop-primary, #111827) 0%,
+    color-mix(in srgb, var(--shop-primary, #111827) 85%, black) 100%
+  );
+}
+
+@keyframes shop-marquee {
+  from { translate: 0; }
+  to   { translate: -50%; }
+}
+
+.shop-marquee-track {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: shop-marquee 22s linear infinite;
+  will-change: translate;
+}
