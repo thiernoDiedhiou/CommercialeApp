@@ -578,40 +578,43 @@ export interface SalesReport {
 }
 
 export interface ProductReportRow {
-  product_id: number
-  name: string
-  category: string | null
-  qty_sold: number
-  revenue: number
-  profit: number
+  product_id:  number
+  name:        string
+  category:    string | null
+  qty_sold:    number
+  revenue:     number
+  profit:      number
+  margin_rate: number
 }
 
 export interface ProductsReport {
   period: ReportPeriod
-  data: ProductReportRow[]
+  data:   ProductReportRow[]
 }
 
 export interface StockReportSummary {
-  total_in: number
-  total_out: number
-  total_return: number
-  total_adjustment: number
+  total_in:          number
+  total_out:         number
+  total_return:      number
+  total_adjustment:  number
+  total_stock_value: number
 }
 
 export interface StockReportRow {
-  product_id: number
-  name: string
-  total_in: number
-  total_out: number
-  total_return: number
+  product_id:       number
+  name:             string
+  total_in:         number
+  total_out:        number
+  total_return:     number
   total_adjustment: number
-  current_stock: number
+  current_stock:    number
+  stock_value:      number
 }
 
 export interface StockReport {
-  period: ReportPeriod
+  period:  ReportPeriod
   summary: StockReportSummary
-  data: StockReportRow[]
+  data:    StockReportRow[]
 }
 
 // ── Sale Returns ──────────────────────────────────────────────────────────

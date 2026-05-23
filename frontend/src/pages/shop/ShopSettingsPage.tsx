@@ -27,6 +27,8 @@ interface ShopSettingsData {
   facebook_url            : string | null
   instagram_url           : string | null
   twitter_url             : string | null
+  tiktok_url              : string | null
+  youtube_url             : string | null
   address                 : string | null
   opening_hours           : string | null
   announcement_bar        : string | null
@@ -84,6 +86,8 @@ export default function ShopSettingsPage() {
       facebook_url           : settings.facebook_url ?? '',
       instagram_url          : settings.instagram_url ?? '',
       twitter_url            : settings.twitter_url ?? '',
+      tiktok_url             : settings.tiktok_url ?? '',
+      youtube_url            : settings.youtube_url ?? '',
       address                : settings.address ?? '',
       opening_hours          : settings.opening_hours ?? '',
       announcement_bar       : settings.announcement_bar ?? '',
@@ -379,6 +383,14 @@ export default function ShopSettingsPage() {
               <Field label="Twitter / X">
                 <input type="url" value={fields.twitter_url ?? ''} onChange={(e) => set('twitter_url', e.target.value)}
                   className={INPUT_CLS} placeholder="https://x.com/votre-compte" />
+              </Field>
+              <Field label="TikTok">
+                <input type="url" value={fields.tiktok_url ?? ''} onChange={(e) => set('tiktok_url', e.target.value)}
+                  className={INPUT_CLS} placeholder="https://tiktok.com/@votre-compte" />
+              </Field>
+              <Field label="YouTube">
+                <input type="url" value={fields.youtube_url ?? ''} onChange={(e) => set('youtube_url', e.target.value)}
+                  className={INPUT_CLS} placeholder="https://youtube.com/@votre-chaine" />
               </Field>
               <Field label="Adresse physique">
                 <input type="text" value={fields.address ?? ''} onChange={(e) => set('address', e.target.value)}

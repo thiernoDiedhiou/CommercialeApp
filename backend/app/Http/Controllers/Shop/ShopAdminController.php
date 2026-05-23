@@ -73,6 +73,8 @@ class ShopAdminController extends Controller
             'facebook_url'            => ['nullable', 'url', 'max:255'],
             'instagram_url'           => ['nullable', 'url', 'max:255'],
             'twitter_url'             => ['nullable', 'url', 'max:255'],
+            'tiktok_url'              => ['nullable', 'url', 'max:255'],
+            'youtube_url'             => ['nullable', 'url', 'max:255'],
             'address'                 => ['nullable', 'string', 'max:255'],
             'opening_hours'           => ['nullable', 'string', 'max:255'],
             'minimum_order'           => ['nullable', 'numeric', 'min:0'],

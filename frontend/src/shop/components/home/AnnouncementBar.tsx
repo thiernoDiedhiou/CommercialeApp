@@ -37,10 +37,9 @@ export default function AnnouncementBar({ text, phone, marquee }: Props) {
     : null
 
   return (
-    <>
-      <div
-        className="shop-announcement-bg relative w-full py-2 text-white text-sm font-medium overflow-hidden"
-      >
+    <div
+      className="shop-announcement-bg relative w-full py-2 text-white text-sm font-medium overflow-hidden"
+    >
         <div className="flex items-center px-10">
 
           {/* ── Left : numéro de téléphone (desktop) ────────────────────── */}
@@ -102,6 +101,5 @@ export default function AnnouncementBar({ text, phone, marquee }: Props) {
           </svg>
         </button>
       </div>
-    </>
   )
 }

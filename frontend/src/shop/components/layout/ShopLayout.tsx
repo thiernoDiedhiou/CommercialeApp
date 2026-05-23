@@ -3,7 +3,7 @@ import { Outlet, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getShopConfig } from '@/shop/services/shop'
 import { useShopStore } from '@/shop/store/shopStore'
-import { WhatsAppFAB } from '@/shop/components/shared'
+import { WhatsAppFAB, ScrollToTopButton } from '@/shop/components/shared'
 import { AnnouncementBar } from '@/shop/components/home'
 import { CartDrawer } from '@/shop/components/cart'
 import ShopNavbar from './ShopNavbar'
@@ -89,6 +89,7 @@ export default function ShopLayout() {
       <ShopFooter slug={slug} />
 
       <WhatsAppFAB number={shopConfig?.whatsapp_number ?? null} />
+      <ScrollToTopButton />
       <CartDrawer />
     </div>
   )

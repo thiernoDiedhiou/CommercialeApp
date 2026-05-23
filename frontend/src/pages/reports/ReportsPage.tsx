@@ -172,6 +172,7 @@ function ProductsTab({ data, isLoading }: { data?: ProductsReport; isLoading: bo
               <th className="px-4 py-3 text-right font-medium">Qté vendue</th>
               <th className="px-4 py-3 text-right font-medium">CA (FCFA)</th>
               <th className="px-4 py-3 text-right font-medium">Bénéfice (FCFA)</th>
+              <th className="px-4 py-3 text-right font-medium">Marge</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -188,6 +189,9 @@ function ProductsTab({ data, isLoading }: { data?: ProductsReport; isLoading: bo
                 </td>
                 <td className={`px-4 py-3 text-right font-medium ${row.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                   {formatCurrency(row.profit)}
+                </td>
+                <td className={`px-4 py-3 text-right font-medium text-xs ${row.margin_rate >= 20 ? 'text-emerald-600' : row.margin_rate >= 10 ? 'text-amber-500' : 'text-red-500'}`}>
+                  {row.margin_rate.toFixed(1)} %
                 </td>
               </tr>
             ))}
@@ -247,6 +251,13 @@ function StockTab({ data, isLoading }: { data?: StockReport; isLoading: boolean 
           value={summary.total_adjustment.toLocaleString('fr-SN')}
           icon={<ArchiveBoxIcon className="h-5 w-5" />}
         />
+        <KpiCard
+          title="Valeur totale du stock"
+          value={formatCurrency(summary.total_stock_value)}
+          icon={<BanknotesIcon className="h-5 w-5" />}
+          accent="secondary"
+          className="col-span-2 lg:col-span-4"
+        />
       </div>
 
       {/* Table */}
@@ -266,6 +277,7 @@ function StockTab({ data, isLoading }: { data?: StockReport; isLoading: boolean 
                   <th className="px-4 py-3 text-right font-medium">Retours</th>
                   <th className="px-4 py-3 text-right font-medium">Ajustements</th>
                   <th className="px-4 py-3 text-right font-medium">Stock actuel</th>
+                  <th className="px-4 py-3 text-right font-medium">Valeur (FCFA)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -286,6 +298,9 @@ function StockTab({ data, isLoading }: { data?: StockReport; isLoading: boolean 
                     </td>
                     <td className="px-4 py-3 text-right font-semibold text-gray-900">
                       {row.current_stock.toLocaleString('fr-SN')}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-700">
+                      {formatCurrency(row.stock_value)}
                     </td>
                   </tr>
                 ))}
@@ -313,6 +328,7 @@ export default function ReportsPage() {
   const [from, setFrom]       = useState(startOfMonth)
   const [to, setTo]           = useState(today)
   const [groupBy, setGroupBy] = useState<'day' | 'month'>('day')
+  const [limit, setLimit]     = useState(50)
   const [exporting, setExporting] = useState(false)
 
   const salesQuery = useQuery({
@@ -323,8 +339,8 @@ export default function ReportsPage() {
   })
 
   const productsQuery = useQuery({
-    queryKey: ['report-products', from, to],
-    queryFn:  () => getProductsReport({ from, to }),
+    queryKey: ['report-products', from, to, limit],
+    queryFn:  () => getProductsReport({ from, to, limit }),
     enabled:  tab === 'products',
     staleTime: 60_000,
   })
@@ -340,7 +356,7 @@ export default function ReportsPage() {
     setExporting(true)
     try {
       if (tab === 'sales')    await exportSalesCsv({ from, to, group_by: groupBy })
-      if (tab === 'products') await exportProductsCsv({ from, to })
+      if (tab === 'products') await exportProductsCsv({ from, to, limit })
       if (tab === 'stock')    await exportStockCsv({ from, to })
     } catch {
       alert("Une erreur est survenue lors de l'export. Veuillez réessayer.")
@@ -390,6 +406,19 @@ export default function ReportsPage() {
             >
               <option value="day">Par jour</option>
               <option value="month">Par mois</option>
+            </Select>
+          </div>
+        )}
+        {tab === 'products' && (
+          <div className="w-36">
+            <Select
+              value={limit}
+              onChange={(e) => setLimit(Number(e.target.value))}
+            >
+              <option value={20}>Top 20</option>
+              <option value={50}>Top 50</option>
+              <option value={100}>Top 100</option>
+              <option value={200}>Top 200</option>
             </Select>
           </div>
         )}

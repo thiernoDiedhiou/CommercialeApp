@@ -48,6 +48,8 @@ class PublicShopController extends Controller
                 'facebook_url'             => $shop->facebook_url,
                 'instagram_url'            => $shop->instagram_url,
                 'twitter_url'              => $shop->twitter_url,
+                'tiktok_url'               => $shop->tiktok_url,
+                'youtube_url'              => $shop->youtube_url,
                 'address'                  => $shop->address,
                 'opening_hours'            => $shop->opening_hours,
                 'footer_text'              => $shop->footer_text,

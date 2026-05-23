@@ -27,6 +27,8 @@ class ShopSetting extends Model
         'facebook_url',
         'instagram_url',
         'twitter_url',
+        'tiktok_url',
+        'youtube_url',
         'address',
         'opening_hours',
         'minimum_order',
