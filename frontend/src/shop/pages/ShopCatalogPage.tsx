@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getShopCategories } from '@/shop/services/shop'
 import { ProductFilters, ProductGrid } from '@/shop/components/catalog'
+import { Breadcrumb } from '@/shop/components/shared'
 
 export default function ShopCatalogPage() {
   const { slug = '' }         = useParams<{ slug: string }>()
@@ -34,7 +35,8 @@ export default function ShopCatalogPage() {
     enabled  : !!slug,
   })
 
-  const categories = categoriesResult?.data ?? []
+  const categories       = categoriesResult?.data ?? []
+  const selectedCategory = categories.find((c) => c.id === categoryId) ?? null
 
   const handleCategorySelect = (id: number | null) => {
     setSearchParams(
@@ -48,10 +50,23 @@ export default function ShopCatalogPage() {
     )
   }
 
+  const breadcrumbItems = [
+    { label: 'Accueil',   to: `/shop/${slug}` },
+    selectedCategory
+      ? { label: 'Catalogue', to: `/shop/${slug}/catalog` }
+      : { label: 'Catalogue' },
+    ...(selectedCategory ? [{ label: selectedCategory.name }] : []),
+  ]
+
   return (
     <div className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      {/* ── Breadcrumb ────────────────────────────────────────────────────── */}
+      <Breadcrumb items={breadcrumbItems} />
+
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <h1 className="text-2xl font-semibold text-gray-900 mb-6">Catalogue</h1>
+      <h1 className="text-2xl font-semibold text-gray-900 mb-6">
+        {selectedCategory ? selectedCategory.name : 'Catalogue'}
+      </h1>
 
       {/* ── Filtres ───────────────────────────────────────────────────────── */}
       <div className="mb-6">

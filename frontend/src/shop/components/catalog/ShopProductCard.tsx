@@ -78,7 +78,7 @@ export default function ShopProductCard({ product, slug }: Props) {
   }
 
   const buttonLabel = () => {
-    if (outOfStock)              return 'Indisponible'
+    if (outOfStock)              return 'Rupture de stock'
     if (product.has_variants)    return 'Voir les options'
     if (product.is_weight_based) return 'Choisir la quantité'
     return 'Ajouter'

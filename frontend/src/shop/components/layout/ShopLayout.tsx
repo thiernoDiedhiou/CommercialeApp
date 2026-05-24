@@ -20,6 +20,14 @@ export default function ShopLayout() {
     enabled  : !!slug,
   })
 
+  // Empêche le scroll horizontal sur toutes les pages du shop
+  useEffect(() => {
+    const html = document.documentElement
+    const prev = html.style.overflowX
+    html.style.overflowX = 'hidden'
+    return () => { html.style.overflowX = prev }
+  }, [])
+
   // Applique la config au store + meta tags dès réception
   useEffect(() => {
     if (!data) return

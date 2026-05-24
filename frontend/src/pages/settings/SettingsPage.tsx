@@ -140,11 +140,10 @@ function SmtpSection() {
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
+  const EMPTY_SMTP: SmtpValues = { smtp_host: '', smtp_port: '', smtp_encryption: 'tls', smtp_username: '', smtp_password: '', smtp_from_address: '', smtp_from_name: '' }
+
   const clearSmtp = () => {
-    mutation.mutate(
-      { smtp_host: '', smtp_port: '', smtp_encryption: 'tls', smtp_username: '', smtp_password: '', smtp_from_address: '', smtp_from_name: '' },
-      { onSuccess: () => reset({ smtp_host: '', smtp_port: '', smtp_encryption: 'tls', smtp_username: '', smtp_password: '', smtp_from_address: '', smtp_from_name: '' }) },
-    )
+    mutation.mutate(EMPTY_SMTP, { onSuccess: () => reset(EMPTY_SMTP) })
   }
 
   return (

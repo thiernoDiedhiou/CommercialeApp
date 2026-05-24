@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getShopProduct } from '@/shop/services/shop'
 import { useShopStore } from '@/shop/store/shopStore'
 import { ProductGallery, VariantPicker, AddToCartBar } from '@/shop/components/product'
-import { SkeletonGrid } from '@/shop/components/shared'
+import { Breadcrumb, SkeletonGrid } from '@/shop/components/shared'
 
 export default function ShopProductDetailPage() {
   const { slug = '', productId = '' } = useParams<{ slug: string; productId: string }>()
@@ -74,17 +74,15 @@ export default function ShopProductDetailPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
       {/* ── Breadcrumb ───────────────────────────────────────────────────── */}
-      <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-        <Link to={`/shop/${slug}`} className="hover:text-gray-600 transition-colors">
-          Accueil
-        </Link>
-        <span>/</span>
-        <Link to={`/shop/${slug}/catalog`} className="hover:text-gray-600 transition-colors">
-          Catalogue
-        </Link>
-        <span>/</span>
-        <span className="text-gray-700 truncate max-w-[200px]">{product.name}</span>
-      </nav>
+      <Breadcrumb items={[
+        { label: 'Accueil',   to: `/shop/${slug}` },
+        { label: 'Catalogue', to: `/shop/${slug}/catalog` },
+        ...(product.category ? [{
+          label: product.category.name,
+          to   : `/shop/${slug}/catalog?category=${product.category.id}`,
+        }] : []),
+        { label: product.name },
+      ]} />
 
       {/* ── Contenu (2 colonnes desktop) ─────────────────────────────────── */}
       <div className="lg:grid lg:grid-cols-2 lg:gap-12 flex flex-col gap-6">
