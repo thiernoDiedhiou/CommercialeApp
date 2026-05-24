@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getShopProduct } from '@/shop/services/shop'
 import { useShopStore } from '@/shop/store/shopStore'
-import { ProductGallery, VariantPicker, AddToCartBar } from '@/shop/components/product'
+import { ProductGallery, VariantPicker, AddToCartBar, SimilarProducts } from '@/shop/components/product'
 import { Breadcrumb, SkeletonGrid } from '@/shop/components/shared'
 
 export default function ShopProductDetailPage() {
@@ -160,6 +160,15 @@ export default function ShopProductDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Produits similaires ──────────────────────────────────────────── */}
+      {product.category && (
+        <SimilarProducts
+          slug={slug}
+          categoryId={product.category.id}
+          currentProductId={product.id}
+        />
+      )}
     </div>
   )
 }

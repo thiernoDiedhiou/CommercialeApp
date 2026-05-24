@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { PlusIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilSquareIcon, TrashIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { getCategories, createCategory, updateCategory, deleteCategory } from '@/services/api/categories'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
@@ -40,10 +40,98 @@ function flatten(cats: Category[], depth = 0, parentName?: string): FlatCategory
 
 type ModalState = { mode: 'create' } | { mode: 'edit'; category: FlatCategory } | null
 
+// ── Sous-composant upload image ───────────────────────────────────────────────
+interface ImagePickerProps {
+  currentUrl : string | null
+  onChange   : (file: File | null) => void
+  onRemove   : () => void
+}
+
+function ImagePicker({ currentUrl, onChange, onRemove }: ImagePickerProps) {
+  const inputRef            = useRef<HTMLInputElement>(null)
+  const [preview, setPreview] = useState<string | null>(currentUrl)
+
+  useEffect(() => {
+    setPreview((prev) => {
+      if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev)
+      return currentUrl
+    })
+  }, [currentUrl])
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null
+    if (!file) return
+    // Bug #2 fix : révoquer l'ancienne blob URL avant d'en créer une nouvelle
+    if (preview?.startsWith('blob:')) URL.revokeObjectURL(preview)
+    setPreview(URL.createObjectURL(file))
+    onChange(file)
+  }
+
+  const handleRemove = () => {
+    if (preview?.startsWith('blob:')) URL.revokeObjectURL(preview)
+    setPreview(null)
+    onChange(null)
+    onRemove()
+    if (inputRef.current) inputRef.current.value = ''
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+      {preview ? (
+        <div className="relative inline-block">
+          <img
+            src={preview}
+            alt="Aperçu"
+            className="h-20 w-20 rounded-xl object-cover border border-gray-200"
+          />
+          <button
+            type="button"
+            onClick={handleRemove}
+            aria-label="Supprimer l'image"
+            className="absolute -top-1.5 -right-1.5 rounded-full bg-red-500 text-white p-0.5 shadow"
+          >
+            <XMarkIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="flex items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
+        >
+          <PhotoIcon className="h-5 w-5" />
+          Ajouter une image
+        </button>
+      )}
+      {preview && (
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="mt-1.5 block text-xs text-brand-primary hover:underline"
+        >
+          Changer l'image
+        </button>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        aria-label="Choisir une image pour la catégorie"
+        className="sr-only"
+        onChange={handleFile}
+      />
+    </div>
+  )
+}
+
+// ── Page principale ───────────────────────────────────────────────────────────
 export default function CategoriesPage() {
   const qc = useQueryClient()
   const [modal, setModal]               = useState<ModalState>(null)
   const [deleteTarget, setDeleteTarget] = useState<FlatCategory | null>(null)
+  const [imageFile, setImageFile]       = useState<File | null>(null)
+  const [removeImage, setRemoveImage]   = useState(false)
 
   const { data: rawData = [], isLoading } = useQuery({
     queryKey: ['categories'],
@@ -67,6 +155,8 @@ export default function CategoriesPage() {
     } else if (modal?.mode === 'create') {
       reset({ name: '', parent_id: '', description: '' })
     }
+    setImageFile(null)
+    setRemoveImage(false)
   }, [modal, reset])
 
   const createMutation = useMutation({
@@ -74,6 +164,7 @@ export default function CategoriesPage() {
       name       : v.name,
       parent_id  : v.parent_id ? Number(v.parent_id) : null,
       description: v.description || null,
+      image      : imageFile,
     }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['categories'] }); setModal(null); toast.success('Catégorie créée avec succès.') },
     onError  : (err) => toast.error(getApiErrorMessage(err)),
@@ -81,9 +172,11 @@ export default function CategoriesPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, v }: { id: number; v: FormValues }) => updateCategory(id, {
-      name       : v.name,
-      parent_id  : v.parent_id ? Number(v.parent_id) : null,
-      description: v.description || null,
+      name        : v.name,
+      parent_id   : v.parent_id ? Number(v.parent_id) : null,
+      description : v.description || null,
+      image       : imageFile,
+      remove_image: removeImage,
     }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['categories'] }); setModal(null); toast.success('Catégorie mise à jour.') },
     onError  : (err) => toast.error(getApiErrorMessage(err)),
@@ -102,7 +195,6 @@ export default function CategoriesPage() {
 
   const isMutating = createMutation.isPending || updateMutation.isPending
 
-  // Seules les catégories racines sont proposées comme parent (évite les niveaux infinis)
   const availableParents = rawData.filter(
     (c) => modal?.mode !== 'edit' || c.id !== modal.category.id,
   )
@@ -112,8 +204,19 @@ export default function CategoriesPage() {
       key   : 'name',
       header: 'Nom',
       render: (c) => (
-        <div className={`flex items-center gap-1${c.depth > 0 ? ' pl-5' : ''}`}>
+        <div className={`flex items-center gap-3${c.depth > 0 ? ' pl-5' : ''}`}>
           {c.depth > 0 && <span className="text-gray-300 text-xs select-none">└</span>}
+          {c.image_url ? (
+            <img
+              src={c.image_url}
+              alt={c.name}
+              className="h-8 w-8 rounded-lg object-cover shrink-0 border border-gray-100"
+            />
+          ) : (
+            <div className="h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+              <span className="text-xs font-semibold text-gray-400">{c.name.charAt(0).toUpperCase()}</span>
+            </div>
+          )}
           <span className="font-medium text-gray-900">{c.name}</span>
         </div>
       ),
@@ -220,6 +323,12 @@ export default function CategoriesPage() {
           </div>
 
           <Textarea label="Description" {...register('description')} />
+
+          <ImagePicker
+            currentUrl={modal?.mode === 'edit' ? modal.category.image_url : null}
+            onChange={(file) => setImageFile(file)}
+            onRemove={() => setRemoveImage(true)}
+          />
         </form>
       </Modal>
 

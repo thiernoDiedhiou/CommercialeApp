@@ -105,6 +105,7 @@ export interface Category {
   slug: string
   parent_id: number | null
   description: string | null
+  image_url: string | null
   products_count?: number
   children?: Category[]
 }
@@ -113,6 +114,8 @@ export interface CreateCategoryData {
   name: string
   parent_id?: number | null
   description?: string | null
+  image?: File | null
+  remove_image?: boolean
 }
 
 // ── Attributes & Values ───────────────────────────────────────────────────

@@ -49,9 +49,7 @@ export default function ShopProductCard({ product, slug }: Props) {
   const priceLabel  = getPriceLabel(product)
 
   const handleCardClick = () => {
-    if (product.has_variants) {
-      navigate(`/shop/${slug}/products/${product.id}`)
-    }
+    navigate(`/shop/${slug}/products/${product.id}`)
   }
 
   const handleButton = (e: React.MouseEvent) => {
@@ -88,9 +86,7 @@ export default function ShopProductCard({ product, slug }: Props) {
     <>
       <article
         onClick={handleCardClick}
-        className={`group flex flex-col h-full rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl ${
-          product.has_variants ? 'cursor-pointer' : 'cursor-default'
-        }`}
+        className="group flex flex-col h-full rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-xl cursor-pointer"
       >
         {/* ── Image ─────────────────────────────────────────────────────────── */}
         <div className="relative aspect-square bg-white p-4 overflow-hidden">

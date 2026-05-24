@@ -121,6 +121,7 @@ class PublicShopController extends Controller
             'id'             => $c->id,
             'name'           => $c->name,
             'slug'           => $c->slug,
+            'image_url'      => $c->image_url,
             'products_count' => $c->products_count,
         ]);
 

@@ -43,6 +43,7 @@ export interface ShopCategory {
   id             : number
   name           : string
   slug           : string
+  image_url      : string | null
   products_count : number
 }
 

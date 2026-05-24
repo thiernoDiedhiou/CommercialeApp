@@ -7,6 +7,7 @@ use App\Http\Requests\Category\StoreCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class CategoryController extends Controller
@@ -29,6 +30,11 @@ class CategoryController extends Controller
         $data         = $request->validated();
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
 
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('categories', 'public');
+        }
+
+        unset($data['remove_image']);
         $category = Category::create($data);
 
         return response()->json(['data' => $category], 201);
@@ -42,6 +48,21 @@ class CategoryController extends Controller
             $data['slug'] = Str::slug($data['name']);
         }
 
+        if ($request->hasFile('image')) {
+            if ($category->image) {
+                Storage::disk('public')->delete($category->image);
+            }
+            $data['image'] = $request->file('image')->store('categories', 'public');
+        } elseif (! empty($data['remove_image'])) {
+            if ($category->image) {
+                Storage::disk('public')->delete($category->image);
+            }
+            $data['image'] = null;
+        } else {
+            unset($data['image']);
+        }
+
+        unset($data['remove_image']);
         $category->update($data);
 
         return response()->json(['data' => $category->fresh()]);
@@ -57,8 +78,11 @@ class CategoryController extends Controller
         }
 
         // Remonter les enfants au niveau du parent de la catégorie supprimée
-        // (ou null si c'est déjà une catégorie racine)
         $category->children()->update(['parent_id' => $category->parent_id]);
+
+        if ($category->image) {
+            Storage::disk('public')->delete($category->image);
+        }
 
         $category->delete();
 
