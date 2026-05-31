@@ -51,6 +51,7 @@ class AdminTenantController extends Controller
             'email'         => ['nullable', 'email', 'max:150'],
             'address'       => ['nullable', 'string', 'max:255'],
             'city'          => ['nullable', 'string', 'max:100'],
+            'custom_domain'   => ['nullable', 'string', 'max:253', Rule::unique('tenants', 'custom_domain')],
             'primary_color'   => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             // Premier utilisateur admin du tenant
@@ -69,6 +70,7 @@ class AdminTenantController extends Controller
                 'email'         => $validated['email'] ?? null,
                 'address'       => $validated['address'] ?? null,
                 'city'          => $validated['city'] ?? null,
+                'custom_domain'   => $validated['custom_domain'] ?? null,
                 'primary_color'   => $validated['primary_color'] ?? null,
                 'secondary_color' => $validated['secondary_color'] ?? null,
                 'is_active'       => true,
@@ -125,6 +127,7 @@ class AdminTenantController extends Controller
             'email'         => ['nullable', 'email', 'max:150'],
             'address'       => ['nullable', 'string', 'max:255'],
             'city'          => ['nullable', 'string', 'max:100'],
+            'custom_domain'   => ['nullable', 'string', 'max:253', Rule::unique('tenants', 'custom_domain')->ignore($tenant->id)],
             'primary_color'   => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
         ]);
@@ -170,6 +173,7 @@ class AdminTenantController extends Controller
             'id'              => $tenant->id,
             'name'            => $tenant->name,
             'slug'            => $tenant->slug,
+            'custom_domain'   => $tenant->custom_domain,
             'api_key'         => $tenant->api_key, // exposé au Super Admin uniquement
             'sector'          => $tenant->sector,
             'currency'        => $tenant->currency,

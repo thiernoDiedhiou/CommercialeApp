@@ -15,6 +15,7 @@ class Tenant extends Model
     protected $fillable = [
         'name',
         'slug',
+        'custom_domain',
         'api_key',
         'sector',
         'currency',

@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ShopApp from '@/shop/ShopApp'
+import ShopDomainEntry from '@/shop/pages/ShopDomainEntry'
+import { detectMode } from '@/shop/hooks/useDomainTenant'
 import { useAuthStore } from '@/store/authStore'
 import { useSuperAdminStore } from '@/store/superAdminStore'
 import { useHomePath } from '@/hooks/useHomePath'
@@ -113,6 +115,11 @@ export default function App() {
 
         {/* ── Boutique publique — pas d'auth requise ── */}
         <Route path="/shop/:slug/*" element={<ShopApp />} />
+
+        {/* ── Entrée boutique par domaine (sous-domaine ou domaine custom) ── */}
+        {detectMode().mode !== 'path' && (
+          <Route path="/*" element={<ShopDomainEntry />} />
+        )}
 
         <Route path="*" element={<SmartRedirect />} />
 

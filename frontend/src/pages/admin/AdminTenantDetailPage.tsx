@@ -23,6 +23,7 @@ const schema = z.object({
   name:            z.string().min(2, 'Nom requis'),
   sector:          z.enum(['general', 'food', 'fashion', 'cosmetic']),
   currency:        z.string().min(3).max(3),
+  custom_domain:   z.string().max(253).optional().or(z.literal('')),
   phone:           z.string().optional(),
   email:           z.string().email('Email invalide').or(z.literal('')).optional(),
   address:         z.string().optional(),
@@ -95,6 +96,7 @@ export default function AdminTenantDetailPage() {
         name:            tenant.name,
         sector:          tenant.sector as FormValues['sector'],
         currency:        tenant.currency,
+        custom_domain:   tenant.custom_domain ?? '',
         phone:           tenant.phone ?? '',
         email:           tenant.email ?? '',
         address:         tenant.address ?? '',
@@ -265,6 +267,17 @@ export default function AdminTenantDetailPage() {
               </Field>
             </div>
 
+            <Field label="Domaine personnalisé" error={errors.custom_domain?.message}>
+              <input
+                {...register('custom_domain')}
+                className={inputCls}
+                placeholder="shop.client.sn"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Le client doit pointer son DNS vers votre VPS. Laisser vide pour l'option sous-domaine.
+              </p>
+            </Field>
+
             {/* Charte graphique */}
             <div className="pt-2 border-t border-gray-800 space-y-3">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Charte graphique</p>
@@ -346,7 +359,7 @@ export default function AdminTenantDetailPage() {
       </div>
 
       {/* Lien de connexion tenant */}
-      <LoginLinkCard apiKey={tenant.api_key} />
+      <LoginLinkCard apiKey={tenant.api_key} slug={tenant.slug} customDomain={tenant.custom_domain} />
 
       {/* Modal confirmation suppression */}
       <ConfirmModal
@@ -369,8 +382,11 @@ export default function AdminTenantDetailPage() {
   )
 }
 
-function LoginLinkCard({ apiKey }: { apiKey: string }) {
+function LoginLinkCard({ apiKey, slug, customDomain }: { apiKey: string; slug: string; customDomain: string | null }) {
   const loginUrl = `${window.location.origin}/login?key=${apiKey}`
+  const shopUrl  = customDomain
+    ? `https://${customDomain}`
+    : `${window.location.origin}/shop/${slug}`
   const [copied, setCopied] = useState(false)
 
   const copy = async (text: string) => {
@@ -411,6 +427,23 @@ function LoginLinkCard({ apiKey }: { apiKey: string }) {
         <p className="mt-1.5 text-xs text-gray-500">
           Partager ce lien au tenant admin — la boutique est pré-sélectionnée automatiquement.
         </p>
+      </div>
+
+      {/* URL boutique publique */}
+      <div>
+        <p className="text-xs font-medium text-gray-400 mb-1.5">
+          URL boutique
+          {customDomain && (
+            <span className="ml-2 text-indigo-400 font-normal">· domaine personnalisé</span>
+          )}
+        </p>
+        <div className="flex items-center gap-2 rounded-lg bg-gray-800 px-3 py-2.5">
+          <code className="flex-1 text-xs text-emerald-300 font-mono truncate">{shopUrl}</code>
+          <button type="button" onClick={() => copy(shopUrl)} title="Copier l'URL"
+            className="shrink-0 text-gray-400 hover:text-white transition">
+            <ClipboardDocumentIcon className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {copied && (

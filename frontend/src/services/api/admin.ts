@@ -43,6 +43,7 @@ export interface AdminTenant {
   id:              number
   name:            string
   slug:            string
+  custom_domain:   string | null
   api_key:         string
   sector:          string
   currency:        string
@@ -77,6 +78,7 @@ export interface UpdateTenantData {
   name?:            string
   sector?:          string
   currency?:        string
+  custom_domain?:   string | null
   phone?:           string | null
   email?:           string | null
   address?:         string | null

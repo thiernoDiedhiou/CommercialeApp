@@ -42,6 +42,10 @@ use Illuminate\Support\Facades\Route;
 | Permissions : middleware permission:{name} → CheckPermission
 */
 
+// ── Résolution tenant par domaine custom (sans auth) ─────────────────────────
+Route::get('v1/public/resolve-domain', [PublicShopController::class, 'resolveByDomain'])
+    ->middleware('throttle:30,1');
+
 // ── Boutique publique (sans auth, sans X-Tenant-ID) ──────────────────────────
 Route::prefix('v1/public/{slug}')
     ->middleware(['throttle:60,1', 'shop.public'])

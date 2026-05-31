@@ -20,6 +20,41 @@ class PublicShopController extends Controller
 {
     public function __construct(private readonly TenantService $tenantService) {}
 
+    // ── GET /api/v1/public/resolve-domain?domain=shop.client.sn ─────────────
+
+    public function resolveByDomain(Request $request): JsonResponse
+    {
+        $domain = $request->query('domain') ?? $request->getHost();
+        $slug   = $request->query('slug');
+
+        // Option 2 — domaine custom (ex: ets18safar.sn)
+        $tenant = Tenant::where('custom_domain', $domain)
+            ->where('is_active', true)
+            ->first();
+
+        // Option 1 — sous-domaine (ex: ets18safar.votreapp.sn) : slug fourni par le frontend
+        if (! $tenant && $slug) {
+            $tenant = Tenant::where('slug', $slug)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        if (! $tenant) {
+            return response()->json([
+                'message' => 'Aucun tenant associé à ce domaine.',
+                'code'    => 'DOMAIN_NOT_FOUND',
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => [
+                'slug'    => $tenant->slug,
+                'api_key' => $tenant->api_key,
+                'name'    => $tenant->name,
+            ],
+        ]);
+    }
+
     // ── GET /api/v1/public/{slug}/config ──────────────────────────────────────
 
     public function config(Request $request): JsonResponse
