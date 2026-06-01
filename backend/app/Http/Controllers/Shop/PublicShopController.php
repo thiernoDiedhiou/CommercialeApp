@@ -91,6 +91,7 @@ class PublicShopController extends Controller
                 'minimum_order'            => (float) $shop->minimum_order,
                 'payment_methods'          => $shop->payment_methods ?? ['cod', 'whatsapp'],
                 'delivery_zones'           => $shop->delivery_zones ?? [],
+                'trust_badges'             => $shop->trust_badges ?? null,
             ],
             'theme' => [
                 'primary_color'   => $primary,
@@ -110,6 +111,11 @@ class PublicShopController extends Controller
     {
         $perPage = min((int) $request->input('per_page', 12), 48);
 
+        $allowedSorts = ['name', 'newest', 'best_sellers'];
+        $sort         = in_array($request->input('sort'), $allowedSorts)
+            ? $request->input('sort')
+            : 'name';
+
         $products = Product::with(['category', 'activeVariants'])
             ->where('is_active', true)
             ->where('is_for_sale', true)
@@ -119,7 +125,15 @@ class PublicShopController extends Controller
             ->when($request->filled('search'), fn($q) =>
                 $q->where('name', 'like', '%' . $request->search . '%')
             )
-            ->orderBy('name')
+            ->when($sort === 'newest', fn($q) =>
+                $q->orderBy('created_at', 'desc')
+            )
+            ->when($sort === 'best_sellers', fn($q) =>
+                $q->withCount('saleItems')->orderByDesc('sale_items_count')
+            )
+            ->when($sort === 'name', fn($q) =>
+                $q->orderBy('name')
+            )
             ->paginate($perPage);
 
         $collection = $products->getCollection()->map(fn($p) => $this->formatProduct($p));

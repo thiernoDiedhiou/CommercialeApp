@@ -84,6 +84,11 @@ class Product extends Model
         return $this->hasMany(StockMovement::class)->latest();
     }
 
+    public function saleItems(): HasMany
+    {
+        return $this->hasMany(SaleItem::class);
+    }
+
     // ─── Scopes ───────────────────────────────────────────────────────────────
 
     public function scopeActive(Builder $query): Builder

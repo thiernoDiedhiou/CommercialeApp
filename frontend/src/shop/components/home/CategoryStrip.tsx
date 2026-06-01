@@ -33,18 +33,18 @@ export default function CategoryStrip({ categories, selectedId, onSelect }: Prop
 
   return (
     <div className="bg-white border-b border-gray-100 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex gap-4 overflow-x-auto scrollbar-hide">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide">
 
           {/* Tuile "Tous" */}
           <button
             type="button"
             onClick={() => onSelect(null)}
-            className="shrink-0 flex flex-col items-center gap-1.5 focus:outline-none group w-20"
+            className="shrink-0 flex flex-col items-center gap-1.5 focus:outline-none group w-[72px]"
           >
-            <div className={`h-16 w-20 rounded-2xl flex items-center justify-center transition-all duration-200 ${
+            <div className={`h-14 w-[72px] rounded-2xl flex items-center justify-center transition-all duration-200 ${
               selectedId === null
-                ? 'bg-[var(--shop-secondary,#374151)] ring-2 ring-[var(--shop-secondary,#374151)] ring-offset-2 scale-105'
+                ? 'bg-[var(--shop-secondary,#374151)] ring-2 ring-[var(--shop-secondary,#374151)]'
                 : 'bg-gray-100 group-hover:bg-gray-200'
             }`}>
               <span className={selectedId === null ? 'text-white' : 'text-gray-500'}>
@@ -68,12 +68,12 @@ export default function CategoryStrip({ categories, selectedId, onSelect }: Prop
                 key={cat.id}
                 type="button"
                 onClick={() => onSelect(cat.id)}
-                className="shrink-0 flex flex-col items-center gap-1.5 focus:outline-none group w-20"
+                className="shrink-0 flex flex-col items-center gap-1.5 focus:outline-none group w-[72px]"
               >
-                <div className={`h-16 w-20 rounded-2xl overflow-hidden transition-all duration-200 ${
+                <div className={`h-14 w-[72px] rounded-2xl overflow-hidden transition-all duration-200 ${
                   isSelected
-                    ? 'ring-2 ring-[var(--shop-secondary,#374151)] ring-offset-2 scale-105'
-                    : 'group-hover:scale-105'
+                    ? 'ring-2 ring-[var(--shop-secondary,#374151)]'
+                    : 'group-hover:opacity-80'
                 }`}>
                   {cat.image_url ? (
                     <img

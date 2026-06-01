@@ -6,10 +6,25 @@ import {
   toggleShopActive,
   updateShopSettings,
 } from '@/shop/services/shop'
+import type { TrustBadge } from '@/shop/store/shopStore'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+const BADGE_ICONS: Record<TrustBadge['icon'], string> = {
+  delivery: '🚚',
+  payment : '💳',
+  quality : '✅',
+  support : '💬',
+}
+
+const DEFAULT_TRUST_BADGES: TrustBadge[] = [
+  { icon: 'delivery', title: 'Livraison rapide',  subtitle: 'À votre porte',     active: true },
+  { icon: 'payment',  title: 'Paiement sécurisé', subtitle: 'Plusieurs options', active: true },
+  { icon: 'quality',  title: 'Qualité garantie',  subtitle: 'Produits vérifiés', active: true },
+  { icon: 'support',  title: 'Support client',    subtitle: 'Réponse rapide',    active: true },
+]
 
 interface ShopSettingsData {
   is_active               : boolean
@@ -38,9 +53,10 @@ interface ShopSettingsData {
   google_analytics_id     : string | null
   footer_text             : string | null
   minimum_order           : number | null
+  trust_badges            : TrustBadge[] | null
 }
 
-type Tab = 'general' | 'appearance' | 'contact' | 'seo'
+type Tab = 'general' | 'appearance' | 'contact' | 'seo' | 'trust'
 
 // ── Composant ─────────────────────────────────────────────────────────────────
 
@@ -55,6 +71,7 @@ export default function ShopSettingsPage() {
   const [logoFile,    setLogoFile]    = useState<File | null>(null)
   const [faviconFile, setFaviconFile] = useState<File | null>(null)
   const [bannerFile,  setBannerFile]  = useState<File | null>(null)
+  const [badges, setBadges]           = useState<TrustBadge[]>(DEFAULT_TRUST_BADGES)
   const logoInputRef    = useRef<HTMLInputElement>(null)
   const faviconInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef  = useRef<HTMLInputElement>(null)
@@ -98,6 +115,12 @@ export default function ShopSettingsPage() {
       google_analytics_id    : settings.google_analytics_id ?? '',
       footer_text            : settings.footer_text ?? '',
     })
+    setBadges(
+      (settings.trust_badges ?? DEFAULT_TRUST_BADGES).map((b) => ({
+        ...b,
+        subtitle: b.subtitle ?? '',
+      }))
+    )
   }, [settings])
 
   // ── Mutations ──────────────────────────────────────────────────────────────
@@ -135,6 +158,7 @@ export default function ShopSettingsPage() {
       if (typeof v === 'boolean') fd.append(k, v ? '1' : '0')
       else fd.append(k, String(v))
     })
+    fd.append('trust_badges', JSON.stringify(badges))
     if (logoFile)    fd.append('logo',        logoFile)
     if (faviconFile) fd.append('favicon',     faviconFile)
     if (bannerFile)  fd.append('hero_banner', bannerFile)
@@ -160,6 +184,7 @@ export default function ShopSettingsPage() {
     { key: 'appearance', label: 'Apparence' },
     { key: 'contact',    label: 'Contact' },
     { key: 'seo',        label: 'SEO' },
+    { key: 'trust',      label: 'Confiance' },
   ]
 
   return (
@@ -440,6 +465,62 @@ export default function ShopSettingsPage() {
                   className={INPUT_CLS} placeholder="© 2026 Ma boutique. Tous droits réservés." />
               </Field>
             </>
+          )}
+
+          {/* ── Confiance ────────────────────────────────────────────── */}
+          {tab === 'trust' && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500">
+                Ces badges s'affichent sur la page d'accueil de votre boutique.
+                Personnalisez le texte selon votre offre et votre pays.
+              </p>
+              {badges.map((badge, i) => (
+                <div key={badge.icon} className="flex items-start gap-3 rounded-xl border border-gray-200 p-4">
+                  {/* Toggle actif */}
+                  <label className="mt-1 relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      role="switch"
+                      aria-label={`Activer le badge "${badge.title}"`}
+                      checked={badge.active}
+                      onChange={(e) => setBadges((prev) => prev.map((b, idx) => idx === i ? { ...b, active: e.target.checked } : b))}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-gray-200 peer-checked:bg-gray-900 rounded-full transition-colors peer-focus:ring-2 peer-focus:ring-gray-900" />
+                    <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
+                  </label>
+
+                  {/* Icône */}
+                  <span className="mt-1 text-xl shrink-0" aria-hidden="true">
+                    {BADGE_ICONS[badge.icon]}
+                  </span>
+
+                  {/* Champs */}
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <Field label="Titre">
+                      <input
+                        type="text"
+                        value={badge.title}
+                        maxLength={60}
+                        onChange={(e) => setBadges((prev) => prev.map((b, idx) => idx === i ? { ...b, title: e.target.value } : b))}
+                        className={INPUT_CLS}
+                        placeholder="Livraison rapide"
+                      />
+                    </Field>
+                    <Field label="Sous-titre">
+                      <input
+                        type="text"
+                        value={badge.subtitle ?? ''}
+                        maxLength={100}
+                        onChange={(e) => setBadges((prev) => prev.map((b, idx) => idx === i ? { ...b, subtitle: e.target.value } : b))}
+                        className={INPUT_CLS}
+                        placeholder="Partout au Mali"
+                      />
+                    </Field>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
 
           {/* ── Bouton enregistrer ────────────────────────────────────── */}

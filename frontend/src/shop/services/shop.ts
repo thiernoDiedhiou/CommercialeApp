@@ -133,7 +133,7 @@ export async function getShopConfig(slug: string): Promise<ShopConfigResponse> {
 
 export async function getShopProducts(
   slug: string,
-  params?: { category_id?: number; search?: string; page?: number; per_page?: number },
+  params?: { category_id?: number; search?: string; page?: number; per_page?: number; sort?: 'name' | 'newest' | 'best_sellers' },
 ): Promise<PaginatedProducts> {
   const { data } = await shopApi.get<PaginatedProducts>(
     `/api/v1/public/${slug}/products`,
