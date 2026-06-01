@@ -1,13 +1,12 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import { useShopStore } from '@/shop/store/shopStore'
-import { getShopCategories } from '@/shop/services/shop'
 
 interface Props {
   slug: string
 }
 
-// ── Icônes SVG inline ─────────────────────────────────────────────────────────
+// ── Icônes SVG ────────────────────────────────────────────────────────────────
 
 function IconFacebook() {
   return (
@@ -49,10 +48,18 @@ function IconYouTube() {
   )
 }
 
-function IconWhatsApp() {
+function IconWhatsApp({ className = 'h-4 w-4' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+    </svg>
+  )
+}
+
+function IconChevron({ open }: { open: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" className={`h-4 w-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="6 9 12 15 18 9" />
     </svg>
   )
 }
@@ -65,18 +72,41 @@ const SOCIAL_ITEMS = [
   { key: 'youtube_url',   icon: IconYouTube,   label: 'YouTube'     },
 ] as const
 
-// ── Composant ─────────────────────────────────────────────────────────────────
+
+// ── Sous-composant section accordéon (mobile only) ────────────────────────────
+
+function FooterSection({ title, children }: { title: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="border-b border-white/10 sm:border-none">
+      {/* En-tête — cliquable uniquement sur mobile */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between py-3 sm:py-0 sm:cursor-default sm:pointer-events-none"
+
+      >
+        <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
+          {title}
+        </h3>
+        <span className="sm:hidden text-gray-500">
+          <IconChevron open={open} />
+        </span>
+      </button>
+
+      {/* Contenu — masqué sur mobile si fermé, toujours visible desktop */}
+      <div className={`overflow-hidden transition-all duration-200 sm:block sm:mt-3 ${open ? 'max-h-96 pb-3' : 'max-h-0 sm:max-h-none'}`}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// ── Composant principal ───────────────────────────────────────────────────────
 
 export default function ShopFooter({ slug }: Props) {
   const shopConfig = useShopStore((s) => s.shopConfig)
-
-  const { data: categoriesResult } = useQuery({
-    queryKey: ['shop-categories', slug],
-    queryFn : () => getShopCategories(slug),
-    staleTime: 5 * 60 * 1000,
-    enabled  : !!slug,
-  })
-  const categories = categoriesResult?.data
 
   const whatsappNumber = shopConfig?.whatsapp_number
     ? shopConfig.whatsapp_number.replace(/[^0-9]/g, '')
@@ -89,45 +119,32 @@ export default function ShopFooter({ slug }: Props) {
 
   return (
     <footer className="bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-0 sm:gap-10">
 
-          {/* ── Colonne 1 — Identité ──────────────────────────────────────── */}
-          <div className="flex flex-col gap-4">
+          {/* ── Colonne 1 — Identité (pas d'accordéon) ───────────────────── */}
+          <div className="flex flex-col gap-4 pb-6 sm:pb-0 border-b border-white/10 sm:border-none">
             <Link to={`/shop/${slug}`} className="inline-block">
               {shopConfig?.logo_url ? (
-                <div className="inline-flex items-center bg-white/10 rounded-xl px-3 py-2 backdrop-blur-sm">
-                  <img
-                    src={shopConfig.logo_url}
-                    alt={shopConfig.name}
-                    className="max-h-8 object-contain"
-                  />
+                <div className="inline-flex items-center bg-white/10 rounded-xl px-3 py-2">
+                  <img src={shopConfig.logo_url} alt={shopConfig.name} className="max-h-8 object-contain" />
                 </div>
               ) : (
-                <span className="text-lg font-bold text-white">
-                  {shopConfig?.name ?? ''}
-                </span>
+                <span className="text-lg font-bold text-white">{shopConfig?.name ?? ''}</span>
               )}
             </Link>
 
             {shopConfig?.description && (
-              <p className="text-sm text-gray-400 leading-relaxed">
-                {shopConfig.description}
-              </p>
+              <p className="text-sm text-gray-400 leading-relaxed">{shopConfig.description}</p>
             )}
 
             {hasSocials && (
-              <div className="flex flex-wrap gap-2 mt-1">
+              <div className="flex flex-wrap gap-2">
                 {SOCIAL_ITEMS.map(({ key, icon: Icon, label }) =>
                   shopConfig?.[key] ? (
-                    <a
-                      key={key}
-                      href={shopConfig[key]!}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <a key={key} href={shopConfig[key]!} target="_blank" rel="noopener noreferrer"
                       aria-label={label}
-                      className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                    >
+                      className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                       <Icon />
                     </a>
                   ) : null
@@ -136,11 +153,8 @@ export default function ShopFooter({ slug }: Props) {
             )}
           </div>
 
-          {/* ── Colonne 2 — Navigation ────────────────────────────────────── */}
-          <div className="flex flex-col gap-3">
-            <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
-              Navigation
-            </h3>
+          {/* ── Colonne 2 — Navigation (accordéon mobile) ────────────────── */}
+          <FooterSection title="Navigation">
             <nav className="flex flex-col gap-2">
               <Link to={`/shop/${slug}`} className="text-sm text-gray-400 hover:text-white transition-colors">
                 Accueil
@@ -148,85 +162,65 @@ export default function ShopFooter({ slug }: Props) {
               <Link to={`/shop/${slug}/catalog`} className="text-sm text-gray-400 hover:text-white transition-colors">
                 Catalogue
               </Link>
-              {categories?.slice(0, 5).map((cat) => (
-                <Link
-                  key={cat.id}
-                  to={`/shop/${slug}/catalog?category=${cat.id}`}
-                  className="text-sm text-gray-400 hover:text-white transition-colors"
-                >
-                  {cat.name}
-                </Link>
-              ))}
             </nav>
-          </div>
+          </FooterSection>
 
-          {/* ── Colonne 3 — Contact ───────────────────────────────────────── */}
-          <div className="flex flex-col gap-3">
-            <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
-              Contact
-            </h3>
+          {/* ── Colonne 3 — Contact (accordéon mobile) ───────────────────── */}
+          <FooterSection title="Contact">
+            <div className="flex flex-col gap-2.5">
+              {shopConfig?.address && (
+                <div className="flex items-start gap-2 text-sm text-gray-400">
+                  <svg className="h-4 w-4 mt-0.5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="leading-relaxed">{shopConfig.address}</span>
+                </div>
+              )}
 
-            {shopConfig?.address && (
-              <div className="flex items-start gap-2 text-sm text-gray-400">
-                <svg className="h-4 w-4 mt-0.5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span className="leading-relaxed">{shopConfig.address}</span>
-              </div>
-            )}
+              {shopConfig?.whatsapp_number && (
+                <div className="flex items-center gap-2 text-sm text-gray-400">
+                  <svg className="h-4 w-4 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
+                  </svg>
+                  <span>{shopConfig.whatsapp_number}</span>
+                </div>
+              )}
 
-            {shopConfig?.whatsapp_number && (
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <svg className="h-4 w-4 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
-                </svg>
-                <span>{shopConfig.whatsapp_number}</span>
-              </div>
-            )}
+              {whatsappNumber && (
+                <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm text-green-400 hover:text-green-300 transition-colors">
+                  <IconWhatsApp />
+                  Nous contacter sur WhatsApp
+                </a>
+              )}
+            </div>
+          </FooterSection>
 
-            {whatsappNumber && (
-              <a
-                href={`https://wa.me/${whatsappNumber}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-green-400 hover:text-green-300 transition-colors"
-              >
-                <IconWhatsApp />
-                Nous contacter sur WhatsApp
-              </a>
-            )}
-          </div>
-
-          {/* ── Colonne 4 — Horaires ──────────────────────────────────────── */}
+          {/* ── Colonne 4 — Horaires (accordéon mobile) ──────────────────── */}
           {shopConfig?.opening_hours && (
-            <div className="flex flex-col gap-3">
-              <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
-                Horaires
-              </h3>
+            <FooterSection title="Horaires">
               <div className="flex items-start gap-2 text-sm text-gray-400">
                 <svg className="h-4 w-4 mt-0.5 shrink-0 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span className="leading-relaxed whitespace-pre-line">{shopConfig.opening_hours}</span>
               </div>
-            </div>
+            </FooterSection>
           )}
 
         </div>
+
       </div>
 
       {/* ── Bas de page ───────────────────────────────────────────────────────── */}
       <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-500">
           <span>
-            {shopConfig?.footer_text
-              ? shopConfig.footer_text
-              : `© ${year} ${shopConfig?.name ?? ''}`}
+            {shopConfig?.footer_text ? shopConfig.footer_text : `© ${year} ${shopConfig?.name ?? ''}`}
           </span>
           <span>
-            Propulsé par{' '}
-            <span className="text-gray-400 font-medium">{appName}</span>
+            Propulsé par <span className="text-gray-400 font-medium">{appName}</span>
           </span>
         </div>
       </div>

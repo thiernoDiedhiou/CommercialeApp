@@ -17,6 +17,11 @@ export default function ShopCatalogPage() {
   const categoryParam = searchParams.get('category')
   const categoryId    = categoryParam ? parseInt(categoryParam, 10) : null
 
+  const sortParam = searchParams.get('sort')
+  const sort      = (['newest', 'best_sellers'].includes(sortParam ?? '')
+    ? sortParam
+    : 'name') as 'name' | 'newest' | 'best_sellers'
+
   // Debounce 300ms sur searchInput
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchInput), 300)
@@ -39,15 +44,21 @@ export default function ShopCatalogPage() {
   const selectedCategory = categories.find((c) => c.id === categoryId) ?? null
 
   const handleCategorySelect = (id: number | null) => {
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        if (id) next.set('category', id.toString())
-        else next.delete('category')
-        return next
-      },
-      { replace: true },
-    )
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (id) next.set('category', id.toString())
+      else next.delete('category')
+      return next
+    }, { replace: true })
+  }
+
+  const handleSortChange = (value: string) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (value === 'name') next.delete('sort')
+      else next.set('sort', value)
+      return next
+    }, { replace: true })
   }
 
   const breadcrumbItems = [
@@ -79,11 +90,26 @@ export default function ShopCatalogPage() {
         />
       </div>
 
+      {/* ── Tri ───────────────────────────────────────────────────────────── */}
+      <div className="flex justify-end mb-4">
+        <select
+          value={sort}
+          onChange={(e) => handleSortChange(e.target.value)}
+          aria-label="Trier les produits"
+          className="rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900"
+        >
+          <option value="name">Nom (A–Z)</option>
+          <option value="newest">Nouveaux arrivages</option>
+          <option value="best_sellers">Meilleures ventes</option>
+        </select>
+      </div>
+
       {/* ── Grille produits ───────────────────────────────────────────────── */}
       <ProductGrid
         slug={slug}
         categoryId={categoryId}
         searchQuery={debouncedSearch}
+        sort={sort}
       />
     </div>
   )

@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getShopCategories } from '@/shop/services/shop'
 import { useShopStore } from '@/shop/store/shopStore'
-import { HeroBanner, CategoryStrip } from '@/shop/components/home'
+import { HeroBanner, CategoryStrip, TrustBadges, HomeProductSection } from '@/shop/components/home'
 import { ProductGrid } from '@/shop/components/catalog'
 
 export default function ShopHomePage() {
@@ -45,6 +45,25 @@ export default function ShopHomePage() {
           onSelect={setSelectedCategory}
         />
       )}
+
+      {/* ── Trust badges ──────────────────────────────────────────────────── */}
+      <TrustBadges />
+
+      {/* ── Nouveaux arrivages ────────────────────────────────────────────── */}
+      <HomeProductSection
+        slug={slug}
+        title="Nouveaux arrivages"
+        sort="newest"
+        seeAllTo={`/shop/${slug}/catalog`}
+      />
+
+      {/* ── Meilleures ventes ─────────────────────────────────────────────── */}
+      <HomeProductSection
+        slug={slug}
+        title="Meilleures ventes"
+        sort="best_sellers"
+        seeAllTo={`/shop/${slug}/catalog`}
+      />
 
       {/* ── Grille produits ───────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

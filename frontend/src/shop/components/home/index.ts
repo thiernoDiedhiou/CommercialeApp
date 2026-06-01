@@ -1,3 +1,5 @@
-export { default as AnnouncementBar } from './AnnouncementBar'
-export { default as HeroBanner      } from './HeroBanner'
-export { default as CategoryStrip   } from './CategoryStrip'
+export { default as AnnouncementBar     } from './AnnouncementBar'
+export { default as HeroBanner          } from './HeroBanner'
+export { default as CategoryStrip       } from './CategoryStrip'
+export { default as TrustBadges         } from './TrustBadges'
+export { default as HomeProductSection  } from './HomeProductSection'

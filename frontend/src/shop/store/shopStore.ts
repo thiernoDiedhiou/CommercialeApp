@@ -50,6 +50,14 @@ export interface ShopConfig {
   minimum_order           : number
   payment_methods         : string[]
   delivery_zones          : DeliveryZone[]
+  trust_badges            : TrustBadge[] | null
+}
+
+export interface TrustBadge {
+  icon    : 'delivery' | 'payment' | 'quality' | 'support'
+  title   : string
+  subtitle: string | null
+  active  : boolean
 }
 
 export interface ShopOrderResult {
