@@ -31,9 +31,11 @@ export async function updateCategory(
   id: number,
   body: Partial<CreateCategoryData>,
 ): Promise<Category> {
-  const { data } = await apiClient.put<{ data: Category }>(
+  const fd = toFormData({ name: body.name ?? '', ...body })
+  fd.append('_method', 'PUT')
+  const { data } = await apiClient.post<{ data: Category }>(
     `/api/v1/categories/${id}`,
-    toFormData({ name: body.name ?? '', ...body }),
+    fd,
     MULTIPART,
   )
   return data.data
