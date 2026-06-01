@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeftIcon, UserIcon, TrashIcon, ShoppingCartIcon, CameraIcon } from '@heroicons/react/24/outline'
 import axios from 'axios'
 
@@ -34,6 +34,7 @@ import Button from '@/components/ui/Button'
 
 export default function PosPage() {
   const navigate    = useNavigate()
+  const qc          = useQueryClient()
   const exitPosPath = useExitPosPath()
   const isMobile    = useIsMobile()
 
@@ -176,6 +177,7 @@ export default function PosPage() {
 
     try {
       const sale = await createPosSale(payload)
+      qc.invalidateQueries({ queryKey: ['dashboard-summary'] })
       clearCart()
       setSelectedCustomer(null)
       setNote('')

@@ -278,6 +278,39 @@ class ShopAdminController extends Controller
             return response()->json(['data' => $order->fresh()]);
         }
 
+        // ── Annulation → restaure le stock si commande déjà confirmée ────────
+        $stockWasDecremented = in_array($order->status, ['confirmed', 'preparing', 'shipped', 'delivered'], true);
+
+        if ($newStatus === 'cancelled' && $stockWasDecremented) {
+            $order->load(['items.product', 'items.variant']);
+
+            DB::transaction(function () use ($order) {
+                foreach ($order->items as $item) {
+                    if (! $item->product) {
+                        continue; // Produit supprimé — impossible de restaurer
+                    }
+
+                    $lot = $item->lot_id
+                        ? ProductLot::withoutGlobalScopes()->find($item->lot_id)
+                        : null;
+
+                    $this->stockService->adjust(
+                        product:  $item->product,
+                        type:     'in',
+                        quantity: (float) $item->quantity,
+                        source:   'shop_order_cancel',
+                        sourceId: $item->id,
+                        variant:  $item->variant ?? null,
+                        lot:      $lot,
+                    );
+                }
+
+                $order->update(['status' => 'cancelled']);
+            });
+
+            return response()->json(['data' => $order->fresh()]);
+        }
+
         // ── Autres transitions ────────────────────────────────────────────────
         $extra = match ($newStatus) {
             'delivered' => ['delivered_at' => now()],

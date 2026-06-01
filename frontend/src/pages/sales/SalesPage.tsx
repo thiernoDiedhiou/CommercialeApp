@@ -66,6 +66,7 @@ export default function SalesPage() {
     onSuccess: (_, id) => {
       qc.invalidateQueries({ queryKey: ['sales'] })
       qc.invalidateQueries({ queryKey: ['sale', id] })
+      qc.invalidateQueries({ queryKey: ['dashboard-summary'] })
       setCancelTarget(null)
       toast.success('Vente annulée.')
     },

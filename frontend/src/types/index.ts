@@ -44,10 +44,14 @@ export interface PaginatedResponse<T> {
 // ── Dashboard ─────────────────────────────────────────────────────────────
 
 export interface DashboardToday {
-  sales_count: number
-  revenue: number       // CA confirmé du jour
-  profit: number        // revenue − coût
-  pending_amount: number // montant dû (ventes non intégralement payées)
+  sales_count          : number
+  revenue              : number
+  profit               : number
+  pending_amount       : number
+  pos_sales_count      : number
+  pos_revenue          : number
+  shop_orders_count    : number
+  shop_orders_revenue  : number
 }
 
 export interface WeekChartPoint {
@@ -86,15 +90,25 @@ export interface ExpiringSoon {
   quantity_remaining: number
 }
 
+export interface RecentTransaction {
+  id           : number
+  reference    : string
+  customer     : string | null
+  total        : number
+  status       : string
+  channel      : 'pos' | 'shop'
+  confirmed_at : string | null
+  created_at   : string
+}
+
 export interface DashboardSummary {
   today: DashboardToday
   week_chart: WeekChartPoint[]
   top_products: TopProduct[]
   stock_alerts: StockAlert[]
   expiring_soon: ExpiringSoon[]
-  /** { cash: 150000, mobile_money: 75000, ... } */
   by_payment_method: Record<string, number>
-  recent_sales: Sale[]
+  recent_sales: RecentTransaction[]
 }
 
 // ── Categories ────────────────────────────────────────────────────────────

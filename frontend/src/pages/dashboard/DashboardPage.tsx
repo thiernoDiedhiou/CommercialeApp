@@ -14,14 +14,15 @@ import StockAlertList from '@/components/dashboard/StockAlertList'
 import RecentSalesList from '@/components/dashboard/RecentSalesList'
 import { formatCurrency } from '@/lib/utils'
 
-const REFETCH_INTERVAL = 5 * 60 * 1000
+const STALE_TIME       = 60_000       // 1 min — données considérées fraîches
+const REFETCH_INTERVAL = 60_000       // auto-refresh toutes les 60s (tab active)
 
 export default function DashboardPage() {
   const { data, isLoading } = useQuery({
-    queryKey: ['dashboard-summary'],
-    queryFn: getDashboardSummary,
-    staleTime: REFETCH_INTERVAL,
-    refetchInterval: REFETCH_INTERVAL,
+    queryKey           : ['dashboard-summary'],
+    queryFn            : getDashboardSummary,
+    staleTime       : STALE_TIME,
+    refetchInterval : REFETCH_INTERVAL,
   })
 
   const today          = data?.today
@@ -32,7 +33,7 @@ export default function DashboardPage() {
     <div className="space-y-6 p-4 sm:p-6">
       <h1 className="text-xl font-bold text-gray-900">Tableau de bord</h1>
 
-      {/* Zone 1 — KPI Cards */}
+      {/* Zone 1 — KPI Cards (tous canaux confondus) */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
@@ -41,16 +42,43 @@ export default function DashboardPage() {
             <KpiCard
               title="Ventes du jour"
               value={today?.sales_count ?? 0}
-              subtitle="commandes"
+              subtitle="toutes canaux"
               icon={<ShoppingCartIcon className="h-5 w-5" />}
-            />
+            >
+              {(today?.shop_orders_count ?? 0) > 0 && (
+                <ul className="space-y-1">
+                  <li className="flex justify-between text-xs text-gray-500">
+                    <span>POS</span>
+                    <span>{today?.pos_sales_count ?? 0}</span>
+                  </li>
+                  <li className="flex justify-between text-xs text-gray-500">
+                    <span>Boutique en ligne</span>
+                    <span>{today?.shop_orders_count ?? 0}</span>
+                  </li>
+                </ul>
+              )}
+            </KpiCard>
 
             <KpiCard
               title="Chiffre d'affaires"
               value={formatCurrency(today?.revenue ?? 0)}
+              subtitle="toutes canaux"
               icon={<BanknotesIcon className="h-5 w-5" />}
               accent="secondary"
-            />
+            >
+              {(today?.shop_orders_revenue ?? 0) > 0 && (
+                <ul className="space-y-1">
+                  <li className="flex justify-between text-xs text-gray-500">
+                    <span>POS</span>
+                    <span>{formatCurrency(today?.pos_revenue ?? 0)}</span>
+                  </li>
+                  <li className="flex justify-between text-xs text-gray-500">
+                    <span>Boutique en ligne</span>
+                    <span>{formatCurrency(today?.shop_orders_revenue ?? 0)}</span>
+                  </li>
+                </ul>
+              )}
+            </KpiCard>
 
             <KpiCard
               title="Bénéfice"
@@ -63,6 +91,7 @@ export default function DashboardPage() {
             <KpiCard
               title="Encaissements du jour"
               value={formatCurrency(todayCollected)}
+              subtitle="POS"
               icon={<ClockIcon className="h-5 w-5" />}
               accent="secondary"
             >
