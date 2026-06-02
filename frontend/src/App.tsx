@@ -12,6 +12,8 @@ import AdminLoginPage from '@/pages/admin/AdminLoginPage'
 import AdminDashboardPage from '@/pages/admin/AdminDashboardPage'
 import AdminTenantsPage from '@/pages/admin/AdminTenantsPage'
 import AdminTenantDetailPage from '@/pages/admin/AdminTenantDetailPage'
+import AdminPlansPage from '@/pages/admin/AdminPlansPage'
+import AdminSubscriptionsPage from '@/pages/admin/AdminSubscriptionsPage'
 import DashboardPage from '@/pages/dashboard/DashboardPage'
 import ProductsPage from '@/pages/products/ProductsPage'
 import ProductFormPage from '@/pages/products/ProductFormPage'
@@ -137,6 +139,8 @@ export default function App() {
           <Route path="dashboard"     element={<AdminDashboardPage />} />
           <Route path="tenants"       element={<AdminTenantsPage />} />
           <Route path="tenants/:id"   element={<AdminTenantDetailPage />} />
+          <Route path="plans"         element={<AdminPlansPage />} />
+          <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
         </Route>
       </Routes>
 

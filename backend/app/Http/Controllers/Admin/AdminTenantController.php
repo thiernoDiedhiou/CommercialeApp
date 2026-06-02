@@ -3,7 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Plan;
+use App\Models\Product;
+use App\Models\Sale;
+use App\Models\Customer;
 use App\Models\Tenant;
+use App\Models\TenantSubscription;
 use App\Models\User;
 use App\Models\Group;
 use App\Services\MailService;
@@ -28,6 +33,7 @@ class AdminTenantController extends Controller
     public function index(Request $request): JsonResponse
     {
         $tenants = Tenant::withCount('users')
+            ->with(['activeSubscription.plan:id,name,slug'])
             ->when($request->search, fn ($q) =>
                 $q->where('name', 'like', "%{$request->search}%")
                   ->orWhere('email', 'like', "%{$request->search}%")
@@ -35,8 +41,28 @@ class AdminTenantController extends Controller
             ->when($request->filled('is_active'), fn ($q) =>
                 $q->where('is_active', $request->boolean('is_active'))
             )
+            ->when($request->filled('plan_id'), fn ($q) =>
+                $q->whereHas('activeSubscription', fn ($s) =>
+                    $s->where('plan_id', $request->integer('plan_id'))
+                )
+            )
             ->orderByDesc('created_at')
             ->paginate(20);
+
+        // Enrichit chaque tenant avec les infos d'abonnement actif
+        $tenants->through(function (Tenant $tenant) {
+            $sub = $tenant->activeSubscription;
+            $data = $this->formatTenant($tenant);
+            $data['subscription'] = $sub ? [
+                'status'        => $sub->status,
+                'plan_name'     => $sub->plan?->name,
+                'plan_slug'     => $sub->plan?->slug,
+                'billing_cycle' => $sub->billing_cycle,
+                'ends_at'       => $sub->ends_at?->toISOString(),
+                'days_remaining'=> $sub->daysUntilExpiry(),
+            ] : null;
+            return $data;
+        });
 
         return response()->json($tenants);
     }
@@ -100,6 +126,19 @@ class AdminTenantController extends Controller
             return [$tenant, $user];
         });
 
+        // Essai gratuit automatique — plan Business pendant trial_days jours
+        $businessPlan = Plan::where('slug', 'business')->where('is_active', true)->first();
+        if ($businessPlan) {
+            TenantSubscription::create([
+                'tenant_id'     => $tenant->id,
+                'plan_id'       => $businessPlan->id,
+                'billing_cycle' => 'trial',
+                'status'        => 'trial',
+                'starts_at'     => now(),
+                'ends_at'       => now()->addDays($businessPlan->trial_days),
+            ]);
+        }
+
         // Email de bienvenue avec le mot de passe en clair (disponible uniquement ici)
         $this->mailService->sendTenantWelcome($tenant, $admin, $validated['admin_password']);
 
@@ -155,6 +194,36 @@ class AdminTenantController extends Controller
         return response()->json(['data' => $this->formatTenant($tenant)]);
     }
 
+    // ── GET /api/v1/admin/tenants/{tenant}/stats ──────────────────────────────
+
+    public function stats(Tenant $tenant): JsonResponse
+    {
+        $tid = $tenant->id;
+
+        $productsCount  = Product::withTrashed()->where('tenant_id', $tid)->count();
+        $salesCount     = Sale::where('tenant_id', $tid)->count();
+        $customersCount = Customer::where('tenant_id', $tid)->count();
+        $usersCount     = User::where('tenant_id', $tid)->count();
+
+        $salesRevenue = Sale::where('tenant_id', $tid)
+            ->where('status', 'confirmed')
+            ->sum('total');
+
+        // first() retourne un modèle avec cast Carbon — value() retourne un string brut
+        $lastSale = Sale::where('tenant_id', $tid)->latest()->first(['created_at']);
+
+        return response()->json([
+            'data' => [
+                'products_count'  => $productsCount,
+                'sales_count'     => $salesCount,
+                'customers_count' => $customersCount,
+                'users_count'     => $usersCount,
+                'sales_revenue'   => (float) $salesRevenue,
+                'last_sale_at'    => $lastSale?->created_at?->toISOString(),
+            ],
+        ]);
+    }
+
     public function destroy(Tenant $tenant): JsonResponse
     {
         $this->tenantService->flushCache($tenant->api_key);
@@ -189,7 +258,7 @@ class AdminTenantController extends Controller
                 : null,
             'is_active'       => $tenant->is_active,
             'users_count'     => $tenant->users_count ?? 0,
-            'created_at'      => $tenant->created_at?->format('d/m/Y'),
+            'created_at'      => $tenant->created_at?->toISOString(),
         ];
     }
 }

@@ -15,6 +15,9 @@ class DatabaseSeeder extends Seeder
         // 1. Permissions globales (toujours en premier)
         $this->call(PermissionSeeder::class);
 
+        // 1b. Plans d'abonnement (avant les tenants pour pouvoir assigner)
+        $this->call(PlanSeeder::class);
+
         // 2. Tenant de démonstration
         $tenant = Tenant::firstOrCreate(
             ['slug' => 'demo'],

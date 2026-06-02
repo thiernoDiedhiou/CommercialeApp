@@ -16,7 +16,9 @@ import {
   EyeIcon,
   EyeSlashIcon,
 } from '@heroicons/react/24/outline'
+import { CreditCardIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/authStore'
+import { formatDate } from '@/lib/utils'
 import { getTenantSettings, updateTenantSettings } from '@/services/api/settings'
 import { SUPPORTED_CURRENCIES } from '@/hooks/useCurrency'
 import Input from '@/components/ui/Input'
@@ -249,11 +251,13 @@ const SECTOR_LABELS: Record<string, string> = {
 }
 
 function BoutiqueTab() {
-  const setAuth   = useAuthStore((s) => s.setAuth)
-  const token     = useAuthStore((s) => s.token)
-  const user      = useAuthStore((s) => s.user)
-  const perms     = useAuthStore((s) => s.permissions)
-  const tenant    = useAuthStore((s) => s.tenant)
+  const setAuth        = useAuthStore((s) => s.setAuth)
+  const token          = useAuthStore((s) => s.token)
+  const user           = useAuthStore((s) => s.user)
+  const perms          = useAuthStore((s) => s.permissions)
+  const tenant         = useAuthStore((s) => s.tenant)
+  const subscription   = useAuthStore((s) => s.subscription)
+  const planFeatures   = useAuthStore((s) => s.planFeatures)
   const [saved, setSaved] = useState(false)
 
   const [logoFile, setLogoFile]       = useState<File | null>(null)
@@ -343,7 +347,7 @@ function BoutiqueTab() {
           secondary_color: updated.secondary_color,
           logo_url:        updated.logo_url ?? null,
           slug:            tenant?.slug ?? '',
-        })
+        }, subscription, planFeatures)
       }
       setLogoFile(null)
       setRemoveLogo(false)
@@ -502,12 +506,14 @@ function BoutiqueTab() {
 // ─── ProfilTab ────────────────────────────────────────────────────────────────
 
 function ProfilTab() {
-  const qc      = useQueryClient()
-  const me      = useAuthStore((s) => s.user)
-  const setAuth = useAuthStore((s) => s.setAuth)
-  const token   = useAuthStore((s) => s.token)
-  const perms   = useAuthStore((s) => s.permissions)
-  const tenant  = useAuthStore((s) => s.tenant)
+  const qc           = useQueryClient()
+  const me           = useAuthStore((s) => s.user)
+  const setAuth      = useAuthStore((s) => s.setAuth)
+  const token        = useAuthStore((s) => s.token)
+  const perms        = useAuthStore((s) => s.permissions)
+  const tenant       = useAuthStore((s) => s.tenant)
+  const subscription = useAuthStore((s) => s.subscription)
+  const planFeatures = useAuthStore((s) => s.planFeatures)
   const [saved, setSaved] = useState(false)
 
   const { register, handleSubmit, formState: { errors, isDirty } } = useForm<ProfilValues>({
@@ -523,7 +529,7 @@ function ProfilTab() {
     },
     onSuccess: (updated) => {
       if (token && tenant) {
-        setAuth(token, { ...me!, name: updated.name, email: updated.email }, perms, tenant)
+        setAuth(token, { ...me!, name: updated.name, email: updated.email }, perms, tenant, subscription, planFeatures)
       }
       qc.invalidateQueries({ queryKey: ['users'] })
       setSaved(true)
@@ -1176,12 +1182,82 @@ function GroupsTab() {
 
 // ─── SettingsPage ─────────────────────────────────────────────────────────────
 
+const STATUS_LABEL: Record<string, string> = {
+  trial:     'Essai gratuit',
+  active:    'Actif',
+  expired:   'Expiré',
+  cancelled: 'Annulé',
+}
+const STATUS_COLOR: Record<string, string> = {
+  trial:     'bg-blue-100 text-blue-700',
+  active:    'bg-emerald-100 text-emerald-700',
+  expired:   'bg-red-100 text-red-700',
+  cancelled: 'bg-gray-100 text-gray-500',
+}
+const CYCLE_LABEL: Record<string, string> = {
+  trial:    'Essai gratuit',
+  monthly:  'Mensuel',
+  yearly:   'Annuel',
+  lifetime: 'À vie',
+}
+
+function SubscriptionInfoCard() {
+  const subscription = useAuthStore((s) => s.subscription)
+
+  if (!subscription) return null
+
+  const daysLeft     = subscription.days_remaining
+  const isExpiringSoon = daysLeft !== null && daysLeft <= 7
+
+  return (
+    <div className="rounded-xl bg-white p-4 sm:p-5 shadow-sm ring-1 ring-gray-100">
+      <div className="flex items-center gap-2 mb-3">
+        <CreditCardIcon className="h-4 w-4 text-gray-400" />
+        <h2 className="text-sm font-semibold text-gray-800">Mon abonnement</h2>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-sm font-medium text-gray-900">
+          {subscription.plan_name ?? '—'}
+        </span>
+        <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${STATUS_COLOR[subscription.status] ?? 'bg-gray-100 text-gray-500'}`}>
+          {STATUS_LABEL[subscription.status] ?? subscription.status}
+        </span>
+        <span className="text-xs text-gray-400">
+          {CYCLE_LABEL[subscription.billing_cycle]}
+        </span>
+      </div>
+
+      {subscription.ends_at && (
+        <p className={`mt-2 text-xs ${isExpiringSoon ? 'text-amber-600 font-medium' : 'text-gray-500'}`}>
+          {subscription.status === 'trial' ? 'Essai jusqu\'au' : 'Valide jusqu\'au'}{' '}
+          <span className="font-semibold">{formatDate(subscription.ends_at)}</span>
+          {daysLeft !== null && daysLeft >= 0 && daysLeft <= 30 && (
+            <span className="ml-1">
+              ({daysLeft === 0 ? "expire aujourd'hui" : daysLeft === 1 ? '1 jour restant' : `${daysLeft} jours restants`})
+            </span>
+          )}
+        </p>
+      )}
+
+      {isExpiringSoon && (
+        <p className="mt-1.5 text-xs text-amber-500">
+          Contactez votre administrateur pour renouveler votre accès.
+        </p>
+      )}
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('boutique')
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <h1 className="text-xl font-bold text-gray-900">Paramètres</h1>
+
+      {/* Carte abonnement — toujours visible en haut */}
+      <SubscriptionInfoCard />
 
       <div className="overflow-x-auto">
         <div className="flex gap-1 rounded-xl bg-gray-100 p-1 min-w-fit">

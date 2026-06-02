@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminTenantController;
 use App\Http\Controllers\Admin\AdminStatsController;
+use App\Http\Controllers\Admin\AdminPlanController;
+use App\Http\Controllers\Admin\AdminSubscriptionController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Brand\BrandController;
 use App\Http\Controllers\Category\CategoryController;
@@ -71,6 +73,19 @@ Route::prefix('v1')->group(function () {
 
             Route::get('stats', [AdminStatsController::class, 'index'])->name('stats');
 
+            // ── Plans ──────────────────────────────────────────────────────
+            Route::prefix('plans')->name('plans.')->group(function () {
+                Route::get('/',          [AdminPlanController::class, 'index'])->name('index');
+                Route::post('/',         [AdminPlanController::class, 'store'])->name('store');
+                Route::get('{plan}',     [AdminPlanController::class, 'show'])->name('show');
+                Route::put('{plan}',     [AdminPlanController::class, 'update'])->name('update');
+                Route::delete('{plan}',  [AdminPlanController::class, 'destroy'])->name('destroy');
+            });
+
+            // ── Abonnements (vue globale) ───────────────────────────────────
+            Route::get('subscriptions', [AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
+
+            // ── Tenants ────────────────────────────────────────────────────
             Route::prefix('tenants')->name('tenants.')->group(function () {
                 Route::get('/',                      [AdminTenantController::class, 'index'])->name('index');
                 Route::post('/',                     [AdminTenantController::class, 'store'])->name('store');
@@ -79,6 +94,14 @@ Route::prefix('v1')->group(function () {
                 Route::delete('{tenant}',            [AdminTenantController::class, 'destroy'])->name('destroy');
                 Route::post('{tenant}/suspend',      [AdminTenantController::class, 'suspend'])->name('suspend');
                 Route::post('{tenant}/activate',     [AdminTenantController::class, 'activate'])->name('activate');
+                // Abonnement du tenant
+                Route::get('{tenant}/subscription',    [AdminSubscriptionController::class, 'show'])->name('subscription.show');
+                Route::post('{tenant}/subscription',   [AdminSubscriptionController::class, 'store'])->name('subscription.store');
+                Route::put('{tenant}/subscription',    [AdminSubscriptionController::class, 'update'])->name('subscription.update');
+                // Historique complet des abonnements du tenant
+                Route::get('{tenant}/subscriptions',   [AdminSubscriptionController::class, 'history'])->name('subscriptions.history');
+                // Stats tenant (produits, ventes, clients)
+                Route::get('{tenant}/stats',           [AdminTenantController::class, 'stats'])->name('stats');
             });
         });
     });
@@ -93,8 +116,8 @@ Route::prefix('v1')->group(function () {
         });
     });
 
-    // ── Routes protégées (Sanctum requis) ─────────────────────────────────────
-    Route::middleware('auth:sanctum')->group(function () {
+    // ── Routes protégées (Sanctum + abonnement valide requis) ────────────────
+    Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
 
         // ── Dashboard ─────────────────────────────────────────────────────────
         Route::get('dashboard/summary', [DashboardController::class, 'summary'])
@@ -111,11 +134,14 @@ Route::prefix('v1')->group(function () {
         });
 
         // ── Rapports ──────────────────────────────────────────────────────────
-        Route::prefix('reports')->name('reports.')->middleware('permission:reports.view')->group(function () {
-            Route::get('sales',    [ReportController::class, 'sales']);
-            Route::get('products', [ReportController::class, 'products']);
-            Route::get('stock',    [ReportController::class, 'stock']);
-        });
+        // Feature : reports — non incluse dans Starter
+        Route::prefix('reports')->name('reports.')
+            ->middleware(['permission:reports.view', 'subscription:reports'])
+            ->group(function () {
+                Route::get('sales',    [ReportController::class, 'sales']);
+                Route::get('products', [ReportController::class, 'products']);
+                Route::get('stock',    [ReportController::class, 'stock']);
+            });
 
         // ── Marques ───────────────────────────────────────────────────────────
         Route::prefix('brands')->name('brands.')->group(function () {
@@ -139,11 +165,11 @@ Route::prefix('v1')->group(function () {
 
         // ── Produits ──────────────────────────────────────────────────────────
         Route::prefix('products')->name('products.')->group(function () {
-            // Import CSV — déclaré avant {product} pour éviter toute collision de route
+            // Import CSV — feature : import_csv (non incluse dans Starter)
             Route::get('import/template',   [ProductImportController::class, 'template'])
-                ->middleware('permission:products.import');
+                ->middleware(['permission:products.import', 'subscription:import_csv']);
             Route::post('import',           [ProductImportController::class, 'import'])
-                ->middleware('permission:products.import');
+                ->middleware(['permission:products.import', 'subscription:import_csv']);
 
             Route::get('/',    [ProductController::class, 'index'])
                 ->middleware('permission:products.view');
@@ -251,8 +277,8 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:returns.view');
         });
 
-        // ── Utilisateurs ──────────────────────────────────────────────────────
-        Route::prefix('users')->name('users.')->group(function () {
+        // ── Utilisateurs — feature : multi_user ──────────────────────────────
+        Route::prefix('users')->name('users.')->middleware('subscription:multi_user')->group(function () {
             Route::get('/',                [UserController::class, 'index'])
                 ->middleware('permission:users.view');
             Route::post('/',               [UserController::class, 'store'])
@@ -265,8 +291,8 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:users.edit');
         });
 
-        // ── Groupes ───────────────────────────────────────────────────────────
-        Route::prefix('groups')->name('groups.')->group(function () {
+        // ── Groupes — feature : multi_user ───────────────────────────────────
+        Route::prefix('groups')->name('groups.')->middleware('subscription:multi_user')->group(function () {
             Route::get('/',                     [GroupController::class, 'index'])
                 ->middleware('permission:groups.view');
             Route::get('permissions/available', [GroupController::class, 'availablePermissions'])
@@ -281,8 +307,8 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:groups.edit');
         });
 
-        // ── Facturation ───────────────────────────────────────────────────────
-        Route::prefix('invoices')->name('invoices.')->group(function () {
+        // ── Facturation — feature : invoicing ────────────────────────────────
+        Route::prefix('invoices')->name('invoices.')->middleware('subscription:invoicing')->group(function () {
             Route::get('/',                        [InvoiceController::class, 'index'])
                 ->middleware('permission:invoices.view');
             Route::post('/',                       [InvoiceController::class, 'store'])
@@ -303,8 +329,8 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:invoices.pdf');
         });
 
-        // ── Fournisseurs ──────────────────────────────────────────────────────
-        Route::prefix('suppliers')->name('suppliers.')->group(function () {
+        // ── Fournisseurs — feature : purchases ───────────────────────────────
+        Route::prefix('suppliers')->name('suppliers.')->middleware('subscription:purchases')->group(function () {
             Route::get('/',               [SupplierController::class, 'index'])
                 ->middleware('permission:suppliers.view');
             Route::post('/',              [SupplierController::class, 'store'])
@@ -317,8 +343,8 @@ Route::prefix('v1')->group(function () {
                 ->middleware('permission:suppliers.delete');
         });
 
-        // ── Bons de commande (Achats) ─────────────────────────────────────────
-        Route::prefix('purchases')->name('purchases.')->group(function () {
+        // ── Bons de commande — feature : purchases ───────────────────────────
+        Route::prefix('purchases')->name('purchases.')->middleware('subscription:purchases')->group(function () {
             Route::get('/',                          [PurchaseOrderController::class, 'index'])
                 ->middleware('permission:purchases.view');
             Route::post('/',                         [PurchaseOrderController::class, 'store'])
@@ -347,8 +373,8 @@ Route::prefix('v1')->group(function () {
             Route::apiResource('drafts',           PosDraftController::class)->names('drafts');
         });
 
-        // ── Boutique en ligne (admin) ─────────────────────────────────────────
-        Route::prefix('shop')->name('shop.')->group(function () {
+        // ── Boutique en ligne (admin) — feature : shop ───────────────────────
+        Route::prefix('shop')->name('shop.')->middleware('subscription:shop')->group(function () {
             Route::get('settings',                 [ShopAdminController::class, 'settings'])
                 ->middleware('permission:shop.manage');
             Route::post('settings/update',         [ShopAdminController::class, 'updateSettings'])

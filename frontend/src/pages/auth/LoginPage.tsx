@@ -49,8 +49,8 @@ export default function LoginPage() {
         .post<LoginResponse>('/api/v1/auth/login', data)
         .then((r) => r.data)
     },
-    onSuccess: ({ token, data: { user, permissions, tenant } }) => {
-      setAuth(token, user, permissions, tenant)
+    onSuccess: ({ token, data: { user, permissions, tenant, subscription, plan_features } }) => {
+      setAuth(token, user, permissions, tenant, subscription, plan_features)
       applyBrandColors(tenant.primary_color, tenant.secondary_color)
       navigate('/dashboard', { replace: true })
     },

@@ -20,6 +20,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
             'permission'   => CheckPermission::class,
             'super_admin'  => \App\Http\Middleware\EnsureSuperAdmin::class,
             'shop.public'  => ResolvePublicShop::class,
+            'subscription' => \App\Http\Middleware\CheckSubscription::class,
         ]);
 
         // ResolveTenant s'exécute en premier sur toutes les routes API

@@ -8,6 +8,7 @@ import { PlusIcon, PencilSquareIcon, TrashIcon, NoSymbolIcon, CheckCircleIcon, A
 import {
   getAdminTenants, createAdminTenant, updateAdminTenant,
   suspendTenant, activateTenant, deleteAdminTenant,
+  getAdminPlans,
 } from '@/services/api/admin'
 import type { AdminTenant } from '@/services/api/admin'
 import { toast } from '@/store/toastStore'
@@ -15,6 +16,19 @@ import { getApiErrorMessage } from '@/lib/errors'
 import { formatDate } from '@/lib/utils'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
+
+const SUB_STATUS_COLOR: Record<string, string> = {
+  trial:     'bg-blue-900/50 text-blue-300',
+  active:    'bg-emerald-900/50 text-emerald-400',
+  expired:   'bg-red-900/50 text-red-400',
+  cancelled: 'bg-gray-800 text-gray-500',
+}
+const SUB_STATUS_LABEL: Record<string, string> = {
+  trial:     'Essai',
+  active:    'Actif',
+  expired:   'Expiré',
+  cancelled: 'Annulé',
+}
 
 const SECTOR_LABELS: Record<string, string> = {
   general:  'Commerce général',
@@ -65,6 +79,7 @@ export default function AdminTenantsPage() {
   const [search, setSearch]           = useState('')
   const [debouncedSearch, setDeb]     = useState('')
   const [statusFilter, setStatusFilter] = useState<'' | 'true' | 'false'>('')
+  const [planFilter, setPlanFilter]   = useState<number | ''>('')
   const [page, setPage]               = useState(1)
   const [createOpen, setCreateOpen]         = useState(false)
   const [editTarget, setEditTarget]         = useState<AdminTenant | null>(null)
@@ -78,11 +93,17 @@ export default function AdminTenantsPage() {
     return () => { if (debRef.current) clearTimeout(debRef.current) }
   }, [search])
 
+  const { data: plans = [] } = useQuery({
+    queryKey: ['admin-plans'],
+    queryFn:  getAdminPlans,
+  })
+
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-tenants', { search: debouncedSearch, statusFilter, page }],
+    queryKey: ['admin-tenants', { search: debouncedSearch, statusFilter, planFilter, page }],
     queryFn: () => getAdminTenants({
-      search: debouncedSearch || undefined,
+      search:    debouncedSearch || undefined,
       is_active: statusFilter === '' ? undefined : statusFilter === 'true',
+      plan_id:   planFilter || undefined,
       page,
     }),
     placeholderData: (prev) => prev,
@@ -141,17 +162,17 @@ export default function AdminTenantsPage() {
       </div>
 
       {/* Filtres */}
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Rechercher un tenant…"
-          className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500 transition"
+          className="flex-1 min-w-48 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500 transition"
         />
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as '' | 'true' | 'false')}
+          onChange={(e) => { setStatusFilter(e.target.value as '' | 'true' | 'false'); setPage(1) }}
           aria-label="Filtrer par statut"
           className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500 transition"
         >
@@ -159,16 +180,27 @@ export default function AdminTenantsPage() {
           <option value="true">Actifs</option>
           <option value="false">Suspendus</option>
         </select>
+        <select
+          value={planFilter}
+          onChange={(e) => { setPlanFilter(e.target.value ? Number(e.target.value) : ''); setPage(1) }}
+          aria-label="Filtrer par plan"
+          className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500 transition"
+        >
+          <option value="">Tous les plans</option>
+          {plans.filter(p => p.is_active).map(p => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-gray-800 overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="rounded-xl border border-gray-800 overflow-x-auto">
+        <table className="min-w-max w-full text-sm">
           <thead className="bg-gray-900 text-xs font-medium text-gray-400 uppercase tracking-wide">
             <tr>
               <th className="px-4 py-3 text-left">Nom</th>
               <th className="px-4 py-3 text-left hidden sm:table-cell">Secteur</th>
-              <th className="px-4 py-3 text-left hidden md:table-cell">Devise</th>
+              <th className="px-4 py-3 text-left hidden md:table-cell">Plan</th>
               <th className="px-4 py-3 text-left hidden lg:table-cell">Utilisateurs</th>
               <th className="px-4 py-3 text-left hidden lg:table-cell">Créé le</th>
               <th className="px-4 py-3 text-center">Statut</th>
@@ -209,8 +241,28 @@ export default function AdminTenantsPage() {
                     <td className="px-4 py-3 hidden sm:table-cell text-gray-400">
                       {SECTOR_LABELS[tenant.sector] ?? tenant.sector}
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell text-gray-400 font-mono text-xs">
-                      {tenant.currency}
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      {tenant.subscription ? (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-gray-200">
+                            {tenant.subscription.plan_name ?? '—'}
+                          </p>
+                          <span className={`inline-flex text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                            SUB_STATUS_COLOR[tenant.subscription.status] ?? 'bg-gray-800 text-gray-500'
+                          }`}>
+                            {SUB_STATUS_LABEL[tenant.subscription.status] ?? tenant.subscription.status}
+                            {tenant.subscription.days_remaining !== null &&
+                             tenant.subscription.days_remaining !== undefined &&
+                             tenant.subscription.days_remaining <= 7 && (
+                              <span className="ml-1 opacity-70">
+                                · {tenant.subscription.days_remaining}j
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-600 italic">Aucun</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell text-gray-400">
                       {tenant.users_count}

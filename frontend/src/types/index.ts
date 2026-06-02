@@ -8,6 +8,27 @@ export interface User {
   is_active: boolean
 }
 
+export interface SubscriptionInfo {
+  status:         'trial' | 'active' | 'expired' | 'cancelled'
+  plan_name:      string | null
+  plan_slug:      string | null
+  billing_cycle:  'trial' | 'monthly' | 'yearly' | 'lifetime'
+  ends_at:        string | null
+  days_remaining: number | null
+}
+
+export interface PlanFeatures {
+  pos:            boolean
+  invoicing:      boolean
+  purchases:      boolean
+  reports:        boolean
+  shop:           boolean
+  import_csv:     boolean
+  stock_alerts:   boolean
+  multi_user:     boolean
+  custom_domain:  boolean
+}
+
 export interface TenantInfo {
   name: string
   slug: string
@@ -23,11 +44,14 @@ export interface TenantInfo {
 export interface LoginResponse {
   token: string
   data: {
-    user: User
-    permissions: string[]
-    tenant: TenantInfo
+    user:         User
+    permissions:  string[]
+    tenant:       TenantInfo
+    subscription: SubscriptionInfo | null
+    plan_features: PlanFeatures | null
   }
 }
+
 
 // ── Pagination ────────────────────────────────────────────────────────────
 

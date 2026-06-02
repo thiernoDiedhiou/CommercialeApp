@@ -67,7 +67,8 @@ class AuthController extends Controller
 
     private function buildMePayload(User $user): array
     {
-        $tenant = $this->tenantService->current();
+        $tenant       = $this->tenantService->current();
+        $subscription = $tenant->activeSubscription()->with('plan')->first();
 
         return [
             'user' => [
@@ -91,6 +92,27 @@ class AuthController extends Controller
                     ? Storage::disk('public')->url($tenant->logo_path)
                     : null,
             ],
+            // Abonnement actif — utilisé par le frontend pour la bannière d'alerte
+            'subscription' => $subscription ? [
+                'status'        => $subscription->status,
+                'plan_name'     => $subscription->plan?->name,
+                'plan_slug'     => $subscription->plan?->slug,
+                'billing_cycle' => $subscription->billing_cycle,
+                'ends_at'       => $subscription->ends_at?->toISOString(),
+                'days_remaining'=> $subscription->daysUntilExpiry(),
+            ] : null,
+            // Features du plan — utilisé par la sidebar pour masquer les modules non inclus
+            'plan_features' => $subscription?->plan ? [
+                'pos'           => (bool) $subscription->plan->feature_pos,
+                'invoicing'     => (bool) $subscription->plan->feature_invoicing,
+                'purchases'     => (bool) $subscription->plan->feature_purchases,
+                'reports'       => (bool) $subscription->plan->feature_reports,
+                'shop'          => (bool) $subscription->plan->feature_shop,
+                'import_csv'    => (bool) $subscription->plan->feature_import_csv,
+                'stock_alerts'  => (bool) $subscription->plan->feature_stock_alerts,
+                'multi_user'    => (bool) $subscription->plan->feature_multi_user,
+                'custom_domain' => (bool) $subscription->plan->feature_custom_domain,
+            ] : null,
         ];
     }
 }
