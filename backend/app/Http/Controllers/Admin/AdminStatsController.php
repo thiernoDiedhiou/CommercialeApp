@@ -13,7 +13,7 @@ class AdminStatsController extends Controller
     {
         return response()->json([
             'data' => [
-                'tenants_total'    => Tenant::withTrashed()->count(),
+                'tenants_total'    => Tenant::count(),
                 'tenants_active'   => Tenant::where('is_active', true)->count(),
                 'tenants_inactive' => Tenant::where('is_active', false)->count(),
                 'users_total'      => User::count(),

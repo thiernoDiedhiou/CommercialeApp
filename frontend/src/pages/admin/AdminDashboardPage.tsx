@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { getAdminStats } from '@/services/api/admin'
-import { BuildingStorefrontIcon, UsersIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
+import { BuildingStorefrontIcon, UsersIcon, CheckCircleIcon, XCircleIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 
 const SECTOR_LABELS: Record<string, string> = {
   general:  'Commerce général',
@@ -26,6 +27,7 @@ function StatCard({ label, value, icon: Icon, color }: {
 }
 
 export default function AdminDashboardPage() {
+  const navigate = useNavigate()
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: getAdminStats,
@@ -53,8 +55,16 @@ export default function AdminDashboardPage() {
 
       {/* Tenants récents */}
       <div className="rounded-xl bg-gray-900 border border-gray-800 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-800">
+        <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-white">Derniers tenants créés</h2>
+          <button
+            type="button"
+            onClick={() => navigate('/admin/tenants')}
+            className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition"
+          >
+            Voir tous
+            <ArrowRightIcon className="h-3.5 w-3.5" />
+          </button>
         </div>
         <div className="divide-y divide-gray-800">
           {isLoading
@@ -65,7 +75,12 @@ export default function AdminDashboardPage() {
                 </div>
               ))
             : stats?.tenants_recent.map((t) => (
-                <div key={t.id} className="px-5 py-3 flex items-center justify-between">
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => navigate(`/admin/tenants/${t.id}`)}
+                  className="w-full px-5 py-3 flex items-center justify-between hover:bg-gray-800/60 transition text-left"
+                >
                   <div>
                     <p className="text-sm font-medium text-white">{t.name}</p>
                     <p className="text-xs text-gray-500">{SECTOR_LABELS[t.sector] ?? t.sector}</p>
@@ -77,7 +92,7 @@ export default function AdminDashboardPage() {
                   }`}>
                     {t.is_active ? 'Actif' : 'Suspendu'}
                   </span>
-                </div>
+                </button>
               ))
           }
         </div>

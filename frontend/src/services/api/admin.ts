@@ -76,6 +76,7 @@ export interface CreateTenantData {
 
 export interface UpdateTenantData {
   name?:            string
+  slug?:            string
   sector?:          string
   currency?:        string
   custom_domain?:   string | null

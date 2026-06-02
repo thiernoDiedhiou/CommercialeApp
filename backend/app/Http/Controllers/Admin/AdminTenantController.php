@@ -121,6 +121,7 @@ class AdminTenantController extends Controller
     {
         $validated = $request->validate([
             'name'          => ['sometimes', 'string', 'max:150'],
+            'slug'          => ['sometimes', 'string', 'max:80', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('tenants', 'slug')->ignore($tenant->id)],
             'sector'        => ['sometimes', Rule::in(self::SECTORS)],
             'currency'      => ['sometimes', Rule::in(self::CURRENCIES)],
             'phone'         => ['nullable', 'string', 'max:30'],

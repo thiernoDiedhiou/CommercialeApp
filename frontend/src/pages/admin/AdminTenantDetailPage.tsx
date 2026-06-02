@@ -21,6 +21,10 @@ const hexColor = z.string().regex(/^#[0-9A-Fa-f]{6}$/, 'Couleur invalide').or(z.
 
 const schema = z.object({
   name:            z.string().min(2, 'Nom requis'),
+  slug:            z.string()
+    .min(2, 'Slug trop court')
+    .max(80, 'Slug trop long')
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Minuscules, chiffres et tirets uniquement'),
   sector:          z.enum(['general', 'food', 'fashion', 'cosmetic']),
   currency:        z.string().min(3).max(3),
   custom_domain:   z.string().max(253).optional().or(z.literal('')),
@@ -94,6 +98,7 @@ export default function AdminTenantDetailPage() {
     if (tenant) {
       reset({
         name:            tenant.name,
+        slug:            tenant.slug,
         sector:          tenant.sector as FormValues['sector'],
         currency:        tenant.currency,
         custom_domain:   tenant.custom_domain ?? '',
@@ -229,6 +234,21 @@ export default function AdminTenantDetailPage() {
           <form onSubmit={handleSubmit((v) => updateMutation.mutate(v))} className="space-y-4">
             <Field label="Nom *" error={errors.name?.message}>
               <input {...register('name')} className={inputCls} />
+            </Field>
+
+            <Field label="Slug (URL boutique)" error={errors.slug?.message}>
+              <div className="flex items-center gap-2 rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm focus-within:border-indigo-500 transition">
+                <span className="text-gray-500 shrink-0 select-none">/shop/</span>
+                <input
+                  {...register('slug')}
+                  className="flex-1 bg-transparent text-white outline-none placeholder-gray-500 font-mono"
+                  placeholder="mon-slug"
+                />
+              </div>
+              <p className="mt-1 flex items-start gap-1 text-xs text-amber-400">
+                <span>⚠</span>
+                <span>Modifier le slug change l'URL publique de la boutique et casse les liens existants.</span>
+              </p>
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
