@@ -3,27 +3,20 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import {
   BuildingStorefrontIcon, ChartBarIcon, ArrowRightStartOnRectangleIcon,
-  CreditCardIcon, BanknotesIcon, Bars3Icon, XMarkIcon,
+  CreditCardIcon, BanknotesIcon, Bars3Icon, XMarkIcon, Cog6ToothIcon,
 } from '@heroicons/react/24/outline'
 import { useSuperAdminStore } from '@/store/superAdminStore'
 import { adminLogout } from '@/services/api/admin'
 import ToastContainer from '@/components/ui/ToastContainer'
 
 const NAV = [
-  { label: 'Tableau de bord', path: '/admin/dashboard',    icon: ChartBarIcon },
-  { label: 'Tenants',         path: '/admin/tenants',       icon: BuildingStorefrontIcon },
-  { label: 'Plans',           path: '/admin/plans',         icon: CreditCardIcon },
-  { label: 'Abonnements',     path: '/admin/subscriptions', icon: BanknotesIcon },
+  { label: 'Tableau de bord', path: '/admin/dashboard',      icon: ChartBarIcon },
+  { label: 'Tenants',         path: '/admin/tenants',         icon: BuildingStorefrontIcon },
+  { label: 'Plans',           path: '/admin/plans',           icon: CreditCardIcon },
+  { label: 'Abonnements',     path: '/admin/subscriptions',   icon: BanknotesIcon },
+  { label: 'Paramètres site', path: '/admin/site-settings',   icon: Cog6ToothIcon },
 ]
 
-function ShieldIcon() {
-  return (
-    <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-    </svg>
-  )
-}
 
 export default function AdminLayout() {
   const navigate  = useNavigate()
@@ -44,11 +37,12 @@ export default function AdminLayout() {
   const SidebarContent = () => (
     <>
       {/* Header sidebar */}
-      <div className="h-16 flex items-center gap-2.5 px-5 border-b border-gray-800 shrink-0">
-        <div className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
-          <ShieldIcon />
-        </div>
-        <span className="text-sm font-bold text-white truncate">Super Admin</span>
+      <div className="h-16 flex items-center gap-2.5 px-4 border-b border-gray-800 shrink-0">
+        <img
+          src="/logo_blanc.svg"
+          alt="DiDi Sphere"
+          className="h-8 w-auto shrink-0"
+        />
         {/* Bouton fermeture (mobile seulement) */}
         <button
           type="button"
@@ -110,12 +104,11 @@ export default function AdminLayout() {
         >
           <Bars3Icon className="h-5 w-5" />
         </button>
-        <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
-            <ShieldIcon />
-          </div>
-          <span className="text-sm font-bold text-white">Super Admin</span>
-        </div>
+        <img
+          src="/logo_blanc.svg"
+          alt="DiDi Sphere"
+          className="h-7 w-auto"
+        />
       </header>
 
       <div className="flex">

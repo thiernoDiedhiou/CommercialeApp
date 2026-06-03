@@ -328,3 +328,30 @@ export async function getTenantStats(tenantId: number): Promise<TenantStats> {
   const { data } = await adminAxios.get<{ data: TenantStats }>(`/api/v1/admin/tenants/${tenantId}/stats`)
   return data.data
 }
+
+// ── Paramètres du site ────────────────────────────────────────────────────────
+
+export interface SiteSettingsData {
+  id:                number
+  contact_email:     string | null
+  contact_whatsapp:  string | null
+  contact_address:   string | null
+  contact_hours:     string | null
+  facebook_url:      string | null
+  twitter_url:       string | null
+  linkedin_url:      string | null
+  instagram_url:     string | null
+}
+
+export type SiteSettingsForm = Omit<SiteSettingsData, 'id'>
+
+export async function getAdminSiteSettings(): Promise<SiteSettingsData> {
+  const { data } = await adminAxios.get<{ data: SiteSettingsData }>('/api/v1/admin/site-settings')
+  return data.data
+}
+
+export async function updateAdminSiteSettings(body: SiteSettingsForm): Promise<SiteSettingsData> {
+  const { data } = await adminAxios.put<{ data: SiteSettingsData }>('/api/v1/admin/site-settings', body)
+  return data.data
+}
+

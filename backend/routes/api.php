@@ -1,11 +1,17 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\AdminSiteSettingsController;
 use App\Http\Controllers\Admin\AdminTenantController;
+use App\Http\Controllers\Landing\PublicPlanController;
+use App\Http\Controllers\Landing\PublicRegistrationController;
+use App\Http\Controllers\Landing\PublicSiteSettingsController;
+use App\Http\Controllers\Landing\PublicTenantController;
 use App\Http\Controllers\Admin\AdminStatsController;
 use App\Http\Controllers\Admin\AdminPlanController;
 use App\Http\Controllers\Admin\AdminSubscriptionController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Brand\BrandController;
 use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Customer\CustomerController;
@@ -43,6 +49,16 @@ use Illuminate\Support\Facades\Route;
 | Auth : Laravel Sanctum (token Bearer)
 | Permissions : middleware permission:{name} → CheckPermission
 */
+
+// ── Landing Page — endpoints publics sans auth ────────────────────────────────
+Route::prefix('v1/public')->middleware('throttle:60,1')->group(function () {
+    Route::get('plans',             [PublicPlanController::class,        'index']);
+    Route::get('site-settings',     [PublicSiteSettingsController::class, 'index']);
+    Route::get('tenant/{slug}',     [PublicTenantController::class,       'resolve'])
+         ->middleware('throttle:30,1');
+    Route::post('register',         [PublicRegistrationController::class,  'register'])
+         ->middleware('throttle:10,1');
+});
 
 // ── Résolution tenant par domaine custom (sans auth) ─────────────────────────
 Route::get('v1/public/resolve-domain', [PublicShopController::class, 'resolveByDomain'])
@@ -85,6 +101,10 @@ Route::prefix('v1')->group(function () {
             // ── Abonnements (vue globale) ───────────────────────────────────
             Route::get('subscriptions', [AdminSubscriptionController::class, 'index'])->name('subscriptions.index');
 
+            // ── Paramètres du site (singleton) ─────────────────────────────
+            Route::get('site-settings', [AdminSiteSettingsController::class, 'show'])->name('site-settings.show');
+            Route::put('site-settings', [AdminSiteSettingsController::class, 'update'])->name('site-settings.update');
+
             // ── Tenants ────────────────────────────────────────────────────
             Route::prefix('tenants')->name('tenants.')->group(function () {
                 Route::get('/',                      [AdminTenantController::class, 'index'])->name('index');
@@ -108,7 +128,9 @@ Route::prefix('v1')->group(function () {
 
     // ── Authentification ──────────────────────────────────────────────────────
     Route::prefix('auth')->name('auth.')->group(function () {
-        Route::post('login', [AuthController::class, 'login'])->name('login');
+        Route::post('login',            [AuthController::class,       'login'])->name('login');
+        Route::post('forgot-password',  [PasswordResetController::class, 'send'])->middleware('throttle:5,1')->name('password.send');
+        Route::post('reset-password',   [PasswordResetController::class, 'reset'])->middleware('throttle:5,1')->name('password.reset');
 
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('logout', [AuthController::class, 'logout'])->name('logout');

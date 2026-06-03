@@ -6,6 +6,16 @@ import { useAuthStore } from '@/store/authStore'
 import { useSuperAdminStore } from '@/store/superAdminStore'
 import { useHomePath } from '@/hooks/useHomePath'
 import LoginPage from '@/pages/auth/LoginPage'
+import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
+import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
+import LandingLayout from '@/landing/LandingLayout'
+import HomePage from '@/landing/pages/HomePage'
+import FeaturesPage from '@/landing/pages/FeaturesPage'
+import PricingPage from '@/landing/pages/PricingPage'
+import ContactPage from '@/landing/pages/ContactPage'
+import RegisterPage from '@/landing/pages/RegisterPage'
+import CGUPage from '@/landing/pages/CGUPage'
+import PrivacyPage from '@/landing/pages/PrivacyPage'
 import Layout from '@/components/layout/Layout'
 import AdminLayout from '@/components/admin/AdminLayout'
 import AdminLoginPage from '@/pages/admin/AdminLoginPage'
@@ -14,6 +24,7 @@ import AdminTenantsPage from '@/pages/admin/AdminTenantsPage'
 import AdminTenantDetailPage from '@/pages/admin/AdminTenantDetailPage'
 import AdminPlansPage from '@/pages/admin/AdminPlansPage'
 import AdminSubscriptionsPage from '@/pages/admin/AdminSubscriptionsPage'
+import AdminSiteSettingsPage from '@/pages/admin/AdminSiteSettingsPage'
 import DashboardPage from '@/pages/dashboard/DashboardPage'
 import ProductsPage from '@/pages/products/ProductsPage'
 import ProductFormPage from '@/pages/products/ProductFormPage'
@@ -47,10 +58,19 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+// Route index "/" : landing si non connecté, dashboard si connecté
+function SmartLandingIndex() {
+  const token    = useAuthStore((s) => s.token)
+  const homePath = useHomePath()
+  if (token) return <Navigate to={homePath} replace />
+  return <HomePage />
+}
+
+// Wildcard catch-all : landing si non connecté, dashboard si connecté
 function SmartRedirect() {
   const token    = useAuthStore((s) => s.token)
   const homePath = useHomePath()
-  return <Navigate to={token ? homePath : '/login'} replace />
+  return <Navigate to={token ? homePath : '/'} replace />
 }
 
 function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -63,7 +83,21 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
+
+        {/* ── Landing (public) — LandingLayout wraps "/" + sous-pages ── */}
+        <Route element={<LandingLayout />}>
+          <Route index element={<SmartLandingIndex />} />
+          <Route path="fonctionnalites"  element={<FeaturesPage />} />
+          <Route path="tarifs"           element={<PricingPage />} />
+          <Route path="contact"          element={<ContactPage />} />
+          <Route path="inscription"      element={<RegisterPage />} />
+          <Route path="cgu"              element={<CGUPage />} />
+          <Route path="confidentialite"  element={<PrivacyPage />} />
+        </Route>
+
+        <Route path="/login"                  element={<LoginPage />} />
+        <Route path="/mot-de-passe-oublie"    element={<ForgotPasswordPage />} />
+        <Route path="/reinitialisation"       element={<ResetPasswordPage />} />
 
         {/* POS — fullscreen, pas de Layout */}
         <Route
@@ -84,7 +118,6 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<SmartRedirect />} />
           <Route path="dashboard"        element={<DashboardPage />} />
           <Route path="sales"            element={<SalesPage />} />
           <Route path="sales/new"        element={<Navigate to="/pos" replace />} />
@@ -140,7 +173,8 @@ export default function App() {
           <Route path="tenants"       element={<AdminTenantsPage />} />
           <Route path="tenants/:id"   element={<AdminTenantDetailPage />} />
           <Route path="plans"         element={<AdminPlansPage />} />
-          <Route path="subscriptions" element={<AdminSubscriptionsPage />} />
+          <Route path="subscriptions"  element={<AdminSubscriptionsPage />} />
+          <Route path="site-settings"  element={<AdminSiteSettingsPage />} />
         </Route>
       </Routes>
 
