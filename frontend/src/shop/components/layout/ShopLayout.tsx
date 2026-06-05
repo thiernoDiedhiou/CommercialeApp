@@ -56,15 +56,17 @@ export default function ShopLayout() {
     themeColor.content = data.theme.primary_color
 
     // <link rel="icon"> — favicon prioritaire, sinon logo comme fallback
+    // index.html injecte plusieurs favicons DiDi Sphere (PNG 48px, PNG 36px, SVG).
+    // Le navigateur préfère le SVG — il faut tous les supprimer avant d'injecter
+    // celui du tenant. On ne supprime que si on a un remplacement (évite l'onglet vide).
     const faviconUrl = data.shop.favicon_url ?? data.shop.logo_url
     if (faviconUrl) {
-      let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
-      if (!link) {
-        link = document.createElement('link')
-        link.rel = 'icon'
-        document.head.appendChild(link)
-      }
+      document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]')
+        .forEach(el => el.remove())
+      const link = document.createElement('link')
+      link.rel  = 'icon'
       link.href = faviconUrl
+      document.head.appendChild(link)
     }
   }, [data, setConfig])
 

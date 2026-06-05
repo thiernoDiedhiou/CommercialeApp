@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
@@ -6,12 +6,8 @@ import { CheckCircleIcon, EyeIcon, EyeSlashIcon, LockClosedIcon } from '@heroico
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
-import apiClient from '@/lib/axios'
-import { useAuthStore } from '@/store/authStore'
-import { resolveTenantSlug } from '@/services/api/public'
+import publicAxios from '@/lib/publicAxios'
 import { cn } from '@/lib/utils'
-
-const ENV_KEY = import.meta.env.VITE_TENANT_API_KEY ?? ''
 
 const schema = z.object({
   password:              z.string().min(8, '8 caractères minimum'),
@@ -30,44 +26,16 @@ function getInitialDark(): boolean {
 }
 
 export default function ResetPasswordPage() {
-  const navigate        = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const setTenantApiKey = useAuthStore((s) => s.setTenantApiKey)
+  const navigate          = useNavigate()
+  const [searchParams]    = useSearchParams()
 
-  const initToken = useRef(searchParams.get('token')  ?? '')
-  const initEmail = useRef(searchParams.get('email')  ?? '')
-  const initKey   = useRef(searchParams.get('key')    ?? '')
-  const initSlug  = useRef(searchParams.get('tenant') ?? '')
+  // Token et email extraits de l'URL — générés par le backend et envoyés par email
+  const tokenFromUrl = useRef(searchParams.get('token') ?? '').current
+  const emailFromUrl = useRef(searchParams.get('email') ?? '').current
 
-  const tokenFromUrl = initToken.current
-  const emailFromUrl = initEmail.current
-  const keyFromUrl   = initKey.current
-  const slugFromUrl  = initSlug.current
-
-  const [tenantKey, setTenantKey]         = useState(keyFromUrl || ENV_KEY)
-  const [slugResolving, setSlugResolving] = useState(!!slugFromUrl && !keyFromUrl && !ENV_KEY)
-  const [showPwd, setShowPwd]             = useState(false)
-  const [showCfm, setShowCfm]             = useState(false)
-  const [isDark]                          = useState(getInitialDark)
-
-  // Supprimer ?key= via setSearchParams — garde token + email + tenant (slug public)
-  useEffect(() => {
-    if (!keyFromUrl) return
-    const next: Record<string, string> = {}
-    if (tokenFromUrl) next.token  = tokenFromUrl
-    if (emailFromUrl) next.email  = emailFromUrl
-    if (slugFromUrl)  next.tenant = slugFromUrl
-    setSearchParams(next, { replace: true })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Résolution slug → api_key
-  useEffect(() => {
-    if (!slugFromUrl || keyFromUrl || ENV_KEY) return
-    setSlugResolving(true)
-    resolveTenantSlug(slugFromUrl)
-      .then((key) => { setTenantKey(key); setSlugResolving(false) })
-      .catch(() => setSlugResolving(false))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const [showPwd, setShowPwd] = useState(false)
+  const [showCfm, setShowCfm] = useState(false)
+  const [isDark]              = useState(getInitialDark)
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -75,8 +43,7 @@ export default function ResetPasswordPage() {
 
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
-      setTenantApiKey(tenantKey)
-      const r = await apiClient.post('/api/v1/auth/reset-password', {
+      const r = await publicAxios.post('/api/v1/auth/reset-password', {
         email:                 emailFromUrl,
         token:                 tokenFromUrl,
         password:              data.password,
@@ -86,33 +53,16 @@ export default function ResetPasswordPage() {
     },
   })
 
-  const inputBase = 'block w-full rounded-xl border px-4 py-3 text-sm transition-colors focus:outline-none focus:ring-2 focus:border-[#2465ed]'
+  const inputBase = 'block w-full rounded-xl border px-4 py-3 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[#2465ed]/30 focus:border-[#2465ed]'
   const inputOk   = isDark
-    ? 'border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-500 focus:ring-[#2465ed]/30'
-    : 'border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:ring-[#2465ed]/30'
+    ? 'border-gray-600 bg-gray-800 text-gray-100 placeholder-gray-500'
+    : 'border-gray-200 bg-white text-gray-900 placeholder-gray-400'
   const inputErr  = isDark
     ? 'border-red-600 bg-red-900/20 text-gray-100 focus:ring-red-500/30'
     : 'border-red-300 bg-red-50 focus:ring-red-300/30'
 
-  // Résolution en cours — on attend avant de valider le lien
-  if (slugResolving) {
-    return (
-      <div className={isDark ? 'dark' : ''}>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-6 transition-colors">
-          <div className="flex items-center gap-3 text-gray-500 dark:text-gray-400 text-sm">
-            <svg className="h-5 w-5 animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-            Vérification du lien…
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // Lien invalide (pas de token/email/clé résolue dans l'URL)
-  if (!tokenFromUrl || !emailFromUrl || !tenantKey) {
+  // Lien invalide — token ou email absent de l'URL
+  if (!tokenFromUrl || !emailFromUrl) {
     return (
       <div className={isDark ? 'dark' : ''}>
         <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 px-6 transition-colors">
@@ -135,31 +85,22 @@ export default function ResetPasswordPage() {
   return (
     <div className={isDark ? 'dark' : ''}>
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-950 px-6 py-12 transition-colors">
-
         <div className="w-full max-w-md">
 
-          {/* Nav */}
           <div className="flex items-center justify-between mb-8">
-            <img
-              src={isDark ? '/logo_blanc.svg' : '/logo_mode_claire.svg'}
-              alt="DiDi Sphere"
-              className="h-7 w-auto"
-            />
+            <img src={isDark ? '/logo_blanc.svg' : '/logo_mode_claire.svg'} alt="DiDi Sphere" className="h-7 w-auto" />
           </div>
 
-          {/* Succès */}
           {mutation.isSuccess ? (
             <div className="rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm p-8 text-center">
               <CheckCircleIcon className="h-16 w-16 text-ds-green mx-auto mb-4" />
-              <h2 className="text-xl font-extrabold text-gray-900 dark:text-white mb-2">
-                Mot de passe modifié !
-              </h2>
+              <h2 className="text-xl font-extrabold text-gray-900 dark:text-white mb-2">Mot de passe modifié !</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
                 Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous connecter.
               </p>
               <button
                 type="button"
-                onClick={() => navigate(`/login${slugFromUrl ? `?tenant=${slugFromUrl}` : keyFromUrl ? `?key=${keyFromUrl}` : ''}`)}
+                onClick={() => navigate('/login')}
                 className="w-full rounded-xl bg-[#2465ed] py-3 text-sm font-bold text-white hover:bg-[#1a4fc4] transition-colors"
               >
                 Se connecter →
@@ -168,9 +109,7 @@ export default function ResetPasswordPage() {
           ) : (
             <>
               <div className="mb-8">
-                <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">
-                  Nouveau mot de passe
-                </h1>
+                <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">Nouveau mot de passe</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   Choisissez un mot de passe sécurisé d'au moins 8 caractères.
                 </p>
@@ -185,26 +124,21 @@ export default function ResetPasswordPage() {
                     </svg>
                     <p className="text-sm text-red-700 dark:text-red-400">
                       {axios.isAxiosError(mutation.error)
-                        ? (mutation.error.response?.data as any)?.message ?? 'Une erreur est survenue.'
-                        : 'Une erreur est survenue.'
-                      }
+                        ? (mutation.error.response?.data as { message?: string })?.message ?? 'Une erreur est survenue.'
+                        : 'Une erreur est survenue.'}
                     </p>
                   </div>
                 )}
 
                 <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-5">
 
-                  {/* Email (lecture seule, accessibilité) */}
                   <div>
-                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Compte
-                    </label>
+                    <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Compte</label>
                     <p className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                       {emailFromUrl}
                     </p>
                   </div>
 
-                  {/* Nouveau mot de passe */}
                   <div>
                     <label htmlFor="rp-password" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Nouveau mot de passe
@@ -218,9 +152,7 @@ export default function ResetPasswordPage() {
                         {...register('password')}
                         className={cn(inputBase, 'pr-11', errors.password ? inputErr : inputOk)}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPwd((v) => !v)}
+                      <button type="button" onClick={() => setShowPwd((v) => !v)}
                         aria-label={showPwd ? 'Masquer' : 'Afficher'}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                       >
@@ -232,7 +164,6 @@ export default function ResetPasswordPage() {
                     )}
                   </div>
 
-                  {/* Confirmation */}
                   <div>
                     <label htmlFor="rp-confirm" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Confirmer le mot de passe
@@ -246,9 +177,7 @@ export default function ResetPasswordPage() {
                         {...register('password_confirmation')}
                         className={cn(inputBase, 'pr-11', errors.password_confirmation ? inputErr : inputOk)}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowCfm((v) => !v)}
+                      <button type="button" onClick={() => setShowCfm((v) => !v)}
                         aria-label={showCfm ? 'Masquer' : 'Afficher'}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                       >

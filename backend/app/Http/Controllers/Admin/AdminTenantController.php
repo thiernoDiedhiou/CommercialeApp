@@ -83,7 +83,7 @@ class AdminTenantController extends Controller
             // Premier utilisateur admin du tenant
 
             'admin_name'    => ['required', 'string', 'max:150'],
-            'admin_email'   => ['required', 'email', 'max:150'],
+            'admin_email'   => ['required', 'email', 'max:150', Rule::unique('users', 'email')],
             'admin_password'=> ['required', 'string', 'min:8'],
         ]);
 

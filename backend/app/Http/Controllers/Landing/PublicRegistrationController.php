@@ -30,7 +30,7 @@ class PublicRegistrationController extends Controller
             'sector'         => ['required', Rule::in(['general', 'food', 'fashion', 'cosmetic'])],
             'currency'       => ['nullable', Rule::in(['XOF', 'XAF', 'GNF', 'EUR', 'USD'])],
             'admin_name'     => ['required', 'string', 'max:150'],
-            'admin_email'    => ['required', 'email', 'max:150'],
+            'admin_email'    => ['required', 'email', 'max:150', Rule::unique('users', 'email')],
             'admin_password' => ['required', 'string', 'min:8'],
         ]);
 

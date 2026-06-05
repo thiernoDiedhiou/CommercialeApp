@@ -21,8 +21,12 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
-        // TenantScope sur User est déjà actif (tenant résolu par ResolveTenant middleware)
-        $user = User::where('email', $request->email)->first();
+        // Lookup global — ResolveTenant bypassé pour /api/v1/auth, tenant résolu ici
+        $user = User::withoutGlobalScopes()
+            ->where('email', $request->email)
+            ->where('is_active', true)
+            ->with('tenant')
+            ->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -31,12 +35,15 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if (! $user->is_active) {
+        if (! $user->tenant?->is_active) {
             return response()->json([
-                'message' => 'Votre compte est désactivé. Contactez votre administrateur.',
-                'code'    => 'ACCOUNT_DISABLED',
+                'message' => 'Votre espace est suspendu. Contactez le support.',
+                'code'    => 'TENANT_SUSPENDED',
             ], 403);
         }
+
+        // Établit le contexte tenant pour buildMePayload
+        $this->tenantService->setCurrentTenant($user->tenant);
 
         // Révoque les anciens tokens de cet appareil si device_name fourni
         if ($request->has('device_name')) {
@@ -60,8 +67,19 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
+        $user = $request->user()->load('tenant');
+
+        if (! $user->tenant?->is_active) {
+            return response()->json([
+                'message' => 'Votre espace est suspendu ou introuvable.',
+                'code'    => 'TENANT_SUSPENDED',
+            ], 403);
+        }
+
+        $this->tenantService->setCurrentTenant($user->tenant);
+
         return response()->json([
-            'data' => $this->buildMePayload($request->user()),
+            'data' => $this->buildMePayload($user),
         ]);
     }
 
@@ -80,6 +98,7 @@ class AuthController extends Controller
             ],
             'permissions' => $this->permissionService->getPermissions($user),
             'tenant' => [
+                'api_key'         => $tenant->getRawOriginal('api_key'),
                 'name'            => $tenant->name,
                 'slug'            => $tenant->slug,
                 'currency'        => $tenant->currency,

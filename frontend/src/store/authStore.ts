@@ -9,6 +9,7 @@ interface AuthState {
   tenant:       TenantInfo | null
   subscription: SubscriptionInfo | null
   planFeatures: PlanFeatures | null
+  // Jamais persisté — retourné par /auth/login et /auth/me, perdu à la fermeture de l'onglet
   tenantApiKey: string
 
   setAuth: (
@@ -23,8 +24,6 @@ interface AuthState {
   logout: () => void
 }
 
-const DEFAULT_KEY = import.meta.env.VITE_TENANT_API_KEY ?? ''
-
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -34,19 +33,28 @@ export const useAuthStore = create<AuthState>()(
       tenant:       null,
       subscription: null,
       planFeatures: null,
-      tenantApiKey: DEFAULT_KEY,
+      tenantApiKey: '',
 
       setAuth: (token, user, permissions, tenant, subscription = null, planFeatures = null) =>
-        set({ token, user, permissions, tenant, subscription, planFeatures }),
+        set({ token, user, permissions, tenant, subscription, planFeatures, tenantApiKey: tenant.api_key }),
 
       setTenantApiKey: (key) =>
         set({ tenantApiKey: key }),
 
       logout: () =>
-        set({ token: null, user: null, permissions: [], tenant: null, subscription: null, planFeatures: null, tenantApiKey: DEFAULT_KEY }),
+        set({ token: null, user: null, permissions: [], tenant: null, subscription: null, planFeatures: null, tenantApiKey: '' }),
     }),
     {
       name: 'auth',
+      // tenantApiKey exclu du persist — restauré depuis /auth/me au prochain montage
+      partialize: (state) => ({
+        token:        state.token,
+        user:         state.user,
+        permissions:  state.permissions,
+        tenant:       state.tenant,
+        subscription: state.subscription,
+        planFeatures: state.planFeatures,
+      }),
     },
   ),
 )

@@ -55,9 +55,9 @@ const SECTORS = [
 ]
 
 const STATS = [
-  { value: '4', label: 'Secteurs supportés',    suffix: '' },
-  { value: '21', label: 'Jours d\'essai gratuit', suffix: 'j' },
-  { value: '5', label: 'Pays ciblés',            suffix: '+' },
+  { value: '4',  label: 'Secteurs supportés',     suffix: '' },
+  { value: '21', label: "Jours d'essai gratuit",  suffix: 'j' },
+  { value: '5',  label: 'Pays ciblés',            suffix: '+' },
 ]
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -67,7 +67,130 @@ function formatPrice(price: string): string {
   return n.toLocaleString('fr-FR')
 }
 
-// ── Composants de section ─────────────────────────────────────────────────────
+// ── Mockup dashboard ──────────────────────────────────────────────────────────
+
+function DashboardMockup() {
+  const bars = [38, 62, 48, 75, 52, 88, 68]
+  const sales = [
+    { name: 'Fatou Diallo',  amount: '12 500', initial: 'F' },
+    { name: 'Moussa Koné',   amount: '8 200',  initial: 'M' },
+    { name: 'Awa Traoré',    amount: '21 000', initial: 'A' },
+  ]
+
+  return (
+    <div className="w-full rounded-2xl overflow-hidden shadow-[0_24px_64px_-8px_rgba(36,101,237,0.18),0_8px_32px_-4px_rgba(0,0,0,0.08)] border border-gray-200/80 ring-1 ring-gray-900/5">
+      {/* Chrome navigateur */}
+      <div className="flex items-center gap-3 bg-gray-900 px-4 py-2.5">
+        <div className="flex gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
+          <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
+          <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
+        </div>
+        <div className="flex-1 rounded-md bg-gray-800 px-3 py-1 text-[10px] text-gray-400 font-mono">
+          didisphere.sn/dashboard
+        </div>
+      </div>
+
+      {/* App */}
+      <div className="flex h-[360px] bg-gray-50 overflow-hidden text-left">
+
+        {/* Sidebar */}
+        <div className="w-40 shrink-0 bg-white border-r border-gray-200 flex flex-col py-3 px-2 gap-0.5">
+          <div className="flex items-center gap-1.5 px-2 mb-4">
+            <div className="h-5 w-5 rounded-md bg-ds-blue" />
+            <span className="text-[9px] font-extrabold text-gray-800 truncate">Commerce Démo</span>
+          </div>
+          {[
+            { label: 'Tableau de bord', active: true  },
+            { label: 'Caisse POS',      active: false },
+            { label: 'Ventes',          active: false },
+            { label: 'Produits',        active: false },
+            { label: 'Stock',           active: false },
+            { label: 'Clients',         active: false },
+            { label: 'Rapports',        active: false },
+          ].map(({ label, active }) => (
+            <div
+              key={label}
+              className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[9px] font-medium ${
+                active ? 'bg-ds-blue text-white' : 'text-gray-500'
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${active ? 'bg-white' : 'bg-gray-300'}`} />
+              {label}
+            </div>
+          ))}
+        </div>
+
+        {/* Contenu principal */}
+        <div className="flex-1 overflow-hidden p-4 flex flex-col gap-3">
+
+          <p className="text-[11px] font-extrabold text-gray-800">Tableau de bord</p>
+
+          {/* KPI cards */}
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: 'Ventes du jour', value: '47 500',    valueClass: 'text-ds-blue',   barBg: 'bg-ds-blue-light',   bar: 'bg-ds-blue'   },
+              { label: "Chiffre d'aff.", value: '1 240 000', valueClass: 'text-ds-green',  barBg: 'bg-ds-green-light',  bar: 'bg-ds-green'  },
+              { label: 'Bénéfice',       value: '380 000',   valueClass: 'text-ds-purple', barBg: 'bg-ds-purple-light', bar: 'bg-ds-purple' },
+            ].map(({ label, value, valueClass, barBg, bar }) => (
+              <div key={label} className="rounded-xl bg-white border border-gray-100 shadow-sm p-2">
+                <p className="text-[7px] text-gray-400 mb-0.5">{label}</p>
+                <p className={`text-[10px] font-extrabold ${valueClass}`}>{value}</p>
+                <p className="text-[6px] text-gray-300 mt-0.5">F CFA</p>
+                <div className={`mt-1.5 h-0.5 rounded-full w-3/4 ${barBg}`}>
+                  <div className={`h-full rounded-full w-1/2 ${bar}`} />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Graphe + ventes récentes */}
+          <div className="grid grid-cols-5 gap-2 flex-1 min-h-0">
+
+            <div className="col-span-3 rounded-xl bg-white border border-gray-100 shadow-sm p-2.5 flex flex-col">
+              <p className="text-[7px] font-semibold text-gray-500 mb-2">CA des 7 derniers jours</p>
+              <div className="flex items-end gap-1 flex-1">
+                {bars.map((h, i) => (
+                  <div key={i} className="flex-1 flex flex-col justify-end">
+                    <div
+                      className={`rounded-sm transition-all ${i === 5 ? 'bg-ds-blue' : 'bg-ds-blue-light'}`}
+                      style={{ height: `${h}%` }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between mt-1.5">
+                {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
+                  <span key={i} className="flex-1 text-center text-[6px] text-gray-300">{d}</span>
+                ))}
+              </div>
+            </div>
+
+            <div className="col-span-2 rounded-xl bg-white border border-gray-100 shadow-sm p-2.5 flex flex-col">
+              <p className="text-[7px] font-semibold text-gray-500 mb-2">Ventes récentes</p>
+              <div className="flex flex-col gap-2">
+                {sales.map(({ name, amount, initial }) => (
+                  <div key={name} className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <div className="h-4 w-4 rounded-full bg-ds-blue-light flex items-center justify-center shrink-0">
+                        <span className="text-[7px] font-bold text-ds-blue">{initial}</span>
+                      </div>
+                      <span className="text-[7px] text-gray-600 truncate max-w-[48px]">{name.split(' ')[0]}</span>
+                    </div>
+                    <span className="text-[7px] font-bold text-ds-green">{amount}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Composants ────────────────────────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -92,55 +215,57 @@ export default function HomePage() {
     <div className="overflow-hidden">
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
-      <section className="relative min-h-[88vh] flex items-center bg-[linear-gradient(135deg,#2465ed_0%,#4a2db5_55%,#6e33d8_100%)]">
+      <section className="relative overflow-hidden bg-white dark:bg-gray-950 pt-20 pb-16">
 
-        {/* Cercles décoratifs */}
-        <div className="absolute -top-32 -right-32 h-[500px] w-[500px] rounded-full bg-white/5 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 h-[400px] w-[400px] rounded-full bg-white/5 blur-3xl pointer-events-none" />
+        {/* Décoration arrière-plan — orbes très subtils */}
+        <div className="hero-bg-glow absolute inset-0 pointer-events-none" />
+        <div className="absolute top-32 -left-24 h-64 w-64 rounded-full bg-ds-purple/5 blur-3xl pointer-events-none" />
+        <div className="absolute top-16 -right-16 h-72 w-72 rounded-full bg-ds-green/5 blur-3xl pointer-events-none" />
 
-        <div className="relative mx-auto max-w-6xl px-4 py-20 text-white">
-          {/* Badge géo */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 backdrop-blur px-4 py-1.5 text-sm mb-8">
-            <GlobeAltIcon className="h-4 w-4" />
-            Sénégal · Côte d'Ivoire · Mali · Guinée · Burkina Faso
-          </div>
+        <div className="relative mx-auto max-w-5xl px-4 text-center">
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight max-w-3xl">
-            La gestion commerciale{' '}
-            <span className="text-ds-green">tout-en-un</span>{' '}
-            pour les PME d'Afrique de l'Ouest
+          <h1 className="text-[2.6rem] sm:text-5xl lg:text-[3.75rem] font-extrabold leading-[1.1] text-gray-900 dark:text-white mb-6">
+            Gérez moins.{' '}
+            <span className="text-ds-blue">Vendez plus.</span>
           </h1>
 
-          <p className="mt-6 text-lg sm:text-xl text-white/80 max-w-2xl leading-relaxed">
-            Ventes, stocks, clients et factures — tout ce dont votre boutique a besoin,
-            en un seul outil. Multi-devises, adapté à votre secteur.
+          <p className="text-lg sm:text-xl text-gray-500 dark:text-gray-400 leading-relaxed mb-10 max-w-2xl mx-auto">
+            Ventes, stocks, clients et factures — tout en un seul endroit,
+            pour les commerçants qui veulent aller plus loin.
           </p>
 
-          <div className="mt-10 flex flex-wrap gap-4">
+          <div className="flex flex-wrap justify-center gap-4 mb-4">
             <button
               type="button"
               onClick={() => navigate('/inscription')}
-              className="flex items-center gap-2 rounded-xl bg-white px-7 py-3.5 text-base font-bold text-ds-blue shadow-lg hover:bg-gray-50 transition-all hover:scale-105"
+              className="flex items-center gap-2 rounded-xl bg-ds-blue px-7 py-3.5 text-base font-bold text-white shadow-lg shadow-ds-blue/25 hover:bg-ds-blue-dark transition-all hover:scale-105 active:scale-100"
             >
               Essai gratuit <ArrowRightIcon className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={() => navigate('/tarifs')}
-              className="flex items-center gap-2 rounded-xl border-2 border-white/40 bg-white/10 backdrop-blur px-7 py-3.5 text-base font-bold text-white hover:bg-white/20 transition-all"
+              className="flex items-center gap-2 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-7 py-3.5 text-base font-bold text-gray-700 dark:text-gray-200 hover:border-ds-blue/50 hover:text-ds-blue transition-all"
             >
               Voir les tarifs
             </button>
           </div>
 
-          <p className="mt-5 text-sm text-white/60">
+          <p className="text-sm text-gray-400">
             Aucune carte bancaire requise · 21 jours d'essai gratuit
           </p>
         </div>
       </section>
 
+      {/* ── Mockup section ──────────────────────────────────────────────────── */}
+      <section className="bg-gray-50 dark:bg-gray-900 py-16">
+        <div className="mx-auto max-w-5xl px-6">
+          <DashboardMockup />
+        </div>
+      </section>
+
       {/* ── Stats strip ─────────────────────────────────────────────────────── */}
-      <section className="border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <section className="border-y border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
         <div className="mx-auto max-w-6xl px-4 py-10">
           <div className="grid grid-cols-3 gap-6 text-center">
             {STATS.map(({ value, label, suffix }) => (
@@ -181,10 +306,7 @@ export default function HomePage() {
           </div>
 
           <div className="mt-10 text-center">
-            <Link
-              to="/fonctionnalites"
-              className="inline-flex items-center gap-2 text-ds-blue font-semibold hover:underline"
-            >
+            <Link to="/fonctionnalites" className="inline-flex items-center gap-2 text-ds-blue font-semibold hover:underline">
               Voir toutes les fonctionnalités <ArrowRightIcon className="h-4 w-4" />
             </Link>
           </div>
@@ -207,7 +329,8 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {SECTORS.map(({ emoji, label, desc }) => (
-              <div key={label}
+              <div
+                key={label}
                 className="group relative overflow-hidden rounded-2xl border-2 border-gray-100 dark:border-gray-700 dark:bg-gray-800/50 p-6 hover:border-ds-blue dark:hover:border-ds-blue hover:shadow-lg transition-all cursor-pointer"
                 onClick={() => navigate('/inscription')}
               >
@@ -235,9 +358,9 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { step: '01', color: 'text-ds-blue', bg: 'bg-ds-blue', title: 'Créez votre compte', desc: 'Renseignez le nom de votre boutique, votre secteur et vos identifiants. Aucune carte requise.' },
-              { step: '02', color: 'text-ds-green', bg: 'bg-ds-green', title: 'Configurez votre boutique', desc: 'Ajoutez vos produits, vos catégories et personnalisez vos couleurs de marque.' },
-              { step: '03', color: 'text-ds-purple', bg: 'bg-ds-purple', title: 'Commencez à vendre', desc: 'Encaissez depuis la caisse POS, générez vos factures et suivez vos stocks en temps réel.' },
+              { step: '01', color: 'text-ds-blue',   bg: 'bg-ds-blue',   title: 'Créez votre compte',       desc: 'Renseignez le nom de votre boutique, votre secteur et vos identifiants. Aucune carte requise.' },
+              { step: '02', color: 'text-ds-green',  bg: 'bg-ds-green',  title: 'Configurez votre boutique', desc: 'Ajoutez vos produits, vos catégories et personnalisez vos couleurs de marque.' },
+              { step: '03', color: 'text-ds-purple', bg: 'bg-ds-purple', title: 'Commencez à vendre',        desc: 'Encaissez depuis la caisse POS, générez vos factures et suivez vos stocks en temps réel.' },
             ].map(({ step, color, bg, title, desc }) => (
               <div key={step} className="relative flex flex-col items-center text-center md:items-start md:text-left">
                 <div className={`flex h-12 w-12 items-center justify-center rounded-full ${bg} text-white font-extrabold text-lg mb-4`}>
@@ -321,10 +444,7 @@ export default function HomePage() {
             </div>
 
             <div className="mt-10 text-center">
-              <Link
-                to="/tarifs"
-                className="inline-flex items-center gap-2 text-ds-blue font-semibold hover:underline"
-              >
+              <Link to="/tarifs" className="inline-flex items-center gap-2 text-ds-blue font-semibold hover:underline">
                 Comparer tous les plans <ArrowRightIcon className="h-4 w-4" />
               </Link>
             </div>
@@ -333,12 +453,13 @@ export default function HomePage() {
       )}
 
       {/* ── CTA final ────────────────────────────────────────────────────────── */}
-      <section className="py-20 bg-[linear-gradient(135deg,#11b67e,#0d9267)]">
-        <div className="mx-auto max-w-3xl px-4 text-center text-white">
+      <section className="relative overflow-hidden py-20 bg-gray-950">
+        <div className="cta-bg-glow absolute inset-0 pointer-events-none" />
+        <div className="relative mx-auto max-w-3xl px-4 text-center text-white">
           <h2 className="text-3xl sm:text-4xl font-extrabold mb-4">
             Prêt à moderniser votre gestion ?
           </h2>
-          <p className="text-lg text-white/80 mb-10">
+          <p className="text-lg text-white/70 mb-10">
             Rejoignez les PME d'Afrique de l'Ouest qui font confiance à DiDi Sphere
             pour gérer leur commerce au quotidien.
           </p>
@@ -346,19 +467,19 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => navigate('/inscription')}
-              className="flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-base font-bold text-ds-green shadow-lg hover:bg-gray-50 transition-all hover:scale-105"
+              className="flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-base font-bold text-ds-blue shadow-lg hover:bg-gray-50 transition-all hover:scale-105 active:scale-100"
             >
               Créer mon compte gratuit <ArrowRightIcon className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={() => navigate('/tarifs')}
-              className="flex items-center gap-2 rounded-xl border-2 border-white/40 px-8 py-4 text-base font-bold text-white hover:bg-white/10 transition-all"
+              className="flex items-center gap-2 rounded-xl border-2 border-white/20 px-8 py-4 text-base font-bold text-white hover:bg-white/10 transition-all"
             >
               Voir les tarifs
             </button>
           </div>
-          <p className="mt-6 text-sm text-white/60">
+          <p className="mt-6 text-sm text-white/40">
             Aucune carte bancaire · Annulation à tout moment
           </p>
         </div>

@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Mail\PasswordResetMail;
 use App\Models\User;
-use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,18 +14,22 @@ use Illuminate\Support\Str;
 
 class PasswordResetController extends Controller
 {
-    public function __construct(private readonly TenantService $tenantService) {}
 
     public function send(Request $request): JsonResponse
     {
         $request->validate(['email' => ['required', 'email']]);
 
-        $tenant = $this->tenantService->current();
-        $user   = User::where('email', $request->email)->first();
+        // Lookup global — email unique sur toute la plateforme, pas de X-Tenant-ID requis
+        $user = User::withoutGlobalScopes()
+            ->where('email', $request->email)
+            ->where('is_active', true)
+            ->with('tenant')
+            ->first();
 
         // Toujours 200 — ne jamais révéler si l'email existe
-        if ($user) {
-            $plain = Str::random(64);
+        if ($user && $user->tenant) {
+            $tenant = $user->tenant;
+            $plain  = Str::random(64);
 
             DB::table('password_reset_tokens')
                 ->where('email', $request->email)
@@ -40,12 +43,10 @@ class PasswordResetController extends Controller
                 'created_at' => now(),
             ]);
 
-            // Utilise le slug (public) plutôt que l'api_key dans l'URL
             $resetUrl = rtrim(config('saas.frontend_url'), '/')
                 . '/reinitialisation'
-                . '?token='  . urlencode($plain)
-                . '&email='  . urlencode($request->email)
-                . '&tenant=' . urlencode($tenant->slug);
+                . '?token=' . urlencode($plain)
+                . '&email=' . urlencode($request->email);
 
             try {
                 Mail::to($user->email, $user->name)->send(
@@ -70,11 +71,19 @@ class PasswordResetController extends Controller
             'password_confirmation' => ['required', 'same:password'],
         ]);
 
-        $tenant = $this->tenantService->current();
+        // Lookup global — trouver l'user et son tenant depuis l'email seul
+        $user = User::withoutGlobalScopes()
+            ->where('email', $validated['email'])
+            ->with('tenant')
+            ->first();
+
+        if (! $user || ! $user->tenant?->is_active) {
+            return response()->json(['message' => 'Lien de réinitialisation invalide ou expiré.'], 422);
+        }
 
         $record = DB::table('password_reset_tokens')
             ->where('email', $validated['email'])
-            ->where('tenant_id', $tenant->id)
+            ->where('tenant_id', $user->tenant_id)
             ->first();
 
         if (! $record || ! hash_equals($record->token, hash('sha256', $validated['token']))) {
@@ -86,7 +95,7 @@ class PasswordResetController extends Controller
         if (now()->diffInMinutes($record->created_at) > 60) {
             DB::table('password_reset_tokens')
                 ->where('email', $validated['email'])
-                ->where('tenant_id', $tenant->id)
+                ->where('tenant_id', $user->tenant_id)
                 ->delete();
 
             return response()->json([
@@ -94,18 +103,12 @@ class PasswordResetController extends Controller
             ], 422);
         }
 
-        $user = User::where('email', $validated['email'])->first();
-
-        if (! $user) {
-            return response()->json(['message' => 'Utilisateur introuvable.'], 422);
-        }
-
         $user->update(['password' => Hash::make($validated['password'])]);
         $user->tokens()->delete();
 
         DB::table('password_reset_tokens')
             ->where('email', $validated['email'])
-            ->where('tenant_id', $tenant->id)
+            ->where('tenant_id', $user->tenant_id)
             ->delete();
 
         return response()->json([

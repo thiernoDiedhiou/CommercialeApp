@@ -30,6 +30,7 @@ export interface PlanFeatures {
 }
 
 export interface TenantInfo {
+  api_key: string
   name: string
   slug: string
   currency: string

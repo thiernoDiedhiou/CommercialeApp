@@ -25,14 +25,16 @@ export default function Layout() {
     }
   }, [tenant, applyBrandColors])
 
-  // Rafraîchit silencieusement les données tenant depuis la DB à chaque montage
-  // pour que les changements Super Admin (couleurs, nom, logo…) soient pris en compte
-  // sans que le tenant ait besoin de se reconnecter.
+  // Au montage : rafraîchit les données depuis /auth/me qui retourne l'api_key.
+  // Couvre aussi la restauration après F5 (tenantApiKey non persisté).
   useEffect(() => {
     if (!token || !user) return
+
     apiClient.get<{ data: LoginResponse['data'] }>('/api/v1/auth/me').then(({ data: response }) => {
+      const currentToken = useAuthStore.getState().token
+      if (!currentToken) return
       const { user: freshUser, permissions: freshPerms, tenant: freshTenant, subscription: freshSub, plan_features } = response.data
-      setAuth(token, freshUser, freshPerms, freshTenant, freshSub, plan_features)
+      setAuth(currentToken, freshUser, freshPerms, freshTenant, freshSub, plan_features)
       applyBrandColors(freshTenant.primary_color, freshTenant.secondary_color)
     }).catch(() => {
       // Silencieux — le cache localStorage reste valide si l'appel échoue

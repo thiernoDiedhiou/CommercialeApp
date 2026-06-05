@@ -32,3 +32,21 @@ body {
   animation: shop-marquee 22s linear infinite;
   will-change: translate;
 }
+
+/* ── Landing page — hero & CTA radial glows ──────────────────────────────── */
+.hero-bg-glow {
+  background: radial-gradient(
+    ellipse 80% 45% at 50% -5%,
+    rgba(36, 101, 237, 0.07) 0%,
+    transparent 100%
+  );
+}
+
+.cta-bg-glow {
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 50%,
+    rgba(36, 101, 237, 0.25) 0%,
+    rgba(110, 51, 216, 0.12) 50%,
+    transparent 100%
+  );
+}
