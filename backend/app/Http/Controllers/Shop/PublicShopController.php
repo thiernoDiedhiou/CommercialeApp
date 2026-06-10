@@ -125,6 +125,9 @@ class PublicShopController extends Controller
             ->when($request->filled('search'), fn($q) =>
                 $q->where('name', 'like', '%' . $request->search . '%')
             )
+            ->when($request->boolean('on_sale'), fn($q) =>
+                $q->whereNotNull('compare_at_price')->whereColumn('compare_at_price', '>', 'price')
+            )
             ->when($sort === 'newest', fn($q) =>
                 $q->orderBy('created_at', 'desc')
             )
@@ -369,17 +372,19 @@ class PublicShopController extends Controller
         }
 
         $data = [
-            'id'              => $product->id,
-            'name'            => $product->name,
-            'slug'            => $product->slug,
-            'price'           => (float) $product->price,
-            'unit'            => $product->unit,
-            'has_variants'    => $product->has_variants,
-            'is_weight_based' => $product->is_weight_based,
-            'has_expiry'      => $product->has_expiry,
-            'image_url'       => $product->image_url,
-            'stock_quantity'  => $product->has_variants ? null : (float) $product->stock_quantity,
-            'min_price'       => $minPrice,
+            'id'               => $product->id,
+            'name'             => $product->name,
+            'slug'             => $product->slug,
+            'price'            => (float) $product->price,
+            'compare_at_price' => $product->compare_at_price !== null ? (float) $product->compare_at_price : null,
+            'unit'             => $product->unit,
+            'has_variants'     => $product->has_variants,
+            'is_weight_based'  => $product->is_weight_based,
+            'has_expiry'       => $product->has_expiry,
+            'image_url'        => $product->image_url,
+            'stock_quantity'   => $product->has_variants ? null : (float) $product->stock_quantity,
+            'alert_threshold'  => $product->has_variants ? null : $product->alert_threshold,
+            'min_price'        => $minPrice,
             'category'        => $product->category ? [
                 'id'   => $product->category->id,
                 'name' => $product->category->name,

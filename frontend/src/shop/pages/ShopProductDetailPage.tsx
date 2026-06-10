@@ -31,6 +31,16 @@ export default function ShopProductDetailPage() {
     return product.variants.find((v) => v.id === selectedVariantId)?.stock_quantity ?? 0
   })()
 
+  const promoPercent = (() => {
+    if (!product?.compare_at_price || product.compare_at_price <= product.price) return null
+    return Math.round((1 - product.price / product.compare_at_price) * 100)
+  })()
+
+  const lowStock = !product?.has_variants
+    && product?.alert_threshold !== null
+    && (product?.stock_quantity ?? 0) > 0
+    && (product?.stock_quantity ?? 0) <= (product?.alert_threshold ?? 0)
+
   const handleAddToCart = () => {
     if (!product) return
     if (product.has_variants && !selectedVariantId) return
@@ -103,10 +113,17 @@ export default function ShopProductDetailPage() {
               </span>
             )}
 
-            {/* Nom */}
-            <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-              {product.name}
-            </h1>
+            {/* Nom + badge promo */}
+            <div className="flex items-start gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+                {product.name}
+              </h1>
+              {promoPercent !== null && (
+                <span className="shrink-0 rounded-lg bg-red-500 px-2.5 py-1 text-sm font-bold text-white shadow">
+                  -{promoPercent}%
+                </span>
+              )}
+            </div>
 
             {/* Description */}
             {product.description && (
@@ -126,13 +143,33 @@ export default function ShopProductDetailPage() {
               />
             )}
 
+            {/* Prix + prix barré */}
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <span className="text-2xl font-bold text-[var(--shop-accent,#111827)]">
+                {product.price.toLocaleString('fr-FR')} FCFA
+                {product.is_weight_based && ` / ${product.unit ?? 'unité'}`}
+              </span>
+              {promoPercent !== null && product.compare_at_price !== null && (
+                <span className="text-base text-gray-400 line-through">
+                  {product.compare_at_price.toLocaleString('fr-FR')} FCFA
+                </span>
+              )}
+            </div>
+
             {/* Badge stock */}
             {resolvedStock !== null && (
               resolvedStock > 0 ? (
-                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
-                  <span className="w-2 h-2 rounded-full bg-green-500" />
-                  En stock
-                </span>
+                <div className="flex flex-col gap-1">
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
+                    <span className="w-2 h-2 rounded-full bg-green-500" />
+                    En stock
+                  </span>
+                  {lowStock && (
+                    <span className="text-sm font-medium text-orange-500">
+                      Plus que {product.stock_quantity} en stock — commandez vite !
+                    </span>
+                  )}
+                </div>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600">
                   <span className="w-2 h-2 rounded-full bg-red-500" />

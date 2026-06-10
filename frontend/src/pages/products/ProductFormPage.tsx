@@ -26,6 +26,10 @@ const schema = z.object({
   price: z
     .number({ invalid_type_error: 'Prix requis' })
     .positive('Le prix doit être supérieur à 0'),
+  compare_at_price: z.preprocess(
+    (v) => (typeof v === 'number' && isNaN(v) ? null : v),
+    z.number().min(0).nullable().optional(),
+  ),
   cost_price: z.preprocess(
     (v) => (typeof v === 'number' && isNaN(v) ? null : v),
     z.number().min(0).nullable().optional(),
@@ -231,6 +235,7 @@ export default function ProductFormPage() {
         barcode: product.barcode ?? '',
         category_id: product.category_id,
         price: Number(product.price),
+        compare_at_price: product.compare_at_price != null ? Number(product.compare_at_price) : null,
         cost_price: product.cost_price ? Number(product.cost_price) : null,
         unit: product.unit ?? '',
         brand_id: product.brand_id ?? null,
@@ -425,6 +430,14 @@ export default function ProductFormPage() {
               error={errors.price?.message}
               required
               {...register('price', { valueAsNumber: true })}
+            />
+            <Input
+              label="Prix barré (FCFA)"
+              type="number"
+              min={0}
+              placeholder="Ancien prix avant remise"
+              error={errors.compare_at_price?.message}
+              {...register('compare_at_price', { valueAsNumber: true })}
             />
             <Input
               label="Prix d'achat (FCFA)"

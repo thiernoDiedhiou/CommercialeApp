@@ -9,9 +9,10 @@ interface Props {
   categoryId  : number | null
   searchQuery : string
   sort?       : 'name' | 'newest' | 'best_sellers'
+  onSale?     : boolean
 }
 
-export default function ProductGrid({ slug, categoryId, searchQuery, sort = 'name' }: Props) {
+export default function ProductGrid({ slug, categoryId, searchQuery, sort = 'name', onSale }: Props) {
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   const {
@@ -21,7 +22,7 @@ export default function ProductGrid({ slug, categoryId, searchQuery, sort = 'nam
     isFetchingNextPage,
     fetchNextPage,
   } = useInfiniteQuery({
-    queryKey: ['shop-products', slug, categoryId, searchQuery, sort],
+    queryKey: ['shop-products', slug, categoryId, searchQuery, sort, onSale],
     queryFn : ({ pageParam = 1 }) =>
       getShopProducts(slug, {
         category_id: categoryId ?? undefined,
@@ -29,6 +30,7 @@ export default function ProductGrid({ slug, categoryId, searchQuery, sort = 'nam
         sort,
         page       : pageParam as number,
         per_page   : 12,
+        on_sale    : onSale,
       }),
     initialPageParam  : 1,
     getNextPageParam  : (lastPage) =>

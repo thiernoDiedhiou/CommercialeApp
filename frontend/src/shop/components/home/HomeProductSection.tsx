@@ -9,6 +9,7 @@ interface Props {
   sort     : 'newest' | 'best_sellers'
   limit?   : number
   seeAllTo?: string
+  onSale?  : boolean
 }
 
 function SkeletonCard() {
@@ -26,12 +27,12 @@ function SkeletonCard() {
   )
 }
 
-export default function HomeProductSection({ slug, title, sort, limit = 10, seeAllTo }: Props) {
+export default function HomeProductSection({ slug, title, sort, limit = 10, seeAllTo, onSale }: Props) {
   const navigate = useNavigate()
 
   const { data, isLoading } = useQuery({
-    queryKey : ['shop-home-section', slug, sort],
-    queryFn  : () => getShopProducts(slug, { sort, per_page: limit }),
+    queryKey : ['shop-home-section', slug, sort, onSale],
+    queryFn  : () => getShopProducts(slug, { sort, per_page: limit, on_sale: onSale }),
     staleTime: 5 * 60 * 1000,
   })
 

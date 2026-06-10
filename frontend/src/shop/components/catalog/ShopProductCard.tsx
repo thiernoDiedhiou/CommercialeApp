@@ -39,6 +39,18 @@ function isOutOfStock(product: ShopProduct): boolean {
   return (product.stock_quantity ?? 0) <= 0
 }
 
+function getPromoPercent(product: ShopProduct): number | null {
+  if (!product.compare_at_price || product.compare_at_price <= product.price) return null
+  return Math.round((1 - product.price / product.compare_at_price) * 100)
+}
+
+function isLowStock(product: ShopProduct): boolean {
+  if (product.has_variants) return false
+  const qty = product.stock_quantity ?? 0
+  const threshold = product.alert_threshold
+  return threshold !== null && qty > 0 && qty <= threshold
+}
+
 export default function ShopProductCard({ product, slug }: Props) {
   const navigate    = useNavigate()
   const addItem     = useShopStore((s) => s.addItem)
@@ -47,6 +59,8 @@ export default function ShopProductCard({ product, slug }: Props) {
 
   const outOfStock  = isOutOfStock(product)
   const priceLabel  = getPriceLabel(product)
+  const promoPercent = getPromoPercent(product)
+  const lowStock    = isLowStock(product)
 
   const handleCardClick = () => {
     navigate(`/shop/${slug}/products/${product.id}`)
@@ -96,13 +110,20 @@ export default function ShopProductCard({ product, slug }: Props) {
               alt={product.name}
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
               <span className="text-4xl font-bold text-gray-300 select-none">
                 {product.name.charAt(0).toUpperCase()}
               </span>
+            </div>
+          )}
+
+          {/* Badge promo */}
+          {promoPercent !== null && !outOfStock && (
+            <div className="absolute top-2 left-2 rounded-lg bg-red-500 px-2 py-0.5 text-[11px] font-bold text-white shadow">
+              -{promoPercent}%
             </div>
           )}
 
@@ -133,9 +154,24 @@ export default function ShopProductCard({ product, slug }: Props) {
             <span className="text-xs text-gray-400">Vendu au {product.unit ?? 'poids'}</span>
           )}
 
-          <p className="text-base font-bold mt-1 text-[var(--shop-accent,#111827)]">
-            {priceLabel}
-          </p>
+          {/* Prix + prix barré */}
+          <div className="flex items-baseline gap-2 mt-1 flex-wrap">
+            <p className="text-base font-bold text-[var(--shop-accent,#111827)]">
+              {priceLabel}
+            </p>
+            {promoPercent !== null && product.compare_at_price !== null && (
+              <span className="text-xs text-gray-400 line-through">
+                {formatPrice(product.compare_at_price)} FCFA
+              </span>
+            )}
+          </div>
+
+          {/* Badge stock faible */}
+          {lowStock && (
+            <p className="text-xs font-medium text-orange-500">
+              Plus que {product.stock_quantity} en stock
+            </p>
+          )}
 
           {/* ── Bouton ────────────────────────────────────────────────────── */}
           <button

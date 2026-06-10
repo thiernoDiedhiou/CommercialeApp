@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getShopCategories } from '@/shop/services/shop'
@@ -10,6 +10,7 @@ export default function ShopHomePage() {
   const { slug = '' }  = useParams<{ slug: string }>()
   const navigate        = useNavigate()
   const shopConfig      = useShopStore((s) => s.shopConfig)
+  const gridRef         = useRef<HTMLDivElement>(null)
 
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
 
@@ -22,10 +23,19 @@ export default function ShopHomePage() {
 
   const categories = categoriesResult?.data ?? []
 
-  // Nom de la catégorie sélectionnée pour le titre de section
   const selectedName = selectedCategory
     ? categories.find((c) => c.id === selectedCategory)?.name ?? 'Produits'
-    : 'Nos produits'
+    : 'Tout notre catalogue'
+
+  const handleCategorySelect = (id: number | null) => {
+    setSelectedCategory(id)
+    // Scroll vers la grille uniquement quand une catégorie est sélectionnée
+    if (id !== null) {
+      setTimeout(() => {
+        gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 50)
+    }
+  }
 
   return (
     <>
@@ -42,12 +52,21 @@ export default function ShopHomePage() {
         <CategoryStrip
           categories={categories}
           selectedId={selectedCategory}
-          onSelect={setSelectedCategory}
+          onSelect={handleCategorySelect}
         />
       )}
 
       {/* ── Trust badges ──────────────────────────────────────────────────── */}
       <TrustBadges />
+
+      {/* ── Offres du moment (masquée si aucun produit en promo) ─────────── */}
+      <HomeProductSection
+        slug={slug}
+        title="🔥 Offres du moment"
+        sort="newest"
+        onSale={true}
+        seeAllTo={`/shop/${slug}/catalog`}
+      />
 
       {/* ── Nouveaux arrivages ────────────────────────────────────────────── */}
       <HomeProductSection
@@ -66,7 +85,7 @@ export default function ShopHomePage() {
       />
 
       {/* ── Grille produits ───────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div ref={gridRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 scroll-mt-20">
         <h2 className="text-xl font-semibold text-gray-900 mb-6">
           {selectedName}
         </h2>

@@ -29,6 +29,7 @@ class Product extends Model
         'sku',
         'barcode',
         'price',
+        'compare_at_price',
         'cost_price',
         'has_variants',
         'is_weight_based',
@@ -41,8 +42,9 @@ class Product extends Model
     ];
 
     protected $casts = [
-        'price'           => 'decimal:2',
-        'cost_price'      => 'decimal:2',
+        'price'            => 'decimal:2',
+        'compare_at_price' => 'decimal:2',
+        'cost_price'       => 'decimal:2',
         'has_variants'    => 'boolean',
         'is_weight_based' => 'boolean',
         'has_expiry'      => 'boolean',

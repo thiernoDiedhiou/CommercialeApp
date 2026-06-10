@@ -22,15 +22,15 @@ body {
 }
 
 @keyframes shop-marquee {
-  from { translate: 0; }
-  to   { translate: -50%; }
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
 .shop-marquee-track {
   display: inline-flex;
   white-space: nowrap;
   animation: shop-marquee 22s linear infinite;
-  will-change: translate;
+  will-change: transform;
 }
 
 /* ── Landing page — hero & CTA radial glows ──────────────────────────────── */

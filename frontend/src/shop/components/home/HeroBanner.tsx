@@ -20,8 +20,10 @@ export default function HeroBanner({ title, subtitle, bannerUrl, onCatalogClick 
             className="absolute inset-0 w-full h-full object-cover"
             loading="eager"
           />
-          {/* Gradient pour lisibilité du texte */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+          {/* Couche de base sombre uniforme pour garantir la lisibilité */}
+          <div className="absolute inset-0 bg-black/50" />
+          {/* Gradient additionnel pour la profondeur */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
         </>
       ) : (
         <div
@@ -37,7 +39,7 @@ export default function HeroBanner({ title, subtitle, bannerUrl, onCatalogClick 
       <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
         {title && (
           <h1
-            className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight max-w-3xl"
+            className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight max-w-3xl drop-shadow-[0_2px_12px_rgba(0,0,0,0.6)]"
             style={{ animation: 'fadeUp 0.6s ease both' }}
           >
             {title}
@@ -46,7 +48,7 @@ export default function HeroBanner({ title, subtitle, bannerUrl, onCatalogClick 
 
         {subtitle && (
           <p
-            className="mt-4 text-lg md:text-xl text-white/80 max-w-xl"
+            className="mt-4 text-lg md:text-xl text-white/90 max-w-xl drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]"
             style={{ animation: 'fadeUp 0.6s ease 0.1s both' }}
           >
             {subtitle}
@@ -56,14 +58,18 @@ export default function HeroBanner({ title, subtitle, bannerUrl, onCatalogClick 
         <button
           type="button"
           onClick={onCatalogClick}
-          className="mt-8 px-8 py-3 rounded-full bg-white text-gray-900 font-semibold text-base shadow-lg hover:bg-white/90 transition-colors max-w-xs w-full"
-          style={{ animation: 'fadeUp 0.6s ease 0.2s both' }}
+          className="mt-8 px-8 py-3.5 rounded-full font-semibold text-base shadow-xl transition-all duration-200 max-w-xs w-full hover:scale-105 active:scale-95 text-white"
+          style={{
+            animation   : 'fadeUp 0.6s ease 0.2s both',
+            background  : 'var(--shop-primary, #111827)',
+            boxShadow   : '0 4px 24px rgba(0,0,0,0.35)',
+          }}
         >
-          Voir le catalogue
+          Voir le catalogue →
         </button>
       </div>
 
-      {/* Animation keyframes injectée une seule fois */}
+      {/* Animation keyframes */}
       <style>{`
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(16px); }

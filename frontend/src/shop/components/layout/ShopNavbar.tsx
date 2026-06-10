@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   ShoppingCartIcon,
@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useShopStore } from '@/shop/store/shopStore'
 import { getShopCategories } from '@/shop/services/shop'
+import { getCategoryIcon } from '@/shop/utils/categoryIcons'
 
 interface Props {
   slug: string
@@ -68,12 +69,21 @@ const SOCIAL_ITEMS = [
 
 export default function ShopNavbar({ slug }: Props) {
   const navigate        = useNavigate()
+  const location        = useLocation()
   const [scrolled, setScrolled]             = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen]         = useState(false)
   const [searchValue, setSearchValue]       = useState('')
   const debounceRef    = useRef<ReturnType<typeof setTimeout>>()
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // Sync le champ de recherche avec ?search= de l'URL quand on est sur le catalogue
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const urlSearch = params.get('search') ?? ''
+    setSearchValue(urlSearch)
+    if (!urlSearch) setSearchOpen(false)
+  }, [location.search, location.pathname])
 
   const shopConfig = useShopStore((s) => s.shopConfig)
   const items      = useShopStore((s) => s.items)
@@ -110,8 +120,12 @@ export default function ShopNavbar({ slug }: Props) {
     setSearchValue(value)
     clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
+      const catalogBase = `/shop/${slug}/catalog`
       if (value.trim()) {
-        navigate(`/shop/${slug}/catalog?search=${encodeURIComponent(value.trim())}`)
+        navigate(`${catalogBase}?search=${encodeURIComponent(value.trim())}`, { replace: location.pathname.includes('/catalog') })
+      } else {
+        // Effacer la recherche : revenir au catalogue sans paramètre
+        navigate(catalogBase, { replace: true })
       }
     }, 300)
   }
@@ -234,7 +248,13 @@ export default function ShopNavbar({ slug }: Props) {
             </div>
             <button
               type="button"
-              onClick={() => { setSearchOpen(false); setSearchValue('') }}
+              onClick={() => {
+                setSearchOpen(false)
+                setSearchValue('')
+                if (location.pathname.includes('/catalog')) {
+                  navigate(`/shop/${slug}/catalog`, { replace: true })
+                }
+              }}
               className="text-sm text-gray-500 font-medium shrink-0"
             >
               Annuler
@@ -307,16 +327,20 @@ export default function ShopNavbar({ slug }: Props) {
                     Catégories
                   </span>
                 </div>
-                {categories.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    to={`/shop/${slug}/catalog?category=${cat.id}`}
-                    onClick={close}
-                    className="block px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50"
-                  >
-                    {cat.name}
-                  </Link>
-                ))}
+                {categories.map((cat) => {
+                  const CatIcon = getCategoryIcon(cat.name)
+                  return (
+                    <Link
+                      key={cat.id}
+                      to={`/shop/${slug}/catalog?category=${cat.id}`}
+                      onClick={close}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                    >
+                      <CatIcon className="h-5 w-5 shrink-0 text-gray-400" />
+                      <span className="truncate">{cat.name}</span>
+                    </Link>
+                  )
+                })}
               </>
             )}
           </nav>

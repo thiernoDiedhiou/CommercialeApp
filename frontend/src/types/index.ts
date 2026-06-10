@@ -195,6 +195,7 @@ export interface Product {
   sku: string | null
   barcode: string | null
   price: string
+  compare_at_price: string | null
   cost_price: string
   stock_quantity: number
   alert_threshold: number | null
@@ -245,6 +246,7 @@ export interface CreateProductData {
   sku?: string | null
   barcode?: string | null
   price: number
+  compare_at_price?: number | null
   cost_price?: number | null
   description?: string | null
   unit?: string | null
