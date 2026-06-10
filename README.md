@@ -18,7 +18,8 @@ Plateforme SaaS multi-tenant de gestion commerciale pour PME — Afrique de l'Ou
 | **Caisse POS** | Fullscreen, panier, variantes, pesée, paiement multi-méthode + partiel, mode hors-ligne |
 | **Ventes** | Liste paginée, détail, annulation, PDF — sous-menu **Retours/Avoirs** (`RET-YYYY-XXXXX`) |
 | **Factures** | Workflow `draft→sent→paid/overdue/cancelled`, remise, TVA, paiement partiel, PDF, envoi email auto |
-| **Produits** | CRUD, image upload, variantes, attributs, catégories, **marques**, import CSV, thumbnail dans la liste |
+| **Boutique en ligne** | Vitrine publique `/shop/{slug}` — hero personnalisable, catégories avec icônes, promotions (-X%), prix barré, stock faible, recherche URL, panier |
+| **Produits** | CRUD, image upload, variantes, attributs, catégories, **marques**, **prix barré** (`compare_at_price`), import CSV, thumbnail dans la liste |
 | **Fournisseurs** | CRUD, activation/désactivation, sélecteur pays + téléphone international |
 | **Achats** | Bons de commande `ACH-YYYY-XXXXX`, workflow draft → ordered → partial → received, réception partielle idempotente |
 | **Clients** | CRUD, historique des achats, sélecteur pays + téléphone — sous-menu **Créances** (`GREATEST(total-paid, 0)`) |
@@ -279,6 +280,12 @@ Interface accessible sur `/admin/login` — store Zustand `superAdminStore` sép
 | Groupes | `/api/v1/groups` | CRUD + permissions |
 | Paramètres | `/api/v1/settings` | GET + PUT/POST (logo + SMTP tenant) |
 
+### Routes publiques Shop (sans authentification)
+
+| Groupe | Préfixe | Endpoints |
+| --- | --- | --- |
+| Shop | `/api/v1/public/{slug}` | config, categories, products (filtrés par category_id / search / on_sale / sort), product detail |
+
 ### Routes Super Admin
 
 | Groupe | Préfixe | Endpoints |
@@ -433,3 +440,5 @@ php artisan queue:work --queue=notifications --stop-when-empty
 | CRUD Catégories & Marques | ✅ Terminée | Pages dédiées `/categories` (arbre parent/enfant, description) et `/brands` — sous-menu accordéon "Produits" dans la sidebar |
 | Filtres Lots expirants | ✅ Terminée | Recherche par nom produit + sélecteur fenêtre (7 / 15 / 30 / 60 jours) + message vide dynamique |
 | Charte graphique POS | ✅ Terminée | `applyBrandColors()` appelé au montage du POS — couleurs tenant cohérentes même après rechargement direct de la page |
+| Boutique en ligne — socle | ✅ Terminée | `PublicShopController`, `ShopConfig`, routes `/api/v1/public/{slug}/*`, `shopStore`, vitrine multi-pages |
+| Boutique en ligne — design & UX | ✅ Terminée | Hero overlay, CategoryStrip icônes sémantiques, `compare_at_price` (-X% badge + prix rayé), stock faible, "Offres du moment" auto-masquée, recherche URL-driven, menu mobile icônes |

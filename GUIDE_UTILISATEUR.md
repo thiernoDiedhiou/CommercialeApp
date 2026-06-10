@@ -19,6 +19,7 @@
 11. [Stock](#11-stock)
 12. [Rapports](#12-rapports)
 13. [Paramètres](#13-paramètres)
+14. [Boutique en ligne (vitrine publique)](#14-boutique-en-ligne-vitrine-publique)
 
 ---
 
@@ -49,6 +50,7 @@ Le menu latéral (sidebar) donne accès à tous les modules :
 | 📊 | Stock | Mouvements, alertes email, lots expirants |
 | 📈 | Rapports | Analyses et exports CSV |
 | ⚙️ | Paramètres | Configuration boutique, SMTP, utilisateurs |
+| 🌐 | Boutique en ligne | Vitrine publique accessible par vos clients — hero, promotions, catalogue, panier |
 
 Cliquer sur le **logo** en haut à gauche retourne toujours au tableau de bord.
 
@@ -293,6 +295,7 @@ La fiche détail affiche :
    - **Image** : JPEG, PNG ou WebP, max 2 Mo
 3. Définissez les prix :
    - **Prix de vente** : prix affiché au client
+   - **Prix barré** *(optionnel)* : ancien prix avant remise — si renseigné et supérieur au prix de vente, la vitrine affiche le badge "-X%" et le prix rayé
    - **Prix d'achat** : coût d'acquisition (pour le calcul de la marge)
    - **Unité** : pièce, kg, L, etc.
    - **Seuil d'alerte stock** : déclenche une alerte email quand le stock descend en dessous
@@ -777,6 +780,54 @@ Les groupes définissent ce que chaque collaborateur peut faire dans l'applicati
 2. Donnez-lui un nom
 3. Cliquez sur **Permissions** pour définir les accès
 4. Cochez les permissions souhaitées module par module
+
+---
+
+## 14. Boutique en ligne (vitrine publique)
+
+Votre boutique en ligne est accessible sans connexion à l'adresse `/shop/{votre-slug}`. Vos clients peuvent parcourir votre catalogue, rechercher des produits et les ajouter au panier depuis n'importe quel appareil.
+
+### Ce que vos clients voient
+
+| Section | Description |
+| --- | --- |
+| **Barre d'annonce** | Message promotionnel défilant (couleurs de votre charte) |
+| **Bannière hero** | Image de fond + titre + bouton "Voir le catalogue" |
+| **Catégories** | Chips avec icônes automatiques — cliquer filtre les produits |
+| **Offres du moment** | Section automatique — apparaît uniquement si vous avez des produits avec un prix barré |
+| **Nouveaux arrivages** | Derniers produits ajoutés |
+| **Meilleures ventes** | Produits les plus vendus |
+| **Catalogue complet** | Grille filtrée par catégorie ou recherche |
+
+### Configurer la vitrine
+
+Les éléments personnalisables se trouvent dans **Paramètres → Boutique** :
+
+| Champ | Effet sur la vitrine |
+| --- | --- |
+| **Nom du commerce** | Affiché dans la barre de navigation |
+| **Logo** | Affiché en haut à gauche de la navbar |
+| **Bannière hero** | Image d'arrière-plan de la section principale |
+| **Titre hero** | Titre affiché sur la bannière |
+| **Sous-titre hero** | Texte descriptif sous le titre |
+| **Message d'annonce** | Texte défilant dans la barre du haut |
+| **WhatsApp** | Bouton de contact visible sur la vitrine |
+| **Réseaux sociaux** | Icônes Facebook, Instagram, TikTok, YouTube, Twitter |
+
+> **Note :** Les couleurs de la vitrine (boutons, catégories, barre d'annonce) sont définies par l'administrateur de la plateforme dans l'onglet charte graphique. Elles ne sont pas modifiables ici.
+
+### Mettre un produit en promotion
+
+1. Ouvrez la fiche du produit (icône crayon)
+2. Renseignez le champ **Prix barré** avec l'ancien prix (ex : 5 000 FCFA)
+3. Assurez-vous que le **Prix de vente** est inférieur (ex : 3 500 FCFA)
+4. Enregistrez — la vitrine affiche automatiquement **-30%** et le prix barré ~~5 000 FCFA~~
+
+Pour retirer une promotion, effacez simplement le champ **Prix barré**.
+
+### Recherche dans la vitrine
+
+La barre de recherche en haut de la vitrine filtre les produits en temps réel. L'URL se met à jour automatiquement (`?search=...`) — vos clients peuvent partager un lien vers des résultats de recherche.
 
 ---
 
