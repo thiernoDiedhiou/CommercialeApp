@@ -87,6 +87,7 @@ export default function ShopOrdersPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['shop-orders'] })
       qc.invalidateQueries({ queryKey: ['shop-order', detailId] })
+      qc.invalidateQueries({ queryKey: ['dashboard-summary'] }) // stats temps réel
       toast.success('Statut mis à jour')
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -117,6 +118,7 @@ export default function ShopOrdersPage() {
         />
 
         <select
+          aria-label="Filtrer par statut"
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-gray-900 bg-white"
@@ -127,9 +129,9 @@ export default function ShopOrdersPage() {
           ))}
         </select>
 
-        <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)}
+        <input type="date" aria-label="Date de début" value={fromDate} onChange={(e) => setFromDate(e.target.value)}
           className="px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-gray-900" />
-        <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)}
+        <input type="date" aria-label="Date de fin" value={toDate} onChange={(e) => setToDate(e.target.value)}
           className="px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-gray-900" />
       </div>
 
@@ -217,8 +219,14 @@ function OrderRow({
   onStatus: (s: string) => void
   isUpdating: boolean
 }) {
+  const [pending, setPending] = useState<{ status: string; label: string } | null>(null)
+
   const nextStatus = NEXT_STATUS[order.status]
   const canCancel  = !['delivered', 'cancelled'].includes(order.status)
+
+  const ask = (status: string, label: string) => setPending({ status, label })
+  const confirm = () => { if (pending) { onStatus(pending.status); setPending(null) } }
+  const cancel  = () => setPending(null)
 
   return (
     <tr className="hover:bg-gray-50 transition-colors">
@@ -238,24 +246,41 @@ function OrderRow({
         {formatDateTime(order.created_at)}
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
-        <div className="flex items-center gap-1.5">
-          {nextStatus && (
-            <button type="button" disabled={isUpdating} onClick={() => onStatus(nextStatus)}
-              className="px-3 py-1 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-700 disabled:opacity-50">
-              {NEXT_LABEL[order.status]}
+        {pending ? (
+          /* ── Confirmation inline ── */
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-gray-600">{pending.label} ?</span>
+            <button type="button" disabled={isUpdating} onClick={confirm}
+              className="px-2.5 py-1 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-700 disabled:opacity-50">
+              Oui
             </button>
-          )}
-          {canCancel && (
-            <button type="button" disabled={isUpdating} onClick={() => onStatus('cancelled')}
-              className="px-3 py-1 rounded-lg border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 disabled:opacity-50">
-              Annuler
+            <button type="button" onClick={cancel}
+              className="px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50">
+              Non
             </button>
-          )}
-          <button type="button" onClick={onDetail}
-            className="px-3 py-1 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50">
-            Détail
-          </button>
-        </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            {nextStatus && (
+              <button type="button" disabled={isUpdating}
+                onClick={() => ask(nextStatus, NEXT_LABEL[order.status])}
+                className="px-3 py-1 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-700 disabled:opacity-50">
+                {NEXT_LABEL[order.status]}
+              </button>
+            )}
+            {canCancel && (
+              <button type="button" disabled={isUpdating}
+                onClick={() => ask('cancelled', 'Annuler la commande')}
+                className="px-3 py-1 rounded-lg border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 disabled:opacity-50">
+                Annuler
+              </button>
+            )}
+            <button type="button" onClick={onDetail}
+              className="px-3 py-1 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50">
+              Détail
+            </button>
+          </div>
+        )}
       </td>
     </tr>
   )
@@ -272,6 +297,12 @@ function OrderDetailModal({
   onStatus     : (s: string) => void
   isUpdating   : boolean
 }) {
+  const [pending, setPending] = useState<{ status: string; label: string } | null>(null)
+
+  const ask     = (status: string, label: string) => setPending({ status, label })
+  const confirm = () => { if (pending) { onStatus(pending.status); setPending(null) } }
+  const cancel  = () => setPending(null)
+
   if (!order) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -300,8 +331,8 @@ function OrderDetailModal({
           </div>
           <div className="flex items-center gap-2">
             <StatusBadge status={order.status} />
-            <button type="button" onClick={onClose} className="p-1 rounded-full hover:bg-gray-100 text-gray-400">
-              <XMarkIcon className="h-5 w-5" />
+            <button type="button" onClick={onClose} aria-label="Fermer" className="p-1 rounded-full hover:bg-gray-100 text-gray-400">
+              <XMarkIcon className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -348,26 +379,45 @@ function OrderDetailModal({
           </Section>
 
           {/* Actions */}
-          <div className="flex flex-wrap gap-2 pt-1">
-            {nextStatus && (
-              <button type="button" disabled={isUpdating} onClick={() => onStatus(nextStatus)}
+          {pending ? (
+            /* ── Confirmation inline ── */
+            <div className="flex items-center gap-3 pt-1 p-3 rounded-xl bg-gray-50 border border-gray-200">
+              <p className="text-sm text-gray-700 flex-1">
+                Confirmer : <span className="font-medium">{pending.label}</span> ?
+              </p>
+              <button type="button" disabled={isUpdating} onClick={confirm}
                 className="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 disabled:opacity-50">
-                {NEXT_LABEL[order.status]}
+                Oui
               </button>
-            )}
-            {canCancel && (
-              <button type="button" disabled={isUpdating} onClick={() => onStatus('cancelled')}
-                className="px-4 py-2 rounded-xl border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-50">
-                Annuler
+              <button type="button" onClick={cancel}
+                className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-100">
+                Non
               </button>
-            )}
-            {whatsappUrl && (
-              <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
-                className="px-4 py-2 rounded-xl bg-[#25D366] text-white text-sm font-medium hover:opacity-90">
-                WhatsApp
-              </a>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {nextStatus && (
+                <button type="button" disabled={isUpdating}
+                  onClick={() => ask(nextStatus, NEXT_LABEL[order.status])}
+                  className="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 disabled:opacity-50">
+                  {NEXT_LABEL[order.status]}
+                </button>
+              )}
+              {canCancel && (
+                <button type="button" disabled={isUpdating}
+                  onClick={() => ask('cancelled', 'Annuler la commande')}
+                  className="px-4 py-2 rounded-xl border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-50">
+                  Annuler
+                </button>
+              )}
+              {whatsappUrl && (
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer"
+                  className="px-4 py-2 rounded-xl bg-[#25D366] text-white text-sm font-medium hover:opacity-90">
+                  WhatsApp
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

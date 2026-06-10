@@ -8,7 +8,29 @@ export interface User {
   is_active: boolean
 }
 
+export interface SubscriptionInfo {
+  status:         'trial' | 'active' | 'expired' | 'cancelled'
+  plan_name:      string | null
+  plan_slug:      string | null
+  billing_cycle:  'trial' | 'monthly' | 'yearly' | 'lifetime'
+  ends_at:        string | null
+  days_remaining: number | null
+}
+
+export interface PlanFeatures {
+  pos:            boolean
+  invoicing:      boolean
+  purchases:      boolean
+  reports:        boolean
+  shop:           boolean
+  import_csv:     boolean
+  stock_alerts:   boolean
+  multi_user:     boolean
+  custom_domain:  boolean
+}
+
 export interface TenantInfo {
+  api_key: string
   name: string
   slug: string
   currency: string
@@ -23,11 +45,14 @@ export interface TenantInfo {
 export interface LoginResponse {
   token: string
   data: {
-    user: User
-    permissions: string[]
-    tenant: TenantInfo
+    user:         User
+    permissions:  string[]
+    tenant:       TenantInfo
+    subscription: SubscriptionInfo | null
+    plan_features: PlanFeatures | null
   }
 }
+
 
 // ── Pagination ────────────────────────────────────────────────────────────
 
@@ -44,10 +69,14 @@ export interface PaginatedResponse<T> {
 // ── Dashboard ─────────────────────────────────────────────────────────────
 
 export interface DashboardToday {
-  sales_count: number
-  revenue: number       // CA confirmé du jour
-  profit: number        // revenue − coût
-  pending_amount: number // montant dû (ventes non intégralement payées)
+  sales_count          : number
+  revenue              : number
+  profit               : number
+  pending_amount       : number
+  pos_sales_count      : number
+  pos_revenue          : number
+  shop_orders_count    : number
+  shop_orders_revenue  : number
 }
 
 export interface WeekChartPoint {
@@ -86,15 +115,25 @@ export interface ExpiringSoon {
   quantity_remaining: number
 }
 
+export interface RecentTransaction {
+  id           : number
+  reference    : string
+  customer     : string | null
+  total        : number
+  status       : string
+  channel      : 'pos' | 'shop'
+  confirmed_at : string | null
+  created_at   : string
+}
+
 export interface DashboardSummary {
   today: DashboardToday
   week_chart: WeekChartPoint[]
   top_products: TopProduct[]
   stock_alerts: StockAlert[]
   expiring_soon: ExpiringSoon[]
-  /** { cash: 150000, mobile_money: 75000, ... } */
   by_payment_method: Record<string, number>
-  recent_sales: Sale[]
+  recent_sales: RecentTransaction[]
 }
 
 // ── Categories ────────────────────────────────────────────────────────────
@@ -105,6 +144,7 @@ export interface Category {
   slug: string
   parent_id: number | null
   description: string | null
+  image_url: string | null
   products_count?: number
   children?: Category[]
 }
@@ -113,6 +153,8 @@ export interface CreateCategoryData {
   name: string
   parent_id?: number | null
   description?: string | null
+  image?: File | null
+  remove_image?: boolean
 }
 
 // ── Attributes & Values ───────────────────────────────────────────────────
@@ -153,6 +195,7 @@ export interface Product {
   sku: string | null
   barcode: string | null
   price: string
+  compare_at_price: string | null
   cost_price: string
   stock_quantity: number
   alert_threshold: number | null
@@ -203,6 +246,7 @@ export interface CreateProductData {
   sku?: string | null
   barcode?: string | null
   price: number
+  compare_at_price?: number | null
   cost_price?: number | null
   description?: string | null
   unit?: string | null
@@ -578,40 +622,43 @@ export interface SalesReport {
 }
 
 export interface ProductReportRow {
-  product_id: number
-  name: string
-  category: string | null
-  qty_sold: number
-  revenue: number
-  profit: number
+  product_id:  number
+  name:        string
+  category:    string | null
+  qty_sold:    number
+  revenue:     number
+  profit:      number
+  margin_rate: number
 }
 
 export interface ProductsReport {
   period: ReportPeriod
-  data: ProductReportRow[]
+  data:   ProductReportRow[]
 }
 
 export interface StockReportSummary {
-  total_in: number
-  total_out: number
-  total_return: number
-  total_adjustment: number
+  total_in:          number
+  total_out:         number
+  total_return:      number
+  total_adjustment:  number
+  total_stock_value: number
 }
 
 export interface StockReportRow {
-  product_id: number
-  name: string
-  total_in: number
-  total_out: number
-  total_return: number
+  product_id:       number
+  name:             string
+  total_in:         number
+  total_out:        number
+  total_return:     number
   total_adjustment: number
-  current_stock: number
+  current_stock:    number
+  stock_value:      number
 }
 
 export interface StockReport {
-  period: ReportPeriod
+  period:  ReportPeriod
   summary: StockReportSummary
-  data: StockReportRow[]
+  data:    StockReportRow[]
 }
 
 // ── Sale Returns ──────────────────────────────────────────────────────────

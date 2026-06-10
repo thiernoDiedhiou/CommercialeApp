@@ -121,43 +121,56 @@ class ReportController extends Controller
     {
         $tenantId = $this->tenantService->currentId();
         [$from, $to] = $this->parseDateRange($request);
-        $limit = min((int) $request->input('limit', 20), 100);
+        $limit = min((int) $request->input('limit', 50), 200);
 
         $rows = DB::select("
             SELECT
-                si.product_id,
+                p.id                            AS product_id,
                 p.name,
-                c.name                                                   AS category,
-                SUM(si.quantity)                                         AS qty_sold,
-                COALESCE(SUM(si.total), 0)                               AS revenue,
-                COALESCE(SUM(si.total - si.cost_price * si.quantity), 0) AS profit
-            FROM sale_items si
-            JOIN products  p ON p.id = si.product_id
-            JOIN sales     s ON s.id = si.sale_id
+                c.name                          AS category,
+                COALESCE(agg.qty_sold, 0)       AS qty_sold,
+                COALESCE(agg.revenue, 0)        AS revenue,
+                COALESCE(agg.profit, 0)         AS profit,
+                CASE WHEN COALESCE(agg.revenue, 0) > 0
+                    THEN ROUND(COALESCE(agg.profit, 0) / agg.revenue * 100, 1)
+                    ELSE 0
+                END                             AS margin_rate
+            FROM products p
             LEFT JOIN categories c ON c.id = p.category_id
-            WHERE s.tenant_id = ?
-              AND s.status    = 'confirmed'
-              AND DATE(s.confirmed_at) BETWEEN ? AND ?
-            GROUP BY si.product_id, p.name, c.name
-            ORDER BY revenue DESC
+            LEFT JOIN (
+                SELECT
+                    si.product_id,
+                    SUM(si.quantity)                                         AS qty_sold,
+                    COALESCE(SUM(si.total), 0)                               AS revenue,
+                    COALESCE(SUM(si.total - si.cost_price * si.quantity), 0) AS profit
+                FROM sale_items si
+                JOIN sales s ON s.id = si.sale_id
+                WHERE s.tenant_id = ?
+                  AND s.status    = 'confirmed'
+                  AND DATE(s.confirmed_at) BETWEEN ? AND ?
+                GROUP BY si.product_id
+            ) agg ON agg.product_id = p.id
+            WHERE p.tenant_id = ? AND p.deleted_at IS NULL
+            ORDER BY revenue DESC, p.name ASC
             LIMIT ?
-        ", [$tenantId, $from, $to, $limit]);
+        ", [$tenantId, $from, $to, $tenantId, $limit]);
 
         $data = collect($rows)->map(fn ($r) => [
-            'product_id' => (int)   $r->product_id,
-            'name'       => $r->name,
-            'category'   => $r->category,
-            'qty_sold'   => (float) $r->qty_sold,
-            'revenue'    => (float) $r->revenue,
-            'profit'     => (float) $r->profit,
+            'product_id'  => (int)   $r->product_id,
+            'name'        => $r->name,
+            'category'    => $r->category,
+            'qty_sold'    => (float) $r->qty_sold,
+            'revenue'     => (float) $r->revenue,
+            'profit'      => (float) $r->profit,
+            'margin_rate' => (float) $r->margin_rate,
         ])->all();
 
         if ($request->input('format') === 'csv') {
             return $this->csvResponse(
                 filename: "top_produits_{$from}_{$to}.csv",
-                headers:  ['Produit', 'Catégorie', 'Qté vendue', 'CA (FCFA)', 'Bénéfice (FCFA)'],
+                headers:  ['Produit', 'Catégorie', 'Qté vendue', 'CA (FCFA)', 'Bénéfice (FCFA)', 'Marge (%)'],
                 rows:     array_map(
-                    fn ($r) => [$r['name'], $r['category'] ?? '', $r['qty_sold'], $r['revenue'], $r['profit']],
+                    fn ($r) => [$r['name'], $r['category'] ?? '', $r['qty_sold'], $r['revenue'], $r['profit'], $r['margin_rate']],
                     $data
                 ),
             );
@@ -194,41 +207,59 @@ class ReportController extends Controller
             ->map(fn ($v) => (float) $v)
             ->toArray();
 
-        // Détail par produit (top 50 par activité)
+        // Valeur totale du stock actuel (indépendante de la période)
+        $stockValueRow = DB::selectOne("
+            SELECT COALESCE(SUM(stock_quantity * cost_price), 0) AS total
+            FROM products
+            WHERE tenant_id = ? AND deleted_at IS NULL
+        ", [$tenantId]);
+
+        // Tous les produits du tenant, avec leurs mouvements sur la période (LEFT JOIN)
         $rows = DB::select("
             SELECT
-                sm.product_id,
+                p.id                                                        AS product_id,
                 p.name,
-                SUM(CASE WHEN sm.type = 'in'         THEN sm.quantity ELSE 0 END) AS total_in,
-                SUM(CASE WHEN sm.type = 'out'        THEN sm.quantity ELSE 0 END) AS total_out,
-                SUM(CASE WHEN sm.type = 'return'     THEN sm.quantity ELSE 0 END) AS total_return,
-                SUM(CASE WHEN sm.type = 'adjustment' THEN sm.quantity ELSE 0 END) AS total_adjustment,
-                p.stock_quantity AS current_stock
-            FROM stock_movements sm
-            JOIN products p ON p.id = sm.product_id
-            WHERE sm.tenant_id = ?
-              AND DATE(sm.created_at) BETWEEN ? AND ?
-            GROUP BY sm.product_id, p.name, p.stock_quantity
-            ORDER BY (SUM(CASE WHEN sm.type IN ('in','out') THEN sm.quantity ELSE 0 END)) DESC
-            LIMIT 50
-        ", [$tenantId, $from, $to]);
+                COALESCE(agg.total_in, 0)                                   AS total_in,
+                COALESCE(agg.total_out, 0)                                  AS total_out,
+                COALESCE(agg.total_return, 0)                               AS total_return,
+                COALESCE(agg.total_adjustment, 0)                           AS total_adjustment,
+                p.stock_quantity                                             AS current_stock,
+                COALESCE(p.cost_price, 0) * p.stock_quantity                AS stock_value
+            FROM products p
+            LEFT JOIN (
+                SELECT
+                    sm.product_id,
+                    SUM(CASE WHEN sm.type = 'in'         THEN sm.quantity ELSE 0 END) AS total_in,
+                    SUM(CASE WHEN sm.type = 'out'        THEN sm.quantity ELSE 0 END) AS total_out,
+                    SUM(CASE WHEN sm.type = 'return'     THEN sm.quantity ELSE 0 END) AS total_return,
+                    SUM(CASE WHEN sm.type = 'adjustment' THEN sm.quantity ELSE 0 END) AS total_adjustment
+                FROM stock_movements sm
+                WHERE sm.tenant_id = ?
+                  AND DATE(sm.created_at) BETWEEN ? AND ?
+                GROUP BY sm.product_id
+            ) agg ON agg.product_id = p.id
+            WHERE p.tenant_id = ? AND p.deleted_at IS NULL
+            ORDER BY (COALESCE(agg.total_in, 0) + COALESCE(agg.total_out, 0)) DESC, p.name ASC
+            LIMIT 1000
+        ", [$tenantId, $from, $to, $tenantId]);
 
         $data = collect($rows)->map(fn ($r) => [
-            'product_id'      => (int)   $r->product_id,
-            'name'            => $r->name,
-            'total_in'        => (float) $r->total_in,
-            'total_out'       => (float) $r->total_out,
-            'total_return'    => (float) $r->total_return,
-            'total_adjustment'=> (float) $r->total_adjustment,
-            'current_stock'   => (float) $r->current_stock,
+            'product_id'       => (int)   $r->product_id,
+            'name'             => $r->name,
+            'total_in'         => (float) $r->total_in,
+            'total_out'        => (float) $r->total_out,
+            'total_return'     => (float) $r->total_return,
+            'total_adjustment' => (float) $r->total_adjustment,
+            'current_stock'    => (float) $r->current_stock,
+            'stock_value'      => (float) $r->stock_value,
         ])->all();
 
         if ($request->input('format') === 'csv') {
             return $this->csvResponse(
                 filename: "stock_{$from}_{$to}.csv",
-                headers:  ['Produit', 'Entrées', 'Sorties', 'Retours', 'Ajustements', 'Stock actuel'],
+                headers:  ['Produit', 'Entrées', 'Sorties', 'Retours', 'Ajustements', 'Stock actuel', 'Valeur (FCFA)'],
                 rows:     array_map(
-                    fn ($r) => [$r['name'], $r['total_in'], $r['total_out'], $r['total_return'], $r['total_adjustment'], $r['current_stock']],
+                    fn ($r) => [$r['name'], $r['total_in'], $r['total_out'], $r['total_return'], $r['total_adjustment'], $r['current_stock'], $r['stock_value']],
                     $data
                 ),
             );
@@ -237,10 +268,11 @@ class ReportController extends Controller
         return response()->json([
             'period'  => ['from' => $from, 'to' => $to],
             'summary' => [
-                'total_in'         => $summary['in']         ?? 0,
-                'total_out'        => $summary['out']        ?? 0,
-                'total_return'     => $summary['return']     ?? 0,
-                'total_adjustment' => $summary['adjustment'] ?? 0,
+                'total_in'          => $summary['in']         ?? 0,
+                'total_out'         => $summary['out']        ?? 0,
+                'total_return'      => $summary['return']     ?? 0,
+                'total_adjustment'  => $summary['adjustment'] ?? 0,
+                'total_stock_value' => (float) ($stockValueRow->total ?? 0),
             ],
             'data' => $data,
         ]);

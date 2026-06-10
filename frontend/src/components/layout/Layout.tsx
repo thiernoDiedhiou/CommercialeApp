@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 import ToastContainer from '@/components/ui/ToastContainer'
+import SubscriptionBanner from '@/components/ui/SubscriptionBanner'
 import { useAuthStore } from '@/store/authStore'
 import { useTenantStore } from '@/store/tenantStore'
 import apiClient from '@/lib/axios'
@@ -11,6 +12,7 @@ import type { LoginResponse } from '@/types'
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const tenant           = useAuthStore((s) => s.tenant)
+  const subscription     = useAuthStore((s) => s.subscription)
   const setAuth          = useAuthStore((s) => s.setAuth)
   const token            = useAuthStore((s) => s.token)
   const user             = useAuthStore((s) => s.user)
@@ -23,15 +25,16 @@ export default function Layout() {
     }
   }, [tenant, applyBrandColors])
 
-  // Rafraîchit silencieusement les données tenant depuis la DB à chaque montage
-  // pour que les changements Super Admin (couleurs, nom, logo…) soient pris en compte
-  // sans que le tenant ait besoin de se reconnecter.
+  // Au montage : rafraîchit les données depuis /auth/me qui retourne l'api_key.
+  // Couvre aussi la restauration après F5 (tenantApiKey non persisté).
   useEffect(() => {
     if (!token || !user) return
-    // La réponse a la forme { data: { user, permissions, tenant } }
+
     apiClient.get<{ data: LoginResponse['data'] }>('/api/v1/auth/me').then(({ data: response }) => {
-      const { user: freshUser, permissions: freshPerms, tenant: freshTenant } = response.data
-      setAuth(token, freshUser, freshPerms, freshTenant)
+      const currentToken = useAuthStore.getState().token
+      if (!currentToken) return
+      const { user: freshUser, permissions: freshPerms, tenant: freshTenant, subscription: freshSub, plan_features } = response.data
+      setAuth(currentToken, freshUser, freshPerms, freshTenant, freshSub, plan_features)
       applyBrandColors(freshTenant.primary_color, freshTenant.secondary_color)
     }).catch(() => {
       // Silencieux — le cache localStorage reste valide si l'appel échoue
@@ -49,6 +52,9 @@ export default function Layout() {
       {/* Zone principale — décalée par la sidebar sur desktop */}
       <div className="flex min-h-screen flex-col lg:pl-64">
         <Topbar onMenuToggle={() => setSidebarOpen((prev) => !prev)} />
+
+        {/* Bannière d'alerte abonnement — visible si expiration dans ≤ 7 jours */}
+        <SubscriptionBanner subscription={subscription} />
 
         <main className="flex-1 px-4 py-6 lg:px-6">
           <Outlet />

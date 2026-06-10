@@ -23,19 +23,21 @@ export interface ShopVariant {
 }
 
 export interface ShopProduct {
-  id              : number
-  name            : string
-  slug            : string
-  price           : number
-  unit            : string | null
-  has_variants    : boolean
-  is_weight_based : boolean
-  has_expiry      : boolean
-  image_url       : string | null
-  stock_quantity  : number | null
-  min_price       : number | null
-  category        : { id: number; name: string } | null
-  variants        : ShopVariant[]
+  id               : number
+  name             : string
+  slug             : string
+  price            : number
+  compare_at_price : number | null
+  unit             : string | null
+  has_variants     : boolean
+  is_weight_based  : boolean
+  has_expiry       : boolean
+  image_url        : string | null
+  stock_quantity   : number | null
+  alert_threshold  : number | null
+  min_price        : number | null
+  category         : { id: number; name: string } | null
+  variants         : ShopVariant[]
   description     ?: string
 }
 
@@ -43,6 +45,7 @@ export interface ShopCategory {
   id             : number
   name           : string
   slug           : string
+  image_url      : string | null
   products_count : number
 }
 
@@ -132,7 +135,7 @@ export async function getShopConfig(slug: string): Promise<ShopConfigResponse> {
 
 export async function getShopProducts(
   slug: string,
-  params?: { category_id?: number; search?: string; page?: number; per_page?: number },
+  params?: { category_id?: number; search?: string; page?: number; per_page?: number; sort?: 'name' | 'newest' | 'best_sellers'; on_sale?: boolean },
 ): Promise<PaginatedProducts> {
   const { data } = await shopApi.get<PaginatedProducts>(
     `/api/v1/public/${slug}/products`,

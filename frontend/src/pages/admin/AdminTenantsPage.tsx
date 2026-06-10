@@ -4,16 +4,31 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { PlusIcon, PencilSquareIcon, TrashIcon, NoSymbolIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilSquareIcon, TrashIcon, NoSymbolIcon, CheckCircleIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline'
 import {
   getAdminTenants, createAdminTenant, updateAdminTenant,
   suspendTenant, activateTenant, deleteAdminTenant,
+  getAdminPlans,
 } from '@/services/api/admin'
 import type { AdminTenant } from '@/services/api/admin'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
+import { formatDate } from '@/lib/utils'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
+
+const SUB_STATUS_COLOR: Record<string, string> = {
+  trial:     'bg-blue-900/50 text-blue-300',
+  active:    'bg-emerald-900/50 text-emerald-400',
+  expired:   'bg-red-900/50 text-red-400',
+  cancelled: 'bg-gray-800 text-gray-500',
+}
+const SUB_STATUS_LABEL: Record<string, string> = {
+  trial:     'Essai',
+  active:    'Actif',
+  expired:   'Expiré',
+  cancelled: 'Annulé',
+}
 
 const SECTOR_LABELS: Record<string, string> = {
   general:  'Commerce général',
@@ -64,10 +79,12 @@ export default function AdminTenantsPage() {
   const [search, setSearch]           = useState('')
   const [debouncedSearch, setDeb]     = useState('')
   const [statusFilter, setStatusFilter] = useState<'' | 'true' | 'false'>('')
+  const [planFilter, setPlanFilter]   = useState<number | ''>('')
   const [page, setPage]               = useState(1)
-  const [createOpen, setCreateOpen]   = useState(false)
-  const [editTarget, setEditTarget]   = useState<AdminTenant | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<AdminTenant | null>(null)
+  const [createOpen, setCreateOpen]         = useState(false)
+  const [editTarget, setEditTarget]         = useState<AdminTenant | null>(null)
+  const [deleteTarget, setDeleteTarget]     = useState<AdminTenant | null>(null)
+  const [suspendTarget, setSuspendTarget]   = useState<AdminTenant | null>(null)
 
   const debRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
@@ -76,11 +93,17 @@ export default function AdminTenantsPage() {
     return () => { if (debRef.current) clearTimeout(debRef.current) }
   }, [search])
 
+  const { data: plans = [] } = useQuery({
+    queryKey: ['admin-plans'],
+    queryFn:  getAdminPlans,
+  })
+
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-tenants', { search: debouncedSearch, statusFilter, page }],
+    queryKey: ['admin-tenants', { search: debouncedSearch, statusFilter, planFilter, page }],
     queryFn: () => getAdminTenants({
-      search: debouncedSearch || undefined,
+      search:    debouncedSearch || undefined,
       is_active: statusFilter === '' ? undefined : statusFilter === 'true',
+      plan_id:   planFilter || undefined,
       page,
     }),
     placeholderData: (prev) => prev,
@@ -122,7 +145,12 @@ export default function AdminTenantsPage() {
     <div className="p-6 space-y-5">
       {/* En-tête */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-white">Tenants</h1>
+        <div className="flex items-baseline gap-2">
+          <h1 className="text-xl font-bold text-white">Tenants</h1>
+          {data && (
+            <span className="text-sm text-gray-500">{data.total} tenant{data.total > 1 ? 's' : ''}</span>
+          )}
+        </div>
         <button
           type="button"
           onClick={() => setCreateOpen(true)}
@@ -134,17 +162,17 @@ export default function AdminTenantsPage() {
       </div>
 
       {/* Filtres */}
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Rechercher un tenant…"
-          className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500 transition"
+          className="flex-1 min-w-48 rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-500 transition"
         />
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as '' | 'true' | 'false')}
+          onChange={(e) => { setStatusFilter(e.target.value as '' | 'true' | 'false'); setPage(1) }}
           aria-label="Filtrer par statut"
           className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500 transition"
         >
@@ -152,16 +180,27 @@ export default function AdminTenantsPage() {
           <option value="true">Actifs</option>
           <option value="false">Suspendus</option>
         </select>
+        <select
+          value={planFilter}
+          onChange={(e) => { setPlanFilter(e.target.value ? Number(e.target.value) : ''); setPage(1) }}
+          aria-label="Filtrer par plan"
+          className="rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white outline-none focus:border-indigo-500 transition"
+        >
+          <option value="">Tous les plans</option>
+          {plans.filter(p => p.is_active).map(p => (
+            <option key={p.id} value={p.id}>{p.name}</option>
+          ))}
+        </select>
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-gray-800 overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="rounded-xl border border-gray-800 overflow-x-auto">
+        <table className="min-w-max w-full text-sm">
           <thead className="bg-gray-900 text-xs font-medium text-gray-400 uppercase tracking-wide">
             <tr>
               <th className="px-4 py-3 text-left">Nom</th>
               <th className="px-4 py-3 text-left hidden sm:table-cell">Secteur</th>
-              <th className="px-4 py-3 text-left hidden md:table-cell">Devise</th>
+              <th className="px-4 py-3 text-left hidden md:table-cell">Plan</th>
               <th className="px-4 py-3 text-left hidden lg:table-cell">Utilisateurs</th>
               <th className="px-4 py-3 text-left hidden lg:table-cell">Créé le</th>
               <th className="px-4 py-3 text-center">Statut</th>
@@ -202,14 +241,34 @@ export default function AdminTenantsPage() {
                     <td className="px-4 py-3 hidden sm:table-cell text-gray-400">
                       {SECTOR_LABELS[tenant.sector] ?? tenant.sector}
                     </td>
-                    <td className="px-4 py-3 hidden md:table-cell text-gray-400 font-mono text-xs">
-                      {tenant.currency}
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      {tenant.subscription ? (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-gray-200">
+                            {tenant.subscription.plan_name ?? '—'}
+                          </p>
+                          <span className={`inline-flex text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                            SUB_STATUS_COLOR[tenant.subscription.status] ?? 'bg-gray-800 text-gray-500'
+                          }`}>
+                            {SUB_STATUS_LABEL[tenant.subscription.status] ?? tenant.subscription.status}
+                            {tenant.subscription.days_remaining !== null &&
+                             tenant.subscription.days_remaining !== undefined &&
+                             tenant.subscription.days_remaining <= 7 && (
+                              <span className="ml-1 opacity-70">
+                                · {tenant.subscription.days_remaining}j
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-600 italic">Aucun</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell text-gray-400">
                       {tenant.users_count}
                     </td>
                     <td className="px-4 py-3 hidden lg:table-cell text-gray-400 text-xs">
-                      {tenant.created_at}
+                      {formatDate(tenant.created_at)}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -222,25 +281,37 @@ export default function AdminTenantsPage() {
                     </td>
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
-                        <button type="button" onClick={() => setEditTarget(tenant)}
-                          className="rounded p-1.5 text-gray-500 hover:bg-gray-800 hover:text-gray-200 transition" title="Modifier rapide">
+                        {/* Boutique */}
+                        <ActionButton
+                          label="Boutique"
+                          onClick={() => window.open(
+                            tenant.custom_domain
+                              ? `https://${tenant.custom_domain}`
+                              : `${window.location.origin}/shop/${tenant.slug}`,
+                            '_blank', 'noopener,noreferrer'
+                          )}
+                          className="hover:bg-indigo-900/30 hover:text-indigo-400"
+                        >
+                          <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                        </ActionButton>
+                        {/* Modifier */}
+                        <ActionButton label="Modifier" onClick={() => setEditTarget(tenant)} className="hover:bg-gray-800 hover:text-gray-200">
                           <PencilSquareIcon className="h-4 w-4" />
-                        </button>
+                        </ActionButton>
+                        {/* Suspendre / Activer */}
                         {tenant.is_active ? (
-                          <button type="button" onClick={() => suspendMutation.mutate(tenant.id)}
-                            className="rounded p-1.5 text-gray-500 hover:bg-orange-900/30 hover:text-orange-400 transition" title="Suspendre">
+                          <ActionButton label="Suspendre" onClick={() => setSuspendTarget(tenant)} className="hover:bg-orange-900/30 hover:text-orange-400">
                             <NoSymbolIcon className="h-4 w-4" />
-                          </button>
+                          </ActionButton>
                         ) : (
-                          <button type="button" onClick={() => activateMutation.mutate(tenant.id)}
-                            className="rounded p-1.5 text-gray-500 hover:bg-emerald-900/30 hover:text-emerald-400 transition" title="Activer">
+                          <ActionButton label="Activer" onClick={() => activateMutation.mutate(tenant.id)} className="hover:bg-emerald-900/30 hover:text-emerald-400">
                             <CheckCircleIcon className="h-4 w-4" />
-                          </button>
+                          </ActionButton>
                         )}
-                        <button type="button" onClick={() => setDeleteTarget(tenant)}
-                          className="rounded p-1.5 text-gray-500 hover:bg-red-900/30 hover:text-red-400 transition" title="Supprimer">
+                        {/* Supprimer */}
+                        <ActionButton label="Supprimer" onClick={() => setDeleteTarget(tenant)} className="hover:bg-red-900/30 hover:text-red-400">
                           <TrashIcon className="h-4 w-4" />
-                        </button>
+                        </ActionButton>
                       </div>
                     </td>
                   </tr>
@@ -307,6 +378,33 @@ export default function AdminTenantsPage() {
                 disabled={deleteMutation.isPending}
                 className="px-4 py-2 rounded-lg bg-red-600 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-60 transition">
                 {deleteMutation.isPending ? 'Suppression…' : 'Supprimer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal confirmation suspension */}
+      {suspendTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60">
+          <div className="w-full max-w-sm rounded-xl bg-gray-900 border border-gray-800 p-6 space-y-4">
+            <h2 className="text-base font-semibold text-white">Suspendre le tenant</h2>
+            <p className="text-sm text-gray-400">
+              Suspendre <span className="font-semibold text-white">«{suspendTarget.name}»</span> ?
+              <span className="mt-2 block text-xs text-gray-500">
+                Le tenant ne pourra plus se connecter. Vous pourrez le réactiver à tout moment.
+              </span>
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button type="button" onClick={() => setSuspendTarget(null)}
+                className="px-4 py-2 rounded-lg border border-gray-700 text-sm text-gray-300 hover:border-gray-500 transition">
+                Annuler
+              </button>
+              <button type="button"
+                onClick={() => { suspendMutation.mutate(suspendTarget.id); setSuspendTarget(null) }}
+                disabled={suspendMutation.isPending}
+                className="px-4 py-2 rounded-lg bg-orange-600 text-sm font-medium text-white hover:bg-orange-500 disabled:opacity-60 transition">
+                {suspendMutation.isPending ? 'Suspension…' : 'Suspendre'}
               </button>
             </div>
           </div>
@@ -493,6 +591,28 @@ function AdminField({ label, error, children }: { label: string; error?: string;
       <label className="block text-xs font-medium text-gray-400 mb-1">{label}</label>
       {children}
       {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+    </div>
+  )
+}
+
+function ActionButton({ label, onClick, className, children }: {
+  label: string
+  onClick: () => void
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="relative group/tip">
+      <button
+        type="button"
+        onClick={onClick}
+        className={`rounded p-1.5 text-gray-500 transition ${className ?? ''}`}
+      >
+        {children}
+      </button>
+      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 whitespace-nowrap rounded bg-gray-700 px-2 py-0.5 text-xs text-white opacity-0 group-hover/tip:opacity-100 transition-opacity z-10">
+        {label}
+      </span>
     </div>
   )
 }

@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getShopProduct } from '@/shop/services/shop'
 import { useShopStore } from '@/shop/store/shopStore'
-import { ProductGallery, VariantPicker, AddToCartBar } from '@/shop/components/product'
-import { SkeletonGrid } from '@/shop/components/shared'
+import { ProductGallery, VariantPicker, AddToCartBar, SimilarProducts } from '@/shop/components/product'
+import { Breadcrumb, SkeletonGrid } from '@/shop/components/shared'
 
 export default function ShopProductDetailPage() {
   const { slug = '', productId = '' } = useParams<{ slug: string; productId: string }>()
@@ -30,6 +30,16 @@ export default function ShopProductDetailPage() {
     if (!selectedVariantId)   return null
     return product.variants.find((v) => v.id === selectedVariantId)?.stock_quantity ?? 0
   })()
+
+  const promoPercent = (() => {
+    if (!product?.compare_at_price || product.compare_at_price <= product.price) return null
+    return Math.round((1 - product.price / product.compare_at_price) * 100)
+  })()
+
+  const lowStock = !product?.has_variants
+    && product?.alert_threshold !== null
+    && (product?.stock_quantity ?? 0) > 0
+    && (product?.stock_quantity ?? 0) <= (product?.alert_threshold ?? 0)
 
   const handleAddToCart = () => {
     if (!product) return
@@ -74,17 +84,15 @@ export default function ShopProductDetailPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
       {/* ── Breadcrumb ───────────────────────────────────────────────────── */}
-      <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-        <Link to={`/shop/${slug}`} className="hover:text-gray-600 transition-colors">
-          Accueil
-        </Link>
-        <span>/</span>
-        <Link to={`/shop/${slug}/catalog`} className="hover:text-gray-600 transition-colors">
-          Catalogue
-        </Link>
-        <span>/</span>
-        <span className="text-gray-700 truncate max-w-[200px]">{product.name}</span>
-      </nav>
+      <Breadcrumb items={[
+        { label: 'Accueil',   to: `/shop/${slug}` },
+        { label: 'Catalogue', to: `/shop/${slug}/catalog` },
+        ...(product.category ? [{
+          label: product.category.name,
+          to   : `/shop/${slug}/catalog?category=${product.category.id}`,
+        }] : []),
+        { label: product.name },
+      ]} />
 
       {/* ── Contenu (2 colonnes desktop) ─────────────────────────────────── */}
       <div className="lg:grid lg:grid-cols-2 lg:gap-12 flex flex-col gap-6">
@@ -105,10 +113,17 @@ export default function ShopProductDetailPage() {
               </span>
             )}
 
-            {/* Nom */}
-            <h1 className="text-2xl font-bold text-gray-900 leading-tight">
-              {product.name}
-            </h1>
+            {/* Nom + badge promo */}
+            <div className="flex items-start gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+                {product.name}
+              </h1>
+              {promoPercent !== null && (
+                <span className="shrink-0 rounded-lg bg-red-500 px-2.5 py-1 text-sm font-bold text-white shadow">
+                  -{promoPercent}%
+                </span>
+              )}
+            </div>
 
             {/* Description */}
             {product.description && (
@@ -128,13 +143,33 @@ export default function ShopProductDetailPage() {
               />
             )}
 
+            {/* Prix + prix barré */}
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <span className="text-2xl font-bold text-[var(--shop-accent,#111827)]">
+                {product.price.toLocaleString('fr-FR')} FCFA
+                {product.is_weight_based && ` / ${product.unit ?? 'unité'}`}
+              </span>
+              {promoPercent !== null && product.compare_at_price !== null && (
+                <span className="text-base text-gray-400 line-through">
+                  {product.compare_at_price.toLocaleString('fr-FR')} FCFA
+                </span>
+              )}
+            </div>
+
             {/* Badge stock */}
             {resolvedStock !== null && (
               resolvedStock > 0 ? (
-                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
-                  <span className="w-2 h-2 rounded-full bg-green-500" />
-                  En stock
-                </span>
+                <div className="flex flex-col gap-1">
+                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
+                    <span className="w-2 h-2 rounded-full bg-green-500" />
+                    En stock
+                  </span>
+                  {lowStock && (
+                    <span className="text-sm font-medium text-orange-500">
+                      Plus que {product.stock_quantity} en stock — commandez vite !
+                    </span>
+                  )}
+                </div>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600">
                   <span className="w-2 h-2 rounded-full bg-red-500" />
@@ -162,6 +197,15 @@ export default function ShopProductDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Produits similaires ──────────────────────────────────────────── */}
+      {product.category && (
+        <SimilarProducts
+          slug={slug}
+          categoryId={product.category.id}
+          currentProductId={product.id}
+        />
+      )}
     </div>
   )
 }

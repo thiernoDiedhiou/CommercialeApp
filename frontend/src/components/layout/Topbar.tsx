@@ -1,6 +1,6 @@
 import {
   Bars3Icon,
-  ArrowRightOnRectangleIcon,
+  ArrowRightStartOnRectangleIcon,
   ChevronDownIcon,
 } from '@heroicons/react/24/outline'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
@@ -20,7 +20,6 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
   const logoutMutation = useMutation({
     mutationFn: () => apiClient.post('/api/v1/auth/logout'),
     onSettled: () => {
-      // onSettled garantit le nettoyage même si le serveur est injoignable
       logout()
       window.location.href = '/login'
     },
@@ -68,7 +67,7 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
                 'disabled:opacity-60 disabled:cursor-not-allowed',
               )}
             >
-              <ArrowRightOnRectangleIcon className="h-4 w-4" />
+              <ArrowRightStartOnRectangleIcon className="h-4 w-4" />
               {logoutMutation.isPending ? 'Déconnexion...' : 'Se déconnecter'}
             </button>
           </MenuItem>

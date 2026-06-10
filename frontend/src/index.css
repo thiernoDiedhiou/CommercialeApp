@@ -11,3 +11,42 @@
 body {
   @apply bg-gray-50 text-gray-900 antialiased;
 }
+
+/* ── Shop AnnouncementBar ──────────────────────────────────────────────────── */
+.shop-announcement-bg {
+  background: linear-gradient(
+    90deg,
+    var(--shop-primary, #111827) 0%,
+    color-mix(in srgb, var(--shop-primary, #111827) 85%, black) 100%
+  );
+}
+
+@keyframes shop-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.shop-marquee-track {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: shop-marquee 22s linear infinite;
+  will-change: transform;
+}
+
+/* ── Landing page — hero & CTA radial glows ──────────────────────────────── */
+.hero-bg-glow {
+  background: radial-gradient(
+    ellipse 80% 45% at 50% -5%,
+    rgba(36, 101, 237, 0.07) 0%,
+    transparent 100%
+  );
+}
+
+.cta-bg-glow {
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 50%,
+    rgba(36, 101, 237, 0.25) 0%,
+    rgba(110, 51, 216, 0.12) 50%,
+    transparent 100%
+  );
+}

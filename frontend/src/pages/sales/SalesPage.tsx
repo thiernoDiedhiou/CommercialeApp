@@ -19,7 +19,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Select } from '@/components/ui/Input'
 import CanDo from '@/components/ui/CanDo'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDateTime } from '@/lib/utils'
 import type { Sale } from '@/types'
 
 const STATUS_VARIANT: Record<Sale['status'], 'success' | 'default' | 'danger'> = {
@@ -66,6 +66,7 @@ export default function SalesPage() {
     onSuccess: (_, id) => {
       qc.invalidateQueries({ queryKey: ['sales'] })
       qc.invalidateQueries({ queryKey: ['sale', id] })
+      qc.invalidateQueries({ queryKey: ['dashboard-summary'] })
       setCancelTarget(null)
       toast.success('Vente annulée.')
     },
@@ -103,7 +104,7 @@ export default function SalesPage() {
       header: 'Date',
       render: (s) => (
         <span className="text-sm text-gray-600">
-          {formatDate(s.confirmed_at ?? s.created_at)}
+          {formatDateTime(s.confirmed_at ?? s.created_at)}
         </span>
       ),
     },

@@ -1,27 +1,34 @@
 import { Link } from 'react-router-dom'
 import Badge from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
-import type { Sale } from '@/types'
+import type { RecentTransaction } from '@/types'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 
-const STATUS_VARIANT: Record<Sale['status'], 'success' | 'warning' | 'danger'> = {
-  confirmed: 'success',
-  draft: 'warning',
-  cancelled: 'danger',
+const STATUS_VARIANT: Record<string, 'success' | 'warning' | 'danger' | 'info'> = {
+  confirmed : 'success',
+  draft     : 'warning',
+  cancelled : 'danger',
+  preparing : 'info',
+  shipped   : 'info',
+  delivered : 'success',
 }
 
-const STATUS_LABEL: Record<Sale['status'], string> = {
-  confirmed: 'Confirmée',
-  draft: 'Brouillon',
-  cancelled: 'Annulée',
+const STATUS_LABEL: Record<string, string> = {
+  confirmed : 'Confirmée',
+  draft     : 'Brouillon',
+  cancelled : 'Annulée',
+  preparing : 'En prép.',
+  shipped   : 'Expédiée',
+  delivered : 'Livrée',
 }
 
-interface RecentSalesListProps {
-  sales: Sale[]
+interface Props {
+  sales   : RecentTransaction[]
   loading?: boolean
 }
 
-export default function RecentSalesList({ sales, loading }: RecentSalesListProps) {
+
+export default function RecentSalesList({ sales, loading }: Props) {
   if (loading) {
     return (
       <div className="space-y-3">
@@ -47,25 +54,41 @@ export default function RecentSalesList({ sales, loading }: RecentSalesListProps
 
   return (
     <ul className="divide-y divide-gray-50">
-      {sales.map((sale) => (
-        <li key={sale.id}>
-          <Link
-            to={`/sales/${sale.id}`}
-            className="flex items-center justify-between py-3 transition-colors hover:bg-gray-50"
-          >
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-900">{sale.reference}</p>
-              <p className="text-xs text-gray-400">{formatDateTime(sale.created_at)}</p>
-            </div>
-            <div className="ml-3 flex shrink-0 items-center gap-3">
-              <span className="text-sm font-medium text-gray-900">
-                {formatCurrency(sale.total)}
-              </span>
-              <Badge variant={STATUS_VARIANT[sale.status]}>{STATUS_LABEL[sale.status]}</Badge>
-            </div>
-          </Link>
-        </li>
-      ))}
+      {sales.map((sale) => {
+        const href    = sale.channel === 'shop' ? '/shop-orders' : `/sales/${sale.id}`
+        const variant = STATUS_VARIANT[sale.status] ?? 'info'
+        const label   = STATUS_LABEL[sale.status]  ?? sale.status
+
+        return (
+          <li key={`${sale.channel}-${sale.id}`}>
+            <Link
+              to={href}
+              className="flex items-center justify-between py-3 transition-colors hover:bg-gray-50"
+            >
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-gray-900">{sale.reference}</p>
+                  {sale.channel === 'shop' && (
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">
+                      En ligne
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400">
+                  {sale.customer && <span className="mr-1">{sale.customer} ·</span>}
+                  {formatDateTime(sale.created_at)}
+                </p>
+              </div>
+              <div className="ml-3 flex shrink-0 items-center gap-3">
+                <span className="text-sm font-medium text-gray-900">
+                  {formatCurrency(sale.total)}
+                </span>
+                <Badge variant={variant}>{label}</Badge>
+              </div>
+            </Link>
+          </li>
+        )
+      })}
     </ul>
   )
 }

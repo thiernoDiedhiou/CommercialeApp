@@ -3,7 +3,7 @@ import { Outlet, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getShopConfig } from '@/shop/services/shop'
 import { useShopStore } from '@/shop/store/shopStore'
-import { WhatsAppFAB } from '@/shop/components/shared'
+import { WhatsAppFAB, ScrollToTopButton } from '@/shop/components/shared'
 import { AnnouncementBar } from '@/shop/components/home'
 import { CartDrawer } from '@/shop/components/cart'
 import ShopNavbar from './ShopNavbar'
@@ -19,6 +19,14 @@ export default function ShopLayout() {
     staleTime: 5 * 60 * 1000,
     enabled  : !!slug,
   })
+
+  // Empêche le scroll horizontal sur toutes les pages du shop
+  useEffect(() => {
+    const html = document.documentElement
+    const prev = html.style.overflowX
+    html.style.overflowX = 'hidden'
+    return () => { html.style.overflowX = prev }
+  }, [])
 
   // Applique la config au store + meta tags dès réception
   useEffect(() => {
@@ -48,15 +56,17 @@ export default function ShopLayout() {
     themeColor.content = data.theme.primary_color
 
     // <link rel="icon"> — favicon prioritaire, sinon logo comme fallback
+    // index.html injecte plusieurs favicons DiDi Sphere (PNG 48px, PNG 36px, SVG).
+    // Le navigateur préfère le SVG — il faut tous les supprimer avant d'injecter
+    // celui du tenant. On ne supprime que si on a un remplacement (évite l'onglet vide).
     const faviconUrl = data.shop.favicon_url ?? data.shop.logo_url
     if (faviconUrl) {
-      let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
-      if (!link) {
-        link = document.createElement('link')
-        link.rel = 'icon'
-        document.head.appendChild(link)
-      }
+      document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]')
+        .forEach(el => el.remove())
+      const link = document.createElement('link')
+      link.rel  = 'icon'
       link.href = faviconUrl
+      document.head.appendChild(link)
     }
   }, [data, setConfig])
 
@@ -75,7 +85,11 @@ export default function ShopLayout() {
   return (
     <div className="min-h-screen bg-[#FAFAFA]">
       {shopConfig?.announcement_bar_active && shopConfig.announcement_bar && (
-        <AnnouncementBar text={shopConfig.announcement_bar} />
+        <AnnouncementBar
+          text={shopConfig.announcement_bar}
+          phone={shopConfig.whatsapp_number}
+          marquee={(shopConfig.announcement_bar?.length ?? 0) > 60}
+        />
       )}
 
       <ShopNavbar slug={slug} />
@@ -85,6 +99,7 @@ export default function ShopLayout() {
       <ShopFooter slug={slug} />
 
       <WhatsAppFAB number={shopConfig?.whatsapp_number ?? null} />
+      <ScrollToTopButton />
       <CartDrawer />
     </div>
   )

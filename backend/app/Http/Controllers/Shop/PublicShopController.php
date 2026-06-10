@@ -20,6 +20,41 @@ class PublicShopController extends Controller
 {
     public function __construct(private readonly TenantService $tenantService) {}
 
+    // ── GET /api/v1/public/resolve-domain?domain=shop.client.sn ─────────────
+
+    public function resolveByDomain(Request $request): JsonResponse
+    {
+        $domain = $request->query('domain') ?? $request->getHost();
+        $slug   = $request->query('slug');
+
+        // Option 2 — domaine custom (ex: ets18safar.sn)
+        $tenant = Tenant::where('custom_domain', $domain)
+            ->where('is_active', true)
+            ->first();
+
+        // Option 1 — sous-domaine (ex: ets18safar.votreapp.sn) : slug fourni par le frontend
+        if (! $tenant && $slug) {
+            $tenant = Tenant::where('slug', $slug)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        if (! $tenant) {
+            return response()->json([
+                'message' => 'Aucun tenant associé à ce domaine.',
+                'code'    => 'DOMAIN_NOT_FOUND',
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => [
+                'slug'    => $tenant->slug,
+                'api_key' => $tenant->api_key,
+                'name'    => $tenant->name,
+            ],
+        ]);
+    }
+
     // ── GET /api/v1/public/{slug}/config ──────────────────────────────────────
 
     public function config(Request $request): JsonResponse
@@ -48,12 +83,15 @@ class PublicShopController extends Controller
                 'facebook_url'             => $shop->facebook_url,
                 'instagram_url'            => $shop->instagram_url,
                 'twitter_url'              => $shop->twitter_url,
+                'tiktok_url'               => $shop->tiktok_url,
+                'youtube_url'              => $shop->youtube_url,
                 'address'                  => $shop->address,
                 'opening_hours'            => $shop->opening_hours,
                 'footer_text'              => $shop->footer_text,
                 'minimum_order'            => (float) $shop->minimum_order,
                 'payment_methods'          => $shop->payment_methods ?? ['cod', 'whatsapp'],
                 'delivery_zones'           => $shop->delivery_zones ?? [],
+                'trust_badges'             => $shop->trust_badges ?? null,
             ],
             'theme' => [
                 'primary_color'   => $primary,
@@ -73,6 +111,11 @@ class PublicShopController extends Controller
     {
         $perPage = min((int) $request->input('per_page', 12), 48);
 
+        $allowedSorts = ['name', 'newest', 'best_sellers'];
+        $sort         = in_array($request->input('sort'), $allowedSorts)
+            ? $request->input('sort')
+            : 'name';
+
         $products = Product::with(['category', 'activeVariants'])
             ->where('is_active', true)
             ->where('is_for_sale', true)
@@ -82,7 +125,18 @@ class PublicShopController extends Controller
             ->when($request->filled('search'), fn($q) =>
                 $q->where('name', 'like', '%' . $request->search . '%')
             )
-            ->orderBy('name')
+            ->when($request->boolean('on_sale'), fn($q) =>
+                $q->whereNotNull('compare_at_price')->whereColumn('compare_at_price', '>', 'price')
+            )
+            ->when($sort === 'newest', fn($q) =>
+                $q->orderBy('created_at', 'desc')
+            )
+            ->when($sort === 'best_sellers', fn($q) =>
+                $q->withCount('saleItems')->orderByDesc('sale_items_count')
+            )
+            ->when($sort === 'name', fn($q) =>
+                $q->orderBy('name')
+            )
             ->paginate($perPage);
 
         $collection = $products->getCollection()->map(fn($p) => $this->formatProduct($p));
@@ -119,6 +173,7 @@ class PublicShopController extends Controller
             'id'             => $c->id,
             'name'           => $c->name,
             'slug'           => $c->slug,
+            'image_url'      => $c->image_url,
             'products_count' => $c->products_count,
         ]);
 
@@ -317,17 +372,19 @@ class PublicShopController extends Controller
         }
 
         $data = [
-            'id'              => $product->id,
-            'name'            => $product->name,
-            'slug'            => $product->slug,
-            'price'           => (float) $product->price,
-            'unit'            => $product->unit,
-            'has_variants'    => $product->has_variants,
-            'is_weight_based' => $product->is_weight_based,
-            'has_expiry'      => $product->has_expiry,
-            'image_url'       => $product->image_url,
-            'stock_quantity'  => $product->has_variants ? null : (float) $product->stock_quantity,
-            'min_price'       => $minPrice,
+            'id'               => $product->id,
+            'name'             => $product->name,
+            'slug'             => $product->slug,
+            'price'            => (float) $product->price,
+            'compare_at_price' => $product->compare_at_price !== null ? (float) $product->compare_at_price : null,
+            'unit'             => $product->unit,
+            'has_variants'     => $product->has_variants,
+            'is_weight_based'  => $product->is_weight_based,
+            'has_expiry'       => $product->has_expiry,
+            'image_url'        => $product->image_url,
+            'stock_quantity'   => $product->has_variants ? null : (float) $product->stock_quantity,
+            'alert_threshold'  => $product->has_variants ? null : $product->alert_threshold,
+            'min_price'        => $minPrice,
             'category'        => $product->category ? [
                 'id'   => $product->category->id,
                 'name' => $product->category->name,

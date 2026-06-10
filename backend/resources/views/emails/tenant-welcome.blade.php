@@ -3,7 +3,8 @@
     $secondaryColor = $tenant->secondary_color ?? $primaryColor;
     $tenantName     = $tenant->name;
     $logoUrl        = null; // logo pas encore disponible à la création
-    $appUrl         = rtrim(config('app.url'), '/');
+    // Utilise le slug dans l'URL (non sensible) plutôt que l'api_key
+    $loginUrl = rtrim(config('saas.frontend_url'), '/') . '/login?tenant=' . urlencode($tenant->slug);
 @endphp
 
 @extends('emails.layout')
@@ -38,9 +39,9 @@
     </div>
 
     <p style="text-align:center;margin:24px 0;">
-        <a href="{{ $appUrl }}/login"
+        <a href="{{ $loginUrl }}"
            style="display:inline-block;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;background-color:{{ $primaryColor }};color:#ffffff;">
-            Accéder à mon espace
+            Accéder à mon espace →
         </a>
     </p>
 

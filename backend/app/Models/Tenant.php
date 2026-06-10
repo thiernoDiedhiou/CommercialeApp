@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -15,6 +16,7 @@ class Tenant extends Model
     protected $fillable = [
         'name',
         'slug',
+        'custom_domain',
         'api_key',
         'sector',
         'currency',
@@ -57,9 +59,23 @@ class Tenant extends Model
         return $this->hasMany(User::class);
     }
 
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(TenantSubscription::class)->orderByDesc('created_at');
+    }
+
+    /** Abonnement actif ou en essai (le plus récent). */
+    public function activeSubscription(): HasOne
+    {
+        return $this->hasOne(TenantSubscription::class)
+            ->whereIn('status', ['trial', 'active'])
+            ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', now()))
+            ->latestOfMany();
+    }
+
     // ─── Scopes ───────────────────────────────────────────────────────────────
 
-    public function scopeActive($query)
+    public function scopeActive(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('is_active', true);
     }

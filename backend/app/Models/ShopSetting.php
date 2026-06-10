@@ -27,11 +27,14 @@ class ShopSetting extends Model
         'facebook_url',
         'instagram_url',
         'twitter_url',
+        'tiktok_url',
+        'youtube_url',
         'address',
         'opening_hours',
         'minimum_order',
         'delivery_zones',
         'payment_methods',
+        'trust_badges',
         'announcement_bar',
         'announcement_bar_active',
         'footer_text',
@@ -46,6 +49,7 @@ class ShopSetting extends Model
         'minimum_order'           => 'decimal:2',
         'delivery_zones'          => 'array',
         'payment_methods'         => 'array',
+        'trust_badges'            => 'array',
     ];
 
     protected $appends = ['hero_banner_url'];

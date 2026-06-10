@@ -4,11 +4,13 @@ namespace App\Services;
 
 use App\Mail\InvoiceSentMail;
 use App\Mail\StockAlertMail;
+use App\Mail\SubscriptionExpiringMail;
 use App\Mail\TenantWelcomeMail;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Tenant;
+use App\Models\TenantSubscription;
 use App\Models\User;
 use Illuminate\Contracts\Mail\Mailer as MailerContract;
 use Illuminate\Mail\Mailer;
@@ -143,6 +145,39 @@ class MailService
             Log::channel('daily')->error('TenantWelcome mail failed', [
                 'tenant_id' => $tenant->id,
                 'error'     => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Notifie un utilisateur que l'abonnement de son tenant expire bientôt.
+     * Toujours via le SMTP global — indépendant du SMTP tenant.
+     * Appelé depuis ExpireSubscriptions command (J-7 et J-1).
+     */
+    public function sendSubscriptionExpiring(
+        Tenant $tenant,
+        User $recipient,
+        int $daysLeft,
+    ): void {
+        if (empty($recipient->email)) {
+            return;
+        }
+
+        $subscription = $tenant->activeSubscription()->with('plan')->first();
+
+        if (! $subscription) {
+            return;
+        }
+
+        try {
+            Mail::to($recipient->email, $recipient->name) // @phpstan-ignore-line
+                ->send(new SubscriptionExpiringMail($tenant, $recipient, $subscription, $daysLeft));
+        } catch (\Throwable $e) {
+            Log::channel('daily')->error('SubscriptionExpiring mail failed', [
+                'tenant_id'    => $tenant->id,
+                'recipient_id' => $recipient->id,
+                'days_left'    => $daysLeft,
+                'error'        => $e->getMessage(),
             ]);
         }
     }

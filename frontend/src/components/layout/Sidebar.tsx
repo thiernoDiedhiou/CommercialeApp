@@ -20,9 +20,21 @@ function findParentPath(pathname: string): string | null {
 function SidebarContent({ onClose }: SidebarContentProps) {
   const permissions  = useAuthStore((s) => s.permissions)
   const tenant       = useAuthStore((s) => s.tenant)
+  const planFeatures = useAuthStore((s) => s.planFeatures)
   const location     = useLocation()
   const homePath     = useHomePath()
-  const visibleItems = NAV_ITEMS.filter((item) => permissions.includes(item.permission))
+
+  // Vérifie si une feature est disponible dans le plan actuel.
+  // Si planFeatures est null (abonnement inconnu), on laisse passer — l'API bloquera si besoin.
+  const hasFeature = (feature?: string): boolean => {
+    if (!feature || !planFeatures) return true
+    const key = feature as keyof typeof planFeatures
+    return planFeatures[key] === true
+  }
+
+  const visibleItems = NAV_ITEMS.filter((item) =>
+    permissions.includes(item.permission)
+  )
 
   const [expandedPath, setExpandedPath] = useState<string | null>(
     () => findParentPath(location.pathname),
@@ -57,9 +69,29 @@ function SidebarContent({ onClose }: SidebarContentProps) {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
         {visibleItems.map((item) => {
-          const visibleChildren = item.children?.filter((c) => permissions.includes(c.permission)) ?? []
-          const hasChildren     = visibleChildren.length > 0
-          const isExpanded      = hasChildren && expandedPath === item.path
+          const featureAllowed  = hasFeature(item.feature)
+          const visibleChildren = item.children?.filter((c) =>
+            permissions.includes(c.permission)
+          ) ?? []
+          const hasChildren = visibleChildren.length > 0
+          const isExpanded  = hasChildren && expandedPath === item.path
+
+          // Item désactivé (feature absente du plan) — affiché grisé, non cliquable
+          if (!featureAllowed) {
+            return (
+              <div
+                key={item.path}
+                title={`Non inclus dans votre plan`}
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-300 cursor-not-allowed select-none"
+              >
+                <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <span className="flex-1">{item.label}</span>
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-400">
+                  Plan+
+                </span>
+              </div>
+            )
+          }
 
           return (
             <div key={item.path}>
@@ -95,24 +127,37 @@ function SidebarContent({ onClose }: SidebarContentProps) {
 
               {hasChildren && isExpanded && (
                 <div className="mt-0.5 ml-4 space-y-0.5 border-l-2 border-gray-100 pl-3">
-                  {visibleChildren.map((child) => (
-                    <NavLink
-                      key={child.path}
-                      to={child.path}
-                      end
-                      onClick={onClose}
-                      className={({ isActive }) =>
-                        cn(
-                          'flex items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
-                          isActive
-                            ? 'text-brand-primary font-semibold'
-                            : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900',
-                        )
-                      }
-                    >
-                      {child.label}
-                    </NavLink>
-                  ))}
+                  {visibleChildren.map((child) => {
+                    if (!hasFeature(child.feature)) {
+                      return (
+                        <div
+                          key={child.path}
+                          title="Non inclus dans votre plan"
+                          className="flex items-center rounded-lg px-3 py-1.5 text-sm font-medium text-gray-300 cursor-not-allowed select-none"
+                        >
+                          {child.label}
+                        </div>
+                      )
+                    }
+                    return (
+                      <NavLink
+                        key={child.path}
+                        to={child.path}
+                        end
+                        onClick={onClose}
+                        className={({ isActive }) =>
+                          cn(
+                            'flex items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                            isActive
+                              ? 'text-brand-primary font-semibold'
+                              : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900',
+                          )
+                        }
+                      >
+                        {child.label}
+                      </NavLink>
+                    )
+                  })}
                 </div>
               )}
             </div>

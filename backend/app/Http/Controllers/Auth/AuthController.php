@@ -21,8 +21,12 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
-        // TenantScope sur User est déjà actif (tenant résolu par ResolveTenant middleware)
-        $user = User::where('email', $request->email)->first();
+        // Lookup global — ResolveTenant bypassé pour /api/v1/auth, tenant résolu ici
+        $user = User::withoutGlobalScopes()
+            ->where('email', $request->email)
+            ->where('is_active', true)
+            ->with('tenant')
+            ->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -31,12 +35,15 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if (! $user->is_active) {
+        if (! $user->tenant?->is_active) {
             return response()->json([
-                'message' => 'Votre compte est désactivé. Contactez votre administrateur.',
-                'code'    => 'ACCOUNT_DISABLED',
+                'message' => 'Votre espace est suspendu. Contactez le support.',
+                'code'    => 'TENANT_SUSPENDED',
             ], 403);
         }
+
+        // Établit le contexte tenant pour buildMePayload
+        $this->tenantService->setCurrentTenant($user->tenant);
 
         // Révoque les anciens tokens de cet appareil si device_name fourni
         if ($request->has('device_name')) {
@@ -60,14 +67,26 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
+        $user = $request->user()->load('tenant');
+
+        if (! $user->tenant?->is_active) {
+            return response()->json([
+                'message' => 'Votre espace est suspendu ou introuvable.',
+                'code'    => 'TENANT_SUSPENDED',
+            ], 403);
+        }
+
+        $this->tenantService->setCurrentTenant($user->tenant);
+
         return response()->json([
-            'data' => $this->buildMePayload($request->user()),
+            'data' => $this->buildMePayload($user),
         ]);
     }
 
     private function buildMePayload(User $user): array
     {
-        $tenant = $this->tenantService->current();
+        $tenant       = $this->tenantService->current();
+        $subscription = $tenant->activeSubscription()->with('plan')->first();
 
         return [
             'user' => [
@@ -79,6 +98,7 @@ class AuthController extends Controller
             ],
             'permissions' => $this->permissionService->getPermissions($user),
             'tenant' => [
+                'api_key'         => $tenant->getRawOriginal('api_key'),
                 'name'            => $tenant->name,
                 'slug'            => $tenant->slug,
                 'currency'        => $tenant->currency,
@@ -91,6 +111,27 @@ class AuthController extends Controller
                     ? Storage::disk('public')->url($tenant->logo_path)
                     : null,
             ],
+            // Abonnement actif — utilisé par le frontend pour la bannière d'alerte
+            'subscription' => $subscription ? [
+                'status'        => $subscription->status,
+                'plan_name'     => $subscription->plan?->name,
+                'plan_slug'     => $subscription->plan?->slug,
+                'billing_cycle' => $subscription->billing_cycle,
+                'ends_at'       => $subscription->ends_at?->toISOString(),
+                'days_remaining'=> $subscription->daysUntilExpiry(),
+            ] : null,
+            // Features du plan — utilisé par la sidebar pour masquer les modules non inclus
+            'plan_features' => $subscription?->plan ? [
+                'pos'           => (bool) $subscription->plan->feature_pos,
+                'invoicing'     => (bool) $subscription->plan->feature_invoicing,
+                'purchases'     => (bool) $subscription->plan->feature_purchases,
+                'reports'       => (bool) $subscription->plan->feature_reports,
+                'shop'          => (bool) $subscription->plan->feature_shop,
+                'import_csv'    => (bool) $subscription->plan->feature_import_csv,
+                'stock_alerts'  => (bool) $subscription->plan->feature_stock_alerts,
+                'multi_user'    => (bool) $subscription->plan->feature_multi_user,
+                'custom_domain' => (bool) $subscription->plan->feature_custom_domain,
+            ] : null,
         ];
     }
 }

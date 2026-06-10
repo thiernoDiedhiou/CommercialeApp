@@ -15,9 +15,11 @@ class ResolveTenant
 
     public function handle(Request $request, Closure $next): Response
     {
-        // Les routes super admin et boutique publique ont leur propre résolution
-        if (str_starts_with($request->getPathInfo(), '/api/v1/admin') ||
-            str_starts_with($request->getPathInfo(), '/api/v1/public')) {
+        // Super admin, boutique publique et auth (login/logout/me/reset)
+        // résolvent eux-mêmes leur contexte tenant — pas besoin de X-Tenant-ID.
+        if (str_starts_with($request->getPathInfo(), '/api/v1/admin')  ||
+            str_starts_with($request->getPathInfo(), '/api/v1/public') ||
+            str_starts_with($request->getPathInfo(), '/api/v1/auth')) {
             return $next($request);
         }
 

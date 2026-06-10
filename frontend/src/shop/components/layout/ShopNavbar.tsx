@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
   ShoppingCartIcon,
   MagnifyingGlassIcon,
@@ -7,24 +8,95 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline'
 import { useShopStore } from '@/shop/store/shopStore'
+import { getShopCategories } from '@/shop/services/shop'
+import { getCategoryIcon } from '@/shop/utils/categoryIcons'
 
 interface Props {
   slug: string
 }
 
+// ── Icônes réseaux sociaux ────────────────────────────────────────────────────
+
+const SOCIAL_ITEMS = [
+  {
+    key  : 'facebook_url' as const,
+    label: 'Facebook',
+    icon : (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
+        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+      </svg>
+    ),
+  },
+  {
+    key  : 'instagram_url' as const,
+    label: 'Instagram',
+    icon : (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162S8.597 18.163 12 18.163s6.162-2.759 6.162-6.162S15.403 5.838 12 5.838zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+      </svg>
+    ),
+  },
+  {
+    key  : 'twitter_url' as const,
+    label: 'Twitter / X',
+    icon : (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.63 5.906-5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+      </svg>
+    ),
+  },
+  {
+    key  : 'tiktok_url' as const,
+    label: 'TikTok',
+    icon : (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
+        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.2 8.2 0 004.79 1.53V6.75a4.85 4.85 0 01-1.02-.06z" />
+      </svg>
+    ),
+  },
+  {
+    key  : 'youtube_url' as const,
+    label: 'YouTube',
+    icon : (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
+        <path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+      </svg>
+    ),
+  },
+]
+
+// ── Composant ─────────────────────────────────────────────────────────────────
+
 export default function ShopNavbar({ slug }: Props) {
   const navigate        = useNavigate()
-  const [scrolled, setScrolled]           = useState(false)
+  const location        = useLocation()
+  const [scrolled, setScrolled]             = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [searchOpen, setSearchOpen]       = useState(false)
-  const [searchValue, setSearchValue]     = useState('')
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const [searchOpen, setSearchOpen]         = useState(false)
+  const [searchValue, setSearchValue]       = useState('')
+  const debounceRef    = useRef<ReturnType<typeof setTimeout>>()
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  // Sync le champ de recherche avec ?search= de l'URL quand on est sur le catalogue
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const urlSearch = params.get('search') ?? ''
+    setSearchValue(urlSearch)
+    if (!urlSearch) setSearchOpen(false)
+  }, [location.search, location.pathname])
 
   const shopConfig = useShopStore((s) => s.shopConfig)
   const items      = useShopStore((s) => s.items)
   const toggleCart = useShopStore((s) => s.toggleCart)
   const itemCount  = items.reduce((sum, item) => sum + item.quantity, 0)
+
+  const { data: categoriesResult } = useQuery({
+    queryKey : ['shop-categories', slug],
+    queryFn  : () => getShopCategories(slug),
+    staleTime: 5 * 60 * 1000,
+    enabled  : !!slug,
+  })
+  const categories = categoriesResult?.data ?? []
 
   // Ombre au scroll
   useEffect(() => {
@@ -48,15 +120,23 @@ export default function ShopNavbar({ slug }: Props) {
     setSearchValue(value)
     clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
+      const catalogBase = `/shop/${slug}/catalog`
       if (value.trim()) {
-        navigate(`/shop/${slug}/catalog?search=${encodeURIComponent(value.trim())}`)
+        navigate(`${catalogBase}?search=${encodeURIComponent(value.trim())}`, { replace: location.pathname.includes('/catalog') })
+      } else {
+        // Effacer la recherche : revenir au catalogue sans paramètre
+        navigate(catalogBase, { replace: true })
       }
     }, 300)
   }
 
+  const close = () => setMobileMenuOpen(false)
+
   const whatsappNumber = shopConfig?.whatsapp_number
     ? shopConfig.whatsapp_number.replace(/[^0-9]/g, '')
     : null
+
+  const hasSocials = SOCIAL_ITEMS.some(({ key }) => !!shopConfig?.[key])
 
   return (
     <>
@@ -110,7 +190,7 @@ export default function ShopNavbar({ slug }: Props) {
                 <MagnifyingGlassIcon className="h-5 w-5" />
               </button>
 
-              {/* WhatsApp (si configuré) */}
+              {/* WhatsApp (desktop) */}
               {whatsappNumber && (
                 <button
                   type="button"
@@ -133,9 +213,7 @@ export default function ShopNavbar({ slug }: Props) {
               >
                 <ShoppingCartIcon className="h-6 w-6" />
                 {itemCount > 0 && (
-                  <span
-                    className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white bg-[var(--shop-primary,#111827)]"
-                  >
+                  <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white bg-[var(--shop-primary,#111827)]">
                     {itemCount > 99 ? '99+' : itemCount}
                   </span>
                 )}
@@ -170,7 +248,13 @@ export default function ShopNavbar({ slug }: Props) {
             </div>
             <button
               type="button"
-              onClick={() => { setSearchOpen(false); setSearchValue('') }}
+              onClick={() => {
+                setSearchOpen(false)
+                setSearchValue('')
+                if (location.pathname.includes('/catalog')) {
+                  navigate(`/shop/${slug}/catalog`, { replace: true })
+                }
+              }}
               className="text-sm text-gray-500 font-medium shrink-0"
             >
               Annuler
@@ -180,96 +264,127 @@ export default function ShopNavbar({ slug }: Props) {
       </header>
 
       {/* ── Menu mobile slide-over ──────────────────────────────────────── */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 flex sm:hidden">
-          {/* Overlay */}
-          <div
-            className="flex-1 bg-black/50"
-            onClick={() => setMobileMenuOpen(false)}
-            aria-hidden="true"
-          />
+      {/* Toujours rendu pour que la transition CSS fonctionne */}
+      <div
+        className={`fixed inset-0 z-[60] flex sm:hidden overflow-hidden transition-all duration-300 ${
+          mobileMenuOpen ? 'visible' : 'invisible'
+        }`}
+      >
+        {/* Overlay */}
+        <div
+          className={`flex-1 bg-black/50 transition-opacity duration-300 ${
+            mobileMenuOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+          onClick={close}
+          aria-hidden="true"
+        />
 
-          {/* Panneau */}
-          <div className="w-full max-w-xs bg-white h-full flex flex-col shadow-xl">
-            {/* Header panneau */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <span className="font-semibold text-gray-900">
-                {shopConfig?.name ?? 'Menu'}
-              </span>
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(false)}
-                aria-label="Fermer le menu"
-                className="p-1 rounded-full hover:bg-gray-100"
+        {/* Panneau */}
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu navigation"
+          className={`w-full max-w-xs bg-white h-full flex flex-col shadow-xl transition-transform duration-300 ease-out ${
+            mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          {/* Header panneau */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <span className="font-semibold text-gray-900">
+              {shopConfig?.name ?? 'Menu'}
+            </span>
+            <button
+              type="button"
+              onClick={close}
+              aria-label="Fermer le menu"
+              className="p-1 rounded-full hover:bg-gray-100"
+            >
+              <XMarkIcon className="h-5 w-5 text-gray-500" />
+            </button>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto px-5 py-4 space-y-1">
+            {[
+              { label: 'Accueil',   to: `/shop/${slug}` },
+              { label: 'Catalogue', to: `/shop/${slug}/catalog` },
+            ].map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={close}
+                className="block px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
-                <XMarkIcon className="h-5 w-5 text-gray-500" />
-              </button>
-            </div>
+                {item.label}
+              </Link>
+            ))}
 
-            {/* Navigation */}
-            <nav className="flex-1 overflow-y-auto px-5 py-6 space-y-1">
-              {[
-                { label: 'Accueil',   to: `/shop/${slug}` },
-                { label: 'Catalogue', to: `/shop/${slug}/catalog` },
-              ].map((item) => (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+            {/* Catégories dynamiques */}
+            {categories.length > 0 && (
+              <>
+                <div className="px-3 pt-4 pb-1">
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Catégories
+                  </span>
+                </div>
+                {categories.map((cat) => {
+                  const CatIcon = getCategoryIcon(cat.name)
+                  return (
+                    <Link
+                      key={cat.id}
+                      to={`/shop/${slug}/catalog?category=${cat.id}`}
+                      onClick={close}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                    >
+                      <CatIcon className="h-5 w-5 shrink-0 text-gray-400" />
+                      <span className="truncate">{cat.name}</span>
+                    </Link>
+                  )
+                })}
+              </>
+            )}
+          </nav>
+
+          {/* Footer panneau */}
+          <div className="border-t border-gray-100 px-5 py-4 space-y-3">
+
+            {/* WhatsApp mobile */}
+            {whatsappNumber && (
+              <a
+                href={`https://wa.me/${whatsappNumber}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-green-600 hover:bg-green-50 transition-colors"
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="#25D366" aria-hidden="true">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                </svg>
+                Nous contacter sur WhatsApp
+              </a>
+            )}
 
             {/* Réseaux sociaux */}
-            {(shopConfig?.facebook_url || shopConfig?.instagram_url || shopConfig?.twitter_url) && (
-              <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
-                {shopConfig.facebook_url && (
-                  <a
-                    href={shopConfig.facebook_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Facebook"
-                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
-                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                    </svg>
-                  </a>
-                )}
-                {shopConfig.instagram_url && (
-                  <a
-                    href={shopConfig.instagram_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Instagram"
-                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
-                      <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162S8.597 18.163 12 18.163s6.162-2.759 6.162-6.162S15.403 5.838 12 5.838zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-                    </svg>
-                  </a>
-                )}
-                {shopConfig.twitter_url && (
-                  <a
-                    href={shopConfig.twitter_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Twitter / X"
-                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden="true">
-                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.258 5.63 5.906-5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                    </svg>
-                  </a>
+            {hasSocials && (
+              <div className="flex gap-2 px-1">
+                {SOCIAL_ITEMS.map(({ key, label, icon }) =>
+                  shopConfig?.[key] ? (
+                    <a
+                      key={key}
+                      href={shopConfig[key]!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={label}
+                      className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
+                    >
+                      {icon}
+                    </a>
+                  ) : null
                 )}
               </div>
             )}
           </div>
         </div>
-      )}
+      </div>
     </>
   )
 }

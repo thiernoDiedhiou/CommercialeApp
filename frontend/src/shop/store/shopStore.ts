@@ -42,12 +42,22 @@ export interface ShopConfig {
   facebook_url            : string | null
   instagram_url           : string | null
   twitter_url             : string | null
+  tiktok_url              : string | null
+  youtube_url             : string | null
   address                 : string | null
   opening_hours           : string | null
   footer_text             : string | null
   minimum_order           : number
   payment_methods         : string[]
   delivery_zones          : DeliveryZone[]
+  trust_badges            : TrustBadge[] | null
+}
+
+export interface TrustBadge {
+  icon    : 'delivery' | 'payment' | 'quality' | 'support'
+  title   : string
+  subtitle: string | null
+  active  : boolean
 }
 
 export interface ShopOrderResult {

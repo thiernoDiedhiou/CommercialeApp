@@ -29,6 +29,7 @@ class StoreProductRequest extends FormRequest
             'sku'                   => ['nullable', 'string', 'max:100', Rule::unique('products')->where('tenant_id', $tenantId)->whereNull('deleted_at')],
             'barcode'               => ['nullable', 'string', 'max:100', Rule::unique('products')->where('tenant_id', $tenantId)->whereNull('deleted_at')],
             'price'                 => ['required', 'numeric', 'min:0'],
+            'compare_at_price'      => ['nullable', 'numeric', 'min:0'],
             'cost_price'            => ['nullable', 'numeric', 'min:0'],
             'has_variants'          => ['boolean'],
             'is_weight_based'       => ['boolean'],

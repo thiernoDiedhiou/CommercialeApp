@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Sale;
+use App\Models\ShopOrder;
 use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -28,18 +29,32 @@ class DashboardController extends Controller
     {
         $tenantId = $this->tenantService->currentId();
 
-        // ── 1. Statistiques du jour ──────────────────────────────────────────
-        // LEFT JOIN sale_items pour inclure les ventes sans items (edge case)
-        $todayRow = DB::selectOne("
+        // ── 1a. Stats POS du jour ────────────────────────────────────────────
+        $posTodayRow = DB::selectOne("
             SELECT
-                COUNT(DISTINCT s.id)                                         AS sales_count,
-                COALESCE(SUM(s.total), 0)                                    AS revenue,
-                COALESCE(SUM(si.total - si.cost_price * si.quantity), 0)     AS profit
+                COUNT(DISTINCT s.id)                                     AS sales_count,
+                COALESCE(SUM(s.total), 0)                                AS revenue,
+                COALESCE(SUM(si.total - si.cost_price * si.quantity), 0) AS profit
             FROM sales s
             LEFT JOIN sale_items si ON si.sale_id = s.id
-            WHERE s.tenant_id  = ?
-              AND s.status     = 'confirmed'
+            WHERE s.tenant_id = ?
+              AND s.status    = 'confirmed'
               AND DATE(s.confirmed_at) = CURDATE()
+        ", [$tenantId]);
+
+        // ── 1b. Stats boutique en ligne du jour ──────────────────────────────
+        $shopTodayRow = DB::selectOne("
+            SELECT
+                COUNT(DISTINCT so.id)                                                                   AS orders_count,
+                COALESCE(SUM(so.total), 0)                                                              AS revenue,
+                COALESCE(SUM(soi.total - COALESCE(pv.cost_price, p.cost_price, 0) * soi.quantity), 0)  AS profit
+            FROM shop_orders so
+            LEFT JOIN shop_order_items soi ON soi.shop_order_id = so.id
+            LEFT JOIN products p           ON p.id  = soi.product_id
+            LEFT JOIN product_variants pv  ON pv.id = soi.variant_id
+            WHERE so.tenant_id = ?
+              AND so.status NOT IN ('cancelled', 'pending')
+              AND DATE(so.confirmed_at) = CURDATE()
         ", [$tenantId]);
 
         // ── 2. Encaissements du jour par méthode ────────────────────────────
@@ -57,19 +72,38 @@ class DashboardController extends Controller
             ->map(fn($v) => (float) $v)
             ->toArray();
 
-        // ── 3. Graphique 7 jours glissants ──────────────────────────────────
+        // ── 3. Graphique 7 jours glissants — POS + boutique ─────────────────
         $weekRows = DB::select("
             SELECT
-                DATE(s.confirmed_at)          AS date,
-                COUNT(*)                      AS sales_count,
-                COALESCE(SUM(s.total), 0)     AS revenue
-            FROM sales s
-            WHERE s.tenant_id  = ?
-              AND s.status     = 'confirmed'
-              AND s.confirmed_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-            GROUP BY DATE(s.confirmed_at)
+                date,
+                SUM(sales_count) AS sales_count,
+                SUM(revenue)     AS revenue
+            FROM (
+                SELECT
+                    DATE(s.confirmed_at)      AS date,
+                    COUNT(*)                  AS sales_count,
+                    COALESCE(SUM(s.total), 0) AS revenue
+                FROM sales s
+                WHERE s.tenant_id = ?
+                  AND s.status    = 'confirmed'
+                  AND s.confirmed_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+                GROUP BY DATE(s.confirmed_at)
+
+                UNION ALL
+
+                SELECT
+                    DATE(so.confirmed_at)      AS date,
+                    COUNT(*)                   AS sales_count,
+                    COALESCE(SUM(so.total), 0) AS revenue
+                FROM shop_orders so
+                WHERE so.tenant_id = ?
+                  AND so.status NOT IN ('cancelled', 'pending')
+                  AND so.confirmed_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+                GROUP BY DATE(so.confirmed_at)
+            ) combined
+            GROUP BY date
             ORDER BY date ASC
-        ", [$tenantId]);
+        ", [$tenantId, $tenantId]);
 
         // Remplissage des jours sans ventes avec 0 (7 jours garantis)
         $weekByDate = collect($weekRows)->keyBy('date');
@@ -91,23 +125,46 @@ class DashboardController extends Controller
             WHERE tenant_id = ? AND status IN ('sent', 'overdue')
         ", [$tenantId]);
 
-        // ── 4. Top 5 produits du mois courant ───────────────────────────────
+        // ── 4. Top 5 produits du mois courant — POS + boutique ──────────────
         $topProductRows = DB::select("
             SELECT
-                si.product_id,
-                p.name,
-                SUM(si.quantity)          AS qty_sold,
-                COALESCE(SUM(si.total), 0) AS revenue
-            FROM sale_items si
-            JOIN products p ON p.id   = si.product_id
-            JOIN sales    s ON s.id   = si.sale_id
-            WHERE s.tenant_id = ?
-              AND s.status    = 'confirmed'
-              AND s.confirmed_at >= DATE_FORMAT(NOW(), '%Y-%m-01')
-            GROUP BY si.product_id, p.name
+                product_id,
+                name,
+                SUM(qty_sold) AS qty_sold,
+                SUM(revenue)  AS revenue
+            FROM (
+                SELECT
+                    si.product_id,
+                    p.name,
+                    SUM(si.quantity)           AS qty_sold,
+                    COALESCE(SUM(si.total), 0) AS revenue
+                FROM sale_items si
+                JOIN products p ON p.id = si.product_id
+                JOIN sales    s ON s.id = si.sale_id
+                WHERE s.tenant_id = ?
+                  AND s.status    = 'confirmed'
+                  AND s.confirmed_at >= DATE_FORMAT(NOW(), '%Y-%m-01')
+                GROUP BY si.product_id, p.name
+
+                UNION ALL
+
+                SELECT
+                    soi.product_id,
+                    p.name,
+                    SUM(soi.quantity)           AS qty_sold,
+                    COALESCE(SUM(soi.total), 0) AS revenue
+                FROM shop_order_items soi
+                JOIN products    p  ON p.id  = soi.product_id
+                JOIN shop_orders so ON so.id = soi.shop_order_id
+                WHERE so.tenant_id = ?
+                  AND so.status NOT IN ('cancelled', 'pending')
+                  AND so.confirmed_at >= DATE_FORMAT(NOW(), '%Y-%m-01')
+                GROUP BY soi.product_id, p.name
+            ) combined
+            GROUP BY product_id, name
             ORDER BY revenue DESC
             LIMIT 5
-        ", [$tenantId]);
+        ", [$tenantId, $tenantId]);
 
         // ── 5. Alertes de stock (UNION produits simples + variantes) ────────
         $stockAlertRows = DB::select("
@@ -145,8 +202,8 @@ class DashboardController extends Controller
             LIMIT 20
         ", [$tenantId, $tenantId]);
 
-        // ── 6. 5 dernières ventes confirmées ────────────────────────────────
-        $recentSales = Sale::confirmed()
+        // ── 6. 5 dernières transactions — POS + boutique ────────────────────
+        $recentPOS = Sale::confirmed()
             ->with(['customer:id,name'])
             ->latest('confirmed_at')
             ->limit(5)
@@ -157,9 +214,32 @@ class DashboardController extends Controller
                 'customer'     => $s->customer?->name,
                 'total'        => (float) $s->total,
                 'status'       => $s->status,
-                'confirmed_at' => $s->confirmed_at,
-                'created_at'   => $s->created_at,
+                'channel'      => 'pos',
+                'confirmed_at' => $s->confirmed_at?->toISOString(),
+                'created_at'   => $s->created_at?->toISOString(),
             ]);
+
+        $recentShop = ShopOrder::where('tenant_id', $tenantId)
+            ->whereNotNull('confirmed_at')
+            ->whereNotIn('status', ['cancelled', 'pending'])
+            ->latest('confirmed_at')
+            ->limit(5)
+            ->get(['id', 'reference', 'customer_name', 'total', 'status', 'confirmed_at', 'created_at'])
+            ->map(fn($o) => [
+                'id'           => $o->id,
+                'reference'    => $o->reference,
+                'customer'     => $o->customer_name,
+                'total'        => (float) $o->total,
+                'status'       => $o->status,
+                'channel'      => 'shop',
+                'confirmed_at' => $o->confirmed_at?->toISOString(),
+                'created_at'   => $o->created_at?->toISOString(),
+            ]);
+
+        $recentSales = $recentPOS->concat($recentShop)
+            ->sortByDesc('confirmed_at')
+            ->take(5)
+            ->values();
 
         // ── [Conditionnel] Lots expirant bientôt ────────────────────────────
         // Requête uniquement si le tenant utilise la traçabilité par lot/expiry.
@@ -194,12 +274,23 @@ class DashboardController extends Controller
             ])->all();
         }
 
+        $posSalesCount  = (int)   ($posTodayRow->sales_count   ?? 0);
+        $posRevenue     = (float) ($posTodayRow->revenue       ?? 0);
+        $posProfit      = (float) ($posTodayRow->profit        ?? 0);
+        $shopOrderCount = (int)   ($shopTodayRow->orders_count ?? 0);
+        $shopRevenue    = (float) ($shopTodayRow->revenue      ?? 0);
+        $shopProfit     = (float) ($shopTodayRow->profit       ?? 0);
+
         return response()->json([
             'today' => [
-                'sales_count'    => (int)   ($todayRow->sales_count ?? 0),
-                'revenue'        => (float) ($todayRow->revenue     ?? 0),
-                'profit'         => (float) ($todayRow->profit      ?? 0),
-                'pending_amount' => (float) ($pendingRow->pending_amount ?? 0),
+                'sales_count'         => $posSalesCount + $shopOrderCount,
+                'revenue'             => $posRevenue    + $shopRevenue,
+                'profit'              => $posProfit     + $shopProfit,
+                'pending_amount'      => (float) ($pendingRow->pending_amount ?? 0),
+                'pos_sales_count'     => $posSalesCount,
+                'pos_revenue'         => $posRevenue,
+                'shop_orders_count'   => $shopOrderCount,
+                'shop_orders_revenue' => $shopRevenue,
             ],
             'by_payment_method' => $paymentsByMethod,
             'week_chart'        => $weekChart,

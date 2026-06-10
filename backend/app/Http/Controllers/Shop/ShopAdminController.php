@@ -6,7 +6,6 @@ use App\Exceptions\StockInsufficientException;
 use App\Http\Controllers\Controller;
 use App\Models\ProductLot;
 use App\Models\ShopOrder;
-use App\Models\ShopOrderItem;
 use App\Models\ShopSetting;
 use App\Services\StockService;
 use App\Services\TenantService;
@@ -73,15 +72,18 @@ class ShopAdminController extends Controller
             'facebook_url'            => ['nullable', 'url', 'max:255'],
             'instagram_url'           => ['nullable', 'url', 'max:255'],
             'twitter_url'             => ['nullable', 'url', 'max:255'],
+            'tiktok_url'              => ['nullable', 'url', 'max:255'],
+            'youtube_url'             => ['nullable', 'url', 'max:255'],
             'address'                 => ['nullable', 'string', 'max:255'],
             'opening_hours'           => ['nullable', 'string', 'max:255'],
             'minimum_order'           => ['nullable', 'numeric', 'min:0'],
             'delivery_zones'          => ['nullable', 'array'],
             'delivery_zones.*.name'   => ['required_with:delivery_zones', 'string', 'max:100'],
             'delivery_zones.*.fee'    => ['required_with:delivery_zones', 'numeric', 'min:0'],
-            'payment_methods'         => ['nullable', 'array'],
-            'payment_methods.*'       => [Rule::in(['cod', 'whatsapp'])],
-            'announcement_bar'        => ['nullable', 'string', 'max:255'],
+            'payment_methods'              => ['nullable', 'array'],
+            'payment_methods.*'            => [Rule::in(['cod', 'whatsapp'])],
+            'trust_badges'                 => ['nullable', 'string'],
+            'announcement_bar'            => ['nullable', 'string', 'max:255'],
             'announcement_bar_active' => ['nullable', 'boolean'],
             'footer_text'             => ['nullable', 'string', 'max:500'],
             'meta_title'              => ['nullable', 'string', 'max:160'],
@@ -99,6 +101,12 @@ class ShopAdminController extends Controller
         $updateData = collect($validated)
             ->except(['logo', 'favicon', 'hero_banner'])
             ->toArray();
+
+        // trust_badges arrive comme JSON string depuis FormData
+        if (array_key_exists('trust_badges', $updateData) && is_string($updateData['trust_badges'])) {
+            $decoded = json_decode($updateData['trust_badges'], true);
+            $updateData['trust_badges'] = json_last_error() === JSON_ERROR_NONE ? $decoded : null;
+        }
 
         // ── Uploads ───────────────────────────────────────────────────────────
         if ($request->hasFile('logo')) {
@@ -266,6 +274,39 @@ class ShopAdminController extends Controller
             } catch (StockInsufficientException $e) {
                 return response()->json($e->toArray(), 422);
             }
+
+            return response()->json(['data' => $order->fresh()]);
+        }
+
+        // ── Annulation → restaure le stock si commande déjà confirmée ────────
+        $stockWasDecremented = in_array($order->status, ['confirmed', 'preparing', 'shipped', 'delivered'], true);
+
+        if ($newStatus === 'cancelled' && $stockWasDecremented) {
+            $order->load(['items.product', 'items.variant']);
+
+            DB::transaction(function () use ($order) {
+                foreach ($order->items as $item) {
+                    if (! $item->product) {
+                        continue; // Produit supprimé — impossible de restaurer
+                    }
+
+                    $lot = $item->lot_id
+                        ? ProductLot::withoutGlobalScopes()->find($item->lot_id)
+                        : null;
+
+                    $this->stockService->adjust(
+                        product:  $item->product,
+                        type:     'in',
+                        quantity: (float) $item->quantity,
+                        source:   'shop_order_cancel',
+                        sourceId: $item->id,
+                        variant:  $item->variant ?? null,
+                        lot:      $lot,
+                    );
+                }
+
+                $order->update(['status' => 'cancelled']);
+            });
 
             return response()->json(['data' => $order->fresh()]);
         }
