@@ -13,21 +13,21 @@ function formatPrice(price: number): string {
   return price.toLocaleString('fr-FR')
 }
 
-function getPriceLabel(product: ShopProduct): string {
+function getPriceLabel(product: ShopProduct, currency: string): string {
   if (product.has_variants) {
     const prices = product.variants
       .filter((v) => v.is_active)
       .map((v) => v.price)
-    if (prices.length === 0) return `${formatPrice(product.price)} FCFA`
+    if (prices.length === 0) return `${formatPrice(product.price)} ${currency}`
     const allSame = prices.every((p) => p === prices[0])
     return allSame
-      ? `${formatPrice(prices[0])} FCFA`
-      : `À partir de ${formatPrice(Math.min(...prices))} FCFA`
+      ? `${formatPrice(prices[0])} ${currency}`
+      : `À partir de ${formatPrice(Math.min(...prices))} ${currency}`
   }
   if (product.is_weight_based) {
-    return `${formatPrice(product.price)} FCFA / ${product.unit ?? 'unité'}`
+    return `${formatPrice(product.price)} ${currency} / ${product.unit ?? 'unité'}`
   }
-  return `${formatPrice(product.price)} FCFA`
+  return `${formatPrice(product.price)} ${currency}`
 }
 
 function isOutOfStock(product: ShopProduct): boolean {
@@ -55,10 +55,11 @@ export default function ShopProductCard({ product, slug }: Props) {
   const navigate    = useNavigate()
   const addItem     = useShopStore((s) => s.addItem)
   const openCart    = useShopStore((s) => s.openCart)
+  const currency    = useShopStore((s) => s.shopConfig?.currency ?? 'FCFA')
   const [weightOpen, setWeightOpen] = useState(false)
 
   const outOfStock  = isOutOfStock(product)
-  const priceLabel  = getPriceLabel(product)
+  const priceLabel  = getPriceLabel(product, currency)
   const promoPercent = getPromoPercent(product)
   const lowStock    = isLowStock(product)
 
@@ -161,7 +162,7 @@ export default function ShopProductCard({ product, slug }: Props) {
             </p>
             {promoPercent !== null && product.compare_at_price !== null && (
               <span className="text-xs text-gray-400 line-through">
-                {formatPrice(product.compare_at_price)} FCFA
+                {formatPrice(product.compare_at_price)} {currency}
               </span>
             )}
           </div>

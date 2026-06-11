@@ -65,7 +65,7 @@ export default function ShopHomePage() {
         title="🔥 Offres du moment"
         sort="newest"
         onSale={true}
-        seeAllTo={`/shop/${slug}/catalog`}
+        seeAllTo={`/shop/${slug}/catalog?on_sale=1`}
       />
 
       {/* ── Nouveaux arrivages ────────────────────────────────────────────── */}

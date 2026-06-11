@@ -71,6 +71,7 @@ class PublicShopController extends Controller
         return response()->json([
             'shop' => [
                 'name'                     => $shop->shop_name   ?? $tenant->name,
+                'currency'                 => $tenant->currency,
                 'description'              => $shop->shop_description,
                 'hero_title'               => $shop->hero_title,
                 'hero_subtitle'            => $shop->hero_subtitle,

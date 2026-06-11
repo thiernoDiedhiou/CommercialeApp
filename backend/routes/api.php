@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminAuthController;
+use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminSiteSettingsController;
 use App\Http\Controllers\Admin\AdminTenantController;
+use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Landing\PublicPlanController;
 use App\Http\Controllers\Landing\PublicRegistrationController;
 use App\Http\Controllers\Landing\PublicSiteSettingsController;
@@ -105,6 +107,14 @@ Route::prefix('v1')->group(function () {
             Route::get('site-settings', [AdminSiteSettingsController::class, 'show'])->name('site-settings.show');
             Route::put('site-settings', [AdminSiteSettingsController::class, 'update'])->name('site-settings.update');
 
+            // ── Notifications Super Admin ──────────────────────────────────
+            Route::prefix('notifications')->name('notifications.')->group(function () {
+                Route::get('/',               [AdminNotificationController::class, 'index'])->name('index');
+                Route::post('read-all',       [AdminNotificationController::class, 'markAllRead'])->name('read-all');
+                Route::post('{id}/read',      [AdminNotificationController::class, 'markRead'])->name('read');
+                Route::delete('{id}',         [AdminNotificationController::class, 'destroy'])->name('destroy');
+            });
+
             // ── Tenants ────────────────────────────────────────────────────
             Route::prefix('tenants')->name('tenants.')->group(function () {
                 Route::get('/',                      [AdminTenantController::class, 'index'])->name('index');
@@ -112,8 +122,12 @@ Route::prefix('v1')->group(function () {
                 Route::get('{tenant}',               [AdminTenantController::class, 'show'])->name('show');
                 Route::put('{tenant}',               [AdminTenantController::class, 'update'])->name('update');
                 Route::delete('{tenant}',            [AdminTenantController::class, 'destroy'])->name('destroy');
-                Route::post('{tenant}/suspend',      [AdminTenantController::class, 'suspend'])->name('suspend');
-                Route::post('{tenant}/activate',     [AdminTenantController::class, 'activate'])->name('activate');
+                Route::post('{tenant}/suspend',            [AdminTenantController::class, 'suspend'])->name('suspend');
+                Route::post('{tenant}/activate',           [AdminTenantController::class, 'activate'])->name('activate');
+                // Corbeille RGPD — ces routes acceptent les modèles soft-deleted
+                Route::post('{tenant}/restore',            [AdminTenantController::class, 'restore'])->name('restore')->withTrashed();
+                Route::post('{tenant}/schedule-deletion',  [AdminTenantController::class, 'scheduleDeletion'])->name('schedule-deletion')->withTrashed();
+                Route::post('{tenant}/cancel-deletion',    [AdminTenantController::class, 'cancelDeletion'])->name('cancel-deletion')->withTrashed();
                 // Abonnement du tenant
                 Route::get('{tenant}/subscription',    [AdminSubscriptionController::class, 'show'])->name('subscription.show');
                 Route::post('{tenant}/subscription',   [AdminSubscriptionController::class, 'store'])->name('subscription.store');
@@ -136,6 +150,14 @@ Route::prefix('v1')->group(function () {
             Route::post('logout', [AuthController::class, 'logout'])->name('logout');
             Route::get('me',     [AuthController::class, 'me'])->name('me');
         });
+    });
+
+    // ── Notifications tenant (Sanctum uniquement, pas d'abonnement requis) ────
+    Route::middleware('auth:sanctum')->prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/',          [NotificationController::class, 'index'])->name('index');
+        Route::post('read-all',  [NotificationController::class, 'markAllRead'])->name('read-all');
+        Route::post('{id}/read', [NotificationController::class, 'markRead'])->name('read');
+        Route::delete('{id}',    [NotificationController::class, 'destroy'])->name('destroy');
     });
 
     // ── Routes protégées (Sanctum + abonnement valide requis) ────────────────

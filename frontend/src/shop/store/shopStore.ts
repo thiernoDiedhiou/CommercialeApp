@@ -30,6 +30,7 @@ export interface DeliveryZone {
 
 export interface ShopConfig {
   name                    : string
+  currency                : string
   description             : string | null
   hero_title              : string | null
   hero_subtitle           : string | null

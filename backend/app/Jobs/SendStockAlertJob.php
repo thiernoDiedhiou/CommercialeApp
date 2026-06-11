@@ -2,9 +2,12 @@
 
 namespace App\Jobs;
 
+use App\Models\Permission;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Tenant;
+use App\Models\User;
+use App\Notifications\StockAlertInAppNotification;
 use App\Services\MailService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -28,6 +31,19 @@ class SendStockAlertJob implements ShouldQueue
     public function handle(MailService $mailService): void
     {
         $mailService->sendStockAlert($this->tenant, $this->product, $this->variant);
+
+        // Notification in-app pour les utilisateurs ayant la permission stock.view
+        $permission = Permission::where('name', 'stock.view')->first();
+        if (!$permission) {
+            return;
+        }
+
+        User::where('tenant_id', $this->tenant->id)
+            ->where('is_active', true)
+            ->whereHas('groups.permissions', fn ($q) => $q->where('permissions.id', $permission->id))
+            ->each(fn (User $user) => $user->notify(
+                new StockAlertInAppNotification($this->tenant, $this->product, $this->variant)
+            ));
     }
 
     public function queue(): string

@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Landing;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\Plan;
+use App\Models\SuperAdmin;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
 use App\Models\User;
+use App\Notifications\NewTenantRegisteredNotification;
 use App\Services\MailService;
 use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
@@ -82,6 +84,11 @@ class PublicRegistrationController extends Controller
         }
 
         $this->mailService->sendTenantWelcome($tenant, $admin, $validated['admin_password']);
+
+        // Notifie tous les Super Admins (email + in-app) — source landing page
+        SuperAdmin::all()->each(
+            fn ($sa) => $sa->notify(new NewTenantRegisteredNotification($tenant, $admin, 'landing'))
+        );
 
         $trialDays = $plan?->trial_days ?? 21;
 

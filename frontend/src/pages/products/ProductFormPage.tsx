@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/Input'
 import CategorySelect from '@/components/products/CategorySelect'
 import BrandSelect from '@/components/products/BrandSelect'
 import VariantManager from '@/components/products/VariantManager'
+import { useAuthStore } from '@/store/authStore'
 import type { CreateVariantData } from '@/types'
 
 // ── Schema Zod ────────────────────────────────────────────────────────────
@@ -193,9 +194,10 @@ function ImageUpload({
 
 export default function ProductFormPage() {
   const { id } = useParams<{ id: string }>()
-  const isEdit = !!id
+  const isEdit   = !!id
   const navigate = useNavigate()
-  const qc = useQueryClient()
+  const qc       = useQueryClient()
+  const currency = useAuthStore((s) => s.tenant?.currency ?? 'FCFA')
 
   // Image state (géré hors React Hook Form car File n'est pas sérialisable)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -423,7 +425,7 @@ export default function ProductFormPage() {
         <Section title="Prix et stock">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Input
-              label="Prix de vente (FCFA)"
+              label={`Prix de vente (${currency})`}
               type="number"
               min={0}
               placeholder="0"
@@ -432,7 +434,7 @@ export default function ProductFormPage() {
               {...register('price', { valueAsNumber: true })}
             />
             <Input
-              label="Prix barré (FCFA)"
+              label={`Prix barré (${currency})`}
               type="number"
               min={0}
               placeholder="Ancien prix avant remise"
@@ -440,7 +442,7 @@ export default function ProductFormPage() {
               {...register('compare_at_price', { valueAsNumber: true })}
             />
             <Input
-              label="Prix d'achat (FCFA)"
+              label={`Prix d'achat (${currency})`}
               type="number"
               min={0}
               placeholder="0"

@@ -6,7 +6,7 @@ import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
 import {
   EnvelopeIcon, ChatBubbleLeftRightIcon, MapPinIcon, ClockIcon,
-  GlobeAltIcon,
+  GlobeAltIcon, ShieldCheckIcon,
 } from '@heroicons/react/24/outline'
 
 function Field({
@@ -42,14 +42,15 @@ export default function AdminSiteSettingsPage() {
   useEffect(() => {
     if (data) {
       reset({
-        contact_email:    data.contact_email    ?? '',
-        contact_whatsapp: data.contact_whatsapp ?? '',
-        contact_address:  data.contact_address  ?? '',
-        contact_hours:    data.contact_hours    ?? '',
-        facebook_url:     data.facebook_url     ?? '',
-        twitter_url:      data.twitter_url      ?? '',
-        linkedin_url:     data.linkedin_url     ?? '',
-        instagram_url:    data.instagram_url    ?? '',
+        contact_email:               data.contact_email    ?? '',
+        contact_whatsapp:            data.contact_whatsapp ?? '',
+        contact_address:             data.contact_address  ?? '',
+        contact_hours:               data.contact_hours    ?? '',
+        facebook_url:                data.facebook_url     ?? '',
+        twitter_url:                 data.twitter_url      ?? '',
+        linkedin_url:                data.linkedin_url     ?? '',
+        instagram_url:               data.instagram_url    ?? '',
+        tenant_deletion_grace_days:  data.tenant_deletion_grace_days ?? 30,
       })
     }
   }, [data, reset])
@@ -156,6 +157,32 @@ export default function AdminSiteSettingsPage() {
                 </Field>
               ))}
             </div>
+          </section>
+
+          {/* Politique RGPD */}
+          <section>
+            <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-gray-500">
+              Politique RGPD
+            </h2>
+            <p className="mb-4 text-xs text-gray-500">
+              Délai de grâce appliqué avant la suppression définitive des données d'un tenant (fenêtre de récupération).
+            </p>
+            <Field
+              label="Délai de grâce — suppression tenant (jours)"
+              icon={ShieldCheckIcon}
+              hint="Minimum 7 jours · Maximum 365 jours · Défaut recommandé : 30 jours"
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  {...register('tenant_deletion_grace_days', { valueAsNumber: true })}
+                  type="number"
+                  min={7}
+                  max={365}
+                  className={`w-32 ${inputClass}`}
+                />
+                <span className="text-sm text-gray-400">jours</span>
+              </div>
+            </Field>
           </section>
 
           <div className="flex items-center gap-3 pt-2">

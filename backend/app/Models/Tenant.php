@@ -35,12 +35,17 @@ class Tenant extends Model
         'is_active',
         'trial_ends_at',
         'subscription_ends_at',
+        'scheduled_deletion_at',
+        'deletion_requested_at',
+        'deletion_requested_by',
     ];
 
     protected $casts = [
-        'is_active'             => 'boolean',
-        'trial_ends_at'         => 'datetime',
-        'subscription_ends_at'  => 'datetime',
+        'is_active'              => 'boolean',
+        'trial_ends_at'          => 'datetime',
+        'subscription_ends_at'   => 'datetime',
+        'scheduled_deletion_at'  => 'datetime',
+        'deletion_requested_at'  => 'datetime',
     ];
 
     protected $hidden = [

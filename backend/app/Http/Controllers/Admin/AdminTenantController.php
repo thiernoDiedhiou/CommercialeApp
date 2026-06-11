@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\Product;
+use App\Models\SiteSettings;
 use App\Models\Sale;
 use App\Models\Customer;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
 use App\Models\User;
 use App\Models\Group;
+use App\Notifications\NewTenantRegisteredNotification;
 use App\Services\MailService;
 use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
@@ -32,16 +34,19 @@ class AdminTenantController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $onlyTrashed = $request->boolean('trashed');
+
         $tenants = Tenant::withCount('users')
             ->with(['activeSubscription.plan:id,name,slug'])
+            ->when($onlyTrashed, fn ($q) => $q->onlyTrashed(), fn ($q) => $q->withoutTrashed())
             ->when($request->search, fn ($q) =>
                 $q->where('name', 'like', "%{$request->search}%")
                   ->orWhere('email', 'like', "%{$request->search}%")
             )
-            ->when($request->filled('is_active'), fn ($q) =>
+            ->when(!$onlyTrashed && $request->filled('is_active'), fn ($q) =>
                 $q->where('is_active', $request->boolean('is_active'))
             )
-            ->when($request->filled('plan_id'), fn ($q) =>
+            ->when(!$onlyTrashed && $request->filled('plan_id'), fn ($q) =>
                 $q->whereHas('activeSubscription', fn ($s) =>
                     $s->where('plan_id', $request->integer('plan_id'))
                 )
@@ -142,6 +147,11 @@ class AdminTenantController extends Controller
         // Email de bienvenue avec le mot de passe en clair (disponible uniquement ici)
         $this->mailService->sendTenantWelcome($tenant, $admin, $validated['admin_password']);
 
+        // Notifie tous les Super Admins (email + in-app)
+        \App\Models\SuperAdmin::all()->each(
+            fn ($sa) => $sa->notify(new NewTenantRegisteredNotification($tenant, $admin, 'admin'))
+        );
+
         return response()->json(['data' => $this->formatTenant($tenant)], 201);
     }
 
@@ -174,6 +184,77 @@ class AdminTenantController extends Controller
 
         $tenant->update($validated);
         $this->tenantService->flushCache($tenant->api_key);
+
+        return response()->json(['data' => $this->formatTenant($tenant)]);
+    }
+
+    // ── POST /api/v1/admin/tenants/{tenant}/restore ───────────────────────────
+    public function restore(Request $request, Tenant $tenant): JsonResponse
+    {
+        $tenant->restore();
+        $tenant->update([
+            'scheduled_deletion_at'  => null,
+            'deletion_requested_at'  => null,
+            'deletion_requested_by'  => null,
+        ]);
+        $this->tenantService->flushCache($tenant->api_key);
+
+        $admin = $request->attributes->get('super_admin');
+        \Illuminate\Support\Facades\Log::info('Tenant restauré depuis la corbeille', [
+            'tenant_id'    => $tenant->id,
+            'tenant_name'  => $tenant->name,
+            'restored_by'  => $admin?->name . ' <' . $admin?->email . '>',
+            'restored_at'  => now()->toISOString(),
+        ]);
+
+        return response()->json(['data' => $this->formatTenant($tenant)]);
+    }
+
+    // ── POST /api/v1/admin/tenants/{tenant}/schedule-deletion ─────────────────
+    public function scheduleDeletion(Request $request, Tenant $tenant): JsonResponse
+    {
+        $graceDays = SiteSettings::instance()->tenant_deletion_grace_days ?? 30;
+        $deleteAt  = now()->addDays($graceDays);
+
+        $admin     = $request->attributes->get('super_admin');
+        $requestedBy = $admin?->name . ' <' . $admin?->email . '>';
+
+        $tenant->update([
+            'scheduled_deletion_at' => $deleteAt,
+            'deletion_requested_at' => now(),
+            'deletion_requested_by' => $requestedBy,
+        ]);
+
+        \Illuminate\Support\Facades\Log::info('Suppression définitive programmée (RGPD)', [
+            'tenant_id'      => $tenant->id,
+            'tenant_name'    => $tenant->name,
+            'requested_by'   => $requestedBy,
+            'requested_at'   => now()->toISOString(),
+            'scheduled_at'   => $deleteAt->toISOString(),
+            'grace_days'     => $graceDays,
+        ]);
+
+        return response()->json(['data' => $this->formatTenant($tenant)]);
+    }
+
+    // ── POST /api/v1/admin/tenants/{tenant}/cancel-deletion ───────────────────
+    public function cancelDeletion(Request $request, Tenant $tenant): JsonResponse
+    {
+        $admin = $request->attributes->get('super_admin');
+
+        \Illuminate\Support\Facades\Log::info('Suppression définitive annulée (RGPD)', [
+            'tenant_id'    => $tenant->id,
+            'tenant_name'  => $tenant->name,
+            'cancelled_by' => $admin?->name . ' <' . $admin?->email . '>',
+            'cancelled_at' => now()->toISOString(),
+            'was_scheduled_for' => $tenant->scheduled_deletion_at?->toISOString(),
+        ]);
+
+        $tenant->update([
+            'scheduled_deletion_at' => null,
+            'deletion_requested_at' => null,
+            'deletion_requested_by' => null,
+        ]);
 
         return response()->json(['data' => $this->formatTenant($tenant)]);
     }
@@ -256,9 +337,16 @@ class AdminTenantController extends Controller
             'logo_url'        => $tenant->logo_path
                 ? Storage::disk('public')->url($tenant->logo_path)
                 : null,
-            'is_active'       => $tenant->is_active,
-            'users_count'     => $tenant->users_count ?? 0,
-            'created_at'      => $tenant->created_at?->toISOString(),
+            'is_active'              => $tenant->is_active,
+            'users_count'            => $tenant->users_count ?? 0,
+            'created_at'             => $tenant->created_at?->toISOString(),
+            'deleted_at'             => $tenant->deleted_at?->toISOString(),
+            'scheduled_deletion_at'  => $tenant->scheduled_deletion_at?->toISOString(),
+            'days_until_deletion'    => $tenant->scheduled_deletion_at
+                ? max(0, (int) now()->diffInDays($tenant->scheduled_deletion_at, false))
+                : null,
+            'deletion_requested_at'  => $tenant->deletion_requested_at?->toISOString(),
+            'deletion_requested_by'  => $tenant->deletion_requested_by,
         ];
     }
 }
