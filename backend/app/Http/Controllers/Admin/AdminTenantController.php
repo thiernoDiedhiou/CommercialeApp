@@ -74,23 +74,36 @@ class AdminTenantController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name'          => ['required', 'string', 'max:150'],
-            'sector'        => ['required', Rule::in(self::SECTORS)],
-            'currency'      => ['required', Rule::in(self::CURRENCIES)],
-            'phone'         => ['nullable', 'string', 'max:30'],
-            'email'         => ['nullable', 'email', 'max:150'],
-            'address'       => ['nullable', 'string', 'max:255'],
-            'city'          => ['nullable', 'string', 'max:100'],
-            'custom_domain'   => ['nullable', 'string', 'max:253', Rule::unique('tenants', 'custom_domain')],
-            'primary_color'   => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            // Premier utilisateur admin du tenant
-
-            'admin_name'    => ['required', 'string', 'max:150'],
-            'admin_email'   => ['required', 'email', 'max:150', Rule::unique('users', 'email')],
-            'admin_password'=> ['required', 'string', 'min:8'],
-        ]);
+        $validated = $request->validate(
+            [
+                'name'            => ['required', 'string', 'max:150'],
+                'sector'          => ['required', Rule::in(self::SECTORS)],
+                'currency'        => ['required', Rule::in(self::CURRENCIES)],
+                'phone'           => ['nullable', 'string', 'max:30'],
+                'email'           => ['nullable', 'email', 'max:150'],
+                'address'         => ['nullable', 'string', 'max:255'],
+                'city'            => ['nullable', 'string', 'max:100'],
+                'custom_domain'   => ['nullable', 'string', 'max:253', Rule::unique('tenants', 'custom_domain')],
+                'primary_color'   => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+                'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+                'admin_name'      => ['required', 'string', 'max:150'],
+                'admin_email'     => ['required', 'email', 'max:150', Rule::unique('users', 'email')],
+                'admin_password'  => ['required', 'string', 'min:8'],
+            ],
+            [
+                'name.required'           => 'Le nom du tenant est obligatoire.',
+                'sector.required'         => 'Le secteur d\'activité est obligatoire.',
+                'sector.in'               => 'Secteur invalide.',
+                'currency.required'       => 'La devise est obligatoire.',
+                'custom_domain.unique'    => 'Ce domaine est déjà utilisé par un autre tenant.',
+                'admin_name.required'     => 'Le nom de l\'administrateur est obligatoire.',
+                'admin_email.required'    => 'L\'email de l\'administrateur est obligatoire.',
+                'admin_email.email'       => 'L\'email de l\'administrateur est invalide.',
+                'admin_email.unique'      => 'Cette adresse email est déjà associée à un compte existant.',
+                'admin_password.required' => 'Le mot de passe est obligatoire.',
+                'admin_password.min'      => 'Le mot de passe doit contenir au moins 8 caractères.',
+            ]
+        );
 
         [$tenant, $admin] = DB::transaction(function () use ($validated) {
             $tenant = Tenant::create([
