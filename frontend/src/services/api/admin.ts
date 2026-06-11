@@ -70,24 +70,27 @@ export interface AdminTenantSubscription {
 }
 
 export interface AdminTenant {
-  id:              number
-  name:            string
-  slug:            string
-  custom_domain:   string | null
-  api_key:         string
-  sector:          string
-  currency:        string
-  phone:           string | null
-  email:           string | null
-  address:         string | null
-  city:            string | null
-  primary_color:   string | null
-  secondary_color: string | null
-  logo_url:        string | null
-  is_active:       boolean
-  users_count:     number
-  created_at:      string
-  subscription:    AdminTenantSubscription | null
+  id:                     number
+  name:                   string
+  slug:                   string
+  custom_domain:          string | null
+  api_key:                string
+  sector:                 string
+  currency:               string
+  phone:                  string | null
+  email:                  string | null
+  address:                string | null
+  city:                   string | null
+  primary_color:          string | null
+  secondary_color:        string | null
+  logo_url:               string | null
+  is_active:              boolean
+  users_count:            number
+  created_at:             string
+  deleted_at:             string | null
+  scheduled_deletion_at:  string | null
+  days_until_deletion:    number | null
+  subscription:           AdminTenantSubscription | null
 }
 
 export interface CreateTenantData {
@@ -135,9 +138,24 @@ export interface TenantUser {
   created_at: string
 }
 
-export async function getAdminTenants(params: { search?: string; is_active?: boolean; plan_id?: number; page?: number } = {}): Promise<PaginatedTenants> {
+export async function getAdminTenants(params: { search?: string; is_active?: boolean; plan_id?: number; page?: number; trashed?: boolean } = {}): Promise<PaginatedTenants> {
   const { data } = await adminAxios.get<PaginatedTenants>('/api/v1/admin/tenants', { params })
   return data
+}
+
+export async function restoreTenant(id: number): Promise<AdminTenant> {
+  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${id}/restore`)
+  return data.data
+}
+
+export async function scheduleTenantDeletion(id: number): Promise<AdminTenant> {
+  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${id}/schedule-deletion`)
+  return data.data
+}
+
+export async function cancelTenantDeletion(id: number): Promise<AdminTenant> {
+  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${id}/cancel-deletion`)
+  return data.data
 }
 
 export async function getAdminTenant(id: number): Promise<{ data: AdminTenant; users: TenantUser[] }> {
@@ -332,15 +350,16 @@ export async function getTenantStats(tenantId: number): Promise<TenantStats> {
 // ── Paramètres du site ────────────────────────────────────────────────────────
 
 export interface SiteSettingsData {
-  id:                number
-  contact_email:     string | null
-  contact_whatsapp:  string | null
-  contact_address:   string | null
-  contact_hours:     string | null
-  facebook_url:      string | null
-  twitter_url:       string | null
-  linkedin_url:      string | null
-  instagram_url:     string | null
+  id:                          number
+  contact_email:               string | null
+  contact_whatsapp:            string | null
+  contact_address:             string | null
+  contact_hours:               string | null
+  facebook_url:                string | null
+  twitter_url:                 string | null
+  linkedin_url:                string | null
+  instagram_url:               string | null
+  tenant_deletion_grace_days:  number
 }
 
 export type SiteSettingsForm = Omit<SiteSettingsData, 'id'>

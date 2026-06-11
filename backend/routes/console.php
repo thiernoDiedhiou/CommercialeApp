@@ -17,6 +17,12 @@ Schedule::command('subscription:expire')
     ->withoutOverlapping()
     ->runInBackground();
 
+// Purge RGPD — suppression définitive des tenants dont la fenêtre de grâce est expirée (quotidien à 02:00)
+Schedule::command('tenants:purge-scheduled-deletions')
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->runInBackground();
+
 // Traitement de la file de notifications (Hostinger shared hosting sans Redis)
 // Exécute les jobs en attente et s'arrête quand la file est vide
 Schedule::command('queue:work --stop-when-empty --queue=notifications --tries=3')

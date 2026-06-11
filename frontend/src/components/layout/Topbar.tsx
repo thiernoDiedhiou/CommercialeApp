@@ -8,6 +8,13 @@ import { useMutation } from '@tanstack/react-query'
 import { useAuthStore } from '@/store/authStore'
 import apiClient from '@/lib/axios'
 import { cn } from '@/lib/utils'
+import NotificationBell from '@/components/ui/NotificationBell'
+import {
+  getTenantNotifications,
+  markTenantNotificationRead,
+  markAllTenantNotificationsRead,
+  deleteTenantNotification,
+} from '@/services/api/notifications'
 
 interface TopbarProps {
   onMenuToggle: () => void
@@ -38,6 +45,15 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
       </button>
 
       <div className="flex-1" />
+
+      {/* Notifications */}
+      <NotificationBell
+        queryKey="tenant-notifications"
+        fetchFn={getTenantNotifications}
+        markReadFn={markTenantNotificationRead}
+        markAllFn={markAllTenantNotificationsRead}
+        deleteFn={deleteTenantNotification}
+      />
 
       {/* Menu utilisateur — Headless UI Menu */}
       <Menu as="div" className="relative">

@@ -15,6 +15,11 @@ class SiteSettings extends Model
         'twitter_url',
         'linkedin_url',
         'instagram_url',
+        'tenant_deletion_grace_days',
+    ];
+
+    protected $casts = [
+        'tenant_deletion_grace_days' => 'integer',
     ];
 
     // Singleton : toujours id = 1

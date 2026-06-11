@@ -13,6 +13,8 @@ export default function ShopCatalogPage() {
   const categoryParam = searchParams.get('category')
   const categoryId    = categoryParam ? parseInt(categoryParam, 10) : null
 
+  const onSale    = searchParams.get('on_sale') === '1'
+
   const sortParam = searchParams.get('sort')
   const sort      = (['newest', 'best_sellers'].includes(sortParam ?? '')
     ? sortParam
@@ -64,6 +66,7 @@ export default function ShopCatalogPage() {
   // Titre de section dynamique
   const sectionTitle = rawSearch
     ? `Résultats pour « ${rawSearch} »`
+    : onSale ? 'Offres du moment'
     : selectedCategory ? selectedCategory.name : 'Catalogue'
 
   return (
@@ -105,6 +108,7 @@ export default function ShopCatalogPage() {
         categoryId={categoryId}
         searchQuery={debouncedSearch}
         sort={sort}
+        onSale={onSale || undefined}
       />
     </div>
   )

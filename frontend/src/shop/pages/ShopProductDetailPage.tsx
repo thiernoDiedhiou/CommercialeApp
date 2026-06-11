@@ -8,8 +8,9 @@ import { Breadcrumb, SkeletonGrid } from '@/shop/components/shared'
 
 export default function ShopProductDetailPage() {
   const { slug = '', productId = '' } = useParams<{ slug: string; productId: string }>()
-  const addItem  = useShopStore((s) => s.addItem)
-  const openCart = useShopStore((s) => s.openCart)
+  const addItem   = useShopStore((s) => s.addItem)
+  const openCart  = useShopStore((s) => s.openCart)
+  const currency  = useShopStore((s) => s.shopConfig?.currency ?? 'FCFA')
 
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null)
   const [quantity, setQuantity]                   = useState(1)
@@ -146,12 +147,12 @@ export default function ShopProductDetailPage() {
             {/* Prix + prix barré */}
             <div className="flex items-baseline gap-3 flex-wrap">
               <span className="text-2xl font-bold text-[var(--shop-accent,#111827)]">
-                {product.price.toLocaleString('fr-FR')} FCFA
+                {product.price.toLocaleString('fr-FR')} {currency}
                 {product.is_weight_based && ` / ${product.unit ?? 'unité'}`}
               </span>
               {promoPercent !== null && product.compare_at_price !== null && (
                 <span className="text-base text-gray-400 line-through">
-                  {product.compare_at_price.toLocaleString('fr-FR')} FCFA
+                  {product.compare_at_price.toLocaleString('fr-FR')} {currency}
                 </span>
               )}
             </div>
