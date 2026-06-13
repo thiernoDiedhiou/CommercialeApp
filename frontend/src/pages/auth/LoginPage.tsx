@@ -219,9 +219,9 @@ export default function LoginPage() {
             </Link>
           </p>
 
-          {/* Footer pays */}
+          {/* Footer  */}
           <p className="mt-8 text-center text-[11px] tracking-wide text-gray-400/60 dark:text-gray-600">
-            Sénégal · Côte d'Ivoire · Mali · Guinée · Burkina Faso
+           {/* Footer contenu */}
           </p>
 
         </div>

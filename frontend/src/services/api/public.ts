@@ -39,6 +39,7 @@ export interface RegisterData {
   company_name:    string
   sector:          string
   currency?:       string
+  phone?:          string | null
   admin_name:      string
   admin_email:     string
   admin_password:  string

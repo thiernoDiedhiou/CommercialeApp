@@ -30,13 +30,16 @@ class PublicRegistrationController extends Controller
         $validated = $request->validate(
             [
                 'company_name'   => ['required', 'string', 'max:150'],
-                'sector'         => ['required', Rule::in(['general', 'food', 'fashion', 'cosmetic'])],
+                'sector'         => ['required', Rule::in(['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services', 'ecommerce'])],
                 'currency'       => ['nullable', Rule::in(['XOF', 'XAF', 'GNF', 'EUR', 'USD'])],
+                'phone'          => ['required', 'string', 'min:8', 'max:30'],
                 'admin_name'     => ['required', 'string', 'max:150'],
                 'admin_email'    => ['required', 'email', 'max:150', Rule::unique('users', 'email')],
                 'admin_password' => ['required', 'string', 'min:8'],
             ],
             [
+                'phone.required'         => 'Le numéro de téléphone est obligatoire.',
+                'phone.min'             => 'Veuillez saisir un numéro complet (indicatif + numéro local).',
                 'company_name.required'   => 'Le nom de votre boutique est obligatoire.',
                 'company_name.max'        => 'Le nom de la boutique ne peut pas dépasser 150 caractères.',
                 'sector.required'         => 'Veuillez sélectionner un secteur d\'activité.',
@@ -55,6 +58,7 @@ class PublicRegistrationController extends Controller
                 'name'      => $validated['company_name'],
                 'sector'    => $validated['sector'],
                 'currency'  => $validated['currency'] ?? 'XOF',
+                'phone'     => $validated['phone'] ?? null,
                 'is_active' => true,
             ]);
 

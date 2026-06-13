@@ -1,16 +1,21 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerTenant, type RegisterData } from '@/services/api/public'
 import { getApiErrorMessage } from '@/lib/errors'
 import { EyeIcon, EyeSlashIcon, CheckCircleIcon } from '@heroicons/react/24/outline'
+import PhoneInput, { normalizePhone } from '@/components/ui/PhoneInput'
+
+const SECTOR_VALUES = ['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services', 'ecommerce'] as const
 
 const schema = z.object({
   company_name:    z.string().min(2, 'Nom requis (2 caractères min)').max(150),
-  sector:          z.enum(['general', 'food', 'fashion', 'cosmetic'], { message: 'Secteur requis' }),
+  sector:          z.enum(SECTOR_VALUES, { message: 'Secteur requis' }),
+  phone:           z.string().min(8, 'Numéro requis — indicatif + numéro local'),
+  phone_country:   z.string().optional(),
   admin_name:      z.string().min(2, 'Votre nom est requis').max(150),
   admin_email:     z.string().email('Email invalide'),
   admin_password:  z.string().min(8, '8 caractères minimum'),
@@ -23,10 +28,14 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 const SECTORS = [
-  { value: 'general',  label: '🛒 Commerce général' },
-  { value: 'food',     label: '🍽️ Alimentation & traiteur' },
-  { value: 'fashion',  label: '👗 Mode & prêt-à-porter' },
-  { value: 'cosmetic', label: '💄 Cosmétique & beauté' },
+  { value: 'general',     label: '🛒 Commerce général' },
+  { value: 'food',        label: '🍽️ Alimentation & traiteur' },
+  { value: 'fashion',     label: '👗 Mode & prêt-à-porter' },
+  { value: 'cosmetic',    label: '💄 Cosmétique & beauté' },
+  { value: 'ecommerce',   label: '🌐 Commerce électronique' },
+  { value: 'pharmacy',    label: '💊 Pharmacie & parapharmacie' },
+  { value: 'electronics', label: '💻 Électronique & informatique' },
+  { value: 'services',    label: '🔧 Prestations de services' },
 ]
 
 export default function RegisterPage() {
@@ -34,7 +43,7 @@ export default function RegisterPage() {
   const [showPwd, setShowPwd]     = useState(false)
   const [success, setSuccess]     = useState<{ name: string; trialDays: number } | null>(null)
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, control, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { sector: 'general' },
   })
@@ -48,8 +57,8 @@ export default function RegisterPage() {
   })
 
   const onSubmit = (data: FormData) => {
-    const { confirm, ...rest } = data
-    mutation.mutate(rest)
+    const { confirm, phone, phone_country: _pc, ...rest } = data
+    mutation.mutate({ ...rest, phone: normalizePhone(phone) ?? phone })
   }
 
   if (success) {
@@ -129,6 +138,37 @@ export default function RegisterPage() {
               ))}
             </select>
             {errors.sector && <p className="mt-1 text-xs text-red-500">{errors.sector.message}</p>}
+          </div>
+
+          {/* Téléphone */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Téléphone <span className="text-red-500">*</span>
+            </label>
+            <Controller
+              name="phone"
+              control={control}
+              render={({ field }) => (
+                <Controller
+                  name="phone_country"
+                  control={control}
+                  render={({ field: countryField }) => (
+                    <PhoneInput
+                      country={countryField.value ?? 'SN'}
+                      onCountryChange={countryField.onChange}
+                      error={errors.phone?.message}
+                      phoneProps={{
+                        value         : field.value ?? '',
+                        onChange      : field.onChange,
+                        placeholder   : 'Saisir le numéro de téléphone',
+                        name          : 'phone',
+                        autoComplete  : 'off',
+                      }}
+                    />
+                  )}
+                />
+              )}
+            />
           </div>
 
           <div className="border-t border-gray-100 dark:border-gray-700 pt-5">

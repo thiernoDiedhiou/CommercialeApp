@@ -32,8 +32,14 @@ const SUB_STATUS_LABEL: Record<string, string> = {
 }
 
 const SECTOR_LABELS: Record<string, string> = {
-  general: 'Commerce général', food: 'Alimentation',
-  fashion: 'Mode',            cosmetic: 'Cosmétique',
+  general:     'Commerce général',
+  food:        'Alimentation',
+  fashion:     'Mode',
+  cosmetic:    'Cosmétique',
+  ecommerce:   'E-commerce',
+  pharmacy:    'Pharmacie',
+  electronics: 'Électronique',
+  services:    'Services',
 }
 
 // ── Schemas ───────────────────────────────────────────────────────────────

@@ -55,7 +55,7 @@ const SECTORS = [
 ]
 
 const STATS = [
-  { value: '4',  label: 'Secteurs supportés',     suffix: '' },
+  { value: '6',  label: 'Secteurs supportés',     suffix: '+' },
   { value: '21', label: "Jours d'essai gratuit",  suffix: 'j' },
   { value: '5',  label: 'Pays ciblés',            suffix: '+' },
 ]
@@ -230,8 +230,9 @@ export default function HomePage() {
           </h1>
 
           <p className="text-lg sm:text-xl text-gray-500 dark:text-gray-400 leading-relaxed mb-10 max-w-2xl mx-auto">
-            Ventes, stocks, clients et factures — tout en un seul endroit,
-            pour les commerçants qui veulent aller plus loin.
+            Optimisez la gestion de votre commerce avec un logiciel de caisse sur mesure : 
+            encaissements, gestion des stocks, promotions, fidélité… 
+            Des outils pensés pour vous faire gagner du temps et booster vos ventes.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 mb-4">
@@ -460,7 +461,7 @@ export default function HomePage() {
             Prêt à moderniser votre gestion ?
           </h2>
           <p className="text-lg text-white/70 mb-10">
-            Rejoignez les PME d'Afrique de l'Ouest qui font confiance à DiDi Sphere
+            Rejoignez les commerces qui font confiance à DiDi Sphere
             pour gérer leur commerce au quotidien.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
