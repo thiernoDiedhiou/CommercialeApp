@@ -11,6 +11,7 @@ import { useExitPosPath } from '@/hooks/useHomePath'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import type { Product, ProductVariant, Customer } from '@/types'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
+import { generateUUID } from '@/lib/uuid'
 
 import { getCategories } from '@/services/api/categories'
 import { getCustomers } from '@/services/api/customers'
@@ -202,7 +203,7 @@ export default function PosPage() {
       // Network failure → save offline
       if (!navigator.onLine || (axios.isAxiosError(e) && !e.response)) {
         addToOfflineQueue({
-          offline_id: crypto.randomUUID(),
+          offline_id: generateUUID(),
           items: payload.items.map((item) => ({
             product_id: item.product_id,
             variant_id: item.variant_id ?? null,

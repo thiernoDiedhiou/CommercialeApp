@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { generateUUID } from '@/lib/uuid'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
@@ -18,7 +19,7 @@ export const useToastStore = create<ToastState>((set) => ({
   toasts: [],
 
   addToast: (message, type = 'error') => {
-    const id = crypto.randomUUID()
+    const id = generateUUID()
     set((s) => ({ toasts: [...s.toasts, { id, type, message }] }))
     // Auto-dismiss après 5 s
     setTimeout(() => {

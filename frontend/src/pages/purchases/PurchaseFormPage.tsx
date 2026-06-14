@@ -14,6 +14,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Textarea, Select } from '@/components/ui/Input'
 import { formatCurrency } from '@/lib/utils'
+import { generateUUID } from '@/lib/uuid'
 import type { Product } from '@/types'
 
 // ── Schema (champs d'en-tête) ─────────────────────────────────────────────
@@ -41,7 +42,7 @@ type LineItem = {
 
 function emptyLine(): LineItem {
   return {
-    uid: crypto.randomUUID(),
+    uid: generateUUID(),
     product: null,
     product_id: null,
     variant_id: null,
@@ -154,7 +155,7 @@ export default function PurchaseFormPage() {
       if (orderData.items?.length) {
         setItems(
           orderData.items.map((item) => ({
-            uid: crypto.randomUUID(),
+            uid: generateUUID(),
             product: item.product
               ? { id: item.product_id, name: item.product.name }
               : null,

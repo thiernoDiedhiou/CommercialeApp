@@ -13,6 +13,7 @@ import { getApiErrorMessage } from '@/lib/errors'
 import Button from '@/components/ui/Button'
 import Input, { Textarea, Select } from '@/components/ui/Input'
 import { formatCurrency } from '@/lib/utils'
+import { generateUUID } from '@/lib/uuid'
 import type { Product } from '@/types'
 
 // ── Schema ────────────────────────────────────────────────────────────────
@@ -42,7 +43,7 @@ type LineItem = {
 }
 
 function emptyLine(): LineItem {
-  return { uid: crypto.randomUUID(), product_id: null, description: '', quantity: 1, unit_price: 0, discount: 0 }
+  return { uid: generateUUID(), product_id: null, description: '', quantity: 1, unit_price: 0, discount: 0 }
 }
 
 // ── Sélecteur produit ─────────────────────────────────────────────────────
@@ -212,7 +213,7 @@ export default function InvoiceFormPage() {
       })
       if (invoiceData.items?.length) {
         setItems(invoiceData.items.map((item) => ({
-          uid:         crypto.randomUUID(),
+          uid:         generateUUID(),
           product_id:  item.product_id,
           description: item.description,
           quantity:    parseFloat(item.quantity),
@@ -334,7 +335,7 @@ export default function InvoiceFormPage() {
           {/* Sélecteur rapide produit */}
           <div className="mb-4">
             <ProductPicker onSelect={(p) => setItems((prev) => [...prev, {
-              uid: crypto.randomUUID(),
+              uid: generateUUID(),
               product_id: p.id,
               description: p.name,
               quantity: 1,
