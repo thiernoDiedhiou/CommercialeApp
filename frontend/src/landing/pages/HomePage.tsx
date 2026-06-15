@@ -5,6 +5,9 @@ import {
   ShoppingCartIcon, CubeIcon, UsersIcon, DocumentTextIcon,
   ChartBarIcon, GlobeAltIcon, CheckIcon, ArrowRightIcon,
 } from '@heroicons/react/24/outline'
+import DashboardMockup from '@/landing/components/DashboardMockup'
+import FaqSection from '@/landing/components/FaqSection'
+import FeatureShowcase from '@/landing/components/FeatureShowcase'
 
 // ── Données statiques ─────────────────────────────────────────────────────────
 
@@ -48,14 +51,18 @@ const FEATURES = [
 ]
 
 const SECTORS = [
-  { emoji: '🛒', label: 'Commerce général',        desc: 'Épiceries, supérettes, multiservices' },
-  { emoji: '🍽️', label: 'Alimentation & traiteur', desc: 'Restaurants, fast-food, boulangeries' },
-  { emoji: '👗', label: 'Mode & prêt-à-porter',    desc: 'Boutiques, friperies, accessoires' },
-  { emoji: '💄', label: 'Cosmétique & beauté',      desc: 'Salons, instituts, distribution' },
+  { emoji: '🛒', label: 'Commerce général',            desc: 'Épiceries, supérettes, multiservices' },
+  { emoji: '🍽️', label: 'Alimentation & traiteur',     desc: 'Restaurants, fast-food, boulangeries' },
+  { emoji: '👗', label: 'Mode & prêt-à-porter',        desc: 'Boutiques, friperies, accessoires' },
+  { emoji: '💄', label: 'Cosmétique & beauté',          desc: 'Salons, instituts, distribution' },
+  { emoji: '🌐', label: 'Commerce électronique',       desc: 'Boutiques en ligne, marketplaces' },
+  { emoji: '💊', label: 'Pharmacie & parapharmacie',   desc: 'Officines, parapharmacies, dépôts' },
+  { emoji: '💻', label: 'Électronique & informatique', desc: 'High-tech, téléphonie, accessoires' },
+  { emoji: '🔧', label: 'Prestations de services',     desc: 'Artisans, prestataires, ateliers' },
 ]
 
 const STATS = [
-  { value: '6',  label: 'Secteurs supportés',     suffix: '+' },
+  { value: '8',  label: 'Secteurs supportés',     suffix: '+' },
   { value: '21', label: "Jours d'essai gratuit",  suffix: 'j' },
   { value: '5',  label: 'Pays ciblés',            suffix: '+' },
 ]
@@ -65,129 +72,6 @@ const STATS = [
 function formatPrice(price: string): string {
   const n = Math.round(parseFloat(price))
   return n.toLocaleString('fr-FR')
-}
-
-// ── Mockup dashboard ──────────────────────────────────────────────────────────
-
-function DashboardMockup() {
-  const bars = [38, 62, 48, 75, 52, 88, 68]
-  const sales = [
-    { name: 'Fatou Diallo',  amount: '12 500', initial: 'F' },
-    { name: 'Moussa Koné',   amount: '8 200',  initial: 'M' },
-    { name: 'Awa Traoré',    amount: '21 000', initial: 'A' },
-  ]
-
-  return (
-    <div className="w-full rounded-2xl overflow-hidden shadow-[0_24px_64px_-8px_rgba(36,101,237,0.18),0_8px_32px_-4px_rgba(0,0,0,0.08)] border border-gray-200/80 ring-1 ring-gray-900/5">
-      {/* Chrome navigateur */}
-      <div className="flex items-center gap-3 bg-gray-900 px-4 py-2.5">
-        <div className="flex gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-          <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
-          <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-        </div>
-        <div className="flex-1 rounded-md bg-gray-800 px-3 py-1 text-[10px] text-gray-400 font-mono">
-          didisphere.sn/dashboard
-        </div>
-      </div>
-
-      {/* App */}
-      <div className="flex h-[360px] bg-gray-50 overflow-hidden text-left">
-
-        {/* Sidebar */}
-        <div className="w-40 shrink-0 bg-white border-r border-gray-200 flex flex-col py-3 px-2 gap-0.5">
-          <div className="flex items-center gap-1.5 px-2 mb-4">
-            <div className="h-5 w-5 rounded-md bg-ds-blue" />
-            <span className="text-[9px] font-extrabold text-gray-800 truncate">Commerce Démo</span>
-          </div>
-          {[
-            { label: 'Tableau de bord', active: true  },
-            { label: 'Caisse POS',      active: false },
-            { label: 'Ventes',          active: false },
-            { label: 'Produits',        active: false },
-            { label: 'Stock',           active: false },
-            { label: 'Clients',         active: false },
-            { label: 'Rapports',        active: false },
-          ].map(({ label, active }) => (
-            <div
-              key={label}
-              className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[9px] font-medium ${
-                active ? 'bg-ds-blue text-white' : 'text-gray-500'
-              }`}
-            >
-              <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${active ? 'bg-white' : 'bg-gray-300'}`} />
-              {label}
-            </div>
-          ))}
-        </div>
-
-        {/* Contenu principal */}
-        <div className="flex-1 overflow-hidden p-4 flex flex-col gap-3">
-
-          <p className="text-[11px] font-extrabold text-gray-800">Tableau de bord</p>
-
-          {/* KPI cards */}
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { label: 'Ventes du jour', value: '47 500',    valueClass: 'text-ds-blue',   barBg: 'bg-ds-blue-light',   bar: 'bg-ds-blue'   },
-              { label: "Chiffre d'aff.", value: '1 240 000', valueClass: 'text-ds-green',  barBg: 'bg-ds-green-light',  bar: 'bg-ds-green'  },
-              { label: 'Bénéfice',       value: '380 000',   valueClass: 'text-ds-purple', barBg: 'bg-ds-purple-light', bar: 'bg-ds-purple' },
-            ].map(({ label, value, valueClass, barBg, bar }) => (
-              <div key={label} className="rounded-xl bg-white border border-gray-100 shadow-sm p-2">
-                <p className="text-[7px] text-gray-400 mb-0.5">{label}</p>
-                <p className={`text-[10px] font-extrabold ${valueClass}`}>{value}</p>
-                <p className="text-[6px] text-gray-300 mt-0.5">F CFA</p>
-                <div className={`mt-1.5 h-0.5 rounded-full w-3/4 ${barBg}`}>
-                  <div className={`h-full rounded-full w-1/2 ${bar}`} />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Graphe + ventes récentes */}
-          <div className="grid grid-cols-5 gap-2 flex-1 min-h-0">
-
-            <div className="col-span-3 rounded-xl bg-white border border-gray-100 shadow-sm p-2.5 flex flex-col">
-              <p className="text-[7px] font-semibold text-gray-500 mb-2">CA des 7 derniers jours</p>
-              <div className="flex items-end gap-1 flex-1">
-                {bars.map((h, i) => (
-                  <div key={i} className="flex-1 flex flex-col justify-end">
-                    <div
-                      className={`rounded-sm transition-all ${i === 5 ? 'bg-ds-blue' : 'bg-ds-blue-light'}`}
-                      style={{ height: `${h}%` }}
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-between mt-1.5">
-                {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
-                  <span key={i} className="flex-1 text-center text-[6px] text-gray-300">{d}</span>
-                ))}
-              </div>
-            </div>
-
-            <div className="col-span-2 rounded-xl bg-white border border-gray-100 shadow-sm p-2.5 flex flex-col">
-              <p className="text-[7px] font-semibold text-gray-500 mb-2">Ventes récentes</p>
-              <div className="flex flex-col gap-2">
-                {sales.map(({ name, amount, initial }) => (
-                  <div key={name} className="flex items-center justify-between">
-                    <div className="flex items-center gap-1">
-                      <div className="h-4 w-4 rounded-full bg-ds-blue-light flex items-center justify-center shrink-0">
-                        <span className="text-[7px] font-bold text-ds-blue">{initial}</span>
-                      </div>
-                      <span className="text-[7px] text-gray-600 truncate max-w-[48px]">{name.split(' ')[0]}</span>
-                    </div>
-                    <span className="text-[7px] font-bold text-ds-green">{amount}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </div>
-    </div>
-  )
 }
 
 // ── Composants ────────────────────────────────────────────────────────────────
@@ -230,9 +114,8 @@ export default function HomePage() {
           </h1>
 
           <p className="text-lg sm:text-xl text-gray-500 dark:text-gray-400 leading-relaxed mb-10 max-w-2xl mx-auto">
-            Optimisez la gestion de votre commerce avec un logiciel de caisse sur mesure : 
-            encaissements, gestion des stocks, promotions, fidélité… 
-            Des outils pensés pour vous faire gagner du temps et booster vos ventes.
+            Ventes, stocks, clients et factures — tout en un seul endroit, 
+            pour les commerçants qui veulent aller plus loin.
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 mb-4">
@@ -259,8 +142,8 @@ export default function HomePage() {
       </section>
 
       {/* ── Mockup section ──────────────────────────────────────────────────── */}
-      <section className="bg-gray-50 dark:bg-gray-900 py-16">
-        <div className="mx-auto max-w-5xl px-6">
+      <section className="bg-gradient-to-b from-white to-gray-50 dark:from-gray-950 dark:to-gray-900 pb-10">
+        <div className="mx-auto max-w-4xl px-6">
           <DashboardMockup />
         </div>
       </section>
@@ -314,6 +197,20 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── Feature Showcase ────────────────────────────────────────────────── */}
+      <section className="py-20 bg-white dark:bg-gray-950">
+        <div className="mx-auto max-w-6xl px-4 text-center mb-10">
+          <SectionLabel>En action</SectionLabel>
+          <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
+            Voyez le produit par vous-même
+          </h2>
+          <p className="mt-4 text-lg text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+            Ce sont de vraies interfaces — interactives, pas des captures d'écran.
+          </p>
+        </div>
+        <FeatureShowcase />
+      </section>
+
       {/* ── Secteurs ────────────────────────────────────────────────────────── */}
       <section className="py-20 bg-white dark:bg-gray-950">
         <div className="mx-auto max-w-6xl px-4">
@@ -330,10 +227,11 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {SECTORS.map(({ emoji, label, desc }) => (
-              <div
+              <button
                 key={label}
-                className="group relative overflow-hidden rounded-2xl border-2 border-gray-100 dark:border-gray-700 dark:bg-gray-800/50 p-6 hover:border-ds-blue dark:hover:border-ds-blue hover:shadow-lg transition-all cursor-pointer"
+                type="button"
                 onClick={() => navigate('/inscription')}
+                className="group relative overflow-hidden rounded-2xl border-2 border-gray-100 dark:border-gray-700 dark:bg-gray-800/50 p-6 hover:border-ds-blue dark:hover:border-ds-blue hover:shadow-lg transition-all text-left w-full"
               >
                 <div className="text-4xl mb-4">{emoji}</div>
                 <h3 className="font-bold text-gray-900 dark:text-white mb-1">{label}</h3>
@@ -341,7 +239,7 @@ export default function HomePage() {
                 <div className="mt-4 text-xs font-semibold text-ds-blue opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                   Commencer <ArrowRightIcon className="h-3 w-3" />
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -452,6 +350,11 @@ export default function HomePage() {
           </div>
         </section>
       )}
+
+      {/* ── FAQ ─────────────────────────────────────────────────────────────── */}
+      <section className="py-20 bg-white dark:bg-gray-950">
+        <FaqSection />
+      </section>
 
       {/* ── CTA final ────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden py-20 bg-gray-950">

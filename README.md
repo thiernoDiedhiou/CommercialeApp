@@ -215,6 +215,19 @@ saas-commercial/
 
 ## Architecture multi-tenant
 
+### Identifiants — Pattern `id + uid`
+
+Tous les modèles métier exposent deux identifiants :
+
+| Champ | Type | Usage |
+| --- | --- | --- |
+| `id` | Auto-increment | Clé primaire interne, jointures SQL uniquement |
+| `uid` | UUID v4 NOT NULL UNIQUE | Routes API, URLs frontend — jamais `id` |
+
+Le trait `HasUuid` (`app/Traits/HasUuid.php`) génère automatiquement l'UUID à la création. Toutes les routes utilisent le binding `{model:uid}` (Laravel résout via `WHERE uid = ?`). Cette approche élimine l'énumération séquentielle des ressources (IDOR).
+
+**Modèles avec `uid` :** Tenant, User, Product, ProductVariant, Category, Brand, Customer, Supplier, Group, Sale, SaleReturn, PurchaseOrder, Invoice, ShopOrder, Plan.
+
 ### Routes tenant (avec X-Tenant-ID)
 
 ```text
@@ -292,7 +305,9 @@ Interface accessible sur `/admin/login` — store Zustand `superAdminStore` sép
 | --- | --- | --- |
 | Auth Admin | `/api/v1/admin/auth` | login, logout, me |
 | Stats | `/api/v1/admin/stats` | index (tenants total/actifs/suspendus, users total) |
-| Tenants | `/api/v1/admin/tenants` | CRUD + suspend + activate |
+| Plans | `/api/v1/admin/plans` | CRUD — paramètre `{plan:uid}` |
+| Tenants | `/api/v1/admin/tenants` | CRUD + suspend + activate — paramètre `{tenant:uid}` |
+| Abonnements | `/api/v1/admin/tenants/{tenant:uid}/subscription` | GET + POST + PUT + historique |
 
 ---
 
@@ -301,7 +316,7 @@ Interface accessible sur `/admin/login` — store Zustand `superAdminStore` sép
 Les couleurs sont définies par le Super Admin (page détail tenant) et appliquées automatiquement :
 
 ```text
-Super Admin → PUT /api/v1/admin/tenants/{id} → primary_color + secondary_color sauvés en DB
+Super Admin → PUT /api/v1/admin/tenants/{uid} → primary_color + secondary_color sauvés en DB
 Tenant login → GET /api/v1/auth/me → retourne les couleurs fraîches
 Layout.tsx → applyBrandColors() → CSS variables --brand-primary / --brand-secondary
 Tailwind → bg-brand-primary, text-brand-secondary, etc.
@@ -442,3 +457,5 @@ php artisan queue:work --queue=notifications --stop-when-empty
 | Charte graphique POS | ✅ Terminée | `applyBrandColors()` appelé au montage du POS — couleurs tenant cohérentes même après rechargement direct de la page |
 | Boutique en ligne — socle | ✅ Terminée | `PublicShopController`, `ShopConfig`, routes `/api/v1/public/{slug}/*`, `shopStore`, vitrine multi-pages |
 | Boutique en ligne — design & UX | ✅ Terminée | Hero overlay, CategoryStrip icônes sémantiques, `compare_at_price` (-X% badge + prix rayé), stock faible, "Offres du moment" auto-masquée, recherche URL-driven, menu mobile icônes |
+| Migration UID | ✅ Terminée | Trait `HasUuid`, migration 3 phases (nullable→backfill→NOT NULL), routes `{model:uid}`, frontend `useParams<{ uid }>` — élimination IDOR |
+| Profil utilisateur | ✅ Terminée | Page `/profile` accessible à tous les utilisateurs (hors settings), topbar enrichie (avatar initiales, Mon profil, déconnexion), changement de mot de passe avec révocation des sessions |

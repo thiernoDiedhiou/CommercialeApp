@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getPublicPlans, type PublicPlan } from '@/services/api/public'
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import FaqSection from '@/landing/components/FaqSection'
 
 
 const FEATURE_LABELS: { key: keyof PublicPlan; label: string }[] = [
@@ -218,34 +219,9 @@ export default function PricingPage() {
         )}
       </div>
 
-      {/* FAQ courte */}
-      <div className="mx-auto max-w-3xl px-4 mt-20">
-        <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white text-center mb-10">Questions fréquentes</h2>
-        <div className="space-y-6">
-          {[
-            {
-              q: "L'essai gratuit nécessite-t-il une carte bancaire ?",
-              a: "Non. Aucune information de paiement n'est requise pour démarrer votre essai."
-            },
-            {
-              q: "Puis-je changer de plan à tout moment ?",
-              a: "Oui. Vous pouvez passer à un plan supérieur ou inférieur à tout moment depuis votre espace client."
-            },
-            {
-              q: "Mes données sont-elles sécurisées ?",
-              a: "Oui. Vos données sont isolées dans un espace dédié (multi-tenant), hébergées sur des serveurs sécurisés."
-            },
-            {
-              q: "Comment fonctionne le paiement ?",
-              a: "Nous acceptons Orange Money, Wave et les virements bancaires. Facturation mensuelle ou annuelle selon votre choix."
-            },
-          ].map(({ q, a }) => (
-            <div key={q} className="rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 p-6">
-              <p className="font-semibold text-gray-900 dark:text-white mb-2">{q}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{a}</p>
-            </div>
-          ))}
-        </div>
+      {/* FAQ */}
+      <div className="mt-20">
+        <FaqSection />
       </div>
 
       {/* CTA */}

@@ -45,7 +45,7 @@ function Navbar({ isDark, onToggle }: { isDark: boolean; onToggle: () => void })
           <img
             src={isDark ? '/logo_blanc.svg' : '/logo_mode_claire.svg'}
             alt="DiDi Sphere"
-            className="h-8 w-auto"
+            className="h-10 w-auto"
           />
         </Link>
 
@@ -131,7 +131,7 @@ function Navbar({ isDark, onToggle }: { isDark: boolean; onToggle: () => void })
               <img
                 src={isDark ? '/logo_blanc.svg' : '/logo_mode_claire.svg'}
                 alt="DiDi Sphere"
-                className="h-7 w-auto"
+                className="h-9 w-auto"
               />
               <button
                 type="button"
