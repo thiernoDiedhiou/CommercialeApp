@@ -131,43 +131,43 @@ export default function AdminTenantsPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: EditValues }) => updateAdminTenant(id, data),
+    mutationFn: ({ uid, data }: { uid: string; data: EditValues }) => updateAdminTenant(uid, data),
     onSuccess: () => { invalidate(); setEditTarget(null); toast.success('Tenant mis à jour.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const suspendMutation = useMutation({
-    mutationFn: (id: number) => suspendTenant(id),
+    mutationFn: (uid: string) => suspendTenant(uid),
     onSuccess: () => { invalidate(); toast.success('Tenant suspendu.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const activateMutation = useMutation({
-    mutationFn: (id: number) => activateTenant(id),
+    mutationFn: (uid: string) => activateTenant(uid),
     onSuccess: () => { invalidate(); toast.success('Tenant activé.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteAdminTenant(id),
+    mutationFn: (uid: string) => deleteAdminTenant(uid),
     onSuccess: () => { invalidate(); qc.invalidateQueries({ queryKey: ['admin-stats'] }); setDeleteTarget(null); toast.success('Tenant déplacé en corbeille.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const restoreMutation = useMutation({
-    mutationFn: (id: number) => restoreTenant(id),
+    mutationFn: (uid: string) => restoreTenant(uid),
     onSuccess: () => { invalidate(); toast.success('Tenant restauré avec succès.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const scheduleMutation = useMutation({
-    mutationFn: (id: number) => scheduleTenantDeletion(id),
+    mutationFn: (uid: string) => scheduleTenantDeletion(uid),
     onSuccess: () => { invalidate(); setScheduleTarget(null); toast.success('Suppression planifiée dans 30 jours (conformité RGPD).') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const cancelDeletionMutation = useMutation({
-    mutationFn: (id: number) => cancelTenantDeletion(id),
+    mutationFn: (uid: string) => cancelTenantDeletion(uid),
     onSuccess: () => { invalidate(); toast.success('Suppression définitive annulée.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -299,7 +299,7 @@ export default function AdminTenantsPage() {
                   <tr
                     key={tenant.id}
                     className={`transition ${isTrash ? 'opacity-70' : 'hover:bg-gray-900/50 cursor-pointer'}`}
-                    onClick={isTrash ? undefined : () => navigate(`/admin/tenants/${tenant.id}`)}
+                    onClick={isTrash ? undefined : () => navigate(`/admin/tenants/${tenant.uid}`)}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
@@ -380,12 +380,12 @@ export default function AdminTenantsPage() {
                         {isTrash ? (
                           <>
                             {/* Restaurer */}
-                            <ActionButton label="Restaurer" onClick={() => restoreMutation.mutate(tenant.id)} className="hover:bg-emerald-900/30 hover:text-emerald-400">
+                            <ActionButton label="Restaurer" onClick={() => restoreMutation.mutate(tenant.uid)} className="hover:bg-emerald-900/30 hover:text-emerald-400">
                               <ArrowUturnLeftIcon className="h-4 w-4" />
                             </ActionButton>
                             {/* Programmer / Annuler la suppression définitive */}
                             {tenant.scheduled_deletion_at ? (
-                              <ActionButton label="Annuler la suppression" onClick={() => cancelDeletionMutation.mutate(tenant.id)} className="hover:bg-gray-800 hover:text-gray-300">
+                              <ActionButton label="Annuler la suppression" onClick={() => cancelDeletionMutation.mutate(tenant.uid)} className="hover:bg-gray-800 hover:text-gray-300">
                                 <XCircleIcon className="h-4 w-4" />
                               </ActionButton>
                             ) : (
@@ -414,7 +414,7 @@ export default function AdminTenantsPage() {
                                 <NoSymbolIcon className="h-4 w-4" />
                               </ActionButton>
                             ) : (
-                              <ActionButton label="Activer" onClick={() => activateMutation.mutate(tenant.id)} className="hover:bg-emerald-900/30 hover:text-emerald-400">
+                              <ActionButton label="Activer" onClick={() => activateMutation.mutate(tenant.uid)} className="hover:bg-emerald-900/30 hover:text-emerald-400">
                                 <CheckCircleIcon className="h-4 w-4" />
                               </ActionButton>
                             )}
@@ -462,7 +462,7 @@ export default function AdminTenantsPage() {
       )}
 
       {editTarget && (
-        <EditTenantModal tenant={editTarget} onClose={() => setEditTarget(null)} onSubmit={(v) => updateMutation.mutate({ id: editTarget.id, data: v })} isPending={updateMutation.isPending} />
+        <EditTenantModal tenant={editTarget} onClose={() => setEditTarget(null)} onSubmit={(v) => updateMutation.mutate({ uid: editTarget.uid, data: v })} isPending={updateMutation.isPending} />
       )}
 
       {/* Modal suppression → corbeille */}
@@ -478,7 +478,7 @@ export default function AdminTenantsPage() {
             </p>
             <div className="flex gap-3 justify-end">
               <button type="button" onClick={() => setDeleteTarget(null)} className={btnOutline}>Annuler</button>
-              <button type="button" onClick={() => deleteMutation.mutate(deleteTarget.id)} disabled={deleteMutation.isPending} className="px-4 py-2 rounded-lg bg-red-600 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-60 transition">
+              <button type="button" onClick={() => deleteMutation.mutate(deleteTarget.uid)} disabled={deleteMutation.isPending} className="px-4 py-2 rounded-lg bg-red-600 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-60 transition">
                 {deleteMutation.isPending ? 'Suppression…' : 'Mettre en corbeille'}
               </button>
             </div>
@@ -497,7 +497,7 @@ export default function AdminTenantsPage() {
             </p>
             <div className="flex gap-3 justify-end">
               <button type="button" onClick={() => setSuspendTarget(null)} className={btnOutline}>Annuler</button>
-              <button type="button" onClick={() => { suspendMutation.mutate(suspendTarget.id); setSuspendTarget(null) }} disabled={suspendMutation.isPending}
+              <button type="button" onClick={() => { suspendMutation.mutate(suspendTarget.uid); setSuspendTarget(null) }} disabled={suspendMutation.isPending}
                 className="px-4 py-2 rounded-lg bg-orange-600 text-sm font-medium text-white hover:bg-orange-500 disabled:opacity-60 transition">
                 {suspendMutation.isPending ? 'Suspension…' : 'Suspendre'}
               </button>
@@ -519,7 +519,7 @@ export default function AdminTenantsPage() {
             </div>
             <div className="flex gap-3 justify-end">
               <button type="button" onClick={() => setScheduleTarget(null)} className={btnOutline}>Annuler</button>
-              <button type="button" onClick={() => scheduleMutation.mutate(scheduleTarget.id)} disabled={scheduleMutation.isPending}
+              <button type="button" onClick={() => scheduleMutation.mutate(scheduleTarget.uid)} disabled={scheduleMutation.isPending}
                 className="px-4 py-2 rounded-lg bg-red-600 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-60 transition">
                 {scheduleMutation.isPending ? 'Planification…' : 'Programmer la suppression'}
               </button>

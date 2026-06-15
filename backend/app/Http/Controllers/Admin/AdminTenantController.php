@@ -335,6 +335,7 @@ class AdminTenantController extends Controller
     {
         return [
             'id'              => $tenant->id,
+            'uid'             => $tenant->uid,
             'name'            => $tenant->name,
             'slug'            => $tenant->slug,
             'custom_domain'   => $tenant->custom_domain,

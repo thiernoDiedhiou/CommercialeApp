@@ -10,7 +10,6 @@ import type {
   CreateVariantData,
 } from '@/types'
 
-/** Retire les valeurs undefined/null/vide pour ne pas polluer la query string. */
 function clean(params: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(
     Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''),
@@ -32,22 +31,19 @@ export async function getProducts(params: {
   return data
 }
 
-export async function getProduct(id: number): Promise<Product> {
-  const { data } = await apiClient.get<{ data: Product }>(`/api/v1/products/${id}`)
+export async function getProduct(uid: string): Promise<Product> {
+  const { data } = await apiClient.get<{ data: Product }>(`/api/v1/products/${uid}`)
   return data.data
 }
 
 function appendToForm(form: FormData, body: Record<string, unknown>) {
   Object.entries(body).forEach(([k, v]) => {
     if (v === undefined || v === null) return
-    // Laravel n'accepte que "0"/"1" pour les champs boolean en multipart
     if (typeof v === 'boolean') form.append(k, v ? '1' : '0')
     else form.append(k, String(v))
   })
 }
 
-// Headers pour les requêtes multipart — supprime Content-Type pour que le
-// navigateur génère automatiquement la boundary correcte.
 const MULTIPART_HEADERS = { headers: { 'Content-Type': undefined } }
 
 export async function createProduct(body: CreateProductData, image?: File | null): Promise<Product> {
@@ -63,7 +59,7 @@ export async function createProduct(body: CreateProductData, image?: File | null
 }
 
 export async function updateProduct(
-  id: number,
+  uid: string,
   body: UpdateProductData,
   image?: File | null,
   removeImage?: boolean,
@@ -74,23 +70,23 @@ export async function updateProduct(
     appendToForm(form, body as unknown as Record<string, unknown>)
     if (image) form.append('image', image)
     if (removeImage) form.append('remove_image', '1')
-    const { data } = await apiClient.post<{ data: Product }>(`/api/v1/products/${id}`, form, MULTIPART_HEADERS)
+    const { data } = await apiClient.post<{ data: Product }>(`/api/v1/products/${uid}`, form, MULTIPART_HEADERS)
     return data.data
   }
-  const { data } = await apiClient.put<{ data: Product }>(`/api/v1/products/${id}`, body)
+  const { data } = await apiClient.put<{ data: Product }>(`/api/v1/products/${uid}`, body)
   return data.data
 }
 
-export async function deleteProduct(id: number): Promise<void> {
-  await apiClient.delete(`/api/v1/products/${id}`)
+export async function deleteProduct(uid: string): Promise<void> {
+  await apiClient.delete(`/api/v1/products/${uid}`)
 }
 
 export async function getProductStockMovements(
-  productId: number,
+  productUid: string,
   params: { page?: number } = {},
 ): Promise<PaginatedResponse<StockMovement>> {
   const { data } = await apiClient.get<PaginatedResponse<StockMovement>>(
-    `/api/v1/products/${productId}/stock-movements`,
+    `/api/v1/products/${productUid}/stock-movements`,
     { params: clean(params) },
   )
   return data
@@ -98,49 +94,49 @@ export async function getProductStockMovements(
 
 // ── Variantes ─────────────────────────────────────────────────────────────
 
-export async function getVariants(productId: number): Promise<ProductVariant[]> {
+export async function getVariants(productUid: string): Promise<ProductVariant[]> {
   const { data } = await apiClient.get<{ data: ProductVariant[] }>(
-    `/api/v1/products/${productId}/variants`,
+    `/api/v1/products/${productUid}/variants`,
   )
   return data.data
 }
 
 export async function createVariant(
-  productId: number,
+  productUid: string,
   body: CreateVariantData,
 ): Promise<ProductVariant> {
   const { data } = await apiClient.post<{ data: ProductVariant }>(
-    `/api/v1/products/${productId}/variants`,
+    `/api/v1/products/${productUid}/variants`,
     body,
   )
   return data.data
 }
 
 export async function updateVariant(
-  productId: number,
-  variantId: number,
+  productUid: string,
+  variantUid: string,
   body: Partial<Omit<CreateVariantData, 'attribute_value_ids'>>,
 ): Promise<ProductVariant> {
   const { data } = await apiClient.put<{ data: ProductVariant }>(
-    `/api/v1/products/${productId}/variants/${variantId}`,
+    `/api/v1/products/${productUid}/variants/${variantUid}`,
     body,
   )
   return data.data
 }
 
-export async function deleteVariant(productId: number, variantId: number): Promise<void> {
-  await apiClient.delete(`/api/v1/products/${productId}/variants/${variantId}`)
+export async function deleteVariant(productUid: string, variantUid: string): Promise<void> {
+  await apiClient.delete(`/api/v1/products/${productUid}/variants/${variantUid}`)
 }
 
-// ── Lots ──────────────────────────────────────────────────────────────────
+// ── Lots (gardent l'id entier — ProductLot n'a pas de uid) ────────────────
 
-export async function getProductLots(productId: number): Promise<ProductLot[]> {
-  const { data } = await apiClient.get<{ data: ProductLot[] }>(`/api/v1/products/${productId}/lots`)
+export async function getProductLots(productUid: string): Promise<ProductLot[]> {
+  const { data } = await apiClient.get<{ data: ProductLot[] }>(`/api/v1/products/${productUid}/lots`)
   return data.data
 }
 
 export async function createProductLot(
-  productId: number,
+  productUid: string,
   body: {
     lot_number: string
     expiry_date?: string | null
@@ -150,25 +146,25 @@ export async function createProductLot(
     notes?: string | null
   },
 ): Promise<ProductLot> {
-  const { data } = await apiClient.post<{ data: ProductLot }>(`/api/v1/products/${productId}/lots`, body)
+  const { data } = await apiClient.post<{ data: ProductLot }>(`/api/v1/products/${productUid}/lots`, body)
   return data.data
 }
 
 export async function updateProductLot(
-  productId: number,
+  productUid: string,
   lotId: number,
   body: { expiry_date?: string | null; is_active?: boolean; notes?: string | null },
 ): Promise<ProductLot> {
-  const { data } = await apiClient.put<{ data: ProductLot }>(`/api/v1/products/${productId}/lots/${lotId}`, body)
+  const { data } = await apiClient.put<{ data: ProductLot }>(`/api/v1/products/${productUid}/lots/${lotId}`, body)
   return data.data
 }
 
 export async function regularizeProductLots(
-  productId: number,
+  productUid: string,
   body: { lot_number?: string; expiry_date?: string | null; notes?: string | null },
 ): Promise<{ data: ProductLot; orphaned_absorbed: number }> {
   const { data } = await apiClient.post<{ data: ProductLot; orphaned_absorbed: number }>(
-    `/api/v1/products/${productId}/lots/regularize`,
+    `/api/v1/products/${productUid}/lots/regularize`,
     body,
   )
   return data

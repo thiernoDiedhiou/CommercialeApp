@@ -18,8 +18,8 @@ export async function getSuppliers(params: {
   return data
 }
 
-export async function getSupplier(id: number): Promise<Supplier> {
-  const { data } = await apiClient.get<{ data: Supplier }>(`/api/v1/suppliers/${id}`)
+export async function getSupplier(uid: string): Promise<Supplier> {
+  const { data } = await apiClient.get<{ data: Supplier }>(`/api/v1/suppliers/${uid}`)
   return data.data
 }
 
@@ -28,11 +28,11 @@ export async function createSupplier(body: CreateSupplierData): Promise<Supplier
   return data.data
 }
 
-export async function updateSupplier(id: number, body: Partial<CreateSupplierData>): Promise<Supplier> {
-  const { data } = await apiClient.put<{ data: Supplier }>(`/api/v1/suppliers/${id}`, body)
+export async function updateSupplier(uid: string, body: Partial<CreateSupplierData>): Promise<Supplier> {
+  const { data } = await apiClient.put<{ data: Supplier }>(`/api/v1/suppliers/${uid}`, body)
   return data.data
 }
 
-export async function deleteSupplier(id: number): Promise<void> {
-  await apiClient.delete(`/api/v1/suppliers/${id}`)
+export async function deleteSupplier(uid: string): Promise<void> {
+  await apiClient.delete(`/api/v1/suppliers/${uid}`)
 }

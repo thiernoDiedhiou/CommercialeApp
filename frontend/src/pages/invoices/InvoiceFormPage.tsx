@@ -179,16 +179,16 @@ function CustomerPicker({ initialName = '', onChange }: { initialName?: string; 
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export default function InvoiceFormPage() {
-  const { id } = useParams<{ id: string }>()
-  const isEdit = !!id
+  const { uid } = useParams<{ uid: string }>()
+  const isEdit = !!uid
   const navigate = useNavigate()
   const qc = useQueryClient()
 
   const [items, setItems] = useState<LineItem[]>([emptyLine()])
 
   const { data: invoiceData, isLoading } = useQuery({
-    queryKey: ['invoice', id],
-    queryFn: () => getInvoice(Number(id)),
+    queryKey: ['invoice', uid],
+    queryFn: () => getInvoice(uid!),
     enabled: isEdit,
   })
 
@@ -262,12 +262,12 @@ export default function InvoiceFormPage() {
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
   const updateMutation = useMutation({
-    mutationFn: (v: FormValues) => updateInvoice(Number(id), buildPayload(v)),
+    mutationFn: (v: FormValues) => updateInvoice(uid!, buildPayload(v)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['invoices'] })
-      qc.invalidateQueries({ queryKey: ['invoice', id] })
+      qc.invalidateQueries({ queryKey: ['invoice', uid] })
       toast.success('Facture mise à jour.')
-      navigate(`/invoices/${id}`)
+      navigate(`/invoices/${uid}`)
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -437,7 +437,7 @@ export default function InvoiceFormPage() {
         )}
 
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate(isEdit ? `/invoices/${id}` : '/invoices')}>
+          <Button type="button" variant="outline" onClick={() => navigate(isEdit ? `/invoices/${uid}` : '/invoices')}>
             Annuler
           </Button>
           <Button type="submit" loading={isPending}>

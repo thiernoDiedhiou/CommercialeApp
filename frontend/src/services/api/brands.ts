@@ -11,11 +11,11 @@ export async function createBrand(body: CreateBrandData): Promise<Brand> {
   return data.data
 }
 
-export async function updateBrand(id: number, body: CreateBrandData): Promise<Brand> {
-  const { data } = await apiClient.put<{ data: Brand }>(`/api/v1/brands/${id}`, body)
+export async function updateBrand(uid: string, body: CreateBrandData): Promise<Brand> {
+  const { data } = await apiClient.put<{ data: Brand }>(`/api/v1/brands/${uid}`, body)
   return data.data
 }
 
-export async function deleteBrand(id: number): Promise<void> {
-  await apiClient.delete(`/api/v1/brands/${id}`)
+export async function deleteBrand(uid: string): Promise<void> {
+  await apiClient.delete(`/api/v1/brands/${uid}`)
 }

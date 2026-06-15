@@ -20,30 +20,26 @@ export async function getSales(params: {
   return data
 }
 
-export async function getSale(id: number): Promise<Sale> {
-  const { data } = await apiClient.get<{ data: Sale }>(`/api/v1/sales/${id}`)
+export async function getSale(uid: string): Promise<Sale> {
+  const { data } = await apiClient.get<{ data: Sale }>(`/api/v1/sales/${uid}`)
   return data.data
 }
 
-export async function cancelSale(id: number): Promise<Sale> {
-  const { data } = await apiClient.post<{ data: Sale }>(`/api/v1/sales/${id}/cancel`)
+export async function cancelSale(uid: string): Promise<Sale> {
+  const { data } = await apiClient.post<{ data: Sale }>(`/api/v1/sales/${uid}/cancel`)
   return data.data
 }
 
 export async function addPayment(
-  id: number,
+  uid: string,
   body: { method: string; amount: number; reference?: string; paid_at?: string },
 ): Promise<Payment> {
-  const { data } = await apiClient.post<{ data: Payment }>(`/api/v1/sales/${id}/payments`, body)
+  const { data } = await apiClient.post<{ data: Payment }>(`/api/v1/sales/${uid}/payments`, body)
   return data.data
 }
 
-/**
- * Télécharge le PDF via axios (bearer token inclus automatiquement),
- * crée une URL objet et l'ouvre dans un nouvel onglet.
- */
-export async function openSalePdf(id: number): Promise<void> {
-  const response = await apiClient.get(`/api/v1/sales/${id}/pdf`, { responseType: 'blob' })
+export async function openSalePdf(uid: string): Promise<void> {
+  const response = await apiClient.get(`/api/v1/sales/${uid}/pdf`, { responseType: 'blob' })
   const url = URL.createObjectURL(response.data as Blob)
   window.open(url, '_blank')
   setTimeout(() => URL.revokeObjectURL(url), 30_000)
@@ -52,11 +48,11 @@ export async function openSalePdf(id: number): Promise<void> {
 // ── Retours ───────────────────────────────────────────────────────────────
 
 export async function createSaleReturn(
-  saleId: number,
+  saleUid: string,
   data: CreateSaleReturnData,
 ): Promise<SaleReturn> {
   const { data: res } = await apiClient.post<{ data: SaleReturn }>(
-    `/api/v1/sales/${saleId}/returns`,
+    `/api/v1/sales/${saleUid}/returns`,
     data,
   )
   return res.data
@@ -76,7 +72,7 @@ export async function getReturns(params: {
   return data
 }
 
-export async function getSaleReturn(id: number): Promise<SaleReturn> {
-  const { data } = await apiClient.get<{ data: SaleReturn }>(`/api/v1/returns/${id}`)
+export async function getSaleReturn(uid: string): Promise<SaleReturn> {
+  const { data } = await apiClient.get<{ data: SaleReturn }>(`/api/v1/returns/${uid}`)
   return data.data
 }

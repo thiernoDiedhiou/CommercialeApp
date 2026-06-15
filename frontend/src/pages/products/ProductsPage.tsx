@@ -101,7 +101,7 @@ export default function ProductsPage() {
   // ── Suppression ───────────────────────────────────────────────────────────
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteProduct(id),
+    mutationFn: (uid: string) => deleteProduct(uid),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
       setDeleteTarget(null)
@@ -184,7 +184,7 @@ export default function ProductsPage() {
           <CanDo permission="products.edit">
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); navigate(`/products/${p.id}/edit`) }}
+              onClick={(e) => { e.stopPropagation(); navigate(`/products/${p.uid}/edit`) }}
               className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
               title="Modifier"
             >
@@ -272,7 +272,7 @@ export default function ProductsPage() {
         loading={isLoading}
         skeletonRows={8}
         emptyMessage="Aucun produit trouvé."
-        onRowClick={(p) => navigate(`/products/${p.id}`)}
+        onRowClick={(p) => navigate(`/products/${p.uid}`)}
       />
 
       {/* Pagination */}
@@ -430,7 +430,7 @@ export default function ProductsPage() {
             <Button
               variant="danger"
               loading={deleteMutation.isPending}
-              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}
             >
               Supprimer
             </Button>

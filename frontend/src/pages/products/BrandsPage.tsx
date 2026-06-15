@@ -52,20 +52,20 @@ export default function BrandsPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, v }: { id: number; v: FormValues }) => updateBrand(id, { name: v.name }),
+    mutationFn: ({ uid, v }: { uid: string; v: FormValues }) => updateBrand(uid, { name: v.name }),
     onSuccess : () => { qc.invalidateQueries({ queryKey: ['brands'] }); setModal(null); toast.success('Marque mise à jour.') },
     onError   : (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteBrand(id),
+    mutationFn: (uid: string) => deleteBrand(uid),
     onSuccess : () => { qc.invalidateQueries({ queryKey: ['brands'] }); setDeleteTarget(null); toast.success('Marque supprimée.') },
     onError   : (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const onSubmit = (v: FormValues) => {
     if (modal?.mode === 'create') createMutation.mutate(v)
-    else if (modal?.mode === 'edit') updateMutation.mutate({ id: modal.brand.id, v })
+    else if (modal?.mode === 'edit') updateMutation.mutate({ uid: modal.brand.uid, v })
   }
 
   const isMutating = createMutation.isPending || updateMutation.isPending
@@ -159,7 +159,7 @@ export default function BrandsPage() {
             <Button
               variant="danger"
               loading={deleteMutation.isPending}
-              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}
             >
               Supprimer
             </Button>

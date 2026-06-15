@@ -115,7 +115,7 @@ export default function AdminPlansPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ['admin-plans'] })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteAdminPlan(id),
+    mutationFn: (uid: string) => deleteAdminPlan(uid),
     onSuccess: () => { invalidate(); setDeleteTarget(null); toast.success('Plan supprimé.') },
     onError:   (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -179,7 +179,7 @@ export default function AdminPlansPage() {
                 className="px-4 py-2 rounded-lg border border-gray-700 text-sm text-gray-300 hover:border-gray-500 transition">
                 Annuler
               </button>
-              <button type="button" onClick={() => deleteMutation.mutate(deleteTarget.id)}
+              <button type="button" onClick={() => deleteMutation.mutate(deleteTarget.uid)}
                 disabled={deleteMutation.isPending}
                 className="px-4 py-2 rounded-lg bg-red-600 text-sm font-medium text-white hover:bg-red-500 disabled:opacity-60 transition">
                 {deleteMutation.isPending ? 'Suppression…' : 'Supprimer'}
@@ -323,7 +323,7 @@ function PlanModal({ plan, onClose, onSaved }: { plan: Plan | null; onClose: () 
 
   const mutation = useMutation({
     mutationFn: (v: FormValues) => isEdit
-      ? updateAdminPlan(plan.id, formToPayload(v))
+      ? updateAdminPlan(plan.uid, formToPayload(v))
       : createAdminPlan(formToPayload(v)),
     onSuccess: () => { toast.success(isEdit ? 'Plan mis à jour.' : 'Plan créé.'); onSaved() },
     onError:   (err) => toast.error(getApiErrorMessage(err)),

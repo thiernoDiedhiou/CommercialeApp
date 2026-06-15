@@ -48,7 +48,7 @@ class AdminStatsController extends Controller
 
         // ── Tenants en danger ────────────────────────────────────────────────
 
-        $expiringSoon = TenantSubscription::with(['tenant:id,name,slug,is_active', 'plan:id,name,slug'])
+        $expiringSoon = TenantSubscription::with(['tenant:id,uid,name,slug,is_active', 'plan:id,name,slug'])
             ->whereIn('status', ['trial', 'active'])
             ->whereNotNull('ends_at')
             ->whereBetween('ends_at', [now(), now()->addDays(7)])
@@ -56,6 +56,7 @@ class AdminStatsController extends Controller
             ->get()
             ->map(fn ($s) => [
                 'tenant_id'      => $s->tenant?->id,
+                'tenant_uid'     => $s->tenant?->uid,
                 'tenant_name'    => $s->tenant?->name,
                 'tenant_slug'    => $s->tenant?->slug,
                 'plan_name'      => $s->plan?->name,
@@ -69,9 +70,10 @@ class AdminStatsController extends Controller
                 $q->whereIn('status', ['trial', 'active'])
                   ->where(fn ($q2) => $q2->whereNull('ends_at')->orWhere('ends_at', '>', now()))
             )
-            ->get(['id', 'name', 'slug'])
+            ->get(['id', 'uid', 'name', 'slug'])
             ->map(fn ($t) => [
                 'tenant_id'   => $t->id,
+                'tenant_uid'  => $t->uid,
                 'tenant_name' => $t->name,
                 'tenant_slug' => $t->slug,
             ]);
@@ -79,7 +81,7 @@ class AdminStatsController extends Controller
         // ── Tenants récents ──────────────────────────────────────────────────
         $tenantsRecent = Tenant::latest()
             ->limit(5)
-            ->get(['id', 'name', 'sector', 'is_active', 'created_at']);
+            ->get(['id', 'uid', 'name', 'sector', 'is_active', 'created_at']);
 
         return response()->json([
             'data' => [

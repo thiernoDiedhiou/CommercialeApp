@@ -121,8 +121,8 @@ function ProductPicker({
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export default function PurchaseFormPage() {
-  const { id } = useParams<{ id: string }>()
-  const isEdit = !!id
+  const { uid } = useParams<{ uid: string }>()
+  const isEdit = !!uid
   const navigate = useNavigate()
   const qc = useQueryClient()
 
@@ -136,8 +136,8 @@ export default function PurchaseFormPage() {
 
   // Données édition
   const { data: orderData, isLoading: orderLoading } = useQuery({
-    queryKey: ['purchase', id],
-    queryFn: () => getPurchaseOrder(Number(id)),
+    queryKey: ['purchase', uid],
+    queryFn: () => getPurchaseOrder(uid!),
     enabled: isEdit,
   })
 
@@ -195,10 +195,10 @@ export default function PurchaseFormPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: (v: FormValues) => updatePurchaseOrder(Number(id), buildPayload(v)),
+    mutationFn: (v: FormValues) => updatePurchaseOrder(uid!, buildPayload(v)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['purchases'] })
-      qc.invalidateQueries({ queryKey: ['purchase', id] })
+      qc.invalidateQueries({ queryKey: ['purchase', uid] })
       toast.success('Bon de commande mis à jour.')
       navigate('/purchases')
     },

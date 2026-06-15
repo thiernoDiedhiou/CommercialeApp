@@ -20,7 +20,7 @@ class AdminSubscriptionController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $subscriptions = TenantSubscription::with(['tenant:id,name,slug,is_active', 'plan:id,name,slug,price_monthly'])
+        $subscriptions = TenantSubscription::with(['tenant:id,uid,name,slug,is_active', 'plan:id,name,slug,price_monthly'])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status))
             ->when($request->filled('plan_id'), fn ($q) => $q->where('plan_id', $request->integer('plan_id')))
             ->orderByDesc('created_at')
@@ -44,6 +44,7 @@ class AdminSubscriptionController extends Controller
             return array_merge($this->formatSubscription($sub), [
                 'tenant' => [
                     'id'        => $sub->tenant?->id,
+                    'uid'       => $sub->tenant?->uid,
                     'name'      => $sub->tenant?->name,
                     'slug'      => $sub->tenant?->slug,
                     'is_active' => $sub->tenant?->is_active,

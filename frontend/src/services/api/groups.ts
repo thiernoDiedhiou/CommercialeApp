@@ -18,17 +18,17 @@ export async function createGroup(body: CreateGroupData): Promise<Group> {
   return data
 }
 
-export async function updateGroup(id: number, body: Partial<CreateGroupData>): Promise<Group> {
-  const { data } = await apiClient.put<Group>(`/api/v1/groups/${id}`, body)
+export async function updateGroup(uid: string, body: Partial<CreateGroupData>): Promise<Group> {
+  const { data } = await apiClient.put<Group>(`/api/v1/groups/${uid}`, body)
   return data
 }
 
-export async function deleteGroup(id: number): Promise<void> {
-  await apiClient.delete(`/api/v1/groups/${id}`)
+export async function deleteGroup(uid: string): Promise<void> {
+  await apiClient.delete(`/api/v1/groups/${uid}`)
 }
 
-export async function syncGroupPermissions(groupId: number, permissionIds: number[]): Promise<Group> {
-  const { data } = await apiClient.post<Group>(`/api/v1/groups/${groupId}/permissions`, {
+export async function syncGroupPermissions(groupUid: string, permissionIds: number[]): Promise<Group> {
+  const { data } = await apiClient.post<Group>(`/api/v1/groups/${groupUid}/permissions`, {
     permission_ids: permissionIds,
   })
   return data

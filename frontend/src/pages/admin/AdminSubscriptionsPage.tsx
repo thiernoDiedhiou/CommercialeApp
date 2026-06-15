@@ -171,7 +171,7 @@ export default function AdminSubscriptionsPage() {
                 <tr
                   key={sub.id}
                   className="hover:bg-gray-800/50 transition cursor-pointer"
-                  onClick={() => navigate(`/admin/tenants/${sub.tenant.id}`)}
+                  onClick={() => navigate(`/admin/tenants/${sub.tenant.uid}`)}
                 >
                   <td className="px-5 py-3">
                     <p className="font-medium text-white">{sub.tenant.name}</p>
@@ -198,7 +198,7 @@ export default function AdminSubscriptionsPage() {
                   <td className="px-4 py-3 text-right">
                     <button
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); navigate(`/admin/tenants/${sub.tenant.id}`) }}
+                      onClick={(e) => { e.stopPropagation(); navigate(`/admin/tenants/${sub.tenant.uid}`) }}
                       className="text-xs text-indigo-400 hover:text-indigo-300 transition"
                     >
                       Voir

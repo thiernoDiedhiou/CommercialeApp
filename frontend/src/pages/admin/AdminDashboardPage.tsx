@@ -54,7 +54,7 @@ function DangerItem({ item, label, navigate }: {
   return (
     <button
       type="button"
-      onClick={() => navigate(`/admin/tenants/${item.tenant_id}`)}
+      onClick={() => navigate(`/admin/tenants/${item.tenant_uid}`)}
       className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-800/50 transition text-left"
     >
       <div>
@@ -238,7 +238,7 @@ export default function AdminDashboardPage() {
                   <button
                     key={t.id}
                     type="button"
-                    onClick={() => navigate(`/admin/tenants/${t.id}`)}
+                    onClick={() => navigate(`/admin/tenants/${t.uid}`)}
                     className="w-full px-5 py-3 flex items-center justify-between hover:bg-gray-800/60 transition text-left"
                   >
                     <div>

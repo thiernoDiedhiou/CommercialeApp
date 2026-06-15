@@ -66,17 +66,17 @@ export default function PurchaseOrdersPage() {
   const [deleteTarget, setDeleteTarget]   = useState<PurchaseOrder | null>(null)
 
   const confirmMutation = useMutation({
-    mutationFn: (id: number) => confirmPurchaseOrder(id),
+    mutationFn: (uid: string) => confirmPurchaseOrder(uid),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['purchases'] }); setConfirmTarget(null) },
   })
 
   const cancelMutation = useMutation({
-    mutationFn: (id: number) => cancelPurchaseOrder(id),
+    mutationFn: (uid: string) => cancelPurchaseOrder(uid),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['purchases'] }); setCancelTarget(null) },
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deletePurchaseOrder(id),
+    mutationFn: (uid: string) => deletePurchaseOrder(uid),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['purchases'] }); setDeleteTarget(null) },
   })
 
@@ -122,7 +122,7 @@ export default function PurchaseOrdersPage() {
       align: 'right',
       render: (o) => (
         <div className="flex items-center justify-end gap-1">
-          <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/purchases/${o.id}`) }}
+          <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/purchases/${o.uid}`) }}
             className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title="Voir le détail">
             <EyeIcon className="h-4 w-4" />
           </button>
@@ -192,7 +192,7 @@ export default function PurchaseOrdersPage() {
         loading={isLoading}
         skeletonRows={8}
         emptyMessage="Aucun bon de commande trouvé."
-        onRowClick={(o) => navigate(`/purchases/${o.id}`)}
+        onRowClick={(o) => navigate(`/purchases/${o.uid}`)}
       />
 
       {data && data.last_page > 1 && (
@@ -203,7 +203,7 @@ export default function PurchaseOrdersPage() {
       <Modal isOpen={!!confirmTarget} onClose={() => setConfirmTarget(null)} title="Confirmer la commande" size="sm"
         footer={<>
           <Button variant="outline" onClick={() => setConfirmTarget(null)}>Annuler</Button>
-          <Button loading={confirmMutation.isPending} onClick={() => confirmTarget && confirmMutation.mutate(confirmTarget.id)}>
+          <Button loading={confirmMutation.isPending} onClick={() => confirmTarget && confirmMutation.mutate(confirmTarget.uid)}>
             Confirmer
           </Button>
         </>}
@@ -217,7 +217,7 @@ export default function PurchaseOrdersPage() {
       <Modal isOpen={!!cancelTarget} onClose={() => setCancelTarget(null)} title="Annuler le bon de commande" size="sm"
         footer={<>
           <Button variant="outline" onClick={() => setCancelTarget(null)}>Retour</Button>
-          <Button variant="danger" loading={cancelMutation.isPending} onClick={() => cancelTarget && cancelMutation.mutate(cancelTarget.id)}>
+          <Button variant="danger" loading={cancelMutation.isPending} onClick={() => cancelTarget && cancelMutation.mutate(cancelTarget.uid)}>
             Annuler le bon
           </Button>
         </>}
@@ -231,7 +231,7 @@ export default function PurchaseOrdersPage() {
       <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Supprimer le bon" size="sm"
         footer={<>
           <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
-          <Button variant="danger" loading={deleteMutation.isPending} onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}>
+          <Button variant="danger" loading={deleteMutation.isPending} onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}>
             Supprimer
           </Button>
         </>}

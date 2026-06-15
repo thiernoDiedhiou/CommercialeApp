@@ -85,12 +85,11 @@ export default function CustomersPage() {
       setModal(null)
       toast.success('Client créé avec succès.')
     },
-    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, values }: { id: number; values: CustomerFormValues }) =>
-      updateCustomer(id, {
+    mutationFn: ({ uid, values }: { uid: string; values: CustomerFormValues }) =>
+      updateCustomer(uid, {
         name:    values.name,
         country: values.country,
         phone:   normalizePhone(values.phone),
@@ -98,18 +97,17 @@ export default function CustomersPage() {
         address: values.address || null,
         notes:   values.notes   || null,
       }),
-    onSuccess: (_, { id }) => {
+    onSuccess: (_, { uid }) => {
       qc.invalidateQueries({ queryKey: ['customers'] })
-      qc.invalidateQueries({ queryKey: ['customer', id] })
+      qc.invalidateQueries({ queryKey: ['customer', uid] })
       setModal(null)
       toast.success('Client mis à jour.')
     },
-    onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const toggleMutation = useMutation({
     mutationFn: (customer: Customer) =>
-      updateCustomer(customer.id, { is_active: !customer.is_active }),
+      updateCustomer(customer.uid, { is_active: !customer.is_active }),
     onSuccess: (_, customer) => {
       qc.invalidateQueries({ queryKey: ['customers'] })
       setToggleTarget(null)
@@ -119,7 +117,7 @@ export default function CustomersPage() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteCustomer(id),
+    mutationFn: (uid: string) => deleteCustomer(uid),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['customers'] })
       setDeleteTarget(null)
@@ -131,11 +129,11 @@ export default function CustomersPage() {
   // ── Handlers formulaire ───────────────────────────────────────────────────
   const handleFormSubmit = (values: CustomerFormValues) => {
     if (modal?.mode === 'create') createMutation.mutate(values)
-    else if (modal?.mode === 'edit') updateMutation.mutate({ id: modal.customer.id, values })
+    else if (modal?.mode === 'edit') updateMutation.mutate({ uid: modal.customer.uid, values })
   }
 
   const isMutating = createMutation.isPending || updateMutation.isPending
-  const mutationError = createMutation.isError || updateMutation.isError
+  const mutationError = createMutation.error ?? updateMutation.error
 
   // ── Colonnes ──────────────────────────────────────────────────────────────
   const columns: Column<Customer>[] = [
@@ -183,7 +181,7 @@ export default function CustomersPage() {
           {/* Voir */}
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); navigate(`/customers/${c.id}`) }}
+            onClick={(e) => { e.stopPropagation(); navigate(`/customers/${c.uid}`) }}
             className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
             title="Voir le profil"
           >
@@ -281,7 +279,7 @@ export default function CustomersPage() {
         loading={isLoading}
         skeletonRows={8}
         emptyMessage="Aucun client trouvé."
-        onRowClick={(c) => navigate(`/customers/${c.id}`)}
+        onRowClick={(c) => navigate(`/customers/${c.uid}`)}
       />
 
       {/* Pagination */}
@@ -314,7 +312,7 @@ export default function CustomersPage() {
       >
         {mutationError && (
           <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-            Une erreur est survenue. Veuillez réessayer.
+            {getApiErrorMessage(mutationError)}
           </p>
         )}
         <CustomerForm
@@ -338,7 +336,7 @@ export default function CustomersPage() {
             <Button
               variant="danger"
               loading={deleteMutation.isPending}
-              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}
             >
               Supprimer
             </Button>

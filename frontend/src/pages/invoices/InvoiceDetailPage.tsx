@@ -35,13 +35,13 @@ const STATUS_LABEL: Record<InvoiceStatus, string> = {
 }
 
 export default function InvoiceDetailPage() {
-  const { id } = useParams<{ id: string }>()
+  const { uid } = useParams<{ uid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
 
   const { data: invoice, isLoading } = useQuery({
-    queryKey: ['invoice', id],
-    queryFn: () => getInvoice(Number(id)),
+    queryKey: ['invoice', uid],
+    queryFn: () => getInvoice(uid!),
   })
 
   const [showSend, setShowSend]       = useState(false)
@@ -51,29 +51,29 @@ export default function InvoiceDetailPage() {
   const [pdfLoading, setPdfLoading]   = useState(false)
 
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['invoice', id] })
+    qc.invalidateQueries({ queryKey: ['invoice', uid] })
     qc.invalidateQueries({ queryKey: ['invoices'] })
   }
 
   const sendMutation = useMutation({
-    mutationFn: () => sendInvoice(Number(id)),
+    mutationFn: () => sendInvoice(uid!),
     onSuccess: () => { invalidate(); setShowSend(false); toast.success('Facture marquée comme envoyée.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
   const cancelMutation = useMutation({
-    mutationFn: () => cancelInvoice(Number(id)),
+    mutationFn: () => cancelInvoice(uid!),
     onSuccess: () => { invalidate(); setShowCancel(false); toast.success('Facture annulée.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
   const paymentMutation = useMutation({
-    mutationFn: () => recordInvoicePayment(Number(id), parseFloat(payAmount) || 0),
+    mutationFn: () => recordInvoicePayment(uid!, parseFloat(payAmount) || 0),
     onSuccess: () => { invalidate(); setShowPayment(false); setPayAmount(''); toast.success('Paiement enregistré.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const handlePdf = async () => {
     setPdfLoading(true)
-    try { await openInvoicePdf(Number(id), invoice?.reference) } finally { setPdfLoading(false) }
+    try { await openInvoicePdf(uid!, invoice?.reference) } finally { setPdfLoading(false) }
   }
 
   if (isLoading) return <div className="p-6 text-sm text-gray-400">Chargement…</div>
@@ -107,7 +107,7 @@ export default function InvoiceDetailPage() {
           {invoice.status === 'draft' && (
             <CanDo permission="invoices.edit">
               <Button variant="outline" icon={<PencilSquareIcon className="h-4 w-4" />}
-                onClick={() => navigate(`/invoices/${id}/edit`)}>
+                onClick={() => navigate(`/invoices/${uid}/edit`)}>
                 Modifier
               </Button>
             </CanDo>
