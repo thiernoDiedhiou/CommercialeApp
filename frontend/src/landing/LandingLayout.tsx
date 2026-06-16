@@ -15,6 +15,7 @@ const SECTORS = ['Commerce général', 'Alimentation', 'Mode', 'Cosmétique']
 // ── Détection préférence initiale ─────────────────────────────────────────────
 
 function getInitialTheme(): boolean {
+  if (typeof window === 'undefined') return false
   const stored = localStorage.getItem('landing-theme')
   if (stored) return stored === 'dark'
   return window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -300,7 +301,9 @@ export default function LandingLayout() {
   const toggle = () => {
     setIsDark((d) => {
       const next = !d
-      localStorage.setItem('landing-theme', next ? 'dark' : 'light')
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('landing-theme', next ? 'dark' : 'light')
+      }
       return next
     })
   }

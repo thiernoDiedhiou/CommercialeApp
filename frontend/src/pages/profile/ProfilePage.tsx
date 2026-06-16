@@ -63,7 +63,7 @@ function PasswordField({
         <input
           {...registration}
           type={visible ? 'text' : 'password'}
-          autoComplete={autoComplete ?? 'off'}
+          autoComplete={autoComplete}
           className="w-full rounded-lg border border-gray-200 px-3 py-2 pr-10 text-sm outline-none focus:border-indigo-400 transition"
         />
         <button

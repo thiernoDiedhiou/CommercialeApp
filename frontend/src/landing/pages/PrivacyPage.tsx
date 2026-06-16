@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
+import SeoHead from '@/landing/components/SeoHead'
 
 const LAST_UPDATED = '1er juin 2026'
 const COMPANY      = 'DiDi Sphere'
-const EMAIL        = 'contact@didisphere.sn'
+const EMAIL        = 'contact@didisphere.shop'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -41,6 +42,11 @@ function DataTable({ rows }: { rows: { data: string; purpose: string; retention:
 export default function PrivacyPage() {
   return (
     <div className="py-20">
+      <SeoHead
+        title="Politique de confidentialité"
+        description="Politique de confidentialité et traitement des données personnelles de DiDi Sphere — logiciel de gestion commerciale SaaS pour PME."
+        canonical="/confidentialite"
+      />
       <div className="mx-auto max-w-3xl px-4">
 
         {/* En-tête */}

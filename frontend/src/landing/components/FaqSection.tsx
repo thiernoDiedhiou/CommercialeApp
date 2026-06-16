@@ -60,7 +60,7 @@ export default function FaqSection({ items = DEFAULT_ITEMS }: { items?: FaqItem[
               <button
                 type="button"
                 onClick={() => toggle(i)}
-                aria-expanded={isOpen}
+                aria-expanded={isOpen ? 'true' : 'false'}
                 className="flex w-full items-center justify-between gap-4 px-6 py-4 text-left"
               >
                 <span className="font-semibold text-gray-900 dark:text-white text-sm sm:text-base">

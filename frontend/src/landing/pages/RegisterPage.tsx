@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
+import SeoHead from '@/landing/components/SeoHead'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerTenant, type RegisterData } from '@/services/api/public'
 import { getApiErrorMessage } from '@/lib/errors'
@@ -90,6 +91,11 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-[80vh] flex items-start justify-center px-4 py-16">
+      <SeoHead
+        title="Créer mon compte"
+        description="Démarrez votre essai gratuit de 21 jours. Aucune carte bancaire requise. Configurez votre boutique en 3 minutes."
+        canonical="/inscription"
+      />
       <div className="w-full max-w-lg">
 
         {/* Header */}

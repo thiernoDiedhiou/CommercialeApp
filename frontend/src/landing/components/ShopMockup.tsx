@@ -5,7 +5,7 @@ const SHOP_PRODUCTS = [
   { id: 1, name: 'Coca-Cola 33cl',    price: 600,  compareAt: null, emoji: '🥤', stock: 24 },
   { id: 2, name: 'Eau Kirène 1.5L',   price: 500,  compareAt: null, emoji: '💧', stock: 48 },
   { id: 3, name: 'Pain de mie 500g',  price: 750,  compareAt: 900,  emoji: '🍞', stock: 3  },
-  { id: 4, name: 'Huile Végétale 1L', price: 1200, compareAt: null, emoji: '🫙', stock: 15 },
+  { id: 4, name: 'Huile Végétale 1L', price: 1200, compareAt: null, emoji: '🍶', stock: 15 },
 ]
 
 const CATEGORIES = ['Tous', 'Boissons', 'Épicerie', 'Frais']

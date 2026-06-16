@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+Disallow: /dashboard
+Disallow: /pos
+Disallow: /sales
+Disallow: /purchases
+Disallow: /products
+Disallow: /categories
+Disallow: /brands
+Disallow: /customers
+Disallow: /invoices
+Disallow: /stock
+Disallow: /reports
+Disallow: /settings
+Disallow: /debts
+Disallow: /returns
+Disallow: /admin/
+
+Sitemap: https://didisphere.shop/sitemap.xml

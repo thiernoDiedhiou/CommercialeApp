@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getPublicSiteSettings } from '@/services/api/public'
 import { EnvelopeIcon, MapPinIcon, ChatBubbleLeftRightIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/outline'
+import SeoHead from '@/landing/components/SeoHead'
 
 export default function ContactPage() {
   const [sent, setSent] = useState(false)
@@ -15,7 +16,7 @@ export default function ContactPage() {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const to   = settings?.contact_email ?? 'contact@didisphere.sn'
+    const to   = settings?.contact_email ?? 'contact@didisphere.shop'
     const body = encodeURIComponent(`Nom: ${form.name}\nEmail: ${form.email}\n\n${form.message}`)
     window.location.href = `mailto:${to}?subject=${encodeURIComponent(form.subject)}&body=${body}`
     setSent(true)
@@ -57,6 +58,11 @@ export default function ContactPage() {
 
   return (
     <div className="py-20">
+      <SeoHead
+        title="Contact"
+        description="Contactez l'équipe DiDi Sphere pour toute question sur notre logiciel de gestion commerciale SaaS pour PME d'Afrique de l'Ouest."
+        canonical="/contact"
+      />
 
       {/* Header */}
       <div className="mx-auto max-w-3xl px-4 text-center mb-16">

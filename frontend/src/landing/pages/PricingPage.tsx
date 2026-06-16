@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getPublicPlans, type PublicPlan } from '@/services/api/public'
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import FaqSection from '@/landing/components/FaqSection'
+import SeoHead from '@/landing/components/SeoHead'
 
 
 const FEATURE_LABELS: { key: keyof PublicPlan; label: string }[] = [
@@ -156,8 +157,23 @@ export default function PricingPage() {
 
   return (
     <div className="py-20">
-
-      {/* Header */}
+      <SeoHead
+        title="Tarifs"
+        description="Des plans pour chaque étape de votre croissance. Commencez gratuitement pendant 21 jours. Orange Money, Wave et virement bancaire acceptés. Sans engagement."
+        canonical="/tarifs"
+        jsonLd={{
+          '@context'   : 'https://schema.org',
+          '@type'      : 'FAQPage',
+          'mainEntity' : [
+            { '@type': 'Question', 'name': "L'essai gratuit nécessite-t-il une carte bancaire ?",    'acceptedAnswer': { '@type': 'Answer', 'text': "Non. Aucune information de paiement n'est requise pour démarrer votre essai de 21 jours." } },
+            { '@type': 'Question', 'name': 'Puis-je changer de plan à tout moment ?',                 'acceptedAnswer': { '@type': 'Answer', 'text': 'Oui, sans frais de résiliation, depuis votre espace client.' } },
+            { '@type': 'Question', 'name': 'Mes données sont-elles sécurisées ?',                     'acceptedAnswer': { '@type': 'Answer', 'text': "Vos données sont isolées dans un espace dédié (architecture multi-tenant), hébergées sur des serveurs sécurisés." } },
+            { '@type': 'Question', 'name': 'Comment fonctionne le paiement ?',                        'acceptedAnswer': { '@type': 'Answer', 'text': 'Nous acceptons Orange Money, Wave et les virements bancaires. Facturation mensuelle ou annuelle.' } },
+            { '@type': 'Question', 'name': 'Puis-je utiliser DiDi Sphere sur mobile ?',               'acceptedAnswer': { '@type': 'Answer', 'text': "Oui. L'interface est entièrement responsive et la caisse POS est optimisée pour tablette et smartphone." } },
+            { '@type': 'Question', 'name': "Que se passe-t-il à la fin de l'essai gratuit ?",        'acceptedAnswer': { '@type': 'Answer', 'text': "Vous choisissez un plan payant pour continuer. Sinon votre compte est suspendu mais vos données conservées 30 jours." } },
+          ],
+        }}
+      />
       <div className="mx-auto max-w-3xl px-4 text-center mb-16">
         <span className="inline-block rounded-full bg-ds-blue-light dark:bg-ds-blue/20 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-ds-blue mb-4">
           Tarifs
