@@ -30,7 +30,7 @@ export default function DashboardPage() {
   const todayCollected = Object.values(data?.by_payment_method ?? {}).reduce((s, v) => s + v, 0)
 
   return (
-    <div className="space-y-6 p-4 sm:p-6">
+    <div className="space-y-6">
       <h1 className="text-xl font-bold text-gray-900">Tableau de bord</h1>
 
       {/* Zone 1 — KPI Cards (tous canaux confondus) */}
