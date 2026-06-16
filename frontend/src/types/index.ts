@@ -704,7 +704,7 @@ export interface SaleReturn {
   total: string
   items_count?: number
   created_at: string
-  sale?: Pick<Sale, 'id' | 'reference' | 'confirmed_at'>
+  sale?: Pick<Sale, 'id' | 'uid' | 'reference' | 'confirmed_at'>
   user?: Pick<User, 'id' | 'name'>
   items?: SaleReturnItem[]
 }

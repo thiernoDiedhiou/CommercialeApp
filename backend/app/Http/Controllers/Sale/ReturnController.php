@@ -28,7 +28,7 @@ class ReturnController extends Controller
             'sale_id'       => ['nullable', 'integer'],
         ]);
 
-        $returns = SaleReturn::with(['sale:id,reference', 'user:id,name'])
+        $returns = SaleReturn::with(['sale:id,uid,reference', 'user:id,name'])
             ->withCount('items')
             ->when($request->search, fn($q) => $q->where('reference', 'like', "%{$request->search}%"))
             ->when($request->sale_id, fn($q) => $q->where('sale_id', $request->sale_id))
@@ -46,7 +46,7 @@ class ReturnController extends Controller
     public function show(SaleReturn $return): JsonResponse
     {
         $return->load([
-            'sale:id,reference,confirmed_at',
+            'sale:id,uid,reference,confirmed_at',
             'user:id,name',
             'items.product:id,name,unit',
             'items.variant:id,attribute_summary',
