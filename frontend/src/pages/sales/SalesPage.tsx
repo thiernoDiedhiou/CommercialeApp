@@ -62,10 +62,10 @@ export default function SalesPage() {
   // ── Annulation ────────────────────────────────────────────────────────────
   const [cancelTarget, setCancelTarget] = useState<Sale | null>(null)
   const cancelMutation = useMutation({
-    mutationFn: (id: number) => cancelSale(id),
-    onSuccess: (_, id) => {
+    mutationFn: (uid: string) => cancelSale(uid),
+    onSuccess: (_, uid) => {
       qc.invalidateQueries({ queryKey: ['sales'] })
-      qc.invalidateQueries({ queryKey: ['sale', id] })
+      qc.invalidateQueries({ queryKey: ['sale', uid] })
       qc.invalidateQueries({ queryKey: ['dashboard-summary'] })
       setCancelTarget(null)
       toast.success('Vente annulée.')
@@ -74,10 +74,10 @@ export default function SalesPage() {
   })
 
   // ── PDF ───────────────────────────────────────────────────────────────────
-  const [pdfLoading, setPdfLoading] = useState<number | null>(null)
-  const handlePdf = async (id: number) => {
-    setPdfLoading(id)
-    try { await openSalePdf(id) } finally { setPdfLoading(null) }
+  const [pdfLoading, setPdfLoading] = useState<string | null>(null)
+  const handlePdf = async (uid: string) => {
+    setPdfLoading(uid)
+    try { await openSalePdf(uid) } finally { setPdfLoading(null) }
   }
 
   // ── Colonnes ──────────────────────────────────────────────────────────────
@@ -154,7 +154,7 @@ export default function SalesPage() {
           {/* Voir */}
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); navigate(`/sales/${s.id}`) }}
+            onClick={(e) => { e.stopPropagation(); navigate(`/sales/${s.uid}`) }}
             className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
             title="Voir le détail"
           >
@@ -165,8 +165,8 @@ export default function SalesPage() {
           <CanDo permission="sales.pdf">
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); handlePdf(s.id) }}
-              disabled={pdfLoading === s.id}
+              onClick={(e) => { e.stopPropagation(); handlePdf(s.uid) }}
+              disabled={pdfLoading === s.uid}
               className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40"
               title="Télécharger PDF"
             >
@@ -250,7 +250,7 @@ export default function SalesPage() {
         loading={isLoading}
         skeletonRows={8}
         emptyMessage="Aucune vente trouvée."
-        onRowClick={(s) => navigate(`/sales/${s.id}`)}
+        onRowClick={(s) => navigate(`/sales/${s.uid}`)}
       />
 
       {/* Pagination */}
@@ -278,7 +278,7 @@ export default function SalesPage() {
             <Button
               variant="danger"
               loading={cancelMutation.isPending}
-              onClick={() => cancelTarget && cancelMutation.mutate(cancelTarget.id)}
+              onClick={() => cancelTarget && cancelMutation.mutate(cancelTarget.uid)}
             >
               Confirmer l'annulation
             </Button>

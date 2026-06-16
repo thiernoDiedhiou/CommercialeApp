@@ -31,6 +31,7 @@ class NewTenantRegisteredNotification extends Notification
             ->line("**Commerce :** {$this->tenant->name}")
             ->line("**Secteur :** {$this->tenant->sector}")
             ->line("**Devise :** {$this->tenant->currency}")
+            ->line("**Téléphone :** " . ($this->tenant->phone ?? '—'))
             ->line("**Admin :** {$this->admin->name} ({$this->admin->email})")
             ->action('Voir le tenant', rtrim(env('FRONTEND_URL', config('app.url')), '/') . "/admin/tenants/{$this->tenant->id}")
             ->salutation('— DiDi Sphere');

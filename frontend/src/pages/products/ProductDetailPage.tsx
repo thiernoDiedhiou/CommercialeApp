@@ -46,7 +46,7 @@ function profit(price: string, cost: string): string {
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export default function ProductDetailPage() {
-  const { id } = useParams<{ id: string }>()
+  const { uid } = useParams<{ uid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [adjustOpen, setAdjustOpen] = useState(false)
@@ -64,7 +64,7 @@ export default function ProductDetailPage() {
 
   const editVariantMutation = useMutation({
     mutationFn: (data: { price: string; cost_price: string; sku: string; alert_threshold: string; is_active: boolean }) =>
-      updateVariant(Number(id), editVariant!.id, {
+      updateVariant(uid!, editVariant!.uid, {
         price:           data.price           ? Number(data.price)           : undefined,
         cost_price:      data.cost_price      ? Number(data.cost_price)      : undefined,
         sku:             data.sku             || undefined,
@@ -72,7 +72,7 @@ export default function ProductDetailPage() {
         is_active:       data.is_active,
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['product', id] })
+      qc.invalidateQueries({ queryKey: ['product', uid] })
       setEditVariant(null)
       toast.success('Variante mise à jour.')
     },
@@ -81,13 +81,13 @@ export default function ProductDetailPage() {
 
   const addVariantMutation = useMutation({
     mutationFn: (data: { attribute_value_ids: number[]; sku: string; price: string }) =>
-      createVariant(Number(id), {
+      createVariant(uid!, {
         attribute_value_ids: data.attribute_value_ids,
         sku: data.sku || null,
         price: data.price ? Number(data.price) : null,
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['product', id] })
+      qc.invalidateQueries({ queryKey: ['product', uid] })
       setAddVariantOpen(false)
       toast.success('Variante ajoutée.')
     },
@@ -95,33 +95,33 @@ export default function ProductDetailPage() {
   })
 
   const { data: product, isLoading, refetch } = useQuery({
-    queryKey: ['product', id],
-    queryFn: () => getProduct(Number(id)),
+    queryKey: ['product', uid],
+    queryFn: () => getProduct(uid!),
   })
 
   const { data: movementsPage, isLoading: movLoading } = useQuery({
-    queryKey: ['product-movements', id],
-    queryFn: () => getProductStockMovements(Number(id), { page: 1 }),
-    enabled: !!id,
+    queryKey: ['product-movements', uid],
+    queryFn: () => getProductStockMovements(uid!, { page: 1 }),
+    enabled: !!uid,
   })
 
   const { data: lots = [], isLoading: lotsLoading } = useQuery({
-    queryKey: ['product-lots', id],
-    queryFn: () => getProductLots(Number(id)),
-    enabled: !!id,
+    queryKey: ['product-lots', uid],
+    queryFn: () => getProductLots(uid!),
+    enabled: !!uid,
   })
 
   const addLotMutation = useMutation({
     mutationFn: (data: { lot_number: string; expiry_date: string; quantity: string; purchase_price: string }) =>
-      createProductLot(Number(id), {
+      createProductLot(uid!, {
         lot_number:     data.lot_number,
         expiry_date:    data.expiry_date || null,
         quantity:       parseInt(data.quantity) || 1,
         purchase_price: data.purchase_price ? Number(data.purchase_price) : null,
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['product-lots', id] })
-      qc.invalidateQueries({ queryKey: ['product', id] })
+      qc.invalidateQueries({ queryKey: ['product-lots', uid] })
+      qc.invalidateQueries({ queryKey: ['product', uid] })
       setAddLotOpen(false)
       toast.success('Lot ajouté.')
     },
@@ -130,13 +130,13 @@ export default function ProductDetailPage() {
 
   const editLotMutation = useMutation({
     mutationFn: (data: { expiry_date: string; is_active: boolean; notes: string }) =>
-      updateProductLot(Number(id), editLot!.id, {
+      updateProductLot(uid!, editLot!.id, {
         expiry_date: data.expiry_date || null,
         is_active:   data.is_active,
         notes:       data.notes || null,
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['product-lots', id] })
+      qc.invalidateQueries({ queryKey: ['product-lots', uid] })
       setEditLot(null)
       toast.success('Lot mis à jour.')
     },
@@ -145,13 +145,13 @@ export default function ProductDetailPage() {
 
   const regularizeMutation = useMutation({
     mutationFn: (data: { lot_number: string; expiry_date: string; notes: string }) =>
-      regularizeProductLots(Number(id), {
+      regularizeProductLots(uid!, {
         lot_number:  data.lot_number || undefined,
         expiry_date: data.expiry_date || null,
         notes:       data.notes || undefined,
       }),
     onSuccess: (res) => {
-      qc.invalidateQueries({ queryKey: ['product-lots', id] })
+      qc.invalidateQueries({ queryKey: ['product-lots', uid] })
       setRegularizeOpen(false)
       toast.success(`${res.orphaned_absorbed} unité(s) affectées au lot.`)
     },
@@ -241,7 +241,7 @@ export default function ProductDetailPage() {
           )}
           <CanDo permission="products.edit">
             <Button icon={<PencilSquareIcon className="h-4 w-4" />}
-              onClick={() => navigate(`/products/${id}/edit`)}>
+              onClick={() => navigate(`/products/${uid}/edit`)}>
               Modifier
             </Button>
           </CanDo>
@@ -672,7 +672,7 @@ export default function ProductDetailPage() {
       {/* Modal ajustement stock */}
       {addVariantOpen && (
         <AddVariantModal
-          productId={Number(id)}
+          productId={product.id}
           existingVariants={variants}
           isPending={addVariantMutation.isPending}
           onClose={() => setAddVariantOpen(false)}

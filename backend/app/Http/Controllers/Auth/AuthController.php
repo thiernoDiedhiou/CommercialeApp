@@ -65,6 +65,49 @@ class AuthController extends Controller
         return response()->json(['message' => 'Déconnexion réussie.']);
     }
 
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name'                  => ['required', 'string', 'min:2', 'max:255'],
+            'current_password'      => ['nullable', 'string'],
+            'password'              => ['nullable', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $passwordChange = ! empty($validated['password']);
+
+        if ($passwordChange) {
+            if (empty($validated['current_password']) || ! Hash::check($validated['current_password'], $user->password)) {
+                return response()->json([
+                    'message' => 'Le mot de passe actuel est incorrect.',
+                    'errors'  => ['current_password' => ['Le mot de passe actuel est incorrect.']],
+                ], 422);
+            }
+        }
+
+        $user->name = $validated['name'];
+        if ($passwordChange) {
+            $user->password = Hash::make($validated['password']);
+        }
+        $user->save();
+
+        // Révoque toutes les sessions actives sauf la courante après changement de mot de passe
+        if ($passwordChange) {
+            $user->tokens()
+                ->where('id', '!=', $request->user()->currentAccessToken()->id)
+                ->delete();
+        }
+
+        return response()->json([
+            'data' => [
+                'id'    => $user->id,
+                'name'  => $user->name,
+                'email' => $user->email,
+            ],
+        ]);
+    }
+
     public function me(Request $request): JsonResponse
     {
         $user = $request->user()->load('tenant');

@@ -2,6 +2,7 @@
 
 export interface User {
   id: number
+  uid: string
   name: string
   email: string
   avatar: string | null
@@ -140,6 +141,7 @@ export interface DashboardSummary {
 
 export interface Category {
   id: number
+  uid: string
   name: string
   slug: string
   parent_id: number | null
@@ -180,6 +182,7 @@ export interface ProductAttribute {
 
 export interface Brand {
   id: number
+  uid: string
   name: string
 }
 
@@ -189,6 +192,7 @@ export interface CreateBrandData {
 
 export interface Product {
   id: number
+  uid: string
   name: string
   slug: string
   description: string | null
@@ -215,6 +219,7 @@ export interface Product {
 
 export interface ProductVariant {
   id: number
+  uid: string
   product_id: number
   sku: string | null
   barcode: string | null
@@ -289,6 +294,7 @@ export interface ImportResult {
 
 export interface Supplier {
   id: number
+  uid: string
   name: string
   phone: string | null
   country: string
@@ -326,6 +332,7 @@ export interface PurchaseOrderItem {
 
 export interface PurchaseOrder {
   id: number
+  uid: string
   reference: string
   status: PurchaseOrderStatus
   expected_at: string | null
@@ -363,6 +370,7 @@ export interface ReceiveItemData {
 
 export interface Customer {
   id: number
+  uid: string
   name: string
   phone: string | null
   country: string       // ISO 3166-1 alpha-2, ex: 'SN'
@@ -409,6 +417,7 @@ export interface CreateCustomerData {
 
 export interface Sale {
   id: number
+  uid: string
   reference: string
   created_at: string
   subtotal: string
@@ -505,6 +514,7 @@ export interface Permission {
 
 export interface Group {
   id: number
+  uid: string
   name: string
   description: string | null
   users_count?: number
@@ -548,6 +558,7 @@ export interface InvoiceItem {
 
 export interface Invoice {
   id: number
+  uid: string
   reference: string
   status: InvoiceStatus
   issue_date: string
@@ -683,6 +694,7 @@ export interface SaleReturnItem {
 
 export interface SaleReturn {
   id: number
+  uid: string
   reference: string
   sale_id: number
   user_id: number

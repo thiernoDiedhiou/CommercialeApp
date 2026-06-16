@@ -4,7 +4,6 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
-  UserIcon,
   UsersIcon,
   ShieldCheckIcon,
   PencilSquareIcon,
@@ -49,23 +48,15 @@ import type { UserWithGroups, Group, Permission, CreateGroupData } from '@/types
 
 // ─── Tab IDs ──────────────────────────────────────────────────────────────────
 
-type Tab = 'boutique' | 'profil' | 'users' | 'groups'
+type Tab = 'boutique' | 'users' | 'groups'
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
   { id: 'boutique', label: 'Boutique',     icon: <BuildingStorefrontIcon className="h-4 w-4" /> },
-  { id: 'profil',   label: 'Mon profil',   icon: <UserIcon className="h-4 w-4" /> },
   { id: 'users',    label: 'Utilisateurs', icon: <UsersIcon className="h-4 w-4" /> },
   { id: 'groups',   label: 'Groupes',      icon: <ShieldCheckIcon className="h-4 w-4" /> },
 ]
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
-
-const profilSchema = z.object({
-  name:     z.string().min(2, 'Nom requis'),
-  email:    z.string().email('Email invalide'),
-  password: z.string().min(8, '8 caractères min').or(z.literal('')).optional(),
-})
-type ProfilValues = z.infer<typeof profilSchema>
 
 const userSchema = z.object({
   name:      z.string().min(2, 'Nom requis'),
@@ -504,81 +495,6 @@ function BoutiqueTab() {
   )
 }
 
-// ─── ProfilTab ────────────────────────────────────────────────────────────────
-
-function ProfilTab() {
-  const qc           = useQueryClient()
-  const me           = useAuthStore((s) => s.user)
-  const setAuth      = useAuthStore((s) => s.setAuth)
-  const token        = useAuthStore((s) => s.token)
-  const perms        = useAuthStore((s) => s.permissions)
-  const tenant       = useAuthStore((s) => s.tenant)
-  const subscription = useAuthStore((s) => s.subscription)
-  const planFeatures = useAuthStore((s) => s.planFeatures)
-  const [saved, setSaved] = useState(false)
-
-  const { register, handleSubmit, formState: { errors, isDirty } } = useForm<ProfilValues>({
-    resolver: zodResolver(profilSchema),
-    defaultValues: { name: me?.name ?? '', email: me?.email ?? '', password: '' },
-  })
-
-  const mutation = useMutation({
-    mutationFn: (vals: ProfilValues) => {
-      const body: Record<string, unknown> = { name: vals.name, email: vals.email }
-      if (vals.password) body.password = vals.password
-      return updateUser(me!.id, body)
-    },
-    onSuccess: (updated) => {
-      if (token && tenant) {
-        setAuth(token, { ...me!, name: updated.name, email: updated.email }, perms, tenant, subscription, planFeatures)
-      }
-      qc.invalidateQueries({ queryKey: ['users'] })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
-      toast.success('Profil mis à jour.')
-    },
-    onError: (err) => toast.error(getApiErrorMessage(err)),
-  })
-
-  return (
-    <div className="max-w-md">
-      <h2 className="mb-6 text-base font-semibold text-gray-800">Informations personnelles</h2>
-      <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nom</label>
-          <input
-            {...register('name')}
-            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition"
-          />
-          {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input type="email" {...register('email')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
-          {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Nouveau mot de passe <span className="font-normal text-gray-400">(laisser vide pour ne pas changer)</span>
-          </label>
-          <input type="password" autoComplete="new-password" {...register('password')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
-          {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
-        </div>
-
-        <div className="flex items-center gap-3 pt-2">
-          <Button type="submit" loading={mutation.isPending} disabled={!isDirty && !mutation.isPending}>
-            Enregistrer
-          </Button>
-          {saved && <span className="text-sm text-green-600">Modifications enregistrées ✓</span>}
-          {mutation.isError && <span className="text-sm text-red-500">Erreur lors de l'enregistrement</span>}
-        </div>
-      </form>
-    </div>
-  )
-}
-
 // ─── UserModal ────────────────────────────────────────────────────────────────
 
 interface UserModalProps {
@@ -723,7 +639,7 @@ function UsersTab() {
   const me = useAuthStore((s) => s.user)
   const [modalOpen, setModalOpen]     = useState(false)
   const [editing, setEditing]         = useState<UserWithGroups | null>(null)
-  const [deletingId, setDeletingId]   = useState<number | null>(null)
+  const [deletingId, setDeletingId]   = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<UserWithGroups | null>(null)
 
   const { data: page, isLoading } = useQuery({
@@ -816,7 +732,7 @@ function UsersTab() {
                         <button
                           type="button"
                           onClick={() => setDeleteTarget(u)}
-                          disabled={deletingId === u.id}
+                          disabled={deletingId === u.uid}
                           className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 transition disabled:opacity-40"
                           title="Supprimer"
                         >
@@ -852,8 +768,8 @@ function UsersTab() {
               loading={deleteMutation.isPending}
               onClick={() => {
                 if (!deleteTarget) return
-                setDeletingId(deleteTarget.id)
-                deleteMutation.mutate(deleteTarget.id)
+                setDeletingId(deleteTarget.uid)
+                deleteMutation.mutate(deleteTarget.uid)
                 setDeleteTarget(null)
               }}
             >
@@ -1068,7 +984,7 @@ function GroupsTab() {
   const [editing, setEditing]                 = useState<Group | null>(null)
   const [permGroup, setPermGroup]             = useState<Group | null>(null)
   const [permModalOpen, setPermModalOpen]     = useState(false)
-  const [deletingId, setDeletingId]           = useState<number | null>(null)
+  const [deletingId, setDeletingId]           = useState<string | null>(null)
   const [deleteGroupTarget, setDeleteGroupTarget] = useState<Group | null>(null)
 
   const { data: groups = [], isLoading } = useQuery({
@@ -1133,7 +1049,7 @@ function GroupsTab() {
                 <button
                   type="button"
                   onClick={() => setDeleteGroupTarget(g)}
-                  disabled={deletingId === g.id}
+                  disabled={deletingId === g.uid}
                   className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 transition disabled:opacity-40"
                   title="Supprimer"
                 >
@@ -1161,8 +1077,8 @@ function GroupsTab() {
               loading={deleteMutation.isPending}
               onClick={() => {
                 if (!deleteGroupTarget) return
-                setDeletingId(deleteGroupTarget.id)
-                deleteMutation.mutate(deleteGroupTarget.id)
+                setDeletingId(deleteGroupTarget.uid)
+                deleteMutation.mutate(deleteGroupTarget.uid)
                 setDeleteGroupTarget(null)
               }}
             >
@@ -1282,7 +1198,6 @@ export default function SettingsPage() {
 
       <div className="rounded-xl bg-white p-4 sm:p-5 shadow-sm ring-1 ring-gray-100">
         {activeTab === 'boutique' && <BoutiqueTab />}
-        {activeTab === 'profil'   && <ProfilTab />}
         {activeTab === 'users'    && <UsersTab />}
         {activeTab === 'groups'   && <GroupsTab />}
       </div>

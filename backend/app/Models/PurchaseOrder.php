@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\BelongsToTenant;
+use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PurchaseOrder extends Model
 {
-    use BelongsToTenant, SoftDeletes;
+    use BelongsToTenant, HasUuid, SoftDeletes;
 
     const STATUS_DRAFT     = 'draft';
     const STATUS_ORDERED   = 'ordered';

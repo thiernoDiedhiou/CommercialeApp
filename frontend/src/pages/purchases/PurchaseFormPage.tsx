@@ -14,6 +14,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Textarea, Select } from '@/components/ui/Input'
 import { formatCurrency } from '@/lib/utils'
+import { generateUUID } from '@/lib/uuid'
 import type { Product } from '@/types'
 
 // ── Schema (champs d'en-tête) ─────────────────────────────────────────────
@@ -41,7 +42,7 @@ type LineItem = {
 
 function emptyLine(): LineItem {
   return {
-    uid: crypto.randomUUID(),
+    uid: generateUUID(),
     product: null,
     product_id: null,
     variant_id: null,
@@ -120,8 +121,8 @@ function ProductPicker({
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export default function PurchaseFormPage() {
-  const { id } = useParams<{ id: string }>()
-  const isEdit = !!id
+  const { uid } = useParams<{ uid: string }>()
+  const isEdit = !!uid
   const navigate = useNavigate()
   const qc = useQueryClient()
 
@@ -135,8 +136,8 @@ export default function PurchaseFormPage() {
 
   // Données édition
   const { data: orderData, isLoading: orderLoading } = useQuery({
-    queryKey: ['purchase', id],
-    queryFn: () => getPurchaseOrder(Number(id)),
+    queryKey: ['purchase', uid],
+    queryFn: () => getPurchaseOrder(uid!),
     enabled: isEdit,
   })
 
@@ -154,7 +155,7 @@ export default function PurchaseFormPage() {
       if (orderData.items?.length) {
         setItems(
           orderData.items.map((item) => ({
-            uid: crypto.randomUUID(),
+            uid: generateUUID(),
             product: item.product
               ? { id: item.product_id, name: item.product.name }
               : null,
@@ -194,10 +195,10 @@ export default function PurchaseFormPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: (v: FormValues) => updatePurchaseOrder(Number(id), buildPayload(v)),
+    mutationFn: (v: FormValues) => updatePurchaseOrder(uid!, buildPayload(v)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['purchases'] })
-      qc.invalidateQueries({ queryKey: ['purchase', id] })
+      qc.invalidateQueries({ queryKey: ['purchase', uid] })
       toast.success('Bon de commande mis à jour.')
       navigate('/purchases')
     },

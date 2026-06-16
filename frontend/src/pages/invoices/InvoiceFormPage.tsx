@@ -13,6 +13,7 @@ import { getApiErrorMessage } from '@/lib/errors'
 import Button from '@/components/ui/Button'
 import Input, { Textarea, Select } from '@/components/ui/Input'
 import { formatCurrency } from '@/lib/utils'
+import { generateUUID } from '@/lib/uuid'
 import type { Product } from '@/types'
 
 // ── Schema ────────────────────────────────────────────────────────────────
@@ -42,7 +43,7 @@ type LineItem = {
 }
 
 function emptyLine(): LineItem {
-  return { uid: crypto.randomUUID(), product_id: null, description: '', quantity: 1, unit_price: 0, discount: 0 }
+  return { uid: generateUUID(), product_id: null, description: '', quantity: 1, unit_price: 0, discount: 0 }
 }
 
 // ── Sélecteur produit ─────────────────────────────────────────────────────
@@ -178,16 +179,16 @@ function CustomerPicker({ initialName = '', onChange }: { initialName?: string; 
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export default function InvoiceFormPage() {
-  const { id } = useParams<{ id: string }>()
-  const isEdit = !!id
+  const { uid } = useParams<{ uid: string }>()
+  const isEdit = !!uid
   const navigate = useNavigate()
   const qc = useQueryClient()
 
   const [items, setItems] = useState<LineItem[]>([emptyLine()])
 
   const { data: invoiceData, isLoading } = useQuery({
-    queryKey: ['invoice', id],
-    queryFn: () => getInvoice(Number(id)),
+    queryKey: ['invoice', uid],
+    queryFn: () => getInvoice(uid!),
     enabled: isEdit,
   })
 
@@ -212,7 +213,7 @@ export default function InvoiceFormPage() {
       })
       if (invoiceData.items?.length) {
         setItems(invoiceData.items.map((item) => ({
-          uid:         crypto.randomUUID(),
+          uid:         generateUUID(),
           product_id:  item.product_id,
           description: item.description,
           quantity:    parseFloat(item.quantity),
@@ -261,12 +262,12 @@ export default function InvoiceFormPage() {
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
   const updateMutation = useMutation({
-    mutationFn: (v: FormValues) => updateInvoice(Number(id), buildPayload(v)),
+    mutationFn: (v: FormValues) => updateInvoice(uid!, buildPayload(v)),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['invoices'] })
-      qc.invalidateQueries({ queryKey: ['invoice', id] })
+      qc.invalidateQueries({ queryKey: ['invoice', uid] })
       toast.success('Facture mise à jour.')
-      navigate(`/invoices/${id}`)
+      navigate(`/invoices/${uid}`)
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -334,7 +335,7 @@ export default function InvoiceFormPage() {
           {/* Sélecteur rapide produit */}
           <div className="mb-4">
             <ProductPicker onSelect={(p) => setItems((prev) => [...prev, {
-              uid: crypto.randomUUID(),
+              uid: generateUUID(),
               product_id: p.id,
               description: p.name,
               quantity: 1,
@@ -436,7 +437,7 @@ export default function InvoiceFormPage() {
         )}
 
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate(isEdit ? `/invoices/${id}` : '/invoices')}>
+          <Button type="button" variant="outline" onClick={() => navigate(isEdit ? `/invoices/${uid}` : '/invoices')}>
             Annuler
           </Button>
           <Button type="submit" loading={isPending}>

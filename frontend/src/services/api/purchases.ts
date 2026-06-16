@@ -27,8 +27,8 @@ export async function getPurchaseOrders(params: {
   return data
 }
 
-export async function getPurchaseOrder(id: number): Promise<PurchaseOrder> {
-  const { data } = await apiClient.get<{ data: PurchaseOrder }>(`/api/v1/purchases/${id}`)
+export async function getPurchaseOrder(uid: string): Promise<PurchaseOrder> {
+  const { data } = await apiClient.get<{ data: PurchaseOrder }>(`/api/v1/purchases/${uid}`)
   return data.data
 }
 
@@ -37,31 +37,31 @@ export async function createPurchaseOrder(body: CreatePurchaseOrderData): Promis
   return data.data
 }
 
-export async function updatePurchaseOrder(id: number, body: UpdatePurchaseOrderData): Promise<PurchaseOrder> {
-  const { data } = await apiClient.put<{ data: PurchaseOrder }>(`/api/v1/purchases/${id}`, body)
+export async function updatePurchaseOrder(uid: string, body: UpdatePurchaseOrderData): Promise<PurchaseOrder> {
+  const { data } = await apiClient.put<{ data: PurchaseOrder }>(`/api/v1/purchases/${uid}`, body)
   return data.data
 }
 
-export async function deletePurchaseOrder(id: number): Promise<void> {
-  await apiClient.delete(`/api/v1/purchases/${id}`)
+export async function deletePurchaseOrder(uid: string): Promise<void> {
+  await apiClient.delete(`/api/v1/purchases/${uid}`)
 }
 
-export async function confirmPurchaseOrder(id: number): Promise<PurchaseOrder> {
-  const { data } = await apiClient.post<{ data: PurchaseOrder }>(`/api/v1/purchases/${id}/confirm`)
+export async function confirmPurchaseOrder(uid: string): Promise<PurchaseOrder> {
+  const { data } = await apiClient.post<{ data: PurchaseOrder }>(`/api/v1/purchases/${uid}/confirm`)
   return data.data
 }
 
 export async function receivePurchaseOrder(
-  id: number,
+  uid: string,
   receptions: ReceiveItemData[],
 ): Promise<PurchaseOrder> {
-  const { data } = await apiClient.post<{ data: PurchaseOrder }>(`/api/v1/purchases/${id}/receive`, {
+  const { data } = await apiClient.post<{ data: PurchaseOrder }>(`/api/v1/purchases/${uid}/receive`, {
     receptions,
   })
   return data.data
 }
 
-export async function cancelPurchaseOrder(id: number): Promise<PurchaseOrder> {
-  const { data } = await apiClient.post<{ data: PurchaseOrder }>(`/api/v1/purchases/${id}/cancel`)
+export async function cancelPurchaseOrder(uid: string): Promise<PurchaseOrder> {
+  const { data } = await apiClient.post<{ data: PurchaseOrder }>(`/api/v1/purchases/${uid}/cancel`)
   return data.data
 }

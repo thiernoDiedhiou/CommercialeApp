@@ -74,27 +74,27 @@ export default function InvoicesPage() {
   const [sendTarget, setSendTarget]     = useState<Invoice | null>(null)
   const [cancelTarget, setCancelTarget] = useState<Invoice | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Invoice | null>(null)
-  const [pdfLoading, setPdfLoading]     = useState<number | null>(null)
+  const [pdfLoading, setPdfLoading]     = useState<string | null>(null)
 
   const sendMutation = useMutation({
-    mutationFn: (id: number) => sendInvoice(id),
+    mutationFn: (uid: string) => sendInvoice(uid),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setSendTarget(null); toast.success('Facture marquée comme envoyée.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
   const cancelMutation = useMutation({
-    mutationFn: (id: number) => cancelInvoice(id),
+    mutationFn: (uid: string) => cancelInvoice(uid),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setCancelTarget(null); toast.success('Facture annulée.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteInvoice(id),
+    mutationFn: (uid: string) => deleteInvoice(uid),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setDeleteTarget(null); toast.success('Facture supprimée.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
-  const handlePdf = async (id: number, reference: string) => {
-    setPdfLoading(id)
-    try { await openInvoicePdf(id, reference) } finally { setPdfLoading(null) }
+  const handlePdf = async (uid: string, reference: string) => {
+    setPdfLoading(uid)
+    try { await openInvoicePdf(uid, reference) } finally { setPdfLoading(null) }
   }
 
   // ── Colonnes ──────────────────────────────────────────────────────────────
@@ -154,14 +154,14 @@ export default function InvoicesPage() {
       align: 'right',
       render: (i) => (
         <div className="flex items-center justify-end gap-1">
-          <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/invoices/${i.id}`) }}
+          <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/invoices/${i.uid}`) }}
             className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title="Voir">
             <EyeIcon className="h-4 w-4" />
           </button>
 
           <CanDo permission="invoices.pdf">
-            <button type="button" onClick={(e) => { e.stopPropagation(); handlePdf(i.id, i.reference) }}
-              disabled={pdfLoading === i.id}
+            <button type="button" onClick={(e) => { e.stopPropagation(); handlePdf(i.uid, i.reference) }}
+              disabled={pdfLoading === i.uid}
               className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40" title="PDF">
               <DocumentArrowDownIcon className="h-4 w-4" />
             </button>
@@ -238,7 +238,7 @@ export default function InvoicesPage() {
         loading={isLoading}
         skeletonRows={8}
         emptyMessage="Aucune facture trouvée."
-        onRowClick={(i) => navigate(`/invoices/${i.id}`)}
+        onRowClick={(i) => navigate(`/invoices/${i.uid}`)}
       />
 
       {data && data.last_page > 1 && (
@@ -249,7 +249,7 @@ export default function InvoicesPage() {
       <Modal isOpen={!!sendTarget} onClose={() => setSendTarget(null)} title="Envoyer la facture" size="sm"
         footer={<>
           <Button variant="outline" onClick={() => setSendTarget(null)}>Annuler</Button>
-          <Button loading={sendMutation.isPending} onClick={() => sendTarget && sendMutation.mutate(sendTarget.id)}>
+          <Button loading={sendMutation.isPending} onClick={() => sendTarget && sendMutation.mutate(sendTarget.uid)}>
             Envoyer
           </Button>
         </>}
@@ -263,7 +263,7 @@ export default function InvoicesPage() {
       <Modal isOpen={!!cancelTarget} onClose={() => setCancelTarget(null)} title="Annuler la facture" size="sm"
         footer={<>
           <Button variant="outline" onClick={() => setCancelTarget(null)}>Retour</Button>
-          <Button variant="danger" loading={cancelMutation.isPending} onClick={() => cancelTarget && cancelMutation.mutate(cancelTarget.id)}>
+          <Button variant="danger" loading={cancelMutation.isPending} onClick={() => cancelTarget && cancelMutation.mutate(cancelTarget.uid)}>
             Annuler la facture
           </Button>
         </>}
@@ -277,7 +277,7 @@ export default function InvoicesPage() {
       <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Supprimer la facture" size="sm"
         footer={<>
           <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
-          <Button variant="danger" loading={deleteMutation.isPending} onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}>
+          <Button variant="danger" loading={deleteMutation.isPending} onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}>
             Supprimer
           </Button>
         </>}

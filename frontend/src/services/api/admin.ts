@@ -25,12 +25,13 @@ export async function adminLogout(): Promise<void> {
 // ── Stats ─────────────────────────────────────────────────────────────────
 
 export interface DangerTenant {
-  tenant_id:      number
-  tenant_name:    string
-  tenant_slug:    string
-  plan_name?:     string | null
-  status?:        string
-  ends_at?:       string | null
+  tenant_id:       number
+  tenant_uid:      string
+  tenant_name:     string
+  tenant_slug:     string
+  plan_name?:      string | null
+  status?:         string
+  ends_at?:        string | null
   days_remaining?: number | null
 }
 
@@ -50,7 +51,7 @@ export interface AdminStats {
   expiring_soon:        DangerTenant[]
   without_subscription: DangerTenant[]
   // Liste récente
-  tenants_recent: { id: number; name: string; sector: string; is_active: boolean; created_at: string }[]
+  tenants_recent: { id: number; uid: string; name: string; sector: string; is_active: boolean; created_at: string }[]
 }
 
 export async function getAdminStats(): Promise<AdminStats> {
@@ -71,6 +72,7 @@ export interface AdminTenantSubscription {
 
 export interface AdminTenant {
   id:                     number
+  uid:                    string
   name:                   string
   slug:                   string
   custom_domain:          string | null
@@ -143,23 +145,23 @@ export async function getAdminTenants(params: { search?: string; is_active?: boo
   return data
 }
 
-export async function restoreTenant(id: number): Promise<AdminTenant> {
-  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${id}/restore`)
+export async function restoreTenant(uid: string): Promise<AdminTenant> {
+  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${uid}/restore`)
   return data.data
 }
 
-export async function scheduleTenantDeletion(id: number): Promise<AdminTenant> {
-  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${id}/schedule-deletion`)
+export async function scheduleTenantDeletion(uid: string): Promise<AdminTenant> {
+  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${uid}/schedule-deletion`)
   return data.data
 }
 
-export async function cancelTenantDeletion(id: number): Promise<AdminTenant> {
-  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${id}/cancel-deletion`)
+export async function cancelTenantDeletion(uid: string): Promise<AdminTenant> {
+  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${uid}/cancel-deletion`)
   return data.data
 }
 
-export async function getAdminTenant(id: number): Promise<{ data: AdminTenant; users: TenantUser[] }> {
-  const { data } = await adminAxios.get<{ data: AdminTenant; users: TenantUser[] }>(`/api/v1/admin/tenants/${id}`)
+export async function getAdminTenant(uid: string): Promise<{ data: AdminTenant; users: TenantUser[] }> {
+  const { data } = await adminAxios.get<{ data: AdminTenant; users: TenantUser[] }>(`/api/v1/admin/tenants/${uid}`)
   return data
 }
 
@@ -168,29 +170,30 @@ export async function createAdminTenant(body: CreateTenantData): Promise<AdminTe
   return data.data
 }
 
-export async function updateAdminTenant(id: number, body: UpdateTenantData): Promise<AdminTenant> {
-  const { data } = await adminAxios.put<{ data: AdminTenant }>(`/api/v1/admin/tenants/${id}`, body)
+export async function updateAdminTenant(uid: string, body: UpdateTenantData): Promise<AdminTenant> {
+  const { data } = await adminAxios.put<{ data: AdminTenant }>(`/api/v1/admin/tenants/${uid}`, body)
   return data.data
 }
 
-export async function suspendTenant(id: number): Promise<AdminTenant> {
-  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${id}/suspend`)
+export async function suspendTenant(uid: string): Promise<AdminTenant> {
+  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${uid}/suspend`)
   return data.data
 }
 
-export async function activateTenant(id: number): Promise<AdminTenant> {
-  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${id}/activate`)
+export async function activateTenant(uid: string): Promise<AdminTenant> {
+  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${uid}/activate`)
   return data.data
 }
 
-export async function deleteAdminTenant(id: number): Promise<void> {
-  await adminAxios.delete(`/api/v1/admin/tenants/${id}`)
+export async function deleteAdminTenant(uid: string): Promise<void> {
+  await adminAxios.delete(`/api/v1/admin/tenants/${uid}`)
 }
 
 // ── Plans ─────────────────────────────────────────────────────────────────
 
 export interface Plan {
   id:                    number
+  uid:                   string
   name:                  string
   slug:                  string
   tagline:               string | null
@@ -254,8 +257,8 @@ export async function getAdminPlans(): Promise<Plan[]> {
   return data.data
 }
 
-export async function getAdminPlan(id: number): Promise<Plan> {
-  const { data } = await adminAxios.get<{ data: Plan }>(`/api/v1/admin/plans/${id}`)
+export async function getAdminPlan(uid: string): Promise<Plan> {
+  const { data } = await adminAxios.get<{ data: Plan }>(`/api/v1/admin/plans/${uid}`)
   return data.data
 }
 
@@ -264,13 +267,13 @@ export async function createAdminPlan(body: PlanFormData): Promise<Plan> {
   return data.data
 }
 
-export async function updateAdminPlan(id: number, body: Partial<PlanFormData>): Promise<Plan> {
-  const { data } = await adminAxios.put<{ data: Plan }>(`/api/v1/admin/plans/${id}`, body)
+export async function updateAdminPlan(uid: string, body: Partial<PlanFormData>): Promise<Plan> {
+  const { data } = await adminAxios.put<{ data: Plan }>(`/api/v1/admin/plans/${uid}`, body)
   return data.data
 }
 
-export async function deleteAdminPlan(id: number): Promise<void> {
-  await adminAxios.delete(`/api/v1/admin/plans/${id}`)
+export async function deleteAdminPlan(uid: string): Promise<void> {
+  await adminAxios.delete(`/api/v1/admin/plans/${uid}`)
 }
 
 // ── Abonnements ───────────────────────────────────────────────────────────
@@ -294,33 +297,33 @@ export interface SubscriptionSummary {
   expired_count: number
 }
 
-export async function getTenantSubscription(tenantId: number): Promise<Subscription | null> {
-  const { data } = await adminAxios.get<{ data: Subscription | null }>(`/api/v1/admin/tenants/${tenantId}/subscription`)
+export async function getTenantSubscription(tenantUid: string): Promise<Subscription | null> {
+  const { data } = await adminAxios.get<{ data: Subscription | null }>(`/api/v1/admin/tenants/${tenantUid}/subscription`)
   return data.data
 }
 
-export async function assignSubscription(tenantId: number, body: {
+export async function assignSubscription(tenantUid: string, body: {
   plan_id: number
   billing_cycle: string
   starts_at?: string
   ends_at?: string
   notes?: string
 }): Promise<Subscription> {
-  const { data } = await adminAxios.post<{ data: Subscription }>(`/api/v1/admin/tenants/${tenantId}/subscription`, body)
+  const { data } = await adminAxios.post<{ data: Subscription }>(`/api/v1/admin/tenants/${tenantUid}/subscription`, body)
   return data.data
 }
 
-export async function updateSubscription(tenantId: number, body: {
+export async function updateSubscription(tenantUid: string, body: {
   ends_at?: string | null
   status?: string
   notes?: string
 }): Promise<Subscription> {
-  const { data } = await adminAxios.put<{ data: Subscription }>(`/api/v1/admin/tenants/${tenantId}/subscription`, body)
+  const { data } = await adminAxios.put<{ data: Subscription }>(`/api/v1/admin/tenants/${tenantUid}/subscription`, body)
   return data.data
 }
 
 export async function getSubscriptions(params?: { status?: string; plan_id?: number; page?: number }): Promise<{
-  data: (Subscription & { tenant: { id: number; name: string; slug: string; is_active: boolean } })[]
+  data: (Subscription & { tenant: { id: number; uid: string; name: string; slug: string; is_active: boolean } })[]
   meta: { current_page: number; last_page: number; total: number; per_page: number }
   summary: SubscriptionSummary
 }> {
@@ -328,8 +331,8 @@ export async function getSubscriptions(params?: { status?: string; plan_id?: num
   return data
 }
 
-export async function getTenantSubscriptionHistory(tenantId: number): Promise<Subscription[]> {
-  const { data } = await adminAxios.get<{ data: Subscription[] }>(`/api/v1/admin/tenants/${tenantId}/subscriptions`)
+export async function getTenantSubscriptionHistory(tenantUid: string): Promise<Subscription[]> {
+  const { data } = await adminAxios.get<{ data: Subscription[] }>(`/api/v1/admin/tenants/${tenantUid}/subscriptions`)
   return data.data
 }
 
@@ -342,8 +345,8 @@ export interface TenantStats {
   last_sale_at:    string | null
 }
 
-export async function getTenantStats(tenantId: number): Promise<TenantStats> {
-  const { data } = await adminAxios.get<{ data: TenantStats }>(`/api/v1/admin/tenants/${tenantId}/stats`)
+export async function getTenantStats(tenantUid: string): Promise<TenantStats> {
+  const { data } = await adminAxios.get<{ data: TenantStats }>(`/api/v1/admin/tenants/${tenantUid}/stats`)
   return data.data
 }
 

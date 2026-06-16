@@ -193,8 +193,8 @@ function ImageUpload({
 // ── Page principale ────────────────────────────────────────────────────────
 
 export default function ProductFormPage() {
-  const { id } = useParams<{ id: string }>()
-  const isEdit   = !!id
+  const { uid } = useParams<{ uid: string }>()
+  const isEdit   = !!uid
   const navigate = useNavigate()
   const qc       = useQueryClient()
   const currency = useAuthStore((s) => s.tenant?.currency ?? 'FCFA')
@@ -206,8 +206,8 @@ export default function ProductFormPage() {
   const [imageError, setImageError] = useState<string | null>(null)
 
   const { data: product, isLoading: productLoading } = useQuery({
-    queryKey: ['product', id],
-    queryFn: () => getProduct(Number(id)),
+    queryKey: ['product', uid],
+    queryFn: () => getProduct(uid!),
     enabled: isEdit,
   })
 
@@ -289,12 +289,12 @@ export default function ProductFormPage() {
       if (created.has_variants && variants?.length) {
         // allSettled : tente toutes les variantes avant de décider du rollback
         const results = await Promise.allSettled(
-          variants.map((v) => createVariant(created.id, v as CreateVariantData)),
+          variants.map((v) => createVariant(created.uid, v as CreateVariantData)),
         )
         const failures = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected')
         if (failures.length > 0) {
           // Rollback complet — cascade supprime les variantes déjà créées
-          await deleteProduct(created.id).catch(() => {})
+          await deleteProduct(created.uid).catch(() => {})
           // Agrège tous les messages pour que l'utilisateur voie tous les conflits d'un coup
           const messages = failures.map((f) => getApiErrorMessage(f.reason))
           const unique = [...new Set(messages)]
@@ -313,11 +313,11 @@ export default function ProductFormPage() {
   const updateMutation = useMutation({
     mutationFn: (values: FormValues) => {
       const { variants: _variants, has_variants: _hv, ...rest } = values
-      return updateProduct(Number(id), rest, imageFile, removeImage)
+      return updateProduct(uid!, rest, imageFile, removeImage)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
-      qc.invalidateQueries({ queryKey: ['product', id] })
+      qc.invalidateQueries({ queryKey: ['product', uid] })
       toast.success('Produit mis à jour.')
       navigate('/products')
     },
@@ -354,19 +354,19 @@ export default function ProductFormPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Section : Informations de base */}
         <Section title="Informations de base">
-          {/* Image */}
-          <div className="flex items-start gap-5">
-            <div>
+          {/* Image + champs : colonne sur mobile, ligne sur sm+ */}
+          <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
+            <div className="flex flex-col items-center sm:items-start gap-1.5">
               <ImageUpload
                 preview={imagePreview}
                 onFileChange={handleFileChange}
                 onRemove={handleRemoveImage}
               />
               {imageError && (
-                <p className="mt-1.5 w-32 text-xs text-red-500 leading-snug">{imageError}</p>
+                <p className="w-full sm:w-32 text-xs text-red-500 leading-snug text-center sm:text-left">{imageError}</p>
               )}
             </div>
-            <div className="flex-1 space-y-4">
+            <div className="w-full flex-1 space-y-4">
               <Input
                 label="Nom du produit"
                 placeholder="Ex : T-shirt coton"
@@ -374,7 +374,7 @@ export default function ProductFormPage() {
                 required
                 {...register('name')}
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                 <Input
                   label="SKU"
                   placeholder="TSH-001"
@@ -388,7 +388,7 @@ export default function ProductFormPage() {
                   {...register('barcode')}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                 <Controller
                   name="category_id"
                   control={control}
@@ -423,7 +423,7 @@ export default function ProductFormPage() {
 
         {/* Section : Prix et stock */}
         <Section title="Prix et stock">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             <Input
               label={`Prix de vente (${currency})`}
               type="number"
@@ -449,6 +449,8 @@ export default function ProductFormPage() {
               error={errors.cost_price?.message}
               {...register('cost_price', { valueAsNumber: true })}
             />
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <Input
               label="Unité"
               placeholder="pièce, kg, L…"

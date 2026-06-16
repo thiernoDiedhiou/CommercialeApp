@@ -15,8 +15,34 @@ const LARAVEL_TRANSLATIONS: Record<string, string> = {
   'The phone is invalid.': 'Le numéro de téléphone est invalide pour le pays sélectionné.',
 }
 
+// Noms de champs Laravel → français
+const FIELD_NAMES: Record<string, string> = {
+  phone:    'ce numéro de téléphone',
+  email:    'cet email',
+  name:     'ce nom',
+  sku:      'ce SKU',
+  slug:     'ce slug',
+  username: 'ce nom d\'utilisateur',
+}
+
 function translateMessage(msg: string): string {
-  return LARAVEL_TRANSLATIONS[msg] ?? msg
+  if (LARAVEL_TRANSLATIONS[msg]) return LARAVEL_TRANSLATIONS[msg]
+
+  // "The {field} has already been taken." → champ déjà utilisé
+  const takenMatch = msg.match(/^The (\w+)(?:\s+field)? has already been taken\.$/)
+  if (takenMatch) {
+    const field = FIELD_NAMES[takenMatch[1]] ?? `ce ${takenMatch[1]}`
+    return `${field.charAt(0).toUpperCase() + field.slice(1)} est déjà utilisé.`
+  }
+
+  // "The {field} field is required."
+  const requiredMatch = msg.match(/^The (\w+)(?:\s+field)? (?:is required|field is required)\.$/)
+  if (requiredMatch) {
+    const field = FIELD_NAMES[requiredMatch[1]] ?? requiredMatch[1]
+    return `Le champ « ${field} » est obligatoire.`
+  }
+
+  return msg
 }
 
 export function getApiErrorMessage(error: unknown): string {

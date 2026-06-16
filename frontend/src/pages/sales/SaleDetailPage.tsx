@@ -84,7 +84,7 @@ function SummaryRow({
 // ── Page principale ────────────────────────────────────────────────────────
 
 export default function SaleDetailPage() {
-  const { id } = useParams<{ id: string }>()
+  const { uid } = useParams<{ uid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
 
@@ -97,35 +97,35 @@ export default function SaleDetailPage() {
 
   // ── Données ───────────────────────────────────────────────────────────────
   const { data: sale, isLoading } = useQuery({
-    queryKey: ['sale', Number(id)],
-    queryFn: () => getSale(Number(id)),
-    enabled: !!id,
+    queryKey: ['sale', uid],
+    queryFn: () => getSale(uid!),
+    enabled: !!uid,
   })
 
   const { data: returnsData } = useQuery({
-    queryKey: ['returns', { sale_id: Number(id) }],
-    queryFn: () => getReturns({ sale_id: Number(id) }),
-    enabled: !!id,
+    queryKey: ['returns', { sale_id: sale?.id }],
+    queryFn: () => getReturns({ sale_id: sale!.id }),
+    enabled: !!sale?.id,
   })
   const saleReturns = returnsData?.data ?? []
 
   // ── Mutations ─────────────────────────────────────────────────────────────
   const cancelMutation = useMutation({
-    mutationFn: () => cancelSale(Number(id)),
+    mutationFn: () => cancelSale(uid!),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['sale', Number(id)] })
+      qc.invalidateQueries({ queryKey: ['sale', uid] })
       qc.invalidateQueries({ queryKey: ['sales'] })
       setCancelOpen(false)
     },
   })
 
   const paymentMutation = useMutation({
-    mutationFn: () => addPayment(Number(id), {
+    mutationFn: () => addPayment(uid!, {
       method: payMethod,
       amount: parseFloat(payAmount) || 0,
     }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['sale', Number(id)] })
+      qc.invalidateQueries({ queryKey: ['sale', uid] })
       qc.invalidateQueries({ queryKey: ['sales'] })
       setPaymentOpen(false)
       setPayAmount('')
@@ -137,7 +137,7 @@ export default function SaleDetailPage() {
 
   const handlePdf = async () => {
     setPdfLoading(true)
-    try { await openSalePdf(Number(id)) } finally { setPdfLoading(false) }
+    try { await openSalePdf(uid!) } finally { setPdfLoading(false) }
   }
 
   // ── Skeleton ──────────────────────────────────────────────────────────────
@@ -251,7 +251,7 @@ export default function SaleDetailPage() {
               <div className="mt-2 text-sm">
                 <span className="text-gray-500">Client : </span>
                 <Link
-                  to={`/customers/${sale.customer.id}`}
+                  to={`/customers/${sale.customer.uid}`}
                   className="font-medium text-brand-primary hover:underline"
                 >
                   {sale.customer.name}

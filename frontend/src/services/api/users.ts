@@ -23,17 +23,17 @@ export async function createUser(body: CreateUserData): Promise<UserWithGroups> 
   return data
 }
 
-export async function updateUser(id: number, body: UpdateUserData): Promise<UserWithGroups> {
-  const { data } = await apiClient.put<UserWithGroups>(`/api/v1/users/${id}`, body)
+export async function updateUser(uid: string, body: UpdateUserData): Promise<UserWithGroups> {
+  const { data } = await apiClient.put<UserWithGroups>(`/api/v1/users/${uid}`, body)
   return data
 }
 
-export async function deleteUser(id: number): Promise<void> {
-  await apiClient.delete(`/api/v1/users/${id}`)
+export async function deleteUser(uid: string): Promise<void> {
+  await apiClient.delete(`/api/v1/users/${uid}`)
 }
 
-export async function syncUserGroups(userId: number, groupIds: number[]): Promise<UserWithGroups> {
-  const { data } = await apiClient.post<UserWithGroups>(`/api/v1/users/${userId}/groups`, {
+export async function syncUserGroups(userUid: string, groupIds: number[]): Promise<UserWithGroups> {
+  const { data } = await apiClient.post<UserWithGroups>(`/api/v1/users/${userUid}/groups`, {
     group_ids: groupIds,
   })
   return data

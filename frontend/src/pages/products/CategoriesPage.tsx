@@ -171,7 +171,7 @@ export default function CategoriesPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, v }: { id: number; v: FormValues }) => updateCategory(id, {
+    mutationFn: ({ uid, v }: { uid: string; v: FormValues }) => updateCategory(uid, {
       name        : v.name,
       parent_id   : v.parent_id ? Number(v.parent_id) : null,
       description : v.description || null,
@@ -183,14 +183,14 @@ export default function CategoriesPage() {
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteCategory(id),
+    mutationFn: (uid: string) => deleteCategory(uid),
     onSuccess : () => { qc.invalidateQueries({ queryKey: ['categories'] }); setDeleteTarget(null); toast.success('Catégorie supprimée.') },
     onError   : (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const onSubmit = (v: FormValues) => {
     if (modal?.mode === 'create') createMutation.mutate(v)
-    else if (modal?.mode === 'edit') updateMutation.mutate({ id: modal.category.id, v })
+    else if (modal?.mode === 'edit') updateMutation.mutate({ uid: modal.category.uid, v })
   }
 
   const isMutating = createMutation.isPending || updateMutation.isPending
@@ -344,7 +344,7 @@ export default function CategoriesPage() {
             <Button
               variant="danger"
               loading={deleteMutation.isPending}
-              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}
             >
               Supprimer
             </Button>

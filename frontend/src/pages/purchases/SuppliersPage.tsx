@@ -97,7 +97,7 @@ export default function SuppliersPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, v }: { id: number; v: FormValues }) => updateSupplier(id, {
+    mutationFn: ({ uid, v }: { uid: string; v: FormValues }) => updateSupplier(uid, {
       name:    v.name,
       country: v.country,
       phone:   normalizePhone(v.phone),
@@ -110,20 +110,20 @@ export default function SuppliersPage() {
   })
 
   const toggleMutation = useMutation({
-    mutationFn: (s: Supplier) => updateSupplier(s.id, { is_active: !s.is_active }),
+    mutationFn: (s: Supplier) => updateSupplier(s.uid, { is_active: !s.is_active }),
     onSuccess: (_, s) => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setToggleTarget(null); toast.success(s.is_active ? 'Fournisseur désactivé.' : 'Fournisseur activé.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => deleteSupplier(id),
+    mutationFn: (uid: string) => deleteSupplier(uid),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setDeleteTarget(null); toast.success('Fournisseur supprimé.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const onSubmit = (v: FormValues) => {
     if (modal?.mode === 'create') createMutation.mutate(v)
-    else if (modal?.mode === 'edit') updateMutation.mutate({ id: modal.supplier.id, v })
+    else if (modal?.mode === 'edit') updateMutation.mutate({ uid: modal.supplier.uid, v })
   }
 
   const isMutating = createMutation.isPending || updateMutation.isPending
@@ -276,7 +276,7 @@ export default function SuppliersPage() {
         footer={
           <>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
-            <Button variant="danger" loading={deleteMutation.isPending} onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}>
+            <Button variant="danger" loading={deleteMutation.isPending} onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}>
               Supprimer
             </Button>
           </>

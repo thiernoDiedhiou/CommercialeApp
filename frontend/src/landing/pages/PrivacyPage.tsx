@@ -57,7 +57,7 @@ export default function PrivacyPage() {
         <Section title="1. Responsable du traitement">
           <p>
             Le responsable du traitement des données personnelles collectées via la plateforme {COMPANY}
-            est l'équipe {COMPANY}, domiciliée à Dakar, République du Sénégal.
+            est l'équipe {COMPANY}, domiciliée à Thiès, République du Sénégal.
           </p>
           <p>
             Pour toute question relative à vos données personnelles, vous pouvez nous contacter à{' '}

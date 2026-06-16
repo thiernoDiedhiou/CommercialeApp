@@ -28,19 +28,19 @@ export async function createCategory(body: CreateCategoryData): Promise<Category
 }
 
 export async function updateCategory(
-  id: number,
+  uid: string,
   body: Partial<CreateCategoryData>,
 ): Promise<Category> {
   const fd = toFormData({ name: body.name ?? '', ...body })
   fd.append('_method', 'PUT')
   const { data } = await apiClient.post<{ data: Category }>(
-    `/api/v1/categories/${id}`,
+    `/api/v1/categories/${uid}`,
     fd,
     MULTIPART,
   )
   return data.data
 }
 
-export async function deleteCategory(id: number): Promise<void> {
-  await apiClient.delete(`/api/v1/categories/${id}`)
+export async function deleteCategory(uid: string): Promise<void> {
+  await apiClient.delete(`/api/v1/categories/${uid}`)
 }

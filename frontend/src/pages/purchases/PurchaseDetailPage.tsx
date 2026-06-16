@@ -34,13 +34,13 @@ const STATUS_LABEL: Record<PurchaseOrderStatus, string> = {
 }
 
 export default function PurchaseDetailPage() {
-  const { id } = useParams<{ id: string }>()
+  const { uid } = useParams<{ uid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
 
   const { data: order, isLoading } = useQuery({
-    queryKey: ['purchase', id],
-    queryFn: () => getPurchaseOrder(Number(id)),
+    queryKey: ['purchase', uid],
+    queryFn: () => getPurchaseOrder(uid!),
   })
 
   const [showConfirm, setShowConfirm] = useState(false)
@@ -51,18 +51,18 @@ export default function PurchaseDetailPage() {
   const [expiryDates, setExpiryDates]       = useState<Record<number, string>>({})
 
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['purchase', id] })
+    qc.invalidateQueries({ queryKey: ['purchase', uid] })
     qc.invalidateQueries({ queryKey: ['purchases'] })
   }
 
   const confirmMutation = useMutation({
-    mutationFn: () => confirmPurchaseOrder(Number(id)),
+    mutationFn: () => confirmPurchaseOrder(uid!),
     onSuccess: () => { invalidate(); setShowConfirm(false); toast.success('Commande confirmée.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const cancelMutation = useMutation({
-    mutationFn: () => cancelPurchaseOrder(Number(id)),
+    mutationFn: () => cancelPurchaseOrder(uid!),
     onSuccess: () => { invalidate(); setShowCancel(false); toast.success('Commande annulée.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -77,7 +77,7 @@ export default function PurchaseDetailPage() {
           expiry_date:       expiryDates[Number(itemId)] || undefined,
         }))
         .filter((r) => r.quantity_received > 0)
-      return receivePurchaseOrder(Number(id), receptions)
+      return receivePurchaseOrder(uid!, receptions)
     },
     onSuccess: () => {
       invalidate()

@@ -64,7 +64,7 @@ export function SaleReturnModal({ sale, isOpen, onClose }: Props) {
 
   const mutation = useMutation({
     mutationFn: () =>
-      createSaleReturn(sale.id, {
+      createSaleReturn(sale.uid, {
         reason: reason || null,
         refund_method: refundMethod,
         items: selectedLines.map((l) => ({
@@ -73,7 +73,7 @@ export function SaleReturnModal({ sale, isOpen, onClose }: Props) {
         })),
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['sale', sale.id] })
+      qc.invalidateQueries({ queryKey: ['sale', sale.uid] })
       qc.invalidateQueries({ queryKey: ['returns', { sale_id: sale.id }] })
       qc.invalidateQueries({ queryKey: ['returns'] })
       toast.success('Retour enregistré avec succès.')

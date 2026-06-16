@@ -82,7 +82,7 @@ export default function DebtsPage() {
                   <tr
                     key={row.id}
                     className="hover:bg-gray-50 cursor-pointer transition-colors"
-                    onClick={() => navigate(`/customers/${row.id}`)}
+                    onClick={() => navigate(`/customers/${row.uid}`)}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">

@@ -45,7 +45,7 @@ function Navbar({ isDark, onToggle }: { isDark: boolean; onToggle: () => void })
           <img
             src={isDark ? '/logo_blanc.svg' : '/logo_mode_claire.svg'}
             alt="DiDi Sphere"
-            className="h-8 w-auto"
+            className="h-10 w-auto"
           />
         </Link>
 
@@ -131,7 +131,7 @@ function Navbar({ isDark, onToggle }: { isDark: boolean; onToggle: () => void })
               <img
                 src={isDark ? '/logo_blanc.svg' : '/logo_mode_claire.svg'}
                 alt="DiDi Sphere"
-                className="h-7 w-auto"
+                className="h-9 w-auto"
               />
               <button
                 type="button"
@@ -210,11 +210,11 @@ function Footer() {
           <div className="space-y-4">
             <img src="/logo_mode_sombre_texte_claire.svg" alt="DiDi Sphere" className="h-8 w-auto" />
             <p className="text-sm leading-relaxed">
-              Logiciel de gestion commerciale tout-en-un pour les PME d'Afrique de l'Ouest.
+              Logiciel de gestion commerciale tout-en-un.
               Multi-devises, adapté à votre secteur.
             </p>
             <p className="text-xs text-gray-600">
-              Sénégal · Côte d'Ivoire · Mali · Guinée · Burkina Faso
+              {address}
             </p>
             {socials.length > 0 && (
               <div className="flex flex-wrap gap-3 pt-1">

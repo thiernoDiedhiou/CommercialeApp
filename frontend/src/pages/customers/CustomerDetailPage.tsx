@@ -95,7 +95,7 @@ function KpiCard({
 // ── Page principale ────────────────────────────────────────────────────────
 
 export default function CustomerDetailPage() {
-  const { id } = useParams<{ id: string }>()
+  const { uid } = useParams<{ uid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
 
@@ -108,34 +108,34 @@ export default function CustomerDetailPage() {
 
   // ── Données ───────────────────────────────────────────────────────────────
   const { data: customer, isLoading: customerLoading } = useQuery({
-    queryKey: ['customer', Number(id)],
-    queryFn: () => getCustomer(Number(id)),
-    enabled: !!id,
+    queryKey: ['customer', uid],
+    queryFn: () => getCustomer(uid!),
+    enabled: !!uid,
   })
 
   const { data: salesData, isLoading: salesLoading } = useQuery({
-    queryKey: ['customer-sales', Number(id), salesPage],
-    queryFn: () => getCustomerSales(Number(id), { page: salesPage }),
-    enabled: !!id,
+    queryKey: ['customer-sales', uid, salesPage],
+    queryFn: () => getCustomerSales(uid!, { page: salesPage }),
+    enabled: !!uid,
     placeholderData: (prev) => prev,
   })
 
   // Toutes les ventes confirmées pour la section créances (sans pagination)
   const { data: allSalesData } = useQuery({
-    queryKey: ['customer-sales-all', Number(id)],
-    queryFn: () => getCustomerSales(Number(id), { page: 1, per_page: 200 }),
-    enabled: !!id && (customer?.outstanding_balance ?? 0) > 0,
+    queryKey: ['customer-sales-all', uid],
+    queryFn: () => getCustomerSales(uid!, { page: 1, per_page: 200 }),
+    enabled: !!uid && (customer?.outstanding_balance ?? 0) > 0,
   })
 
   // ── Mutation encaissement rapide ──────────────────────────────────────────
   const payMutation = useMutation({
-    mutationFn: () => addPayment(payingSale!.id, {
+    mutationFn: () => addPayment(payingSale!.uid, {
       method: payMethod,
       amount: parseFloat(payAmount) || 0,
     }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['customer', Number(id)] })
-      qc.invalidateQueries({ queryKey: ['customer-sales', Number(id)] })
+      qc.invalidateQueries({ queryKey: ['customer', uid] })
+      qc.invalidateQueries({ queryKey: ['customer-sales', uid] })
       qc.invalidateQueries({ queryKey: ['debts'] })
       setPayOpen(false)
       setPayAmount('')
@@ -155,7 +155,7 @@ export default function CustomerDetailPage() {
   // ── Mutation édition ──────────────────────────────────────────────────────
   const updateMutation = useMutation({
     mutationFn: (values: CustomerFormValues) =>
-      updateCustomer(Number(id), {
+      updateCustomer(uid!, {
         name: values.name,
         phone: values.phone || null,
         email: values.email || null,
@@ -163,7 +163,7 @@ export default function CustomerDetailPage() {
         notes: values.notes || null,
       }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['customer', Number(id)] })
+      qc.invalidateQueries({ queryKey: ['customer', uid] })
       qc.invalidateQueries({ queryKey: ['customers'] })
       setEditOpen(false)
     },
@@ -428,7 +428,7 @@ export default function CustomerDetailPage() {
           loading={salesLoading}
           skeletonRows={5}
           emptyMessage="Aucune vente enregistrée pour ce client."
-          onRowClick={(s) => navigate(`/sales/${s.id}`)}
+          onRowClick={(s) => navigate(`/sales/${s.uid}`)}
         />
 
         {salesData && salesData.last_page > 1 && (

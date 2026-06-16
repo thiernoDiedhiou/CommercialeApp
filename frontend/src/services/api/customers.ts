@@ -25,12 +25,8 @@ export async function getCustomers(params: {
   return data
 }
 
-/**
- * GET /api/v1/customers/{id}
- * Retourne le client enrichi avec sales_count, total_purchases, last_purchase_at.
- */
-export async function getCustomer(id: number): Promise<CustomerDetail> {
-  const { data } = await apiClient.get<{ data: CustomerDetail }>(`/api/v1/customers/${id}`)
+export async function getCustomer(uid: string): Promise<CustomerDetail> {
+  const { data } = await apiClient.get<{ data: CustomerDetail }>(`/api/v1/customers/${uid}`)
   return data.data
 }
 
@@ -40,23 +36,23 @@ export async function createCustomer(body: CreateCustomerData): Promise<Customer
 }
 
 export async function updateCustomer(
-  id: number,
+  uid: string,
   body: Partial<CreateCustomerData>,
 ): Promise<Customer> {
-  const { data } = await apiClient.put<{ data: Customer }>(`/api/v1/customers/${id}`, body)
+  const { data } = await apiClient.put<{ data: Customer }>(`/api/v1/customers/${uid}`, body)
   return data.data
 }
 
-export async function deleteCustomer(id: number): Promise<void> {
-  await apiClient.delete(`/api/v1/customers/${id}`)
+export async function deleteCustomer(uid: string): Promise<void> {
+  await apiClient.delete(`/api/v1/customers/${uid}`)
 }
 
 export async function getCustomerSales(
-  customerId: number,
+  customerUid: string,
   params: { page?: number; per_page?: number } = {},
 ): Promise<PaginatedResponse<Sale>> {
   const { data } = await apiClient.get<PaginatedResponse<Sale>>(
-    `/api/v1/customers/${customerId}/sales`,
+    `/api/v1/customers/${customerUid}/sales`,
     { params: clean(params) },
   )
   return data

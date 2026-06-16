@@ -51,6 +51,7 @@ import ShopSettingsPage from '@/pages/shop/ShopSettingsPage'
 import ShopOrdersPage from '@/pages/shop/ShopOrdersPage'
 import CategoriesPage from '@/pages/products/CategoriesPage'
 import BrandsPage from '@/pages/products/BrandsPage'
+import ProfilePage from '@/pages/profile/ProfilePage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
@@ -121,28 +122,29 @@ export default function App() {
           <Route path="dashboard"        element={<DashboardPage />} />
           <Route path="sales"            element={<SalesPage />} />
           <Route path="sales/new"        element={<Navigate to="/pos" replace />} />
-          <Route path="sales/:id"        element={<SaleDetailPage />} />
+          <Route path="sales/:uid"        element={<SaleDetailPage />} />
           <Route path="returns"          element={<ReturnsPage />} />
           <Route path="products"           element={<ProductsPage />} />
           <Route path="products/new"       element={<ProductFormPage />} />
-          <Route path="products/:id"       element={<ProductDetailPage />} />
-          <Route path="products/:id/edit"  element={<ProductFormPage />} />
+          <Route path="products/:uid"       element={<ProductDetailPage />} />
+          <Route path="products/:uid/edit"  element={<ProductFormPage />} />
           <Route path="categories"         element={<CategoriesPage />} />
           <Route path="brands"             element={<BrandsPage />} />
           <Route path="customers"         element={<CustomersPage />} />
-          <Route path="customers/:id"    element={<CustomerDetailPage />} />
+          <Route path="customers/:uid"    element={<CustomerDetailPage />} />
           <Route path="debts"            element={<DebtsPage />} />
           <Route path="stock"               element={<StockPage />} />
           <Route path="reports"               element={<ReportsPage />} />
           <Route path="invoices"             element={<InvoicesPage />} />
           <Route path="invoices/new"         element={<InvoiceFormPage />} />
-          <Route path="invoices/:id"         element={<InvoiceDetailPage />} />
-          <Route path="invoices/:id/edit"    element={<InvoiceFormPage />} />
+          <Route path="invoices/:uid"         element={<InvoiceDetailPage />} />
+          <Route path="invoices/:uid/edit"    element={<InvoiceFormPage />} />
           <Route path="suppliers"         element={<SuppliersPage />} />
           <Route path="purchases"         element={<PurchaseOrdersPage />} />
           <Route path="purchases/new"     element={<PurchaseFormPage />} />
-          <Route path="purchases/:id"     element={<PurchaseDetailPage />} />
-          <Route path="purchases/:id/edit" element={<PurchaseFormPage />} />
+          <Route path="purchases/:uid"     element={<PurchaseDetailPage />} />
+          <Route path="purchases/:uid/edit" element={<PurchaseFormPage />} />
+          <Route path="profile"           element={<ProfilePage />} />
           <Route path="settings"          element={<SettingsPage />} />
           <Route path="shop-settings"     element={<ShopSettingsPage />} />
           <Route path="shop-orders"       element={<ShopOrdersPage />} />
@@ -171,7 +173,7 @@ export default function App() {
           <Route index element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="dashboard"     element={<AdminDashboardPage />} />
           <Route path="tenants"       element={<AdminTenantsPage />} />
-          <Route path="tenants/:id"   element={<AdminTenantDetailPage />} />
+          <Route path="tenants/:uid"  element={<AdminTenantDetailPage />} />
           <Route path="plans"         element={<AdminPlansPage />} />
           <Route path="subscriptions"  element={<AdminSubscriptionsPage />} />
           <Route path="site-settings"  element={<AdminSiteSettingsPage />} />

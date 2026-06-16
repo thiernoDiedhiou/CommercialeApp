@@ -24,7 +24,7 @@ use Illuminate\Validation\Rule;
 
 class AdminTenantController extends Controller
 {
-    private const SECTORS    = ['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services'];
+    private const SECTORS    = ['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services', 'ecommerce'];
     private const CURRENCIES = ['XOF', 'XAF', 'GNF', 'EUR', 'USD', 'GBP', 'MAD', 'MRU'];
 
     public function __construct(
@@ -335,6 +335,7 @@ class AdminTenantController extends Controller
     {
         return [
             'id'              => $tenant->id,
+            'uid'             => $tenant->uid,
             'name'            => $tenant->name,
             'slug'            => $tenant->slug,
             'custom_domain'   => $tenant->custom_domain,

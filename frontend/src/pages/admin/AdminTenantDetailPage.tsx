@@ -81,14 +81,14 @@ function ColorField({ label, value, onChange, error }: {
 // ── Page principale ────────────────────────────────────────────────────────
 
 export default function AdminTenantDetailPage() {
-  const { id } = useParams<{ id: string }>()
+  const { uid } = useParams<{ uid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [deleteOpen, setDeleteOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-tenant', id],
-    queryFn: () => getAdminTenant(Number(id)),
+    queryKey: ['admin-tenant', uid],
+    queryFn: () => getAdminTenant(uid!),
   })
 
   const tenant = data?.data
@@ -118,30 +118,30 @@ export default function AdminTenantDetailPage() {
   }, [tenant, reset])
 
   const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ['admin-tenant', id] })
+    qc.invalidateQueries({ queryKey: ['admin-tenant', uid] })
     qc.invalidateQueries({ queryKey: ['admin-tenants'] })
   }
 
   const updateMutation = useMutation({
-    mutationFn: (v: FormValues) => updateAdminTenant(Number(id), v),
+    mutationFn: (v: FormValues) => updateAdminTenant(uid!, v),
     onSuccess: () => { invalidate(); toast.success('Tenant mis à jour.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const suspendMutation = useMutation({
-    mutationFn: () => suspendTenant(Number(id)),
+    mutationFn: () => suspendTenant(uid!),
     onSuccess: () => { invalidate(); toast.success('Tenant suspendu.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const activateMutation = useMutation({
-    mutationFn: () => activateTenant(Number(id)),
+    mutationFn: () => activateTenant(uid!),
     onSuccess: () => { invalidate(); toast.success('Tenant activé.') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: () => deleteAdminTenant(Number(id)),
+    mutationFn: () => deleteAdminTenant(uid!),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-tenants'] })
       qc.invalidateQueries({ queryKey: ['admin-stats'] })
@@ -384,13 +384,13 @@ export default function AdminTenantDetailPage() {
       </div>
 
       {/* Stats tenant */}
-      <TenantStatsCard tenantId={tenant.id} />
+      <TenantStatsCard tenantId={tenant.uid} />
 
       {/* Abonnement */}
-      <SubscriptionCard tenantId={tenant.id} />
+      <SubscriptionCard tenantId={tenant.uid} />
 
       {/* Historique abonnements */}
-      <SubscriptionHistoryCard tenantId={tenant.id} />
+      <SubscriptionHistoryCard tenantId={tenant.uid} />
 
       {/* Lien de connexion tenant */}
       <LoginLinkCard apiKey={tenant.api_key} slug={tenant.slug} customDomain={tenant.custom_domain} />
@@ -437,7 +437,7 @@ const CYCLE_LABEL: Record<string, string> = {
   lifetime: 'À vie',
 }
 
-function SubscriptionCard({ tenantId }: { tenantId: number }) {
+function SubscriptionCard({ tenantId }: { tenantId: string }) {
   const qc = useQueryClient()
   const [showForm, setShowForm] = useState(false)
 
@@ -681,7 +681,7 @@ function LoginLinkCard({ apiKey, slug, customDomain }: { apiKey: string; slug: s
 
 // ── Carte Stats tenant ────────────────────────────────────────────────────
 
-function TenantStatsCard({ tenantId }: { tenantId: number }) {
+function TenantStatsCard({ tenantId }: { tenantId: string }) {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['admin-tenant-stats', tenantId],
     queryFn:  () => getTenantStats(tenantId),
@@ -736,7 +736,7 @@ function TenantStatsCard({ tenantId }: { tenantId: number }) {
 
 // ── Carte Historique abonnements ──────────────────────────────────────────
 
-function SubscriptionHistoryCard({ tenantId }: { tenantId: number }) {
+function SubscriptionHistoryCard({ tenantId }: { tenantId: string }) {
   const { data: history = [], isLoading } = useQuery({
     queryKey: ['admin-tenant-subscriptions-history', tenantId],
     queryFn:  () => getTenantSubscriptionHistory(tenantId),

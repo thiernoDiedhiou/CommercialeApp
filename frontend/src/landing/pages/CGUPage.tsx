@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 const LAST_UPDATED = '1er juin 2026'
 const COMPANY      = 'DiDi Sphere'
 const EMAIL        = 'contact@didisphere.sn'
-const ADDRESS      = 'Dakar, République du Sénégal'
+const ADDRESS      = 'Thiès, République du Sénégal'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
