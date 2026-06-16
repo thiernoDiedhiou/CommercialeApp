@@ -97,7 +97,7 @@ export default function DashboardMockup() {
           <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
         </div>
         <div className="flex-1 rounded-md bg-gray-800 px-3 py-1 text-[10px] text-gray-400 font-mono text-center">
-          app.didisphere.sn/dashboard
+          app.didisphere.shop/dashboard
         </div>
         <span className="flex items-center gap-1 text-[8px] text-green-400 font-medium">
           <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />

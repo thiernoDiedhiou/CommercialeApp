@@ -64,11 +64,11 @@ export default function CustomerModal({ isOpen, onClose, customer }: CustomerMod
         address: values.address || null,
         notes: values.notes || null,
       }
-      return isEdit ? updateCustomer(customer!.id, body) : createCustomer(body)
+      return isEdit ? updateCustomer(customer!.uid, body) : createCustomer(body)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['customers'] })
-      if (isEdit) qc.invalidateQueries({ queryKey: ['customer', customer!.id] })
+      if (isEdit) qc.invalidateQueries({ queryKey: ['customer', customer!.uid] })
       onClose()
     },
   })

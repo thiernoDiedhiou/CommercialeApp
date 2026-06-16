@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import SeoHead from '@/landing/components/SeoHead'
 import {
   ShoppingCartIcon, CubeIcon, UsersIcon, DocumentTextIcon,
   ChartBarIcon, GlobeAltIcon, TruckIcon, ArrowPathIcon,
@@ -84,6 +85,11 @@ export default function FeaturesPage() {
 
   return (
     <div className="py-20">
+      <SeoHead
+        title="Fonctionnalités"
+        description="Caisse POS, gestion des stocks, facturation PDF, boutique en ligne, rapports en temps réel… Découvrez tous les outils DiDi Sphere pour piloter votre commerce."
+        canonical="/fonctionnalites"
+      />
 
       {/* Header */}
       <div className="mx-auto max-w-3xl px-4 text-center mb-20">

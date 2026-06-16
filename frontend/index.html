@@ -3,10 +3,56 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DiDi Sphere</title>
+    <title>DiDi Sphere — Logiciel de gestion commerciale pour PME</title>
+    <meta name="description" content="Gérez vos ventes, stocks, clients et factures en un seul endroit. Caisse POS, boutique en ligne, rapports en temps réel. Essai gratuit 21 jours." />
+    <meta name="theme-color" content="#2465ED" />
+
+    <!-- Favicons -->
     <link rel="icon" type="image/png" sizes="48x48" href="/logo_mode_claire-icon-48x48.png" />
     <link rel="icon" type="image/png" sizes="36x36" href="/logo_mode_claire-icon-36x36.png" />
     <link rel="icon" type="image/svg+xml" href="/logo_mode_claire.svg" />
+    <link rel="apple-touch-icon" href="/logo_mode_claire-icon-48x48.png" />
+
+    <!-- JSON-LD : Organisation + Site Web (invariants, toujours présents) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://didisphere.shop/#organization",
+          "name": "DiDi Sphere",
+          "url": "https://didisphere.shop",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://didisphere.shop/logo_mode_claire.svg",
+            "width": 200,
+            "height": 50
+          },
+          "description": "Logiciel de gestion commerciale SaaS pour PME d'Afrique de l'Ouest",
+          "email": "contact@didisphere.shop",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Thiès",
+            "addressCountry": "SN"
+          },
+          "foundingLocation": {
+            "@type": "Place",
+            "name": "Thiès, Sénégal"
+          },
+          "areaServed": ["SN", "CI", "ML", "BF", "GN", "CM", "TG", "BJ"]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://didisphere.shop/#website",
+          "url": "https://didisphere.shop",
+          "name": "DiDi Sphere",
+          "inLanguage": "fr",
+          "publisher": { "@id": "https://didisphere.shop/#organization" }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

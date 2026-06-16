@@ -329,6 +329,7 @@ function BoutiqueTab() {
     onSuccess: (updated) => {
       if (token && user) {
         setAuth(token, user, perms, {
+          api_key:         tenant?.api_key ?? '',
           name:            updated.name,
           currency:        updated.currency,
           sector:          updated.sector,
@@ -529,8 +530,8 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
       if (editing) {
         const body: Record<string, unknown> = { name: vals.name, email: vals.email, is_active: vals.is_active }
         if (vals.password) body.password = vals.password
-        const u = await updateUser(editing.id, body)
-        await syncUserGroups(u.id, selectedGroupIds)
+        const u = await updateUser(editing.uid, body)
+        await syncUserGroups(u.uid, selectedGroupIds)
         return u
       }
       return createUser({
@@ -825,7 +826,7 @@ function PermissionsModal({ group, isOpen, onClose }: PermissionsModalProps) {
   }, [isOpen, group])
 
   const mutation = useMutation({
-    mutationFn: () => syncGroupPermissions(group!.id, checked),
+    mutationFn: () => syncGroupPermissions(group!.uid, checked),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['groups'] })
       toast.success('Permissions mises à jour.')
@@ -923,7 +924,7 @@ function GroupModal({ isOpen, editing, onClose }: GroupModalProps) {
   const mutation = useMutation({
     mutationFn: (vals: GroupValues) =>
       editing
-        ? updateGroup(editing.id, vals as Partial<CreateGroupData>)
+        ? updateGroup(editing.uid, vals as Partial<CreateGroupData>)
         : createGroup(vals as CreateGroupData),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['groups'] })
