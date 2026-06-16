@@ -42,6 +42,10 @@ class ProductController extends Controller
             $data['unit'] = '';
         }
 
+        if (array_key_exists('alert_threshold', $data) && $data['alert_threshold'] === null) {
+            $data['alert_threshold'] = 5;
+        }
+
         if ($request->hasFile('image')) {
             $data['image_path'] = $request->file('image')->store('products', 'public');
         }
@@ -62,9 +66,13 @@ class ProductController extends Controller
     {
         $data = $request->validated();
 
-        // unit est NOT NULL en base ; ConvertEmptyStringsToNull le transforme en null si vide
+        // unit et alert_threshold sont NOT NULL en base
         if (array_key_exists('unit', $data) && $data['unit'] === null) {
             $data['unit'] = '';
+        }
+
+        if (array_key_exists('alert_threshold', $data) && $data['alert_threshold'] === null) {
+            $data['alert_threshold'] = 5;
         }
 
         if ($request->hasFile('image')) {
