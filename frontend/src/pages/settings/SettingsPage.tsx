@@ -339,7 +339,6 @@ function BoutiqueTab() {
           secondary_color: updated.secondary_color,
           logo_url:        updated.logo_url ?? null,
           slug:            tenant?.slug ?? '',
-          api_key :            tenant?.api_key ?? '',
         }, subscription, planFeatures)
       }
       setLogoFile(null)
