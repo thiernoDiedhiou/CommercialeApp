@@ -6,7 +6,7 @@ const MOCK_PRODUCTS = [
   { id: 3, name: 'Pain de mie',        price: 750,  emoji: '🍞' },
   { id: 4, name: 'Sucre 1kg',          price: 800,  emoji: '🍬' },
   { id: 5, name: 'Riz Parfumé 5kg',    price: 2500, emoji: '🌾' },
-  { id: 6, name: 'Huile Végétale 1L',  price: 1200, emoji: '🫙' },
+  { id: 6, name: 'Huile Végétale 1L',  price: 1200, emoji: '🍶' },
 ]
 
 const PAYMENT_METHODS = ['Espèces', 'Orange Money', 'Wave']
