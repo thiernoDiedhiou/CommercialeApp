@@ -139,7 +139,7 @@ export default function DashboardPage() {
               {(data?.top_products ?? []).map((p, idx) => (
                 <li key={p.product_id}>
                   <Link
-                    to={`/products/${p.product_id}`}
+                    to={`/products/${p.product_uid}`}
                     className="flex items-center justify-between py-2 transition-colors hover:bg-gray-50"
                   >
                     <div className="flex min-w-0 items-center gap-2">

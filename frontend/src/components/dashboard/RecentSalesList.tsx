@@ -55,12 +55,12 @@ export default function RecentSalesList({ sales, loading }: Props) {
   return (
     <ul className="divide-y divide-gray-50">
       {sales.map((sale) => {
-        const href    = sale.channel === 'shop' ? '/shop-orders' : `/sales/${sale.id}`
+        const href    = sale.channel === 'shop' ? '/shop-orders' : `/sales/${sale.uid}`
         const variant = STATUS_VARIANT[sale.status] ?? 'info'
         const label   = STATUS_LABEL[sale.status]  ?? sale.status
 
         return (
-          <li key={`${sale.channel}-${sale.id}`}>
+          <li key={`${sale.channel}-${sale.uid}`}>
             <Link
               to={href}
               className="flex items-center justify-between py-3 transition-colors hover:bg-gray-50"

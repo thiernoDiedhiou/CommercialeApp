@@ -89,6 +89,7 @@ export interface WeekChartPoint {
 
 export interface TopProduct {
   product_id: number
+  product_uid: string
   product_name: string
   quantity_sold: number
   revenue: number
@@ -96,6 +97,7 @@ export interface TopProduct {
 
 export interface StockAlert {
   product_id: number
+  product_uid: string
   product_name: string
   variant_id: number | null
   variant_summary: string | null
@@ -118,6 +120,7 @@ export interface ExpiringSoon {
 
 export interface RecentTransaction {
   id           : number
+  uid          : string
   reference    : string
   customer     : string | null
   total        : number

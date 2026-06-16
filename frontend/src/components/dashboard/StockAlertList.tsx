@@ -35,7 +35,7 @@ export default function StockAlertList({ alerts, expiring, loading }: StockAlert
             {alerts.map((item) => (
               <li key={item.variant_id ?? item.product_id}>
                 <Link
-                  to={`/products/${item.product_id}`}
+                  to={`/products/${item.product_uid}`}
                   className="flex items-center justify-between py-2 transition-colors hover:bg-gray-50"
                 >
                   <div className="min-w-0">
