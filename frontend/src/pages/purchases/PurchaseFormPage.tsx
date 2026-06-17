@@ -256,13 +256,71 @@ export default function PurchaseFormPage() {
         {/* Articles */}
         <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
           <h2 className="mb-4 text-sm font-semibold text-gray-700">Articles</h2>
-          <div className="overflow-x-auto">
+          {/* ── Mobile : cartes empilées ──────────────────────────────────── */}
+          <div className="md:hidden space-y-3">
+            {items.map((item) => (
+              <div key={item.uid} className="rounded-lg border border-gray-100 bg-gray-50 p-3 space-y-2">
+                <ProductPicker
+                  value={item.product}
+                  onSelect={(p) => updateItem(item.uid, {
+                    product: { id: p.id, name: p.name },
+                    product_id: p.id,
+                    unit_cost: parseFloat(String(p.cost_price ?? '0')) || 0,
+                    variant_id: null,
+                  })}
+                />
+                <div className="flex gap-2">
+                  <div className="w-24 shrink-0">
+                    <p className="mb-1 text-[11px] text-gray-400">Quantité</p>
+                    <input
+                      type="number" min="0.001" step="0.001"
+                      value={item.quantity_ordered}
+                      onChange={(e) => updateItem(item.uid, { quantity_ordered: parseFloat(e.target.value) || 0 })}
+                      aria-label="Quantité commandée"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <p className="mb-1 text-[11px] text-gray-400">Prix d'achat</p>
+                    <PriceInput
+                      value={item.unit_cost || null}
+                      onChange={(v) => updateItem(item.uid, { unit_cost: v ?? 0 })}
+                      currency={currency}
+                      aria-label="Prix d'achat unitaire"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between border-t border-gray-200 pt-2">
+                  <span className="text-sm font-semibold text-gray-900">
+                    Sous-total : {formatCurrency(item.quantity_ordered * item.unit_cost)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeItem(item.uid)}
+                    disabled={items.length === 1}
+                    aria-label="Supprimer la ligne"
+                    className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+            <div className="rounded-lg border border-gray-100 p-3 text-sm">
+              <div className="flex justify-between font-bold text-gray-900">
+                <span>Total estimé</span><span>{formatCurrency(total)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Desktop : tableau ─────────────────────────────────────────── */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
                   <th className="pb-2 pr-3 font-medium">Produit</th>
                   <th className="pb-2 pr-3 w-24 font-medium">Quantité</th>
-                  <th className="pb-2 pr-3 w-32 font-medium">Prix d'achat (FCFA)</th>
+                  <th className="pb-2 pr-3 w-32 font-medium">Prix d'achat ({currency})</th>
                   <th className="pb-2 w-28 text-right font-medium">Sous-total</th>
                   <th className="pb-2 w-10" aria-label="Actions" />
                 </tr>

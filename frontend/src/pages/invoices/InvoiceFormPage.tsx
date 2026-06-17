@@ -367,7 +367,90 @@ export default function InvoiceFormPage() {
             }])} />
           </div>
 
-          <div className="overflow-x-auto">
+          {/* ── Mobile : cartes empilées ──────────────────────────────────── */}
+          <div className="md:hidden space-y-3">
+            {items.map((item) => {
+              const lineTotal = item.quantity * item.unit_price - item.discount
+              return (
+                <div key={item.uid} className="rounded-lg border border-gray-100 bg-gray-50 p-3 space-y-2">
+                  <input
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => updateItem(item.uid, { description: e.target.value })}
+                    placeholder="Désignation de la prestation…"
+                    aria-label="Description de la ligne"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                  />
+                  <div className="flex gap-2">
+                    <div className="w-20 shrink-0">
+                      <p className="mb-1 text-[11px] text-gray-400">Qté</p>
+                      <input
+                        type="number" min="0.001" step="0.001"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(item.uid, { quantity: parseFloat(e.target.value) || 0 })}
+                        aria-label="Quantité"
+                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <p className="mb-1 text-[11px] text-gray-400">Prix unit.</p>
+                      <PriceInput
+                        value={item.unit_price || null}
+                        onChange={(v) => updateItem(item.uid, { unit_price: v ?? 0 })}
+                        currency={currency}
+                        aria-label="Prix unitaire"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <p className="mb-1 text-[11px] text-gray-400">Remise</p>
+                      <PriceInput
+                        value={item.discount || null}
+                        onChange={(v) => updateItem(item.uid, { discount: v ?? 0 })}
+                        currency={currency}
+                        placeholder="0"
+                        aria-label="Remise sur la ligne"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-gray-200 pt-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      Total : {formatCurrency(Math.max(0, lineTotal))}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item.uid)}
+                      disabled={items.length === 1}
+                      aria-label="Supprimer la ligne"
+                      className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+            <div className="rounded-lg border border-gray-100 p-3 space-y-1 text-sm">
+              <div className="flex justify-between text-gray-500">
+                <span>Sous-total</span><span>{formatCurrency(subtotal)}</span>
+              </div>
+              {discountAmt > 0 && (
+                <div className="flex justify-between text-red-500">
+                  <span>Remise</span><span>−{formatCurrency(discountAmt)}</span>
+                </div>
+              )}
+              {taxAmount > 0 && (
+                <div className="flex justify-between text-gray-500">
+                  <span>TVA ({taxRate}%)</span><span>{formatCurrency(taxAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-gray-100 pt-2 font-bold text-gray-900">
+                <span>TOTAL</span><span>{formatCurrency(total)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Desktop : tableau ─────────────────────────────────────────── */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
