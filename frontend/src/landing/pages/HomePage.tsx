@@ -339,7 +339,7 @@ export default function HomePage() {
                 const isHighlighted = i === 1
                 return (
                   <div
-                    key={plan.id}
+                    key={plan.uid}
                     className={`relative rounded-2xl p-6 flex flex-col ${
                       isHighlighted
                         ? 'bg-ds-blue text-white shadow-2xl shadow-ds-blue/30 scale-105'

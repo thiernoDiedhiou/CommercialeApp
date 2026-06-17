@@ -44,7 +44,7 @@ function Navbar({ isDark, onToggle }: { isDark: boolean; onToggle: () => void })
         {/* Logo */}
         <Link to="/" className="shrink-0">
           <img
-            src={isDark ? '/logo_blanc.svg' : '/logo_mode_claire.svg'}
+            src={isDark ? '/logo_mode_sombre_texte_claire.svg' : '/logo_mode_claire.svg'}
             alt="DiDi Sphere"
             className="h-10 w-auto"
           />
@@ -130,7 +130,7 @@ function Navbar({ isDark, onToggle }: { isDark: boolean; onToggle: () => void })
           <div className="fixed inset-y-0 right-0 z-50 w-72 bg-white dark:bg-gray-900 shadow-xl flex flex-col md:hidden border-l border-gray-100 dark:border-gray-800">
             <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 dark:border-gray-800">
               <img
-                src={isDark ? '/logo_blanc.svg' : '/logo_mode_claire.svg'}
+                src={isDark ? '/logo_mode_sombre_texte_claire.svg' : '/logo_mode_claire.svg'}
                 alt="DiDi Sphere"
                 className="h-9 w-auto"
               />

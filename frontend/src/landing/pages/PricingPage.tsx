@@ -19,6 +19,9 @@ const FEATURE_LABELS: { key: keyof PublicPlan; label: string }[] = [
   { key: 'feature_custom_domain', label: 'Domaine personnalisé' },
 ]
 
+const fmtLimit = (n: number) => (n === 0 || n === 9999) ? '∞' : n.toLocaleString('fr-FR')
+const isUnlim  = (n: number) => n === 0 || n === 9999
+
 function PlanCard({ plan, yearly, isHighlighted }: { plan: PublicPlan; yearly: boolean; isHighlighted: boolean }) {
   const navigate = useNavigate()
   const monthlyPrice  = parseFloat(plan.price_monthly)
@@ -87,13 +90,13 @@ function PlanCard({ plan, yearly, isHighlighted }: { plan: PublicPlan; yearly: b
       {/* Limites */}
       <div className={`rounded-xl p-4 mb-6 text-sm space-y-1.5 ${isHighlighted ? 'bg-white/10' : 'bg-gray-50'}`}>
         <p className={isHighlighted ? 'text-white/90' : 'text-gray-700'}>
-          <span className="font-semibold">{plan.max_users === 9999 ? 'Illimité' : plan.max_users}</span> utilisateur{plan.max_users > 1 ? 's' : ''}
+          <span className="font-semibold">{fmtLimit(plan.max_users)}</span> utilisateur{(isUnlim(plan.max_users) || plan.max_users > 1) ? 's' : ''}
         </p>
         <p className={isHighlighted ? 'text-white/90' : 'text-gray-700'}>
-          <span className="font-semibold">{plan.max_products === 9999 ? 'Illimité' : plan.max_products.toLocaleString('fr-FR')}</span> produits
+          <span className="font-semibold">{fmtLimit(plan.max_products)}</span> produit{(isUnlim(plan.max_products) || plan.max_products > 1) ? 's' : ''}
         </p>
         <p className={isHighlighted ? 'text-white/90' : 'text-gray-700'}>
-          <span className="font-semibold">{plan.max_monthly_sales === 9999 ? 'Illimité' : plan.max_monthly_sales.toLocaleString('fr-FR')}</span> ventes/mois
+          <span className="font-semibold">{fmtLimit(plan.max_monthly_sales)}</span> vente{(isUnlim(plan.max_monthly_sales) || plan.max_monthly_sales > 1) ? 's' : ''}/mois
         </p>
       </div>
 
@@ -225,7 +228,7 @@ export default function PricingPage() {
           }`}>
             {plans.map((plan, i) => (
               <PlanCard
-                key={plan.id}
+                key={plan.uid}
                 plan={plan}
                 yearly={yearly}
                 isHighlighted={plans.length >= 2 && i === Math.floor(plans.length / 2)}
