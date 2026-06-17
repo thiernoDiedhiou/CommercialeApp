@@ -212,9 +212,8 @@ class DashboardController extends Controller
             ->with(['customer:id,name'])
             ->latest('confirmed_at')
             ->limit(5)
-            ->get(['id', 'uid', 'reference', 'customer_id', 'total', 'status', 'confirmed_at', 'created_at'])
+            ->get(['uid', 'reference', 'customer_id', 'total', 'status', 'confirmed_at', 'created_at'])
             ->map(fn($s) => [
-                'id'           => $s->id,
                 'uid'          => $s->uid,
                 'reference'    => $s->reference,
                 'customer'     => $s->customer?->name,
@@ -230,9 +229,8 @@ class DashboardController extends Controller
             ->whereNotIn('status', ['cancelled', 'pending'])
             ->latest('confirmed_at')
             ->limit(5)
-            ->get(['id', 'uid', 'reference', 'customer_name', 'total', 'status', 'confirmed_at', 'created_at'])
+            ->get(['uid', 'reference', 'customer_name', 'total', 'status', 'confirmed_at', 'created_at'])
             ->map(fn($o) => [
-                'id'           => $o->id,
                 'uid'          => $o->uid,
                 'reference'    => $o->reference,
                 'customer'     => $o->customer_name,

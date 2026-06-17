@@ -82,7 +82,6 @@ class DebtController extends Controller
 
         return response()->json([
             'data'               => array_map(fn($r) => [
-                'id'                  => $r->id,
                 'uid'                 => $r->uid,
                 'name'                => $r->name,
                 'phone'               => $r->phone,

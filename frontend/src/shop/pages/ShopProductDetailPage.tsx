@@ -87,7 +87,7 @@ export default function ShopProductDetailPage() {
   const rawDesc      = product.description
     ?? `${product.name}${product.category ? ` — ${product.category.name}` : ''}. Commandez en ligne.`
   const productDesc  = rawDesc.length > 160
-    ? rawDesc.slice(0, rawDesc.lastIndexOf(' ', 160)) + '…'
+    ? rawDesc.slice(0, (rawDesc.lastIndexOf(' ', 160) || 160)) + '…'
     : rawDesc
 
   return (

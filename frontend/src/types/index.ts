@@ -119,7 +119,6 @@ export interface ExpiringSoon {
 }
 
 export interface RecentTransaction {
-  id           : number
   uid          : string
   reference    : string
   customer     : string | null
@@ -394,7 +393,6 @@ export interface CustomerDetail extends Customer {
 
 /** Ligne du rapport créances GET /debts */
 export interface DebtRow {
-  id: number
   uid: string
   name: string
   phone: string | null

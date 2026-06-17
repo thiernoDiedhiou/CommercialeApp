@@ -13,6 +13,7 @@ import type { Product, ProductVariant, Customer } from '@/types'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { generateUUID } from '@/lib/uuid'
 
+import PriceInput from '@/components/ui/PriceInput'
 import { getCategories } from '@/services/api/categories'
 import { getCustomers } from '@/services/api/customers'
 import {
@@ -496,14 +497,24 @@ export default function PosPage() {
                     </button>
                   </div>
                 </div>
-                <input
-                  type="number"
-                  min={0}
-                  value={discountValue || ''}
-                  placeholder="0"
-                  onChange={(e) => setGlobalDiscount(discountType, parseFloat(e.target.value) || 0)}
-                  className="w-full rounded-lg border border-gray-200 px-2 py-1 text-sm text-right"
-                />
+                {discountType === 'fixed' ? (
+                  <PriceInput
+                    value={discountValue || null}
+                    onChange={(v) => setGlobalDiscount('fixed', v ?? 0)}
+                    currency={tenant?.currency ?? 'XOF'}
+                    className="text-right"
+                  />
+                ) : (
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={discountValue || ''}
+                    placeholder="0"
+                    onChange={(e) => setGlobalDiscount('percent', parseFloat(e.target.value) || 0)}
+                    className="w-full rounded-lg border border-gray-200 px-2 py-1 text-sm text-right outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                  />
+                )}
               </div>
 
               {/* Note */}

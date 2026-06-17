@@ -1,6 +1,8 @@
 import { MinusIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import type { CartItem } from '@/store/cartStore'
 import { formatCurrency } from '@/lib/utils'
+import { useAuthStore } from '@/store/authStore'
+import PriceInput from '@/components/ui/PriceInput'
 
 interface Props {
   item: CartItem
@@ -11,6 +13,7 @@ interface Props {
 }
 
 export function CartItemRow({ item, index, onRemove, onUpdateQty, onUpdateDiscount }: Props) {
+  const currency = useAuthStore((s) => s.tenant?.currency ?? 'XOF')
   const lineBase = item.unit_price * (item.unit_weight ?? item.quantity)
   const lineTotal = Math.max(0, lineBase - item.discount)
   const designation = [item.product.name, item.variant?.attribute_summary]
@@ -72,17 +75,15 @@ export function CartItemRow({ item, index, onRemove, onUpdateQty, onUpdateDiscou
         </span>
       </div>
 
-      <div className="mt-1 flex items-center gap-1">
+      <div className="mt-1 flex items-center gap-1.5">
         <span className="text-[11px] text-gray-400">Remise</span>
-        <input
-          type="number"
-          min={0}
-          value={item.discount || ''}
-          placeholder="0"
-          onChange={(e) => onUpdateDiscount(index, parseInt(e.target.value) || 0)}
-          className="w-20 rounded border border-gray-200 text-xs px-1.5 py-0.5 text-gray-600"
+        <PriceInput
+          value={item.discount || null}
+          onChange={(v) => onUpdateDiscount(index, v ?? 0)}
+          currency={currency}
+          compact
+          aria-label="Remise sur l'article"
         />
-        <span className="text-[11px] text-gray-400">FCFA</span>
       </div>
     </div>
   )
