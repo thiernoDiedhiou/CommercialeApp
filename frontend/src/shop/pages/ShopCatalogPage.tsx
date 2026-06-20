@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { Helmet } from 'react-helmet-async'
 import { getShopCategories } from '@/shop/services/shop'
+import { useShopStore } from '@/shop/store/shopStore'
 import { ProductFilters, ProductGrid } from '@/shop/components/catalog'
 import { Breadcrumb } from '@/shop/components/shared'
 
@@ -33,6 +35,8 @@ export default function ShopCatalogPage() {
     staleTime: 5 * 60 * 1000,
     enabled  : !!slug,
   })
+
+  const shopName = useShopStore((s) => s.shopConfig?.name ?? '')
 
   const categories       = categoriesResult?.data ?? []
   const selectedCategory = categories.find((c) => c.id === categoryId) ?? null
@@ -69,8 +73,47 @@ export default function ShopCatalogPage() {
     : onSale ? 'Offres du moment'
     : selectedCategory ? selectedCategory.name : 'Catalogue'
 
+  // Pages de recherche/filtres → noindex pour éviter le contenu dupliqué
+  const isFiltered = !!rawSearch || onSale
+
+  const metaTitle = selectedCategory
+    ? `${selectedCategory.name} — ${shopName}`
+    : onSale
+    ? `Offres du moment — ${shopName}`
+    : `Catalogue — ${shopName}`
+
+  const metaDesc = selectedCategory
+    ? `Découvrez tous nos produits ${selectedCategory.name}${shopName ? ` chez ${shopName}` : ''}. Commandez en ligne.`
+    : `Parcourez le catalogue complet${shopName ? ` de ${shopName}` : ''}. Livraison disponible.`
+
   return (
     <div className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <Helmet>
+        <title>{metaTitle}</title>
+        <meta name="description" content={metaDesc} />
+        {isFiltered
+          ? <meta name="robots" content="noindex, follow" />
+          : <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+        }
+        {/* Canonical — inclut ?category= si filtre actif, strip les autres params */}
+        {!isFiltered && (
+          <link rel="canonical" href={
+            categoryId
+              ? `${window.location.origin}/shop/${slug}/catalog?category=${categoryId}`
+              : `${window.location.origin}/shop/${slug}/catalog`
+          } />
+        )}
+        <meta property="og:title"       content={metaTitle} />
+        <meta property="og:description" content={metaDesc} />
+        <meta property="og:type"        content="website" />
+        <meta property="og:locale"      content="fr_SN" />
+        <meta property="og:url"         content={
+          categoryId
+            ? `${window.location.origin}/shop/${slug}/catalog?category=${categoryId}`
+            : `${window.location.origin}/shop/${slug}/catalog`
+        } />
+      </Helmet>
+
       {/* ── Breadcrumb ────────────────────────────────────────────────────── */}
       <Breadcrumb items={breadcrumbItems} />
 

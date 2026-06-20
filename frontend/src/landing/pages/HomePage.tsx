@@ -99,7 +99,7 @@ export default function HomePage() {
   return (
     <div className="overflow-hidden">
       <SeoHead
-        title="DiDi Sphere — Logiciel de gestion commerciale pour PME d'Afrique de l'Ouest"
+        title="DiDi Sphere — Logiciel de gestion commerciale"
         description="Gérez vos ventes, stocks, clients et factures. Caisse POS, boutique en ligne, rapports en temps réel. Essai gratuit 21 jours."
         canonical="/"
         jsonLd={[

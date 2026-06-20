@@ -35,6 +35,30 @@ export default function ShopLayout() {
     setConfig(data.shop, data.theme)
   }, [data, setConfig])
 
+  // Google Analytics tenant — injecté uniquement si l'ID est configuré
+  useEffect(() => {
+    const gaId = data?.seo.google_analytics_id
+    if (!gaId) return
+
+    if (document.getElementById('ga-script')) return
+
+    const script1 = document.createElement('script')
+    script1.id    = 'ga-script'
+    script1.async = true
+    script1.src   = `https://www.googletagmanager.com/gtag/js?id=${gaId}`
+    document.head.appendChild(script1)
+
+    const script2 = document.createElement('script')
+    script2.id   = 'ga-init'
+    script2.text = `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${gaId}');`
+    document.head.appendChild(script2)
+
+    return () => {
+      document.getElementById('ga-script')?.remove()
+      document.getElementById('ga-init')?.remove()
+    }
+  }, [data?.seo.google_analytics_id])
+
   // Favicon du tenant — Helmet ne peut pas supprimer les <link rel="icon"> statiques
   // de index.html (SVG DiDi Sphere priorisé par le navigateur). Manipulation DOM requise.
   useEffect(() => {
@@ -71,12 +95,15 @@ export default function ShopLayout() {
         <title>{shopTitle}</title>
         {shopDesc && <meta name="description" content={shopDesc} />}
         <meta name="theme-color" content={themeColor} />
-        <meta property="og:title" content={shopTitle} />
+        <link rel="canonical" href={`${window.location.origin}/shop/${slug}`} />
+        <meta property="og:title"       content={shopTitle} />
         {shopDesc && <meta property="og:description" content={shopDesc} />}
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content={typeof window !== 'undefined' ? window.location.href : ''} />
-        {faviconUrl && <meta property="og:image" content={faviconUrl} />}
-        {faviconUrl && <meta property="og:image:alt" content={shopTitle} />}
+        <meta property="og:type"        content="website" />
+        <meta property="og:locale"      content="fr_SN" />
+        <meta property="og:url"         content={`${window.location.origin}/shop/${slug}`} />
+        {faviconUrl && <meta property="og:image"            content={faviconUrl} />}
+        {faviconUrl && <meta property="og:image:secure_url" content={faviconUrl} />}
+        {faviconUrl && <meta property="og:image:alt"        content={shopTitle} />}
       </Helmet>
 
       {shopConfig?.announcement_bar_active && shopConfig.announcement_bar && (

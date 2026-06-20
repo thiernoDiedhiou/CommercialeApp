@@ -95,27 +95,48 @@ export default function ShopProductDetailPage() {
       <Helmet>
         <title>{productTitle}</title>
         <meta name="description" content={productDesc} />
-        <meta property="og:title" content={productTitle} />
+        <link rel="canonical" href={`${window.location.origin}/shop/${slug}/products/${productId}`} />
+        <meta property="og:title"       content={productTitle} />
         <meta property="og:description" content={productDesc} />
-        <meta property="og:type" content="product" />
-        <meta property="og:locale" content="fr_SN" />
-        {product.image_url && <meta property="og:image" content={product.image_url} />}
-        {product.image_url && <meta property="og:image:alt" content={product.name} />}
-        <script type="application/ld+json">{JSON.stringify({
-          '@context'    : 'https://schema.org',
-          '@type'       : 'Product',
-          'name'        : product.name,
-          'description' : productDesc,
-          'image'       : product.image_url ?? undefined,
-          'offers'      : {
-            '@type'         : 'Offer',
-            'price'         : String(product.price),
-            'priceCurrency' : currency,
-            'availability'  : (product.stock_quantity ?? 1) > 0
-              ? 'https://schema.org/InStock'
-              : 'https://schema.org/OutOfStock',
+        <meta property="og:type"        content="product" />
+        <meta property="og:locale"      content="fr_SN" />
+        <meta property="og:url"         content={`${window.location.origin}/shop/${slug}/products/${productId}`} />
+        {product.image_url && <meta property="og:image"             content={product.image_url} />}
+        {product.image_url && <meta property="og:image:secure_url"  content={product.image_url} />}
+        {product.image_url && <meta property="og:image:type"        content={product.image_url.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg'} />}
+        {product.image_url && <meta property="og:image:alt"         content={product.name} />}
+        <script type="application/ld+json">{JSON.stringify([
+          {
+            '@context'    : 'https://schema.org',
+            '@type'       : 'Product',
+            'name'        : product.name,
+            'description' : productDesc,
+            'image'       : product.image_url ?? undefined,
+            'offers'      : {
+              '@type'         : 'Offer',
+              'price'         : String(product.price),
+              'priceCurrency' : currency,
+              'availability'  : (product.stock_quantity ?? 1) > 0
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock',
+            },
           },
-        })}</script>
+          {
+            '@context'       : 'https://schema.org',
+            '@type'          : 'BreadcrumbList',
+            'itemListElement': [
+              { '@type': 'ListItem', 'position': 1, 'name': 'Accueil',   'item': `${window.location.origin}/shop/${slug}` },
+              { '@type': 'ListItem', 'position': 2, 'name': 'Catalogue', 'item': `${window.location.origin}/shop/${slug}/catalog` },
+              ...(product.category ? [{
+                '@type': 'ListItem',
+                'position': 3,
+                'name': product.category.name,
+                'item': `${window.location.origin}/shop/${slug}/catalog?category=${product.category.id}`,
+              }] : []),
+              { '@type': 'ListItem', 'position': product.category ? 4 : 3, 'name': product.name },
+            ],
+          },
+        ])}</script>
       </Helmet>
 
       {/* ── Breadcrumb ───────────────────────────────────────────────────── */}

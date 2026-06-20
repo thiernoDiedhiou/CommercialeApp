@@ -88,7 +88,7 @@ class ShopAdminController extends Controller
             'footer_text'             => ['nullable', 'string', 'max:500'],
             'meta_title'              => ['nullable', 'string', 'max:160'],
             'meta_description'        => ['nullable', 'string', 'max:320'],
-            'google_analytics_id'     => ['nullable', 'string', 'max:30'],
+            'google_analytics_id'     => ['nullable', 'string', 'regex:/^G-[A-Z0-9]{4,12}$/i'],
             'logo'                    => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
             'favicon'                 => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:512'],
             'hero_banner'             => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],

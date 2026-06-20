@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 
+# Backoffice — jamais indexé
 Disallow: /dashboard
 Disallow: /pos
 Disallow: /sales
@@ -15,6 +16,24 @@ Disallow: /reports
 Disallow: /settings
 Disallow: /debts
 Disallow: /returns
+Disallow: /profile
 Disallow: /admin/
 
+# API backend
+Disallow: /api/
+
+# IA / scrapers d'entraînement — opt-out
+User-agent: GPTBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
 Sitemap: https://didisphere.shop/sitemap.xml
+Sitemap: https://api.didisphere.shop/api/v1/public/sitemap-shops.xml
