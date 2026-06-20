@@ -100,9 +100,10 @@ export default function RegisterPage() {
 
         {/* Header */}
         <div className="text-center mb-10">
-          <img src="/logo_mode_claire.svg" alt="DiDi Sphere" className="h-9 mx-auto mb-6" />
-          <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Créer votre compte</h1>
-          <p className="text-gray-500 text-sm">
+          <img src="/logo_mode_claire.svg" alt="DiDi Sphere" className="h-9 mx-auto mb-6 dark:hidden" />
+          <img src="/logo_mode_sombre_texte_claire.svg" alt="DiDi Sphere" className="h-9 mx-auto mb-6 hidden dark:block" />
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">Créer votre compte</h1>
+          <p className="text-gray-500 dark:text-gray-300 text-sm">
             Essai gratuit de 21 jours · Aucune carte bancaire requise
           </p>
         </div>

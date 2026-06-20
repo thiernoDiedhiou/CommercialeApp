@@ -13,6 +13,7 @@ import type { Product, ProductVariant, Customer } from '@/types'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { generateUUID } from '@/lib/uuid'
 
+import PriceInput from '@/components/ui/PriceInput'
 import { getCategories } from '@/services/api/categories'
 import { getCustomers } from '@/services/api/customers'
 import {
@@ -468,40 +469,52 @@ export default function PosPage() {
           {items.length > 0 && (
             <div className="shrink-0 border-t border-gray-100 px-4 py-3 space-y-3">
               {/* Global discount */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 shrink-0">Remise globale</span>
-                <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setGlobalDiscount('percent', discountValue)}
-                    className={`px-2 py-1 transition ${
-                      discountType === 'percent'
-                        ? 'bg-brand-primary text-white'
-                        : 'bg-white text-gray-500 hover:bg-gray-50'
-                    }`}
-                  >
-                    %
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setGlobalDiscount('fixed', discountValue)}
-                    className={`px-2 py-1 transition ${
-                      discountType === 'fixed'
-                        ? 'bg-brand-primary text-white'
-                        : 'bg-white text-gray-500 hover:bg-gray-50'
-                    }`}
-                  >
-                    FCFA
-                  </button>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-gray-500">Remise globale</span>
+                  <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setGlobalDiscount('percent', discountValue)}
+                      className={`px-2 py-1 transition ${
+                        discountType === 'percent'
+                          ? 'bg-brand-primary text-white'
+                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      %
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGlobalDiscount('fixed', discountValue)}
+                      className={`px-2 py-1 transition ${
+                        discountType === 'fixed'
+                          ? 'bg-brand-primary text-white'
+                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      FCFA
+                    </button>
+                  </div>
                 </div>
-                <input
-                  type="number"
-                  min={0}
-                  value={discountValue || ''}
-                  placeholder="0"
-                  onChange={(e) => setGlobalDiscount(discountType, parseFloat(e.target.value) || 0)}
-                  className="flex-1 rounded-lg border border-gray-200 px-2 py-1 text-sm text-right"
-                />
+                {discountType === 'fixed' ? (
+                  <PriceInput
+                    value={discountValue || null}
+                    onChange={(v) => setGlobalDiscount('fixed', v ?? 0)}
+                    currency={tenant?.currency ?? 'XOF'}
+                    className="text-right"
+                  />
+                ) : (
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={discountValue || ''}
+                    placeholder="0"
+                    onChange={(e) => setGlobalDiscount('percent', parseFloat(e.target.value) || 0)}
+                    className="w-full rounded-lg border border-gray-200 px-2 py-1 text-sm text-right outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                  />
+                )}
               </div>
 
               {/* Note */}

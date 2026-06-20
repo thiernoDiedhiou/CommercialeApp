@@ -80,7 +80,7 @@ export default function DebtsPage() {
                 )
                 : rows.map((row) => (
                   <tr
-                    key={row.id}
+                    key={row.uid}
                     className="hover:bg-gray-50 cursor-pointer transition-colors"
                     onClick={() => navigate(`/customers/${row.uid}`)}
                   >

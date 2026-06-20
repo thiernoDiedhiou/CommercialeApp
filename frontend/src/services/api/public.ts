@@ -3,7 +3,7 @@ import publicAxios from '@/lib/publicAxios'
 // ── Plans publics ─────────────────────────────────────────────────────────────
 
 export interface PublicPlan {
-  id:                    number
+  uid:                   string
   name:                  string
   slug:                  string
   tagline:               string | null

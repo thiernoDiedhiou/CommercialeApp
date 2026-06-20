@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -12,8 +12,10 @@ import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
 import Button from '@/components/ui/Button'
 import Input, { Textarea, Select } from '@/components/ui/Input'
+import PriceInput from '@/components/ui/PriceInput'
 import { formatCurrency } from '@/lib/utils'
 import { generateUUID } from '@/lib/uuid'
+import { useAuthStore } from '@/store/authStore'
 import type { Product } from '@/types'
 
 // ── Schema ────────────────────────────────────────────────────────────────
@@ -183,6 +185,7 @@ export default function InvoiceFormPage() {
   const isEdit = !!uid
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const currency = useAuthStore((s) => s.tenant?.currency ?? 'XOF')
 
   const [items, setItems] = useState<LineItem[]>([emptyLine()])
 
@@ -192,7 +195,7 @@ export default function InvoiceFormPage() {
     enabled: isEdit,
   })
 
-  const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, watch, reset, setValue, control, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { issue_date: new Date().toISOString().split('T')[0], tax_rate: 0 },
   })
@@ -317,11 +320,31 @@ export default function InvoiceFormPage() {
               </Select>
             </div>
             {discountType && (
-              <Input
-                label={discountType === 'percent' ? 'Taux (%)' : 'Montant (FCFA)'}
-                type="number" min={0}
-                {...register('discount_value', { valueAsNumber: true })}
-              />
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                  {discountType === 'percent' ? 'Taux (%)' : `Montant (${currency})`}
+                </label>
+                {discountType === 'fixed' ? (
+                  <Controller
+                    name="discount_value"
+                    control={control}
+                    render={({ field }) => (
+                      <PriceInput
+                        value={field.value ?? null}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        currency={currency}
+                      />
+                    )}
+                  />
+                ) : (
+                  <input
+                    type="number" min={0} max={100}
+                    {...register('discount_value', { valueAsNumber: true })}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                  />
+                )}
+              </div>
             )}
             <Input label="TVA (%)" type="number" min={0} max={100} placeholder="0"
               {...register('tax_rate', { valueAsNumber: true })} />
@@ -344,7 +367,90 @@ export default function InvoiceFormPage() {
             }])} />
           </div>
 
-          <div className="overflow-x-auto">
+          {/* ── Mobile : cartes empilées ──────────────────────────────────── */}
+          <div className="md:hidden space-y-3">
+            {items.map((item) => {
+              const lineTotal = item.quantity * item.unit_price - item.discount
+              return (
+                <div key={item.uid} className="rounded-lg border border-gray-100 bg-gray-50 p-3 space-y-2">
+                  <input
+                    type="text"
+                    value={item.description}
+                    onChange={(e) => updateItem(item.uid, { description: e.target.value })}
+                    placeholder="Désignation de la prestation…"
+                    aria-label="Description de la ligne"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                  />
+                  <div className="flex gap-2">
+                    <div className="w-20 shrink-0">
+                      <p className="mb-1 text-[11px] text-gray-400">Qté</p>
+                      <input
+                        type="number" min="0.001" step="0.001"
+                        value={item.quantity}
+                        onChange={(e) => updateItem(item.uid, { quantity: parseFloat(e.target.value) || 0 })}
+                        aria-label="Quantité"
+                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <p className="mb-1 text-[11px] text-gray-400">Prix unit.</p>
+                      <PriceInput
+                        value={item.unit_price || null}
+                        onChange={(v) => updateItem(item.uid, { unit_price: v ?? 0 })}
+                        currency={currency}
+                        aria-label="Prix unitaire"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <p className="mb-1 text-[11px] text-gray-400">Remise</p>
+                      <PriceInput
+                        value={item.discount || null}
+                        onChange={(v) => updateItem(item.uid, { discount: v ?? 0 })}
+                        currency={currency}
+                        placeholder="0"
+                        aria-label="Remise sur la ligne"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between border-t border-gray-200 pt-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      Total : {formatCurrency(Math.max(0, lineTotal))}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item.uid)}
+                      disabled={items.length === 1}
+                      aria-label="Supprimer la ligne"
+                      className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+            <div className="rounded-lg border border-gray-100 p-3 space-y-1 text-sm">
+              <div className="flex justify-between text-gray-500">
+                <span>Sous-total</span><span>{formatCurrency(subtotal)}</span>
+              </div>
+              {discountAmt > 0 && (
+                <div className="flex justify-between text-red-500">
+                  <span>Remise</span><span>−{formatCurrency(discountAmt)}</span>
+                </div>
+              )}
+              {taxAmount > 0 && (
+                <div className="flex justify-between text-gray-500">
+                  <span>TVA ({taxRate}%)</span><span>{formatCurrency(taxAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-gray-100 pt-2 font-bold text-gray-900">
+                <span>TOTAL</span><span>{formatCurrency(total)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Desktop : tableau ─────────────────────────────────────────── */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
@@ -377,17 +483,20 @@ export default function InvoiceFormPage() {
                         />
                       </td>
                       <td className="py-2 pr-3">
-                        <input type="number" min="0" step="1" value={item.unit_price}
-                          onChange={(e) => updateItem(item.uid, { unit_price: parseFloat(e.target.value) || 0 })}
+                        <PriceInput
+                          value={item.unit_price || null}
+                          onChange={(v) => updateItem(item.uid, { unit_price: v ?? 0 })}
+                          currency={currency}
                           aria-label="Prix unitaire"
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                         />
                       </td>
                       <td className="py-2 pr-3">
-                        <input type="number" min="0" step="1" value={item.discount}
-                          onChange={(e) => updateItem(item.uid, { discount: parseFloat(e.target.value) || 0 })}
+                        <PriceInput
+                          value={item.discount || null}
+                          onChange={(v) => updateItem(item.uid, { discount: v ?? 0 })}
+                          currency={currency}
+                          placeholder="0"
                           aria-label="Remise sur la ligne"
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                         />
                       </td>
                       <td className="py-2 text-right font-medium text-gray-900">

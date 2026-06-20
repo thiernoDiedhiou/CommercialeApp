@@ -35,6 +35,19 @@ export default function ShopLayout() {
     setConfig(data.shop, data.theme)
   }, [data, setConfig])
 
+  // Favicon du tenant — Helmet ne peut pas supprimer les <link rel="icon"> statiques
+  // de index.html (SVG DiDi Sphere priorisé par le navigateur). Manipulation DOM requise.
+  useEffect(() => {
+    const url = data?.shop.favicon_url ?? data?.shop.logo_url
+    if (!url) return
+    document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]')
+      .forEach(el => el.remove())
+    const link = document.createElement('link')
+    link.rel  = 'icon'
+    link.href = url
+    document.head.appendChild(link)
+  }, [data?.shop.favicon_url, data?.shop.logo_url])
+
   // Écran de chargement pendant la résolution de la config
   if (isLoading) {
     return (
@@ -64,7 +77,6 @@ export default function ShopLayout() {
         <meta property="og:url" content={typeof window !== 'undefined' ? window.location.href : ''} />
         {faviconUrl && <meta property="og:image" content={faviconUrl} />}
         {faviconUrl && <meta property="og:image:alt" content={shopTitle} />}
-        {faviconUrl && <link rel="icon" href={faviconUrl} />}
       </Helmet>
 
       {shopConfig?.announcement_bar_active && shopConfig.announcement_bar && (

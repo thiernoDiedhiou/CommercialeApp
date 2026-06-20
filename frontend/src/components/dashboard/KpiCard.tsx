@@ -27,22 +27,22 @@ export default function KpiCard({
     : 'bg-brand-primary/10 text-brand-primary'
 
   return (
-    <div className={cn('rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100', className)}>
+    <div className={cn('rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100 sm:p-5', className)}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium text-gray-500">{title}</p>
         {icon && (
-          <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-lg', iconCls)}>
+          <span className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:h-9 sm:w-9', iconCls)}>
             {icon}
           </span>
         )}
       </div>
 
-      <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-2xl font-bold text-gray-900">{value}</span>
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0">
+        <span className="text-xl font-bold text-gray-900 sm:text-2xl">{value}</span>
         {subtitle && (
           <span
             className={cn(
-              'text-sm font-medium',
+              'text-xs font-medium sm:text-sm',
               trend === 'up' && 'text-emerald-600',
               trend === 'down' && 'text-red-500',
               (!trend || trend === 'neutral') && 'text-gray-500',

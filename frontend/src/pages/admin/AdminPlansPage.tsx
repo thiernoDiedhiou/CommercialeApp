@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
+import PriceInput from '@/components/ui/PriceInput'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { PlusIcon, PencilSquareIcon, TrashIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
@@ -397,12 +398,38 @@ function PlanModal({ plan, onClose, onSaved }: { plan: Plan | null; onClose: () 
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Prix mensuel (XOF) *</label>
-                <input type="number" {...register('price_monthly', { valueAsNumber: true })} className={inputCls} min={0} />
+                <Controller
+                  name="price_monthly"
+                  control={control}
+                  render={({ field }) => (
+                    <PriceInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      currency="XOF"
+                      dark
+                      error={!!errors.price_monthly}
+                    />
+                  )}
+                />
                 {errors.price_monthly && <p className="mt-1 text-xs text-red-400">{errors.price_monthly.message}</p>}
               </div>
               <div>
                 <label className={labelCls}>Prix annuel (XOF)</label>
-                <input type="number" {...register('price_yearly', { valueAsNumber: true, setValueAs: v => v === '' ? null : Number(v) })} className={inputCls} min={0} placeholder="Optionnel" />
+                <Controller
+                  name="price_yearly"
+                  control={control}
+                  render={({ field }) => (
+                    <PriceInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      currency="XOF"
+                      dark
+                      placeholder="Optionnel"
+                    />
+                  )}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

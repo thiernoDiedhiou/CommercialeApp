@@ -22,7 +22,7 @@ const ROUTES = [
   {
     path        : '/',
     title       : `${SITE_NAME} — Logiciel de gestion commerciale pour PME d'Afrique de l'Ouest`,
-    description : 'Gérez vos ventes, stocks, clients et factures en un seul endroit. Caisse POS, boutique en ligne, rapports en temps réel. Essai gratuit 21 jours.',
+    description : 'Gérez vos ventes, stocks, clients et factures. Caisse POS, boutique en ligne, rapports en temps réel. Essai gratuit 21 jours.',
   },
   {
     path        : '/fonctionnalites',

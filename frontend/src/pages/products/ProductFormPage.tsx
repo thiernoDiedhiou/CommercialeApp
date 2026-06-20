@@ -15,6 +15,7 @@ import CategorySelect from '@/components/products/CategorySelect'
 import BrandSelect from '@/components/products/BrandSelect'
 import VariantManager from '@/components/products/VariantManager'
 import { useAuthStore } from '@/store/authStore'
+import PriceInput from '@/components/ui/PriceInput'
 import type { CreateVariantData } from '@/types'
 
 // ── Schema Zod ────────────────────────────────────────────────────────────
@@ -197,7 +198,7 @@ export default function ProductFormPage() {
   const isEdit   = !!uid
   const navigate = useNavigate()
   const qc       = useQueryClient()
-  const currency = useAuthStore((s) => s.tenant?.currency ?? 'FCFA')
+  const currency = useAuthStore((s) => s.tenant?.currency ?? 'XOF')
 
   // Image state (géré hors React Hook Form car File n'est pas sérialisable)
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -424,31 +425,64 @@ export default function ProductFormPage() {
         {/* Section : Prix et stock */}
         <Section title="Prix et stock">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-            <Input
-              label={`Prix de vente (${currency})`}
-              type="number"
-              min={0}
-              placeholder="0"
-              error={errors.price?.message}
-              required
-              {...register('price', { valueAsNumber: true })}
-            />
-            <Input
-              label={`Prix barré (${currency})`}
-              type="number"
-              min={0}
-              placeholder="Ancien prix avant remise"
-              error={errors.compare_at_price?.message}
-              {...register('compare_at_price', { valueAsNumber: true })}
-            />
-            <Input
-              label={`Prix d'achat (${currency})`}
-              type="number"
-              min={0}
-              placeholder="0"
-              error={errors.cost_price?.message}
-              {...register('cost_price', { valueAsNumber: true })}
-            />
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Prix de vente ({currency}) <span className="text-red-500">*</span>
+              </label>
+              <Controller
+                name="price"
+                control={control}
+                render={({ field }) => (
+                  <PriceInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    currency={currency}
+                    error={!!errors.price}
+                  />
+                )}
+              />
+              {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price.message}</p>}
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Prix barré ({currency})
+              </label>
+              <Controller
+                name="compare_at_price"
+                control={control}
+                render={({ field }) => (
+                  <PriceInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    currency={currency}
+                    placeholder="Ancien prix avant remise"
+                    error={!!errors.compare_at_price}
+                  />
+                )}
+              />
+              {errors.compare_at_price && <p className="mt-1 text-xs text-red-500">{errors.compare_at_price.message}</p>}
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Prix d'achat ({currency})
+              </label>
+              <Controller
+                name="cost_price"
+                control={control}
+                render={({ field }) => (
+                  <PriceInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    currency={currency}
+                    error={!!errors.cost_price}
+                  />
+                )}
+              />
+              {errors.cost_price && <p className="mt-1 text-xs text-red-500">{errors.cost_price.message}</p>}
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <Input

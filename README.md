@@ -29,6 +29,7 @@ Plateforme SaaS multi-tenant de gestion commerciale pour PME — Afrique de l'Ou
 | **Toasts** | Notifications succès/erreur sur toutes les mutations — messages d'erreur Laravel traduits en français |
 | **Charte graphique** | `--brand-primary` / `--brand-secondary` CSS variables — sidebar, boutons, badges, graphe, emails |
 | **Notifications email** | 2 niveaux SMTP (global `.env` + par tenant), 3 jobs queue, templates HTML inline Gmail-compatible |
+| **Landing page & SEO** | `react-helmet-async` + composant `SeoHead`, prérendu statique SSG par route (`npm run build:ssg`), `robots.txt`, `sitemap.xml`, `.htaccess`, JSON-LD (Organization, SoftwareApplication, FAQPage, Product), Open Graph 1200×630px |
 
 ---
 
@@ -62,6 +63,9 @@ php artisan serve          # → http://localhost:8000
 cd frontend
 npm install
 npm run dev                # → http://localhost:5173
+
+# Build production avec prérendu SEO (à exécuter avant déploiement)
+npm run build:ssg          # génère dist/ + dist/{route}/index.html par page landing
 ```
 
 > **Redis non requis en dev** — `.env.example` utilise `CACHE_STORE=file` et `SESSION_DRIVER=file` par défaut.
@@ -122,9 +126,10 @@ php artisan storage:link                       # lien public/storage (images, lo
 php artisan view:clear                         # vider le cache des vues Blade (PDF)
 
 # Frontend (depuis frontend/)
-npm run dev      # dev server → http://localhost:5173
-npm run build    # build production → dist/
-npm run preview  # prévisualise le build
+npm run dev        # dev server → http://localhost:5173
+npm run build      # build production SPA → dist/
+npm run build:ssg  # build + prérendu SEO des pages landing (recommandé en prod)
+npm run preview    # prévisualise le build
 ```
 
 ---
@@ -351,7 +356,76 @@ SESSION_DRIVER=database
 QUEUE_CONNECTION=database
 ```
 
-### VPS / Docker
+### Digital Ocean Droplet — Nginx + PHP-FPM
+
+```bash
+# 1. Build frontend sur la machine de dev
+cd frontend && npm run build:ssg   # génère dist/ avec pages SSG
+
+# 2. Copier dist/ vers le serveur
+rsync -avz dist/ user@<IP>:/var/www/saas-commercial/public/
+
+# 3. Backend — depuis le serveur
+cd /var/www/saas-commercial
+composer install --no-dev --optimize-autoloader
+php artisan key:generate
+php artisan config:cache && php artisan route:cache
+php artisan migrate --force
+php artisan storage:link
+```
+
+**Configuration Nginx** (équivalent du `.htaccess` pour le SPA + SSG) :
+
+```nginx
+server {
+    listen 80;
+    server_name didisphere.shop www.didisphere.shop;
+    root /var/www/saas-commercial/public;
+    index index.html;
+
+    # ── Frontend SPA + SSG ────────────────────────────────────────────
+    location / {
+        # Sert la page SSG prérendue si elle existe (ex: /tarifs/index.html)
+        try_files $uri $uri/index.html /index.html;
+    }
+
+    # ── Backend API Laravel ───────────────────────────────────────────
+    location /api/ {
+        root /var/www/saas-commercial/backend/public;
+        try_files $uri $uri/ /index.php?$query_string;
+
+        location ~ \.php$ {
+            fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            include fastcgi_params;
+        }
+    }
+
+    # ── Fichiers statiques ─────────────────────────────────────────────
+    location ~* \.(js|css|png|jpg|svg|ico|woff2)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+> ⚠ Le fichier `public/.htaccess` est pour **Apache uniquement** (Hostinger). Sur Nginx (Digital Ocean), il est ignoré — utiliser la config ci-dessus.
+
+### Digital Ocean Droplet — Docker Compose
+
+```bash
+# Sur le serveur
+git pull origin main
+docker compose up -d --build
+docker compose exec app php artisan migrate --force
+docker compose exec app php artisan storage:link
+
+# Build frontend (depuis la machine de dev, copier dist/ sur le serveur)
+cd frontend && npm run build:ssg
+rsync -avz dist/ user@<IP>:/var/www/saas-commercial/public/
+```
+
+### VPS / Docker (générique)
 
 ```bash
 docker compose up -d
@@ -459,3 +533,4 @@ php artisan queue:work --queue=notifications --stop-when-empty
 | Boutique en ligne — design & UX | ✅ Terminée | Hero overlay, CategoryStrip icônes sémantiques, `compare_at_price` (-X% badge + prix rayé), stock faible, "Offres du moment" auto-masquée, recherche URL-driven, menu mobile icônes |
 | Migration UID | ✅ Terminée | Trait `HasUuid`, migration 3 phases (nullable→backfill→NOT NULL), routes `{model:uid}`, frontend `useParams<{ uid }>` — élimination IDOR |
 | Profil utilisateur | ✅ Terminée | Page `/profile` accessible à tous les utilisateurs (hors settings), topbar enrichie (avatar initiales, Mon profil, déconnexion), changement de mot de passe avec révocation des sessions |
+| Landing page & SEO | ✅ Terminée | `react-helmet-async`, composant `SeoHead`, prérendu SSG (`build:ssg`), `robots.txt`, `sitemap.xml`, `.htaccess`, JSON-LD multi-schémas, Open Graph 1200×630, Twitter Card, canonical par route |

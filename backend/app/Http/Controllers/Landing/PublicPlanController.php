@@ -15,7 +15,7 @@ class PublicPlanController extends Controller
             ->orderBy('sort_order')
             ->orderBy('price_monthly')
             ->get([
-                'id', 'name', 'slug', 'tagline', 'badge', 'description', 'features',
+                'uid', 'name', 'slug', 'tagline', 'badge', 'description', 'features',
                 'price_monthly', 'price_yearly', 'yearly_discount_pct', 'trial_days',
                 'max_users', 'max_products', 'max_monthly_sales',
                 'feature_pos', 'feature_invoicing', 'feature_purchases',
