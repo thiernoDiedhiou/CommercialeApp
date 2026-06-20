@@ -442,30 +442,105 @@ export default function ShopSettingsPage() {
           )}
 
           {/* ── SEO ─────────────────────────────────────────────────────── */}
-          {tab === 'seo' && (
-            <>
-              <Field label={`Meta title (${(fields.meta_title ?? '').length}/60)`}>
-                <input type="text" value={fields.meta_title ?? ''} maxLength={60}
-                  onChange={(e) => set('meta_title', e.target.value)}
-                  className={INPUT_CLS} placeholder="Ma boutique — Sénégal" />
-              </Field>
-              <Field label={`Meta description (${(fields.meta_description ?? '').length}/160)`}>
-                <textarea rows={3} value={fields.meta_description ?? ''} maxLength={160}
-                  onChange={(e) => set('meta_description', e.target.value)}
-                  className={`${INPUT_CLS} resize-none`} placeholder="Découvrez nos produits de qualité…" />
-              </Field>
-              <Field label="Google Analytics ID">
-                <input type="text" value={fields.google_analytics_id ?? ''}
-                  onChange={(e) => set('google_analytics_id', e.target.value)}
-                  className={INPUT_CLS} placeholder="G-XXXXXXXXXX" />
-              </Field>
-              <Field label="Texte de pied de page">
-                <input type="text" value={fields.footer_text ?? ''}
-                  onChange={(e) => set('footer_text', e.target.value)}
-                  className={INPUT_CLS} placeholder="© 2026 Ma boutique. Tous droits réservés." />
-              </Field>
-            </>
-          )}
+          {tab === 'seo' && (() => {
+            const titleLen = (fields.meta_title ?? '').length
+            const descLen  = (fields.meta_description ?? '').length
+            const gaId     = (fields.google_analytics_id ?? '').trim()
+            const gaValid  = gaId === '' || /^G-[A-Z0-9]{4,12}$/i.test(gaId)
+
+            const titleColor = titleLen === 0 ? 'text-gray-400'
+              : titleLen < 30  ? 'text-orange-500'
+              : titleLen <= 60 ? 'text-green-600'
+              : 'text-red-500'
+
+            const descColor = descLen === 0 ? 'text-gray-400'
+              : descLen < 80   ? 'text-orange-500'
+              : descLen <= 160 ? 'text-green-600'
+              : 'text-red-500'
+
+            const previewTitle = fields.meta_title?.trim() || fields.shop_name || 'Ma boutique'
+            const previewDesc  = fields.meta_description?.trim() || 'Découvrez nos produits en ligne. Commandez facilement.'
+            const previewUrl   = `didisphere.shop/shop/${slug}`
+
+            return (
+              <>
+                {/* ── Aperçu Google ──────────────────────────────────────── */}
+                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Aperçu dans Google</p>
+                  <p className="text-[#1a0dab] text-lg font-medium leading-snug truncate">
+                    {previewTitle.length > 60 ? previewTitle.slice(0, 57) + '…' : previewTitle}
+                  </p>
+                  <p className="text-[#006621] text-sm">{previewUrl}</p>
+                  <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+                    {previewDesc.length > 160 ? previewDesc.slice(0, 157) + '…' : previewDesc}
+                  </p>
+                </div>
+
+                {/* ── Meta title ─────────────────────────────────────────── */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-sm font-medium text-gray-700">Meta title</label>
+                    <span className={`text-xs font-medium ${titleColor}`}>{titleLen}/60</span>
+                  </div>
+                  <input type="text" value={fields.meta_title ?? ''} maxLength={60}
+                    onChange={(e) => set('meta_title', e.target.value)}
+                    className={INPUT_CLS} placeholder="Ma boutique — Dakar, Sénégal" />
+                  <p className="mt-1.5 text-xs text-gray-400">
+                    Le titre affiché dans les résultats Google et les onglets de navigateur.
+                    Idéal entre <strong>40 et 60 caractères</strong>. Incluez le nom de votre boutique et votre ville.
+                  </p>
+                </div>
+
+                {/* ── Meta description ───────────────────────────────────── */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-sm font-medium text-gray-700">Meta description</label>
+                    <span className={`text-xs font-medium ${descColor}`}>{descLen}/160</span>
+                  </div>
+                  <textarea rows={3} value={fields.meta_description ?? ''} maxLength={160}
+                    onChange={(e) => set('meta_description', e.target.value)}
+                    className={`${INPUT_CLS} resize-none`}
+                    placeholder="Découvrez nos produits de qualité livrés rapidement à Dakar. Vêtements, alimentation, cosmétiques…" />
+                  <p className="mt-1.5 text-xs text-gray-400">
+                    Le texte affiché sous votre titre dans Google. Il doit donner envie de cliquer.
+                    Idéal entre <strong>120 et 160 caractères</strong>. Décrivez ce que vous vendez et votre zone de livraison.
+                  </p>
+                </div>
+
+                {/* ── Google Analytics ───────────────────────────────────── */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Google Analytics ID</label>
+                  <input type="text" value={fields.google_analytics_id ?? ''}
+                    onChange={(e) => set('google_analytics_id', e.target.value.toUpperCase())}
+                    className={`${INPUT_CLS} ${!gaValid ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : ''}`}
+                    placeholder="G-XXXXXXXXXX" />
+                  {!gaValid && (
+                    <p className="mt-1 text-xs text-red-500">Format invalide — doit ressembler à G-AB12CD34EF</p>
+                  )}
+                  <p className="mt-1.5 text-xs text-gray-400">
+                    Permet de suivre les visiteurs de votre boutique dans Google Analytics.
+                    Trouvez votre ID dans{' '}
+                    <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer"
+                      className="text-brand-primary underline">
+                      Google Analytics
+                    </a>
+                    {' '}→ Admin → Flux de données → votre site → ID de mesure.
+                  </p>
+                </div>
+
+                {/* ── Pied de page ───────────────────────────────────────── */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Texte de pied de page</label>
+                  <input type="text" value={fields.footer_text ?? ''}
+                    onChange={(e) => set('footer_text', e.target.value)}
+                    className={INPUT_CLS} placeholder={`© ${new Date().getFullYear()} ${fields.shop_name || 'Ma boutique'}. Tous droits réservés.`} />
+                  <p className="mt-1.5 text-xs text-gray-400">
+                    Affiché en bas de votre boutique. Généralement vos mentions légales ou copyright.
+                  </p>
+                </div>
+              </>
+            )
+          })()}
 
           {/* ── Confiance ────────────────────────────────────────────── */}
           {tab === 'trust' && (

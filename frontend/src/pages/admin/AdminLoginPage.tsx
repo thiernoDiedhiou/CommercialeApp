@@ -31,7 +31,7 @@ export default function AdminLoginPage() {
         {/* Logo / titre */}
         <div className="text-center mb-8">
           <img
-            src="/logo_blanc.svg"
+            src="/logo_mode_sombre_texte_claire.svg"
             alt="DiDi Sphere"
             className="h-16 w-auto mx-auto mb-4"
           />

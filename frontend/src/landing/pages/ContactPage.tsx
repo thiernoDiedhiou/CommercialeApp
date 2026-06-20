@@ -62,6 +62,27 @@ export default function ContactPage() {
         title="Contact"
         description="Contactez l'équipe DiDi Sphere pour toute question sur notre logiciel de gestion commerciale SaaS pour PME d'Afrique de l'Ouest."
         canonical="/contact"
+        jsonLd={{
+          '@context'     : 'https://schema.org',
+          '@type'        : 'Organization',
+          '@id'          : 'https://didisphere.shop/#organization',
+          'name'         : 'DiDi Sphere',
+          'url'          : 'https://didisphere.shop',
+          'email'        : 'contact@didisphere.shop',
+          'description'  : "Logiciel de gestion commerciale SaaS pour PME d'Afrique de l'Ouest.",
+          'contactPoint' : {
+            '@type'             : 'ContactPoint',
+            'contactType'       : 'customer support',
+            'email'             : 'contact@didisphere.shop',
+            'availableLanguage' : 'French',
+          },
+          'areaServed'  : ['SN', 'CI', 'ML', 'BF', 'GN', 'CM', 'TG', 'BJ'],
+          'address'     : {
+            '@type'           : 'PostalAddress',
+            'addressLocality' : 'Thiès',
+            'addressCountry'  : 'SN',
+          },
+        }}
       />
 
       {/* Header */}

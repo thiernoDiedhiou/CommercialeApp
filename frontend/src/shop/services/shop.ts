@@ -52,7 +52,7 @@ export interface ShopCategory {
 export interface ShopConfigResponse {
   shop  : ShopConfig
   theme : ShopTheme
-  seo   : { meta_title: string | null; meta_description: string | null }
+  seo   : { meta_title: string | null; meta_description: string | null; google_analytics_id: string | null }
 }
 
 export interface PaginatedProducts {

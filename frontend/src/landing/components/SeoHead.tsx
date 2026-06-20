@@ -32,23 +32,32 @@ export default function SeoHead({
     <Helmet>
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
-      {noIndex && <meta name="robots" content="noindex, nofollow" />}
+
+      {/* Contrôle des extraits Google */}
+      {noIndex
+        ? <meta name="robots" content="noindex, nofollow" />
+        : <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+      }
+
       {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
 
       {/* Open Graph */}
-      <meta property="og:title"        content={fullTitle} />
-      <meta property="og:description"  content={description} />
-      <meta property="og:type"         content={ogType} />
-      <meta property="og:site_name"    content={SITE_NAME} />
-      <meta property="og:locale"       content="fr_SN" />
-      <meta property="og:image"        content={ogImage} />
-      <meta property="og:image:width"  content={String(OG_IMG_W)} />
-      <meta property="og:image:height" content={String(OG_IMG_H)} />
-      <meta property="og:image:alt"    content={fullTitle} />
+      <meta property="og:title"             content={fullTitle} />
+      <meta property="og:description"       content={description} />
+      <meta property="og:type"              content={ogType} />
+      <meta property="og:site_name"         content={SITE_NAME} />
+      <meta property="og:locale"            content="fr_SN" />
+      <meta property="og:image"             content={ogImage} />
+      <meta property="og:image:secure_url"  content={ogImage} />
+      <meta property="og:image:type"        content="image/png" />
+      <meta property="og:image:width"       content={String(OG_IMG_W)} />
+      <meta property="og:image:height"      content={String(OG_IMG_H)} />
+      <meta property="og:image:alt"         content={fullTitle} />
       {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
 
-      {/* Twitter Card */}
+      {/* Twitter / X Card */}
       <meta name="twitter:card"        content="summary_large_image" />
+      <meta name="twitter:site"        content="@didisphere" />
       <meta name="twitter:title"       content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image"       content={ogImage} />

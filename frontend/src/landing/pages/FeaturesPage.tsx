@@ -89,6 +89,31 @@ export default function FeaturesPage() {
         title="Fonctionnalités"
         description="Caisse POS, gestion des stocks, facturation PDF, boutique en ligne, rapports en temps réel… Découvrez tous les outils DiDi Sphere pour piloter votre commerce."
         canonical="/fonctionnalites"
+        jsonLd={{
+          '@context'            : 'https://schema.org',
+          '@type'               : 'SoftwareApplication',
+          '@id'                 : 'https://didisphere.shop/#app',
+          'name'                : 'DiDi Sphere',
+          'applicationCategory' : 'BusinessApplication',
+          'operatingSystem'     : 'Web',
+          'url'                 : 'https://didisphere.shop',
+          'description'         : "Logiciel de gestion commerciale SaaS pour PME d'Afrique de l'Ouest. Caisse POS, stocks, clients, factures, boutique en ligne.",
+          'featureList'         : [
+            'Caisse POS hors-ligne',
+            'Retours & avoirs',
+            'Variantes produit (taille, couleur…)',
+            'Gestion des stocks en temps réel',
+            'Alertes de rupture automatiques',
+            'Import CSV produits',
+            'Gestion clients & créances',
+            'Facturation PDF & envoi email',
+            "Fournisseurs & commandes d'achat",
+            'Rapports & analyses en temps réel',
+            'Boutique en ligne publique',
+            'Multi-utilisateurs avec permissions',
+          ],
+          'publisher': { '@id': 'https://didisphere.shop/#organization' },
+        }}
       />
 
       {/* Header */}
