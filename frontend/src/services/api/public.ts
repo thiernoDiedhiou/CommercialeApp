@@ -61,6 +61,7 @@ export async function registerTenant(body: RegisterData): Promise<RegisterRespon
 export interface PublicSiteSettings {
   contact_email:    string | null
   contact_whatsapp: string | null
+  renewal_url:      string | null
   contact_address:  string | null
   contact_hours:    string | null
   facebook_url:     string | null

@@ -16,6 +16,9 @@ class SiteSettings extends Model
         'linkedin_url',
         'instagram_url',
         'tenant_deletion_grace_days',
+        // Lien de renouvellement d'abonnement (null = paiements non activés)
+        // Renseigner quand les moyens de paiement seront en place.
+        'renewal_url',
     ];
 
     protected $casts = [

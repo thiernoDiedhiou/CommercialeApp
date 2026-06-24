@@ -363,6 +363,8 @@ export interface SiteSettingsData {
   linkedin_url:                string | null
   instagram_url:               string | null
   tenant_deletion_grace_days:  number
+  /** Lien de paiement/renouvellement — null jusqu'à l'activation des moyens de paiement */
+  renewal_url:                 string | null
 }
 
 export type SiteSettingsForm = Omit<SiteSettingsData, 'id'>
