@@ -411,6 +411,119 @@ server {
 
 > ⚠ Le fichier `public/.htaccess` est pour **Apache uniquement** (Hostinger). Sur Nginx (Digital Ocean), il est ignoré — utiliser la config ci-dessus.
 
+---
+
+## URLs de boutique — 3 phases d'évolution
+
+Les vitrines publiques supportent trois modes d'accès progressifs. Le code frontend (`useDomainTenant.ts`) et le backend (`PublicShopController::resolveByDomain`) gèrent les trois sans modification supplémentaire.
+
+### Phase 1 — Path-based *(actif)*
+
+```text
+https://didisphere.shop/shop/boutique-fatou
+```
+
+Aucun prérequis infrastructure supplémentaire. URL résolue depuis le chemin React Router.
+
+---
+
+### Phase 2 — Sous-domaine wildcard
+
+```text
+https://boutique-fatou.didisphere.shop
+```
+
+#### 1. DNS wildcard (Digital Ocean → Networking → Domains)
+
+```text
+Type : A
+Nom  : *
+TTL  : 3600
+IP   : <IP de votre Droplet>
+```
+
+#### 2. Certificat SSL wildcard
+
+```bash
+# Installer le plugin Digital Ocean pour Certbot (Ubuntu/Debian)
+sudo apt install python3-certbot-dns-digitalocean
+
+# Créer un token API Digital Ocean avec accès DNS
+mkdir -p ~/.secrets/certbot
+echo "dns_digitalocean_token = <VOTRE_TOKEN_DO>" > ~/.secrets/certbot/digitalocean.ini
+chmod 600 ~/.secrets/certbot/digitalocean.ini
+
+# Générer le certificat wildcard
+sudo certbot certonly --dns-digitalocean \
+  -d didisphere.shop \
+  -d *.didisphere.shop \
+  --dns-digitalocean-credentials ~/.secrets/certbot/digitalocean.ini
+```
+
+#### 3. Nginx wildcard
+
+```bash
+sudo cp nginx-subdomain.conf /etc/nginx/conf.d/didisphere-subdomain.conf
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+#### 4. Variable d'environnement frontend
+
+```env
+# frontend/.env (production)
+VITE_MAIN_DOMAIN=didisphere.shop
+```
+
+Rebuild et redéployer le frontend après cette modification.
+
+---
+
+### Phase 3 — Domaine custom client
+
+```text
+https://www.boutique-fatou.com    →  géré par DiDi Sphere
+```
+
+#### Côté client (tenant)
+
+Le client configure un CNAME chez son registrar :
+
+```text
+CNAME  www  →  didisphere.shop
+```
+
+#### Côté Super Admin
+
+Dans l'interface Super Admin → Tenants → éditer → champ **Domaine custom** :
+
+```text
+www.boutique-fatou.com
+```
+
+#### Côté serveur (par domaine custom)
+
+```bash
+# Générer un certificat SSL pour ce domaine
+sudo certbot --nginx -d www.boutique-fatou.com
+
+# Nginx génère automatiquement un bloc server pour ce domaine
+# Le frontend détecte le domaine via useDomainTenant.ts (mode 'custom')
+# et appelle /api/v1/public/resolve-domain?domain=www.boutique-fatou.com
+```
+
+---
+
+### Tableau récapitulatif
+
+| | Phase 1 | Phase 2 | Phase 3 |
+| --- | --- | --- | --- |
+| **URL** | `/shop/slug` | `slug.didisphere.shop` | `www.client.com` |
+| **DNS** | Aucun | Wildcard `*.didisphere.shop` | CNAME côté client |
+| **SSL** | 1 certificat | 1 wildcard `*.didisphere.shop` | 1 cert par domaine |
+| **Config Nginx** | Standard | `nginx-subdomain.conf` | `certbot --nginx` |
+| **Variable env** | Aucune | `VITE_MAIN_DOMAIN` | Aucune |
+| **Statut** | ✅ Actif | ⏳ Phase suivante | ⏳ Pour clients premium |
+
 ### Digital Ocean Droplet — Docker Compose
 
 ```bash
