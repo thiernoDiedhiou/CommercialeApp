@@ -118,6 +118,29 @@ class Tenant extends Model
         return in_array($this->sector, ['cosmetic', 'food'], true);
     }
 
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+
+    /**
+     * Génère un slug unique en ajoutant un suffixe numérique si nécessaire.
+     * Inclut les soft-deleted pour éviter les collisions avec les anciens tenants.
+     *
+     * "boutique-fatou"   → libre → "boutique-fatou"
+     * "boutique-fatou"   → pris  → "boutique-fatou-2"
+     * "boutique-fatou-2" → pris  → "boutique-fatou-3"
+     */
+    public static function uniqueSlug(string $base): string
+    {
+        $slug   = $base;
+        $suffix = 2;
+
+        while (static::withTrashed()->where('slug', $slug)->exists()) {
+            $slug = "{$base}-{$suffix}";
+            $suffix++;
+        }
+
+        return $slug;
+    }
+
     // ─── Boot ─────────────────────────────────────────────────────────────────
 
     protected static function boot(): void
@@ -126,7 +149,7 @@ class Tenant extends Model
 
         static::creating(function (Tenant $tenant) {
             if (empty($tenant->slug)) {
-                $tenant->slug = Str::slug($tenant->name);
+                $tenant->slug = static::uniqueSlug(Str::slug($tenant->name));
             }
 
             if (empty($tenant->api_key)) {

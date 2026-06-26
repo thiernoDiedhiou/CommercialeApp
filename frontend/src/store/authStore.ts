@@ -12,6 +12,9 @@ interface AuthState {
   // Jamais persisté — retourné par /auth/login et /auth/me, perdu à la fermeture de l'onglet
   tenantApiKey: string
 
+  /** true dès qu'un 402 SUBSCRIPTION_EXPIRED est reçu — source de vérité côté frontend */
+  subscriptionExpired: boolean
+
   setAuth: (
     token:        string,
     user:         User,
@@ -21,28 +24,33 @@ interface AuthState {
     planFeatures?: PlanFeatures | null,
   ) => void
   setTenantApiKey: (key: string) => void
+  setSubscriptionExpired: (value: boolean) => void
   logout: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      token:        null,
-      user:         null,
-      permissions:  [],
-      tenant:       null,
-      subscription: null,
-      planFeatures: null,
-      tenantApiKey: '',
+      token:               null,
+      user:                null,
+      permissions:         [],
+      tenant:              null,
+      subscription:        null,
+      planFeatures:        null,
+      tenantApiKey:        '',
+      subscriptionExpired: false,
 
       setAuth: (token, user, permissions, tenant, subscription = null, planFeatures = null) =>
-        set({ token, user, permissions, tenant, subscription, planFeatures, tenantApiKey: tenant.api_key }),
+        set({ token, user, permissions, tenant, subscription, planFeatures, tenantApiKey: tenant.api_key, subscriptionExpired: false }),
 
       setTenantApiKey: (key) =>
         set({ tenantApiKey: key }),
 
+      setSubscriptionExpired: (value) =>
+        set({ subscriptionExpired: value }),
+
       logout: () =>
-        set({ token: null, user: null, permissions: [], tenant: null, subscription: null, planFeatures: null, tenantApiKey: '' }),
+        set({ token: null, user: null, permissions: [], tenant: null, subscription: null, planFeatures: null, tenantApiKey: '', subscriptionExpired: false }),
     }),
     {
       name: 'auth',

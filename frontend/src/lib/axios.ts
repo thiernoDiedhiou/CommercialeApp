@@ -31,11 +31,19 @@ apiClient.interceptors.response.use(
     }
 
     const status = error.response?.status
+    const code   = error.response?.data?.code as string | undefined
 
     // 401 (hors login) → logout + redirect
     if (status === 401 && !error.config?.url?.includes('/auth/login')) {
       useAuthStore.getState().logout()
       window.location.href = '/login'
+      return Promise.reject(error)
+    }
+
+    // 402 SUBSCRIPTION_EXPIRED / PLAN_UNAVAILABLE → pas de toast
+    // Stocke le flag dans authStore — SubscriptionBanner affiche la bannière persistante
+    if (status === 402 && (code === 'SUBSCRIPTION_EXPIRED' || code === 'PLAN_UNAVAILABLE')) {
+      useAuthStore.getState().setSubscriptionExpired(true)
       return Promise.reject(error)
     }
 

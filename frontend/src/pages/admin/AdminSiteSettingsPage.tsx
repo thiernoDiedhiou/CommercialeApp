@@ -6,7 +6,7 @@ import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
 import {
   EnvelopeIcon, ChatBubbleLeftRightIcon, MapPinIcon, ClockIcon,
-  GlobeAltIcon, ShieldCheckIcon,
+  GlobeAltIcon, ShieldCheckIcon, CreditCardIcon,
 } from '@heroicons/react/24/outline'
 
 function Field({
@@ -51,6 +51,7 @@ export default function AdminSiteSettingsPage() {
         linkedin_url:                data.linkedin_url     ?? '',
         instagram_url:               data.instagram_url    ?? '',
         tenant_deletion_grace_days:  data.tenant_deletion_grace_days ?? 30,
+        renewal_url:                 data.renewal_url      ?? '',
       })
     }
   }, [data, reset])
@@ -157,6 +158,29 @@ export default function AdminSiteSettingsPage() {
                 </Field>
               ))}
             </div>
+          </section>
+
+          {/* Renouvellement / Paiements */}
+          <section>
+            <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-gray-500">
+              Renouvellement d'abonnement
+            </h2>
+            <p className="mb-4 text-xs text-gray-500">
+              Lien affiché dans la bannière "abonnement expiré" du backoffice tenant.
+              Laisser vide jusqu'à l'activation des moyens de paiement.
+            </p>
+            <Field
+              label="Lien de paiement / renouvellement"
+              icon={CreditCardIcon}
+              hint="Ex : lien Stripe, Wave, Orange Money ou page de paiement interne"
+            >
+              <input
+                {...register('renewal_url')}
+                type="url"
+                placeholder="https://pay.didisphere.shop/renew"
+                className={inputClass}
+              />
+            </Field>
           </section>
 
           {/* Politique RGPD */}
