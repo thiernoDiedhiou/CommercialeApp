@@ -92,7 +92,7 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
           <select
             value={country}
             onChange={(e) => handleCountryChange(e.target.value)}
-            className="w-24 shrink-0 rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+            className="w-20 shrink-0 rounded-lg border border-gray-300 bg-white px-2 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary sm:w-24"
             aria-label="Pays du numéro de téléphone"
           >
             {PHONE_COUNTRIES.map((c) => (
@@ -110,7 +110,7 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
             {...phoneProps}
             onChange={handlePhoneChange}
             onFocus={handleFocus}
-            className={`flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
+            className={`min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-1 ${
               error
                 ? 'border-red-400 focus:border-red-400 focus:ring-red-400'
                 : 'border-gray-300 focus:border-brand-primary focus:ring-brand-primary'

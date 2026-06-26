@@ -129,12 +129,14 @@ class DashboardController extends Controller
         $topProductRows = DB::select("
             SELECT
                 product_id,
+                product_uid,
                 name,
                 SUM(qty_sold) AS qty_sold,
                 SUM(revenue)  AS revenue
             FROM (
                 SELECT
                     si.product_id,
+                    p.uid  AS product_uid,
                     p.name,
                     SUM(si.quantity)           AS qty_sold,
                     COALESCE(SUM(si.total), 0) AS revenue
@@ -144,12 +146,13 @@ class DashboardController extends Controller
                 WHERE s.tenant_id = ?
                   AND s.status    = 'confirmed'
                   AND s.confirmed_at >= DATE_FORMAT(NOW(), '%Y-%m-01')
-                GROUP BY si.product_id, p.name
+                GROUP BY si.product_id, p.uid, p.name
 
                 UNION ALL
 
                 SELECT
                     soi.product_id,
+                    p.uid  AS product_uid,
                     p.name,
                     SUM(soi.quantity)           AS qty_sold,
                     COALESCE(SUM(soi.total), 0) AS revenue
@@ -159,9 +162,9 @@ class DashboardController extends Controller
                 WHERE so.tenant_id = ?
                   AND so.status NOT IN ('cancelled', 'pending')
                   AND so.confirmed_at >= DATE_FORMAT(NOW(), '%Y-%m-01')
-                GROUP BY soi.product_id, p.name
+                GROUP BY soi.product_id, p.uid, p.name
             ) combined
-            GROUP BY product_id, name
+            GROUP BY product_id, product_uid, name
             ORDER BY revenue DESC
             LIMIT 5
         ", [$tenantId, $tenantId]);
@@ -170,6 +173,7 @@ class DashboardController extends Controller
         $stockAlertRows = DB::select("
             SELECT
                 p.id   AS product_id,
+                p.uid  AS product_uid,
                 p.name,
                 NULL   AS variant_id,
                 NULL   AS variant,
@@ -186,6 +190,7 @@ class DashboardController extends Controller
 
             SELECT
                 p.id  AS product_id,
+                p.uid AS product_uid,
                 p.name,
                 pv.id AS variant_id,
                 pv.attribute_summary AS variant,
@@ -207,9 +212,9 @@ class DashboardController extends Controller
             ->with(['customer:id,name'])
             ->latest('confirmed_at')
             ->limit(5)
-            ->get(['id', 'reference', 'customer_id', 'total', 'status', 'confirmed_at', 'created_at'])
+            ->get(['uid', 'reference', 'customer_id', 'total', 'status', 'confirmed_at', 'created_at'])
             ->map(fn($s) => [
-                'id'           => $s->id,
+                'uid'          => $s->uid,
                 'reference'    => $s->reference,
                 'customer'     => $s->customer?->name,
                 'total'        => (float) $s->total,
@@ -224,9 +229,9 @@ class DashboardController extends Controller
             ->whereNotIn('status', ['cancelled', 'pending'])
             ->latest('confirmed_at')
             ->limit(5)
-            ->get(['id', 'reference', 'customer_name', 'total', 'status', 'confirmed_at', 'created_at'])
+            ->get(['uid', 'reference', 'customer_name', 'total', 'status', 'confirmed_at', 'created_at'])
             ->map(fn($o) => [
-                'id'           => $o->id,
+                'uid'          => $o->uid,
                 'reference'    => $o->reference,
                 'customer'     => $o->customer_name,
                 'total'        => (float) $o->total,
@@ -296,12 +301,14 @@ class DashboardController extends Controller
             'week_chart'        => $weekChart,
             'top_products'      => collect($topProductRows)->map(fn($r) => [
                 'product_id'    => $r->product_id,
+                'product_uid'   => $r->product_uid,
                 'product_name'  => $r->name,
                 'quantity_sold' => (float) $r->qty_sold,
                 'revenue'       => (float) $r->revenue,
             ]),
             'stock_alerts'  => collect($stockAlertRows)->map(fn($r) => [
                 'product_id'      => $r->product_id,
+                'product_uid'     => $r->product_uid,
                 'product_name'    => $r->name,
                 'variant_id'      => $r->variant_id,
                 'variant_summary' => $r->variant,

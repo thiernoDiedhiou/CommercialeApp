@@ -100,8 +100,9 @@ class PublicShopController extends Controller
                 'accent_color'    => $accent,
             ],
             'seo' => [
-                'meta_title'       => $shop->meta_title       ?? $shop->shop_name ?? $tenant->name,
-                'meta_description' => $shop->meta_description,
+                'meta_title'          => $shop->meta_title       ?? $shop->shop_name ?? $tenant->name,
+                'meta_description'    => $shop->meta_description,
+                'google_analytics_id' => $shop->google_analytics_id,
             ],
         ]);
     }

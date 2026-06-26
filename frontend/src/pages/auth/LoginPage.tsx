@@ -89,7 +89,7 @@ export default function LoginPage() {
             <div className="relative mb-5 inline-flex">
               <div className="absolute inset-0 rounded-2xl bg-[#2465ed]/20 dark:bg-[#2465ed]/10 blur-2xl scale-150" />
               <img
-                src={isDark ? '/logo_blanc.svg' : '/logo_mode_claire.svg'}
+                src={isDark ? '/logo_mode_sombre_texte_claire.svg' : '/logo_mode_claire.svg'}
                 alt="DiDi Sphere"
                 className="relative h-11 w-auto"
               />

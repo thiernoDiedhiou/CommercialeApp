@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
+import SeoHead from '@/landing/components/SeoHead'
 
 const LAST_UPDATED = '1er juin 2026'
 const COMPANY      = 'DiDi Sphere'
-const EMAIL        = 'contact@didisphere.sn'
+const EMAIL        = 'contact@didisphere.shop'
 const ADDRESS      = 'Thiès, République du Sénégal'
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -17,6 +18,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function CGUPage() {
   return (
     <div className="py-20">
+      <SeoHead
+        title="Conditions générales d'utilisation"
+        description="Conditions générales d'utilisation du logiciel DiDi Sphere — logiciel de gestion commerciale SaaS pour PME."
+        canonical="/cgu"
+      />
       <div className="mx-auto max-w-3xl px-4">
 
         {/* En-tête */}

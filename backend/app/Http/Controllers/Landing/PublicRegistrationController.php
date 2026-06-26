@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Notifications\NewTenantRegisteredNotification;
 use App\Services\MailService;
 use App\Services\TenantService;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -53,35 +54,58 @@ class PublicRegistrationController extends Controller
             ]
         );
 
-        [$tenant, $admin] = DB::transaction(function () use ($validated) {
-            $tenant = Tenant::create([
-                'name'      => $validated['company_name'],
-                'sector'    => $validated['sector'],
-                'currency'  => $validated['currency'] ?? 'XOF',
-                'phone'     => $validated['phone'] ?? null,
-                'is_active' => true,
-            ]);
+        // Retry une fois en cas de collision de slug (race condition rare mais possible
+        // si deux inscriptions avec le même nom arrivent simultanément).
+        $attempts = 0;
+        do {
+            try {
+                [$tenant, $admin] = DB::transaction(function () use ($validated) {
+                    $tenant = Tenant::create([
+                        'name'      => $validated['company_name'],
+                        'sector'    => $validated['sector'],
+                        'currency'  => $validated['currency'] ?? 'XOF',
+                        'phone'     => $validated['phone'] ?? null,
+                        'is_active' => true,
+                    ]);
 
-            $this->tenantService->setCurrentTenant($tenant);
+                    $this->tenantService->setCurrentTenant($tenant);
 
-            $user = User::create([
-                'tenant_id' => $tenant->id,
-                'name'      => $validated['admin_name'],
-                'email'     => $validated['admin_email'],
-                'password'  => Hash::make($validated['admin_password']),
-                'is_active' => true,
-            ]);
+                    $user = User::create([
+                        'tenant_id' => $tenant->id,
+                        'name'      => $validated['admin_name'],
+                        'email'     => $validated['admin_email'],
+                        'password'  => Hash::make($validated['admin_password']),
+                        'is_active' => true,
+                    ]);
 
-            $adminGroup = Group::where('tenant_id', $tenant->id)
-                ->where('name', 'Administrateur')
-                ->first();
+                    $adminGroup = Group::where('tenant_id', $tenant->id)
+                        ->where('name', 'Administrateur')
+                        ->first();
 
-            if ($adminGroup) {
-                $user->groups()->attach($adminGroup->id);
+                    if ($adminGroup) {
+                        $user->groups()->attach($adminGroup->id);
+                    }
+
+                    return [$tenant, $user];
+                });
+                break; // succès — sortir de la boucle
+            } catch (UniqueConstraintViolationException $e) {
+                // Ne retenter que sur collision de slug — les autres violations
+                // (ex: email dupliqué) doivent remonter normalement.
+                if (! str_contains($e->getMessage(), 'slug')) {
+                    throw $e;
+                }
+                $attempts++;
+                if ($attempts >= 2) {
+                    return response()->json([
+                        'message' => 'Une erreur est survenue lors de la création du compte. Veuillez réessayer.',
+                        'code'    => 'REGISTRATION_FAILED',
+                    ], 500);
+                }
+                // Le premier tenant concurrent a pris le slug — on relance :
+                // uniqueSlug() recalculera un slug libre avec suffixe
             }
-
-            return [$tenant, $user];
-        });
+        } while ($attempts < 2);
 
         // Abonnement d'essai automatique — premier plan public disponible
         $plan = Plan::where('is_active', true)

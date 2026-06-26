@@ -8,6 +8,7 @@ import {
 import DashboardMockup from '@/landing/components/DashboardMockup'
 import FaqSection from '@/landing/components/FaqSection'
 import FeatureShowcase from '@/landing/components/FeatureShowcase'
+import SeoHead from '@/landing/components/SeoHead'
 
 // ── Données statiques ─────────────────────────────────────────────────────────
 
@@ -97,6 +98,52 @@ export default function HomePage() {
 
   return (
     <div className="overflow-hidden">
+      <SeoHead
+        title="DiDi Sphere — Logiciel de gestion commerciale"
+        description="Gérez vos ventes, stocks, clients et factures. Caisse POS, boutique en ligne, rapports en temps réel. Essai gratuit 21 jours."
+        canonical="/"
+        jsonLd={[
+          {
+            '@context'            : 'https://schema.org',
+            '@type'               : 'SoftwareApplication',
+            '@id'                 : 'https://didisphere.shop/#app',
+            'name'                : 'DiDi Sphere',
+            'applicationCategory' : 'BusinessApplication',
+            'operatingSystem'     : 'Web',
+            'url'                 : 'https://didisphere.shop',
+            'description'         : "Logiciel de gestion commerciale SaaS pour PME d'Afrique de l'Ouest. Caisse POS, stocks, clients, factures, boutique en ligne.",
+            'screenshot'          : 'https://didisphere.shop/og-image.png',
+            'featureList'         : [
+              'Caisse POS hors-ligne',
+              'Gestion des stocks en temps réel',
+              'Facturation PDF',
+              'Boutique en ligne publique',
+              'Rapports et analyses',
+              'Multi-devises XOF EUR USD',
+              'Multi-utilisateurs avec permissions',
+              'Import CSV produits',
+            ],
+            'offers': {
+              '@type'         : 'Offer',
+              'price'         : '5000',
+              'priceCurrency' : 'XOF',
+            },
+            'publisher': { '@id': 'https://didisphere.shop/#organization' },
+          },
+          {
+            '@context'   : 'https://schema.org',
+            '@type'      : 'FAQPage',
+            'mainEntity' : [
+              { '@type': 'Question', 'name': "L'essai gratuit nécessite-t-il une carte bancaire ?",    'acceptedAnswer': { '@type': 'Answer', 'text': "Non. Aucune information de paiement n'est requise pour démarrer votre essai de 21 jours." } },
+              { '@type': 'Question', 'name': 'Puis-je changer de plan à tout moment ?',                 'acceptedAnswer': { '@type': 'Answer', 'text': 'Oui, sans frais de résiliation, depuis votre espace client.' } },
+              { '@type': 'Question', 'name': 'Mes données sont-elles sécurisées ?',                     'acceptedAnswer': { '@type': 'Answer', 'text': "Vos données sont isolées dans un espace dédié (architecture multi-tenant), hébergées sur des serveurs sécurisés." } },
+              { '@type': 'Question', 'name': 'Comment fonctionne le paiement ?',                        'acceptedAnswer': { '@type': 'Answer', 'text': 'Nous acceptons Orange Money, Wave et les virements bancaires. Facturation mensuelle ou annuelle.' } },
+              { '@type': 'Question', 'name': 'Puis-je utiliser DiDi Sphere sur mobile ?',               'acceptedAnswer': { '@type': 'Answer', 'text': "Oui. L'interface est entièrement responsive et la caisse POS est optimisée pour tablette et smartphone." } },
+              { '@type': 'Question', 'name': "Que se passe-t-il à la fin de l'essai gratuit ?",        'acceptedAnswer': { '@type': 'Answer', 'text': "Vous choisissez un plan payant pour continuer. Sinon votre compte est suspendu mais vos données conservées 30 jours." } },
+            ],
+          },
+        ]}
+      />
 
       {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <section className="relative overflow-hidden bg-white dark:bg-gray-950 pt-20 pb-16">
@@ -292,7 +339,7 @@ export default function HomePage() {
                 const isHighlighted = i === 1
                 return (
                   <div
-                    key={plan.id}
+                    key={plan.uid}
                     className={`relative rounded-2xl p-6 flex flex-col ${
                       isHighlighted
                         ? 'bg-ds-blue text-white shadow-2xl shadow-ds-blue/30 scale-105'

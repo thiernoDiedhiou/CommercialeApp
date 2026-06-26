@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { Helmet } from 'react-helmet-async'
 import { getShopProduct } from '@/shop/services/shop'
 import { useShopStore } from '@/shop/store/shopStore'
 import { ProductGallery, VariantPicker, AddToCartBar, SimilarProducts } from '@/shop/components/product'
@@ -11,6 +12,7 @@ export default function ShopProductDetailPage() {
   const addItem   = useShopStore((s) => s.addItem)
   const openCart  = useShopStore((s) => s.openCart)
   const currency  = useShopStore((s) => s.shopConfig?.currency ?? 'FCFA')
+  const shopName  = useShopStore((s) => s.shopConfig?.name ?? '')
 
   const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null)
   const [quantity, setQuantity]                   = useState(1)
@@ -81,8 +83,61 @@ export default function ShopProductDetailPage() {
     )
   }
 
+  const productTitle = shopName ? `${product.name} — ${shopName}` : product.name
+  const rawDesc      = product.description
+    ?? `${product.name}${product.category ? ` — ${product.category.name}` : ''}. Commandez en ligne.`
+  const productDesc  = rawDesc.length > 160
+    ? rawDesc.slice(0, (rawDesc.lastIndexOf(' ', 160) || 160)) + '…'
+    : rawDesc
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <Helmet>
+        <title>{productTitle}</title>
+        <meta name="description" content={productDesc} />
+        <link rel="canonical" href={`${window.location.origin}/shop/${slug}/products/${productId}`} />
+        <meta property="og:title"       content={productTitle} />
+        <meta property="og:description" content={productDesc} />
+        <meta property="og:type"        content="product" />
+        <meta property="og:locale"      content="fr_SN" />
+        <meta property="og:url"         content={`${window.location.origin}/shop/${slug}/products/${productId}`} />
+        {product.image_url && <meta property="og:image"             content={product.image_url} />}
+        {product.image_url && <meta property="og:image:secure_url"  content={product.image_url} />}
+        {product.image_url && <meta property="og:image:type"        content={product.image_url.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg'} />}
+        {product.image_url && <meta property="og:image:alt"         content={product.name} />}
+        <script type="application/ld+json">{JSON.stringify([
+          {
+            '@context'    : 'https://schema.org',
+            '@type'       : 'Product',
+            'name'        : product.name,
+            'description' : productDesc,
+            'image'       : product.image_url ?? undefined,
+            'offers'      : {
+              '@type'         : 'Offer',
+              'price'         : String(product.price),
+              'priceCurrency' : currency,
+              'availability'  : (product.stock_quantity ?? 1) > 0
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock',
+            },
+          },
+          {
+            '@context'       : 'https://schema.org',
+            '@type'          : 'BreadcrumbList',
+            'itemListElement': [
+              { '@type': 'ListItem', 'position': 1, 'name': 'Accueil',   'item': `${window.location.origin}/shop/${slug}` },
+              { '@type': 'ListItem', 'position': 2, 'name': 'Catalogue', 'item': `${window.location.origin}/shop/${slug}/catalog` },
+              ...(product.category ? [{
+                '@type': 'ListItem',
+                'position': 3,
+                'name': product.category.name,
+                'item': `${window.location.origin}/shop/${slug}/catalog?category=${product.category.id}`,
+              }] : []),
+              { '@type': 'ListItem', 'position': product.category ? 4 : 3, 'name': product.name },
+            ],
+          },
+        ])}</script>
+      </Helmet>
 
       {/* ── Breadcrumb ───────────────────────────────────────────────────── */}
       <Breadcrumb items={[

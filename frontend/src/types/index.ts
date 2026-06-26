@@ -89,6 +89,7 @@ export interface WeekChartPoint {
 
 export interface TopProduct {
   product_id: number
+  product_uid: string
   product_name: string
   quantity_sold: number
   revenue: number
@@ -96,6 +97,7 @@ export interface TopProduct {
 
 export interface StockAlert {
   product_id: number
+  product_uid: string
   product_name: string
   variant_id: number | null
   variant_summary: string | null
@@ -117,7 +119,7 @@ export interface ExpiringSoon {
 }
 
 export interface RecentTransaction {
-  id           : number
+  uid          : string
   reference    : string
   customer     : string | null
   total        : number
@@ -391,7 +393,7 @@ export interface CustomerDetail extends Customer {
 
 /** Ligne du rapport créances GET /debts */
 export interface DebtRow {
-  id: number
+  uid: string
   name: string
   phone: string | null
   email: string | null
@@ -703,7 +705,7 @@ export interface SaleReturn {
   total: string
   items_count?: number
   created_at: string
-  sale?: Pick<Sale, 'id' | 'reference' | 'confirmed_at'>
+  sale?: Pick<Sale, 'id' | 'uid' | 'reference' | 'confirmed_at'>
   user?: Pick<User, 'id' | 'name'>
   items?: SaleReturnItem[]
 }

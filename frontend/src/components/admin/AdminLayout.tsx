@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import {
@@ -46,7 +46,9 @@ export default function AdminLayout() {
     <>
       {/* Logo */}
       <div className="h-16 flex items-center gap-2.5 px-4 border-b border-gray-800 shrink-0">
-        <img src="/logo_blanc.svg" alt="DiDi Sphere" className="h-8 w-auto" />
+        <Link to="/admin/dashboard" className="shrink-0">
+          <img src="/logo_mode_sombre_texte_claire.svg" alt="DiDi Sphere" className="h-8 w-auto" />
+        </Link>
         <button
           type="button"
           aria-label="Fermer le menu"
@@ -117,11 +119,9 @@ export default function AdminLayout() {
           </button>
 
           {/* Logo mobile */}
-          <img
-            src="/logo_blanc.svg"
-            alt="DiDi Sphere"
-            className="h-7 w-auto lg:hidden"
-          />
+          <Link to="/admin/dashboard" className="lg:hidden shrink-0">
+            <img src="/logo_mode_sombre_texte_claire.svg" alt="DiDi Sphere" className="h-7 w-auto" />
+          </Link>
 
           <div className="flex-1" />
 

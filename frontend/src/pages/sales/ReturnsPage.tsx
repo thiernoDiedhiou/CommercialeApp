@@ -86,9 +86,7 @@ export default function ReturnsPage() {
             <tbody className="divide-y divide-gray-50">
               {isLoading
                 ? Array.from({ length: 6 }).map((_, i) => (
-                    <tr key={i}>
-                      <td colSpan={6} className="px-4 py-3"><SkeletonRow /></td>
-                    </tr>
+                    <SkeletonRow key={i} cols={6} />
                   ))
                 : returns.length === 0
                 ? (
@@ -106,7 +104,7 @@ export default function ReturnsPage() {
                     <td className="px-4 py-3">
                       {ret.sale ? (
                         <Link
-                          to={`/sales/${ret.sale_id}`}
+                          to={`/sales/${ret.sale.uid}`}
                           className="font-mono text-brand-primary hover:underline"
                         >
                           {ret.sale.reference}

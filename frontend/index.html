@@ -3,10 +3,103 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DiDi Sphere</title>
+    <title>DiDi Sphere — Logiciel de gestion commerciale</title>
+    <meta name="description" content="Gérez vos ventes, stocks, clients et factures en un seul endroit. Caisse POS, boutique en ligne, rapports en temps réel. Essai gratuit 21 jours." />
+    <meta name="theme-color" content="#2465ED" />
+
+    <!-- Contrôle des extraits Google (max-snippet, large image preview) -->
+    <meta name="robots" content="max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+
+    <!-- Géolocalisation — Afrique de l'Ouest / Sénégal -->
+    <meta name="geo.region"    content="SN" />
+    <meta name="geo.placename" content="Thiès, Sénégal" />
+    <meta name="geo.position"  content="14.7924;-16.9353" />
+    <meta name="ICBM"          content="14.7924, -16.9353" />
+
+    <!-- Auteur / éditeur -->
+    <meta name="author"           content="DiDi Sphere" />
+    <meta name="application-name" content="DiDi Sphere" />
+
+    <!-- PWA / Apple -->
+    <meta name="mobile-web-app-capable"         content="yes" />
+    <meta name="apple-mobile-web-app-capable"   content="yes" />
+    <meta name="apple-mobile-web-app-title"     content="DiDi Sphere" />
+
+    <!-- Performance : connexions anticipées vers l'API -->
+    <link rel="preconnect" href="https://api.didisphere.shop" />
+    <link rel="dns-prefetch" href="https://api.didisphere.shop" />
+
+    <!-- Open Graph — fallback statique (React Helmet remplace dynamiquement) -->
+    <meta property="og:title"            content="DiDi Sphere — Logiciel de gestion commerciale" />
+    <meta property="og:description"      content="Gérez vos ventes, stocks, clients et factures en un seul endroit. Caisse POS, boutique en ligne, rapports en temps réel. Essai gratuit 21 jours." />
+    <meta property="og:type"             content="website" />
+    <meta property="og:site_name"        content="DiDi Sphere" />
+    <meta property="og:locale"           content="fr_SN" />
+    <meta property="og:url"              content="https://didisphere.shop" />
+    <meta property="og:image"            content="https://didisphere.shop/og-image.png" />
+    <meta property="og:image:secure_url" content="https://didisphere.shop/og-image.png" />
+    <meta property="og:image:type"       content="image/png" />
+    <meta property="og:image:width"      content="1200" />
+    <meta property="og:image:height"     content="630" />
+    <meta property="og:image:alt"        content="DiDi Sphere — Logiciel de gestion commerciale pour PME" />
+
+    <!-- Twitter Card — fallback statique -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:site"        content="@didisphere" />
+    <meta name="twitter:title"       content="DiDi Sphere — Logiciel de gestion commerciale" />
+    <meta name="twitter:description" content="Gérez vos ventes, stocks, clients et factures en un seul endroit. Caisse POS, boutique en ligne, rapports en temps réel. Essai gratuit 21 jours." />
+    <meta name="twitter:image"       content="https://didisphere.shop/og-image.png" />
+    <meta name="twitter:image:alt"   content="DiDi Sphere — Logiciel de gestion commerciale pour PME" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Favicons -->
     <link rel="icon" type="image/png" sizes="48x48" href="/logo_mode_claire-icon-48x48.png" />
     <link rel="icon" type="image/png" sizes="36x36" href="/logo_mode_claire-icon-36x36.png" />
     <link rel="icon" type="image/svg+xml" href="/logo_mode_claire.svg" />
+    <link rel="apple-touch-icon" href="/logo_mode_claire-icon-48x48.png" />
+
+    <!-- JSON-LD : Organisation + Site Web (invariants, toujours présents) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://didisphere.shop/#organization",
+          "name": "DiDi Sphere",
+          "url": "https://didisphere.shop",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://didisphere.shop/logo_mode_claire.svg",
+            "width": 200,
+            "height": 50
+          },
+          "description": "Logiciel de gestion commerciale SaaS pour PME d'Afrique de l'Ouest",
+          "email": "contact@didisphere.shop",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Thiès",
+            "addressCountry": "SN"
+          },
+          "foundingLocation": {
+            "@type": "Place",
+            "name": "Thiès, Sénégal"
+          },
+          "areaServed": ["SN", "CI", "ML", "BF", "GN", "CM", "TG", "BJ"]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://didisphere.shop/#website",
+          "url": "https://didisphere.shop",
+          "name": "DiDi Sphere",
+          "inLanguage": "fr",
+          "publisher": { "@id": "https://didisphere.shop/#organization" }
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

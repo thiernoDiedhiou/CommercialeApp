@@ -1,0 +1,14 @@
+Options -MultiViews
+RewriteEngine On
+
+# Serve static files as-is (assets, images, etc.)
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# For landing routes: serve prerendered index.html if it exists
+RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI}/index.html -f
+RewriteRule ^(.+?)/?$ $1/index.html [L]
+
+# Fallback: SPA — all other routes → root index.html
+RewriteRule ^ /index.html [QSA,L]

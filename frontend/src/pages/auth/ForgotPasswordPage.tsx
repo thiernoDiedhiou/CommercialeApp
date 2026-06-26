@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
         <div className="w-full max-w-md">
 
           <div className="flex items-center justify-between mb-8">
-            <img src={isDark ? '/logo_blanc.svg' : '/logo_mode_claire.svg'} alt="DiDi Sphere" className="h-7 w-auto" />
+            <img src={isDark ? '/logo_mode_sombre_texte_claire.svg' : '/logo_mode_claire.svg'} alt="DiDi Sphere" className="h-7 w-auto" />
             <Link to="/login" className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
               ← Retour à la connexion
             </Link>

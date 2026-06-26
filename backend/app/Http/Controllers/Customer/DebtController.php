@@ -47,7 +47,7 @@ class DebtController extends Controller
             LEFT JOIN ({$paidSubquery}) p ON p.sale_id = s.id
             WHERE c.tenant_id = ?
             {$searchWhere}
-            GROUP BY c.id, c.name, c.phone, c.email
+            GROUP BY c.id, c.uid, c.name, c.phone, c.email
             HAVING SUM(GREATEST(s.total - COALESCE(p.paid, 0), 0)) > 0
         ";
 
@@ -69,6 +69,7 @@ class DebtController extends Controller
         $rows = DB::select("
             SELECT
                 c.id,
+                c.uid,
                 c.name,
                 c.phone,
                 c.email,
@@ -81,7 +82,7 @@ class DebtController extends Controller
 
         return response()->json([
             'data'               => array_map(fn($r) => [
-                'id'                  => $r->id,
+                'uid'                 => $r->uid,
                 'name'                => $r->name,
                 'phone'               => $r->phone,
                 'email'               => $r->email,

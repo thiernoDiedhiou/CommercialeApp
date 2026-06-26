@@ -88,7 +88,7 @@ export default function ResetPasswordPage() {
         <div className="w-full max-w-md">
 
           <div className="flex items-center justify-between mb-8">
-            <img src={isDark ? '/logo_blanc.svg' : '/logo_mode_claire.svg'} alt="DiDi Sphere" className="h-7 w-auto" />
+            <img src={isDark ? '/logo_mode_sombre_texte_claire.svg' : '/logo_mode_claire.svg'} alt="DiDi Sphere" className="h-7 w-auto" />
           </div>
 
           {mutation.isSuccess ? (

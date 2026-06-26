@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { z } from 'zod'
+import SeoHead from '@/landing/components/SeoHead'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerTenant, type RegisterData } from '@/services/api/public'
 import { getApiErrorMessage } from '@/lib/errors'
@@ -90,13 +91,19 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-[80vh] flex items-start justify-center px-4 py-16">
+      <SeoHead
+        title="Créer mon compte"
+        description="Démarrez votre essai gratuit de 21 jours. Aucune carte bancaire requise. Configurez votre boutique en 3 minutes."
+        canonical="/inscription"
+      />
       <div className="w-full max-w-lg">
 
         {/* Header */}
         <div className="text-center mb-10">
-          <img src="/logo_mode_claire.svg" alt="DiDi Sphere" className="h-9 mx-auto mb-6" />
-          <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Créer votre compte</h1>
-          <p className="text-gray-500 text-sm">
+          <img src="/logo_mode_claire.svg" alt="DiDi Sphere" className="h-9 mx-auto mb-6 dark:hidden" />
+          <img src="/logo_mode_sombre_texte_claire.svg" alt="DiDi Sphere" className="h-9 mx-auto mb-6 hidden dark:block" />
+          <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">Créer votre compte</h1>
+          <p className="text-gray-500 dark:text-gray-300 text-sm">
             Essai gratuit de 21 jours · Aucune carte bancaire requise
           </p>
         </div>

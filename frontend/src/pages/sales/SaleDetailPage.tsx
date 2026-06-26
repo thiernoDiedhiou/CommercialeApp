@@ -10,7 +10,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { getSale, cancelSale, openSalePdf, addPayment, getReturns } from '@/services/api/sales'
 import { SaleReturnModal } from '@/components/sales/SaleReturnModal'
-import { SkeletonCard, SkeletonRow } from '@/components/ui/Skeleton'
+import { SkeletonCard } from '@/components/ui/Skeleton'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
@@ -150,8 +150,10 @@ export default function SaleDetailPage() {
           <SkeletonCard />
           <SkeletonCard />
         </div>
-        <div className="space-y-2 rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          {Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}
+        <div className="space-y-3 rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-4 animate-pulse rounded bg-gray-200" />
+          ))}
         </div>
       </div>
     )

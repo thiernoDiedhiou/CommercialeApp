@@ -26,6 +26,7 @@ class AdminSiteSettingsController extends Controller
             'linkedin_url'     => ['nullable', 'url',     'max:255'],
             'instagram_url'    => ['nullable', 'url',     'max:255'],
             'tenant_deletion_grace_days' => ['nullable', 'integer', 'min:7', 'max:365'],
+            'renewal_url'  => ['nullable', 'url', 'max:500'],
         ]);
 
         $settings = SiteSettings::instance();
