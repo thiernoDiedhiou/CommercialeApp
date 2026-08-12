@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Billing\BillingController;
+use App\Http\Controllers\Billing\WebhookController;
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AdminSiteSettingsController;
@@ -84,6 +86,14 @@ Route::prefix('v1/public/{slug}')
              ->middleware('throttle:10,1');
     });
 
+// ── Webhooks paiement — pas d'auth, pas de ResolveTenant ────────────────────
+// Les providers appellent ces URLs directement depuis leurs serveurs.
+// Chaque gateway vérifie la signature dans verifyWebhookSignature().
+Route::prefix('v1/billing/webhook')->name('billing.webhook.')->group(function () {
+    Route::post('paydunya', [WebhookController::class, 'paydunya'])->name('paydunya');
+    Route::post('bictorys', [WebhookController::class, 'bictorys'])->name('bictorys');
+});
+
 Route::prefix('v1')->group(function () {
 
     // ── Super Admin ───────────────────────────────────────────────────────────
@@ -156,6 +166,14 @@ Route::prefix('v1')->group(function () {
             Route::get('me',             [AuthController::class, 'me'])->name('me');
             Route::put('profile',        [AuthController::class, 'updateProfile'])->name('profile.update');
         });
+    });
+
+    // ── Facturation / renouvellement abonnement (Sanctum, sans check_subscription) ──
+    // Le tenant dont l'abonnement est expiré doit pouvoir initier un paiement.
+    Route::middleware('auth:sanctum')->prefix('billing')->name('billing.')->group(function () {
+        Route::post('initiate',     [BillingController::class, 'initiate'])->name('initiate');
+        Route::get('verify',        [BillingController::class, 'verify'])->name('verify');
+        Route::get('transactions',  [BillingController::class, 'transactions'])->name('transactions');
     });
 
     // ── Notifications tenant (Sanctum uniquement, pas d'abonnement requis) ────

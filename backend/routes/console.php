@@ -23,6 +23,12 @@ Schedule::command('tenants:purge-scheduled-deletions')
     ->withoutOverlapping()
     ->runInBackground();
 
+// Nettoyage des paiements abandonnés — transactions pending expirées → cancelled
+Schedule::command('billing:expire-abandoned')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();
+
 // Traitement de la file de notifications (Hostinger shared hosting sans Redis)
 // Exécute les jobs en attente et s'arrête quand la file est vide
 Schedule::command('queue:work --stop-when-empty --queue=notifications --tries=3')

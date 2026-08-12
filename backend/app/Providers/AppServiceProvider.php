@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Contracts\PaymentGatewayInterface;
+use App\Gateways\BictorysGateway;
+use App\Gateways\NullGateway;
+use App\Gateways\PayDunyaGateway;
 use App\Models\Tenant;
 use App\Observers\TenantObserver;
 use App\Services\PermissionService;
@@ -18,6 +22,16 @@ class AppServiceProvider extends ServiceProvider
         // PermissionService : sans état propre, mais singleton pour éviter les
         // instanciations répétées dans les middlewares et controllers
         $this->app->singleton(PermissionService::class);
+
+        // PaymentGateway : binding configurable via PAYMENT_PROVIDER dans .env
+        // Changer de provider = changer la valeur .env, pas le code.
+        $this->app->bind(PaymentGatewayInterface::class, function () {
+            return match (config('payment.provider')) {
+                'paydunya'    => new PayDunyaGateway(),
+                'bictorys'    => new BictorysGateway(),
+                default       => new NullGateway(), // null, 'nullgateway', 'null', ou toute autre valeur
+            };
+        });
     }
 
     public function boot(): void

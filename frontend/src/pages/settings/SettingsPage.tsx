@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -18,6 +19,8 @@ import {
 import { CreditCardIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/authStore'
 import { formatDate } from '@/lib/utils'
+import { getPublicPlans } from '@/services/api/public'
+import { initiateRenewal } from '@/services/api/billing'
 import { getTenantSettings, updateTenantSettings } from '@/services/api/settings'
 import { SUPPORTED_CURRENCIES } from '@/hooks/useCurrency'
 import Input from '@/components/ui/Input'
@@ -1119,36 +1122,81 @@ const CYCLE_LABEL: Record<string, string> = {
 }
 
 function SubscriptionInfoCard() {
-  const subscription = useAuthStore((s) => s.subscription)
+  const subscription        = useAuthStore((s) => s.subscription)
+  const subscriptionExpired = useAuthStore((s) => s.subscriptionExpired)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [showRenew, setShowRenew]       = useState(() => searchParams.get('renouveler') === '1')
+  const [selectedPlan, setSelectedPlan] = useState<string>('')
+  const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'yearly'>('monthly')
 
-  if (!subscription) return null
+  // Nettoie le param ?renouveler=1 de l'URL une fois le formulaire ouvert
+  useEffect(() => {
+    if (searchParams.get('renouveler') === '1') {
+      setSearchParams((p) => { p.delete('renouveler'); return p }, { replace: true })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const daysLeft     = subscription.days_remaining
+  const { data: plans = [] } = useQuery({
+    queryKey: ['public-plans'],
+    queryFn : getPublicPlans,
+    enabled : showRenew,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const renewMutation = useMutation({
+    mutationFn: () => initiateRenewal(selectedPlan, selectedCycle),
+    onSuccess : ({ checkout_url }) => { window.location.href = checkout_url },
+    onError   : (err) => toast.error(getApiErrorMessage(err)),
+  })
+
+  // Afficher la carte même si subscription=null dès qu'un 402 a été reçu
+  if (!subscription && !subscriptionExpired) return null
+
+  const daysLeft       = subscription?.days_remaining ?? null
   const isExpiringSoon = daysLeft !== null && daysLeft <= 7
+  const isExpired      = subscriptionExpired
+    || subscription?.status === 'expired'
+    || subscription?.status === 'cancelled'
+  const canRenew = isExpiringSoon || isExpired
 
   return (
     <div className="rounded-xl bg-white p-4 sm:p-5 shadow-sm ring-1 ring-gray-100">
-      <div className="flex items-center gap-2 mb-3">
-        <CreditCardIcon className="h-4 w-4 text-gray-400" />
-        <h2 className="text-sm font-semibold text-gray-800">Mon abonnement</h2>
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <CreditCardIcon className="h-4 w-4 text-gray-400" />
+          <h2 className="text-sm font-semibold text-gray-800">Mon abonnement</h2>
+        </div>
+        {canRenew && !showRenew && (
+          <button
+            type="button"
+            onClick={() => setShowRenew(true)}
+            className="text-xs font-semibold text-brand-primary hover:underline"
+          >
+            Renouveler →
+          </button>
+        )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-sm font-medium text-gray-900">
-          {subscription.plan_name ?? '—'}
-        </span>
-        <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${STATUS_COLOR[subscription.status] ?? 'bg-gray-100 text-gray-500'}`}>
-          {STATUS_LABEL[subscription.status] ?? subscription.status}
-        </span>
-        <span className="text-xs text-gray-400">
-          {CYCLE_LABEL[subscription.billing_cycle]}
-        </span>
-      </div>
+      {subscription ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm font-medium text-gray-900">
+            {subscription.plan_name ?? '—'}
+          </span>
+          <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${STATUS_COLOR[subscription.status] ?? 'bg-gray-100 text-gray-500'}`}>
+            {STATUS_LABEL[subscription.status] ?? subscription.status}
+          </span>
+          <span className="text-xs text-gray-400">
+            {CYCLE_LABEL[subscription.billing_cycle]}
+          </span>
+        </div>
+      ) : (
+        <p className="text-sm text-red-600 font-medium">Abonnement expiré</p>
+      )}
 
-      {subscription.ends_at && (
+      {subscription?.ends_at && (
         <p className={`mt-2 text-xs ${isExpiringSoon ? 'text-amber-600 font-medium' : 'text-gray-500'}`}>
-          {subscription.status === 'trial' ? 'Essai jusqu\'au' : 'Valide jusqu\'au'}{' '}
-          <span className="font-semibold">{formatDate(subscription.ends_at)}</span>
+          {subscription.status === 'trial' ? "Essai jusqu'au" : "Valide jusqu'au"}{' '}
+          <span className="font-semibold">{formatDate(subscription!.ends_at!)}</span>
           {daysLeft !== null && daysLeft >= 0 && daysLeft <= 30 && (
             <span className="ml-1">
               ({daysLeft === 0 ? "expire aujourd'hui" : daysLeft === 1 ? '1 jour restant' : `${daysLeft} jours restants`})
@@ -1157,10 +1205,135 @@ function SubscriptionInfoCard() {
         </p>
       )}
 
-      {isExpiringSoon && (
-        <p className="mt-1.5 text-xs text-amber-500">
-          Contactez votre administrateur pour renouveler votre accès.
-        </p>
+      {/* ── Renouvellement — design premium ──────────────────────────────── */}
+      {showRenew && (
+        <div className="mt-5 space-y-5">
+
+          {/* Toggle mensuel / annuel */}
+          <div className="flex items-center justify-center">
+            <div className="inline-flex items-center gap-1 rounded-full bg-gray-100 p-1">
+              {(['monthly', 'yearly'] as const).map((c) => {
+                const discountPct = plans.find(p => p.yearly_discount_pct)?.yearly_discount_pct
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setSelectedCycle(c)}
+                    className={`relative flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition-all ${
+                      selectedCycle === c
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {c === 'monthly' ? 'Mensuel' : 'Annuel'}
+                    {c === 'yearly' && discountPct && (
+                      <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-bold text-green-700">
+                        -{discountPct}%
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Grille de plans */}
+          <div className={`grid gap-3 ${plans.length === 2 ? 'grid-cols-2' : plans.length >= 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1'}`}>
+            {plans.map((p) => {
+              const monthlyPrice = parseInt(p.price_monthly)
+              const yearlyPrice  = p.price_yearly ? Math.round(parseInt(p.price_yearly) / 12) : null
+              const displayPrice = selectedCycle === 'yearly' && yearlyPrice ? yearlyPrice : monthlyPrice
+              const isSelected   = selectedPlan === p.uid
+              const isPopular    = !!p.badge
+
+              return (
+                <button
+                  key={p.uid}
+                  type="button"
+                  onClick={() => setSelectedPlan(p.uid)}
+                  className={`relative flex flex-col rounded-xl border-2 p-4 text-left transition-all ${
+                    isSelected
+                      ? 'border-brand-primary bg-brand-primary/5 shadow-md'
+                      : 'border-gray-200 bg-white hover:border-brand-primary/50 hover:shadow-sm'
+                  }`}
+                >
+                  {isPopular && (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-brand-primary px-3 py-0.5 text-[10px] font-bold text-white uppercase tracking-wide">
+                      {p.badge}
+                    </span>
+                  )}
+
+                  {/* Nom + tagline */}
+                  <div className="mb-3">
+                    <p className={`text-sm font-bold ${isSelected ? 'text-brand-primary' : 'text-gray-900'}`}>
+                      {p.name}
+                    </p>
+                    {p.tagline && (
+                      <p className="mt-0.5 text-xs text-gray-500">{p.tagline}</p>
+                    )}
+                  </div>
+
+                  {/* Prix */}
+                  <div className="mb-3">
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-2xl font-extrabold ${isSelected ? 'text-brand-primary' : 'text-gray-900'}`}>
+                        {displayPrice.toLocaleString('fr-FR')}
+                      </span>
+                      <span className="text-xs text-gray-400">XOF/mois</span>
+                    </div>
+                    {selectedCycle === 'yearly' && yearlyPrice && (
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        soit {parseInt(p.price_yearly!).toLocaleString('fr-FR')} XOF/an
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Limites */}
+                  <div className="space-y-1 text-xs text-gray-500">
+                    <p>{p.max_users === 0 ? '∞' : p.max_users} utilisateur{p.max_users !== 1 ? 's' : ''}</p>
+                    <p>{p.max_products === 0 ? '∞' : p.max_products.toLocaleString('fr-FR')} produits</p>
+                  </div>
+
+                  {/* Coche sélection */}
+                  {isSelected && (
+                    <span className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-brand-primary text-white">
+                      <svg className="h-3 w-3" viewBox="0 0 12 12" fill="currentColor">
+                        <path d="M10 3L5 8.5 2 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                      </svg>
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
+          {/* CTA */}
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => renewMutation.mutate()}
+              disabled={!selectedPlan || renewMutation.isPending}
+              className="w-full rounded-xl bg-brand-primary py-3 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-40 transition-all"
+            >
+              {renewMutation.isPending
+                ? 'Redirection vers le paiement…'
+                : selectedPlan
+                  ? `Payer avec ${selectedCycle === 'yearly' ? 'abonnement annuel' : 'abonnement mensuel'} →`
+                  : 'Sélectionner un plan pour continuer'}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowRenew(false); setSelectedPlan('') }}
+              className="w-full rounded-xl py-2.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Annuler
+            </button>
+          </div>
+
+          <p className="text-center text-xs text-gray-400">
+            🔒 Paiement sécurisé · Orange Money, Wave, Carte bancaire
+          </p>
+        </div>
       )}
     </div>
   )

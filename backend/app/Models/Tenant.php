@@ -70,6 +70,11 @@ class Tenant extends Model
         return $this->hasMany(TenantSubscription::class)->orderByDesc('created_at');
     }
 
+    public function paymentTransactions(): HasMany
+    {
+        return $this->hasMany(PaymentTransaction::class)->orderByDesc('created_at');
+    }
+
     /** Abonnement actif ou en essai (le plus récent). */
     public function activeSubscription(): HasOne
     {

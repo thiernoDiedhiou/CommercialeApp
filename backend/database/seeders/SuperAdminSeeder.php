@@ -11,7 +11,7 @@ class SuperAdminSeeder extends Seeder
     public function run(): void
     {
         SuperAdmin::firstOrCreate(
-            ['email' => 'superadmin@saas.sn'],
+            ['email' => 'didispheres@gmail.com'],
             [
                 'name'      => 'Super Admin',
                 'password'  => Hash::make('superadmin123'),
@@ -19,7 +19,7 @@ class SuperAdminSeeder extends Seeder
             ]
         );
 
-        $this->command->info('Super Admin créé : superadmin@saas.sn / superadmin123');
+        $this->command->info('Super Admin créé : didispheres@gmail.com / superadmin123');
         $this->command->warn('⚠  Changez ce mot de passe en production !');
     }
 }

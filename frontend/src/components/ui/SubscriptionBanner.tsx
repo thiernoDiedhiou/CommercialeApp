@@ -1,9 +1,19 @@
 import { ExclamationTriangleIcon, XMarkIcon, EnvelopeIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { getPublicSiteSettings } from '@/services/api/public'
 import { useAuthStore } from '@/store/authStore'
 import type { SubscriptionInfo } from '@/types'
+
+function isInternalUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url, window.location.origin)
+    return parsed.origin === window.location.origin
+  } catch {
+    return url.startsWith('/')
+  }
+}
 
 // Seuil d'alerte : bannière visible si ≤ 7 jours restants
 const ALERT_THRESHOLD = 7
@@ -53,16 +63,25 @@ export default function SubscriptionBanner({ subscription }: Props) {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 pl-7 sm:pl-0">
-            {/* Bouton paiement — affiché uniquement quand renewal_url est configuré */}
+            {/* Bouton paiement — interne : ouvre le formulaire de renouvellement directement */}
             {renewalUrl && (
-              <a
-                href={renewalUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition-colors"
-              >
-                Payer maintenant →
-              </a>
+              isInternalUrl(renewalUrl) ? (
+                <Link
+                  to="/settings?renouveler=1"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition-colors"
+                >
+                  Payer maintenant →
+                </Link>
+              ) : (
+                <a
+                  href={renewalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition-colors"
+                >
+                  Payer maintenant →
+                </a>
+              )
             )}
 
             {email && (

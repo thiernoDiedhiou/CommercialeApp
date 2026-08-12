@@ -64,32 +64,36 @@ class PublicOgController extends Controller
 
     private function render(string $title, string $desc, string $image, string $url): Response
     {
-        $frontendUrl = rtrim(config('app.frontend_url', 'https://didisphere.shop'), '/');
+        // Échapper toutes les données user-controlled avant insertion HTML (XSS)
+        $eTitle = htmlspecialchars($title, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $eDesc  = htmlspecialchars($desc,  ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $eImage = htmlspecialchars($image, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $eUrl   = htmlspecialchars($url,   ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         $html = <<<HTML
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>{$title}</title>
-  <meta name="description" content="{$desc}" />
-  <meta property="og:title"            content="{$title}" />
-  <meta property="og:description"      content="{$desc}" />
+  <title>{$eTitle}</title>
+  <meta name="description" content="{$eDesc}" />
+  <meta property="og:title"            content="{$eTitle}" />
+  <meta property="og:description"      content="{$eDesc}" />
   <meta property="og:type"             content="website" />
-  <meta property="og:url"              content="{$url}" />
-  <meta property="og:image"            content="{$image}" />
-  <meta property="og:image:secure_url" content="{$image}" />
+  <meta property="og:url"              content="{$eUrl}" />
+  <meta property="og:image"            content="{$eImage}" />
+  <meta property="og:image:secure_url" content="{$eImage}" />
   <meta property="og:locale"           content="fr_SN" />
   <meta name="twitter:card"            content="summary_large_image" />
-  <meta name="twitter:title"           content="{$title}" />
-  <meta name="twitter:description"     content="{$desc}" />
-  <meta name="twitter:image"           content="{$image}" />
+  <meta name="twitter:title"           content="{$eTitle}" />
+  <meta name="twitter:description"     content="{$eDesc}" />
+  <meta name="twitter:image"           content="{$eImage}" />
   <!-- Redirige les vrais utilisateurs vers la SPA React -->
-  <meta http-equiv="refresh" content="0;url={$url}" />
-  <link rel="canonical" href="{$url}" />
+  <meta http-equiv="refresh" content="0;url={$eUrl}" />
+  <link rel="canonical" href="{$eUrl}" />
 </head>
 <body>
-  <p>Redirection vers <a href="{$url}">{$title}</a>…</p>
+  <p>Redirection vers <a href="{$eUrl}">{$eTitle}</a>…</p>
 </body>
 </html>
 HTML;

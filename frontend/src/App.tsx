@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import BillingSuccessPage from '@/pages/billing/BillingSuccessPage'
+import BillingCancelPage  from '@/pages/billing/BillingCancelPage'
 import ShopApp from '@/shop/ShopApp'
 import ShopDomainEntry from '@/shop/pages/ShopDomainEntry'
 import { detectMode } from '@/shop/hooks/useDomainTenant'
@@ -149,6 +151,10 @@ export default function App() {
           <Route path="shop-settings"     element={<ShopSettingsPage />} />
           <Route path="shop-orders"       element={<ShopOrdersPage />} />
         </Route>
+
+        {/* ── Pages de retour paiement (hors Layout, hors auth obligatoire) ── */}
+        <Route path="/billing/success" element={<BillingSuccessPage />} />
+        <Route path="/billing/cancel"  element={<BillingCancelPage />} />
 
         {/* ── Boutique publique — pas d'auth requise ── */}
         <Route path="/shop/:slug/*" element={<ShopApp />} />

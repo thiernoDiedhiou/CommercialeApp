@@ -548,6 +548,57 @@ docker compose exec app php artisan storage:link
 
 ---
 
+## Configuration paiements (abonnements DiDi Sphere)
+
+### Variables `.env` backend
+
+```env
+# Provider actif — changer cette ligne pour changer de prestataire
+PAYMENT_PROVIDER=null          # null (dev/test) | paydunya | cinetpay | bictorys
+PAYMENT_LINK_TTL=3600          # validité du lien de paiement en secondes (1h)
+PAYMENT_NULL_FAIL=false        # true = simule un échec de paiement (tests)
+
+# PayDunya — renseigner après création du compte marchand
+PAYDUNYA_MASTER_KEY=           # depuis le dashboard PayDunya → Paramètres → API
+PAYDUNYA_PRIVATE_KEY=
+PAYDUNYA_TOKEN=
+PAYDUNYA_MODE=test             # test → live uniquement après validation complète
+```
+
+### Activation en production
+
+```bash
+# 1. Renseigner les 3 clés PayDunya dans .env
+# 2. Passer en mode test d'abord
+PAYMENT_PROVIDER=paydunya
+PAYDUNYA_MODE=test
+
+# 3. Tester avec un vrai compte (petit montant)
+php artisan billing:test-invoice --tenant=votre-slug
+
+# 4. Passer en live uniquement après validation
+PAYDUNYA_MODE=live
+php artisan config:cache
+```
+
+### Scheduler — ajouter au cron serveur
+
+```bash
+# Nettoyage des paiements abandonnés (toutes les 30min)
+# Déjà dans routes/console.php — s'active via le scheduler Laravel
+* * * * * cd /var/www/saas-commercial/backend && php artisan schedule:run >> /dev/null 2>&1
+```
+
+### URL webhook à configurer dans PayDunya
+
+```text
+https://api.didisphere.shop/api/v1/billing/webhook/paydunya
+```
+
+À renseigner dans le dashboard PayDunya → Paramètres → Webhooks.
+
+---
+
 ## Configuration email
 
 ### Niveau 1 — SMTP global (`.env`)

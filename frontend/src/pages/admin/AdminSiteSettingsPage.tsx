@@ -172,12 +172,12 @@ export default function AdminSiteSettingsPage() {
             <Field
               label="Lien de paiement / renouvellement"
               icon={CreditCardIcon}
-              hint="Ex : lien Stripe, Wave, Orange Money ou page de paiement interne"
+              hint="Interne : https://didisphere.shop/settings — Externe : lien Wave, Orange Money…"
             >
               <input
                 {...register('renewal_url')}
                 type="url"
-                placeholder="https://pay.didisphere.shop/renew"
+                placeholder="https://didisphere.shop/settings"
                 className={inputClass}
               />
             </Field>
