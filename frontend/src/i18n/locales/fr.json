@@ -94,7 +94,9 @@
     "payment_method": "Mode de paiement",
     "confirm_action": "Confirmer l'action",
     "see_detail": "Voir le détail",
-    "category": "Catégorie"
+    "category": "Catégorie",
+    "other": "Autre",
+    "validate": "Valider"
   },
   "auth": {
     "profile": "Mon profil",
@@ -414,7 +416,19 @@
     "empty_desc": "Renseignez vos fournisseurs pour créer des bons de commande.",
     "total_orders": "Commandes",
     "total_spent": "Total commandé",
-    "last_order": "Dernière commande"
+    "last_order": "Dernière commande",
+    "contact_info": "Coordonnées",
+    "stats_section": "Statistiques",
+    "total_orders_label": "Total commandes",
+    "total_amount_label": "Montant total",
+    "last_order_label": "Dernière commande",
+    "phone_missing": "Téléphone non renseigné",
+    "email_missing": "Email non renseigné",
+    "purchase_history": "Bons de commande",
+    "no_purchases_for_supplier": "Aucun bon de commande pour ce fournisseur.",
+    "new_order": "Nouveau bon",
+    "create_order": "Créer un bon",
+    "not_found": "Fournisseur introuvable."
   },
   "purchases": {
     "title": "Achats",
@@ -460,7 +474,27 @@
     "expected_at": "Livraison prévue",
     "order_confirm_title": "Confirmer la commande",
     "cancel_title": "Annuler le bon de commande",
-    "cancel_action": "Annuler le bon"
+    "cancel_action": "Annuler le bon",
+    "no_supplier": "Sans fournisseur",
+    "expected_label": "Livraison prévue le {{date}}",
+    "articles_count": "Articles",
+    "total_amount_label": "Montant total",
+    "delivery_label": "Livraison prévue",
+    "col_product": "Produit",
+    "col_ordered": "Commandé",
+    "col_received": "Reçu",
+    "col_remaining": "Reliquat",
+    "col_unit_cost": "Coût unit.",
+    "confirm_text": "Le statut passera à « Commandé ». Vous pourrez réceptionner les articles à la livraison.",
+    "cancel_text": "Voulez-vous annuler ce bon de commande ? Aucun stock ne sera affecté.",
+    "receive_modal_title": "Réceptionner les articles",
+    "receive_instructions": "Saisissez les quantités effectivement reçues.",
+    "remaining_label": "Reliquat",
+    "lot_number": "N° de lot",
+    "expiry_date": "Date d'expiration",
+    "validate_reception": "Valider la réception",
+    "confirmed_ok": "Commande confirmée.",
+    "not_found": "Bon de commande introuvable."
   },
   "customers": {
     "title": "Clients",
@@ -534,7 +568,17 @@
     "sale_reference": "Vente {{ref}}",
     "payment_registered": "Paiement enregistré.",
     "unpaid_count": "{{count}} vente(s) impayée(s)",
-    "amount_label": "Montant"
+    "amount_label": "Montant",
+    "view_client_file": "Voir la fiche client →",
+    "whatsapp_remind": "Relance WhatsApp",
+    "unpaid_sales_section": "Ventes avec solde impayé",
+    "sale_total": "Total vente",
+    "already_paid": "Déjà payé",
+    "total_remaining_due": "Total restant dû",
+    "remaining_due": "Reste dû",
+    "amount_collected": "Montant encaissé",
+    "reference_optional": "Référence (optionnel)",
+    "reference_placeholder": "N° transaction, chèque…"
   },
   "stock": {
     "title": "Stock",

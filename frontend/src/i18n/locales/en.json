@@ -94,7 +94,9 @@
     "payment_method": "Payment method",
     "confirm_action": "Confirm action",
     "see_detail": "View detail",
-    "category": "Category"
+    "category": "Category",
+    "other": "Other",
+    "validate": "Validate"
   },
   "auth": {
     "profile": "My profile",
@@ -414,7 +416,19 @@
     "empty_desc": "Add your suppliers to create purchase orders.",
     "total_orders": "Orders",
     "total_spent": "Total ordered",
-    "last_order": "Last order"
+    "last_order": "Last order",
+    "contact_info": "Contact details",
+    "stats_section": "Statistics",
+    "total_orders_label": "Total orders",
+    "total_amount_label": "Total amount",
+    "last_order_label": "Last order",
+    "phone_missing": "No phone number",
+    "email_missing": "No email address",
+    "purchase_history": "Purchase orders",
+    "no_purchases_for_supplier": "No purchase orders for this supplier.",
+    "new_order": "New order",
+    "create_order": "Create order",
+    "not_found": "Supplier not found."
   },
   "purchases": {
     "title": "Purchases",
@@ -460,7 +474,27 @@
     "expected_at": "Expected delivery",
     "order_confirm_title": "Confirm order",
     "cancel_title": "Cancel purchase order",
-    "cancel_action": "Cancel order"
+    "cancel_action": "Cancel order",
+    "no_supplier": "No supplier",
+    "expected_label": "Expected delivery on {{date}}",
+    "articles_count": "Items",
+    "total_amount_label": "Total amount",
+    "delivery_label": "Expected delivery",
+    "col_product": "Product",
+    "col_ordered": "Ordered",
+    "col_received": "Received",
+    "col_remaining": "Remaining",
+    "col_unit_cost": "Unit cost",
+    "confirm_text": "The status will change to \"Ordered\". You will be able to receive items upon delivery.",
+    "cancel_text": "Do you want to cancel this purchase order? No stock will be affected.",
+    "receive_modal_title": "Receive items",
+    "receive_instructions": "Enter the quantities actually received.",
+    "remaining_label": "Remaining",
+    "lot_number": "Lot number",
+    "expiry_date": "Expiry date",
+    "validate_reception": "Validate reception",
+    "confirmed_ok": "Order confirmed.",
+    "not_found": "Purchase order not found."
   },
   "customers": {
     "title": "Customers",
@@ -534,7 +568,17 @@
     "sale_reference": "Sale {{ref}}",
     "payment_registered": "Payment recorded.",
     "unpaid_count": "{{count}} unpaid sale(s)",
-    "amount_label": "Amount"
+    "amount_label": "Amount",
+    "view_client_file": "View customer profile →",
+    "whatsapp_remind": "WhatsApp reminder",
+    "unpaid_sales_section": "Sales with unpaid balance",
+    "sale_total": "Sale total",
+    "already_paid": "Already paid",
+    "total_remaining_due": "Total remaining due",
+    "remaining_due": "Amount due",
+    "amount_collected": "Amount collected",
+    "reference_optional": "Reference (optional)",
+    "reference_placeholder": "Transaction no., cheque…"
   },
   "stock": {
     "title": "Stock",

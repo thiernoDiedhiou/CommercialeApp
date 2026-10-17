@@ -9,6 +9,7 @@ import {
   BanknotesIcon,
   ChatBubbleLeftEllipsisIcon,
 } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getDebtDetail } from '@/services/api/customers'
 import { addPayment } from '@/services/api/sales'
 import { SkeletonCard } from '@/components/ui/Skeleton'
@@ -21,20 +22,21 @@ import { getApiErrorMessage } from '@/lib/errors'
 import { toast } from '@/store/toastStore'
 import type { DebtSale } from '@/types'
 
-const PAYMENT_METHODS = [
-  { value: 'cash',         label: 'Espèces' },
-  { value: 'wave',         label: 'Wave' },
-  { value: 'orange_money', label: 'Orange Money' },
-  { value: 'free_money',   label: 'Free Money' },
-  { value: 'bank',         label: 'Virement bancaire' },
-  { value: 'cheque',       label: 'Chèque' },
-  { value: 'other',        label: 'Autre' },
-]
-
 export default function DebtDetailPage() {
+  const { t } = useTranslation()
   const { uid } = useParams<{ uid: string }>()
   const navigate  = useNavigate()
   const qc        = useQueryClient()
+
+  const PAYMENT_METHODS = [
+    { value: 'cash',         label: t('sales.method_cash') },
+    { value: 'wave',         label: 'Wave' },
+    { value: 'orange_money', label: 'Orange Money' },
+    { value: 'free_money',   label: 'Free Money' },
+    { value: 'bank',         label: t('sales.method_bank_transfer') },
+    { value: 'cheque',       label: t('sales.method_cheque') },
+    { value: 'other',        label: t('common.other') },
+  ]
 
   // Paiement modal
   const [payOpen,    setPayOpen]    = useState(false)
@@ -61,7 +63,7 @@ export default function DebtDetailPage() {
       setPayOpen(false)
       setPayAmount('')
       setPayRef('')
-      toast.success('Paiement enregistré.')
+      toast.success(t('customers.payment_registered'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -74,7 +76,6 @@ export default function DebtDetailPage() {
     setPayOpen(true)
   }
 
-  // Relance WhatsApp
   const buildWhatsApp = () => {
     if (!data) return ''
     const { customer, sales, total_outstanding } = data
@@ -102,7 +103,7 @@ export default function DebtDetailPage() {
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
         >
           <ArrowLeftIcon className="h-4 w-4" />
-          Créances
+          {t('nav.debts')}
         </button>
         <span className="text-gray-300">/</span>
         <span className="text-sm font-medium text-gray-800">{customer.name}</span>
@@ -135,15 +136,13 @@ export default function DebtDetailPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            {/* Lien fiche client complète */}
             <Link
               to={`/customers/${customer.uid}`}
               className="text-sm text-brand-primary hover:underline"
             >
-              Voir la fiche client →
+              {t('customers.view_client_file')}
             </Link>
 
-            {/* Relance WhatsApp */}
             {customer.phone && (
               <a
                 href={buildWhatsApp()}
@@ -152,7 +151,7 @@ export default function DebtDetailPage() {
                 className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-3 py-2 text-sm font-medium text-white hover:bg-green-600 transition-colors"
               >
                 <ChatBubbleLeftEllipsisIcon className="h-4 w-4" />
-                Relance WhatsApp
+                {t('customers.whatsapp_remind')}
               </a>
             )}
           </div>
@@ -161,11 +160,11 @@ export default function DebtDetailPage() {
         {/* KPIs solde */}
         <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
           <div className="rounded-lg bg-red-50 p-4">
-            <p className="text-xs text-red-400 uppercase tracking-wide">Total dû</p>
+            <p className="text-xs text-red-400 uppercase tracking-wide">{t('customers.total_due')}</p>
             <p className="mt-1 text-2xl font-bold text-red-600">{formatCurrency(total_outstanding)}</p>
           </div>
           <div className="rounded-lg bg-gray-50 p-4">
-            <p className="text-xs text-gray-400 uppercase tracking-wide">Ventes impayées</p>
+            <p className="text-xs text-gray-400 uppercase tracking-wide">{t('customers.unpaid_sales')}</p>
             <p className="mt-1 text-2xl font-bold text-gray-700">{unpaid_count}</p>
           </div>
         </div>
@@ -175,14 +174,13 @@ export default function DebtDetailPage() {
       <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
         <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-4">
           <ExclamationCircleIcon className="h-5 w-5 text-red-400" />
-          <h2 className="font-semibold text-gray-900">Ventes avec solde impayé</h2>
+          <h2 className="font-semibold text-gray-900">{t('customers.unpaid_sales_section')}</h2>
         </div>
 
         {/* ── Cartes mobiles ── */}
         <div className="sm:hidden divide-y divide-gray-100">
           {sales.map((sale) => (
             <div key={sale.uid} className="px-4 py-4 space-y-3">
-              {/* En-tête carte */}
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <Link
@@ -197,18 +195,16 @@ export default function DebtDetailPage() {
                   {formatCurrency(sale.remaining)}
                 </span>
               </div>
-              {/* Détails */}
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="rounded-lg bg-gray-50 px-3 py-2">
-                  <p className="text-gray-400 uppercase tracking-wide">Total vente</p>
+                  <p className="text-gray-400 uppercase tracking-wide">{t('customers.sale_total')}</p>
                   <p className="font-semibold text-gray-700 mt-0.5">{formatCurrency(sale.total)}</p>
                 </div>
                 <div className="rounded-lg bg-emerald-50 px-3 py-2">
-                  <p className="text-emerald-400 uppercase tracking-wide">Déjà payé</p>
+                  <p className="text-emerald-400 uppercase tracking-wide">{t('customers.already_paid')}</p>
                   <p className="font-semibold text-emerald-700 mt-0.5">{formatCurrency(sale.paid_amount)}</p>
                 </div>
               </div>
-              {/* Bouton encaisser */}
               <CanDo permission="sales.edit">
                 <button
                   type="button"
@@ -216,14 +212,14 @@ export default function DebtDetailPage() {
                   className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition"
                 >
                   <BanknotesIcon className="h-4 w-4" />
-                  Encaisser {formatCurrency(sale.remaining)}
+                  {t('customers.collect')} {formatCurrency(sale.remaining)}
                 </button>
               </CanDo>
             </div>
           ))}
           {/* Total mobile */}
           <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t-2 border-gray-200">
-            <span className="text-sm font-semibold text-gray-700">Total restant dû</span>
+            <span className="text-sm font-semibold text-gray-700">{t('customers.total_remaining_due')}</span>
             <span className="font-bold text-red-600 text-base">{formatCurrency(total_outstanding)}</span>
           </div>
         </div>
@@ -233,11 +229,11 @@ export default function DebtDetailPage() {
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Référence</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Date</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Total</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Payé</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Reste dû</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.reference')}</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.date')}</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.total')}</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('sales.paid')}</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('customers.remaining_due')}</th>
                 <th className="sr-only">Action</th>
               </tr>
             </thead>
@@ -265,7 +261,7 @@ export default function DebtDetailPage() {
                         className="inline-flex items-center gap-1.5 rounded-lg bg-brand-primary px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 transition"
                       >
                         <BanknotesIcon className="h-3.5 w-3.5" />
-                        Encaisser
+                        {t('customers.collect')}
                       </button>
                     </CanDo>
                   </td>
@@ -275,7 +271,7 @@ export default function DebtDetailPage() {
             <tfoot>
               <tr className="border-t-2 border-gray-200 bg-gray-50">
                 <td colSpan={4} className="px-5 py-3 text-right text-sm font-semibold text-gray-700">
-                  Total restant dû
+                  {t('customers.total_remaining_due')}
                 </td>
                 <td className="px-5 py-3 text-right font-bold text-red-600 text-base">
                   {formatCurrency(total_outstanding)}
@@ -291,17 +287,17 @@ export default function DebtDetailPage() {
       <Modal
         isOpen={payOpen}
         onClose={() => setPayOpen(false)}
-        title="Encaisser un paiement"
+        title={t('customers.collect_payment_title')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={() => setPayOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setPayOpen(false)}>{t('common.cancel')}</Button>
             <Button
               onClick={() => payMutation.mutate()}
               loading={payMutation.isPending}
               disabled={!payAmount || parseFloat(payAmount) <= 0}
             >
-              Valider
+              {t('common.validate')}
             </Button>
           </>
         }
@@ -310,11 +306,11 @@ export default function DebtDetailPage() {
           <div className="space-y-4">
             <div className="rounded-lg bg-gray-50 p-3 text-sm">
               <p className="font-medium text-gray-800">{payingSale.reference}</p>
-              <p className="text-gray-500 mt-0.5">Reste dû : <span className="font-bold text-red-600">{formatCurrency(payingSale.remaining)}</span></p>
+              <p className="text-gray-500 mt-0.5">{t('customers.remaining_due')} : <span className="font-bold text-red-600">{formatCurrency(payingSale.remaining)}</span></p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Montant encaissé</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.amount_collected')}</label>
               <input
                 type="number"
                 min="1"
@@ -322,12 +318,12 @@ export default function DebtDetailPage() {
                 value={payAmount}
                 onChange={(e) => setPayAmount(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                placeholder="Montant"
+                placeholder={t('common.amount')}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Mode de paiement</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.payment_method')}</label>
               <Select value={payMethod} onChange={(e) => setPayMethod(e.target.value)}>
                 {PAYMENT_METHODS.map(m => (
                   <option key={m.value} value={m.value}>{m.label}</option>
@@ -336,13 +332,13 @@ export default function DebtDetailPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Référence (optionnel)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.reference_optional')}</label>
               <input
                 type="text"
                 value={payRef}
                 onChange={(e) => setPayRef(e.target.value)}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                placeholder="N° transaction, chèque…"
+                placeholder={t('customers.reference_placeholder')}
               />
             </div>
           </div>

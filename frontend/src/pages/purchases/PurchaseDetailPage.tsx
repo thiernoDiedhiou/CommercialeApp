@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Check, XCircle, Truck } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import {
   getPurchaseOrder,
@@ -26,17 +27,18 @@ const STATUS_VARIANT: Record<PurchaseOrderStatus, 'default' | 'info' | 'warning'
   cancelled: 'danger',
 }
 
-const STATUS_LABEL: Record<PurchaseOrderStatus, string> = {
-  draft:     'Brouillon',
-  ordered:   'Commandé',
-  partial:   'Partiel',
-  received:  'Réceptionné',
-  cancelled: 'Annulé',
-}
-
 export default function PurchaseDetailPage() {
+  const { t } = useTranslation()
   const { uid } = useParams<{ uid: string }>()
   const qc = useQueryClient()
+
+  const STATUS_LABEL: Record<PurchaseOrderStatus, string> = {
+    draft:     t('purchases.draft'),
+    ordered:   t('purchases.ordered'),
+    partial:   t('purchases.partial'),
+    received:  t('purchases.received'),
+    cancelled: t('purchases.cancelled'),
+  }
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['purchase', uid],
@@ -57,13 +59,13 @@ export default function PurchaseDetailPage() {
 
   const confirmMutation = useMutation({
     mutationFn: () => confirmPurchaseOrder(uid!),
-    onSuccess: () => { invalidate(); setShowConfirm(false); toast.success('Commande confirmée.') },
+    onSuccess: () => { invalidate(); setShowConfirm(false); toast.success(t('purchases.confirmed_ok')) },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const cancelMutation = useMutation({
     mutationFn: () => cancelPurchaseOrder(uid!),
-    onSuccess: () => { invalidate(); setShowCancel(false); toast.success('Commande annulée.') },
+    onSuccess: () => { invalidate(); setShowCancel(false); toast.success(t('purchases.cancelled_ok')) },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
@@ -85,13 +87,13 @@ export default function PurchaseDetailPage() {
       setReceivedQtys({})
       setLotNumbers({})
       setExpiryDates({})
-      toast.success('Réception enregistrée.')
+      toast.success(t('purchases.received_ok'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
-  if (isLoading) return <div className="p-6 text-sm text-gray-400">Chargement…</div>
-  if (!order) return <div className="p-6 text-sm text-gray-400">Bon de commande introuvable.</div>
+  if (isLoading) return <div className="p-6 text-sm text-gray-400">{t('common.loading')}</div>
+  if (!order) return <div className="p-6 text-sm text-gray-400">{t('purchases.not_found')}</div>
 
   const canConfirm = order.status === 'draft'
   const canCancel  = order.status === 'draft' || order.status === 'ordered'
@@ -106,8 +108,7 @@ export default function PurchaseDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
-      {/* Fil d'Ariane */}
-      <Breadcrumb items={[{ label: 'Commandes fournisseurs', to: '/purchases' }, { label: order.reference }]} />
+      <Breadcrumb items={[{ label: t('nav.purchases'), to: '/purchases' }, { label: order.reference }]} />
 
       {/* En-tête */}
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -117,10 +118,10 @@ export default function PurchaseDetailPage() {
             <Badge variant={STATUS_VARIANT[order.status]}>{STATUS_LABEL[order.status]}</Badge>
           </div>
           <p className="mt-0.5 text-sm text-gray-500">
-            {order.supplier ? order.supplier.name : 'Sans fournisseur'}
+            {order.supplier ? order.supplier.name : t('purchases.no_supplier')}
             {' · '}
             {formatDate(order.created_at)}
-            {order.expected_at && ` · Livraison prévue le ${formatDate(order.expected_at)}`}
+            {order.expected_at && ` · ${t('purchases.expected_label', { date: formatDate(order.expected_at) })}`}
           </p>
         </div>
 
@@ -128,21 +129,21 @@ export default function PurchaseDetailPage() {
           {canConfirm && (
             <CanDo permission="purchases.edit">
               <Button variant="outline" icon={<Check className="h-4 w-4" />} onClick={() => setShowConfirm(true)}>
-                Confirmer
+                {t('common.confirm')}
               </Button>
             </CanDo>
           )}
           {canReceive && (
             <CanDo permission="purchases.receive">
               <Button icon={<Truck className="h-4 w-4" />} onClick={() => setShowReceive(true)}>
-                Réceptionner
+                {t('purchases.receive')}
               </Button>
             </CanDo>
           )}
           {canCancel && (
             <CanDo permission="purchases.edit">
               <Button variant="danger" icon={<XCircle className="h-4 w-4" />} onClick={() => setShowCancel(true)}>
-                Annuler
+                {t('common.cancel')}
               </Button>
             </CanDo>
           )}
@@ -152,15 +153,15 @@ export default function PurchaseDetailPage() {
       {/* Récapitulatif */}
       <div className="grid grid-cols-3 gap-3 sm:gap-4">
         <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-100 text-center">
-          <p className="text-xs text-gray-500">Articles</p>
+          <p className="text-xs text-gray-500">{t('purchases.articles_count')}</p>
           <p className="mt-0.5 text-lg font-bold text-gray-900">{(order.items ?? []).length}</p>
         </div>
         <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-100 text-center">
-          <p className="text-xs text-gray-500">Montant total</p>
+          <p className="text-xs text-gray-500">{t('purchases.total_amount_label')}</p>
           <p className="mt-0.5 text-base font-bold text-gray-900">{formatCurrency(itemsTotal)}</p>
         </div>
         <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-100 text-center">
-          <p className="text-xs text-gray-500">Livraison prévue</p>
+          <p className="text-xs text-gray-500">{t('purchases.delivery_label')}</p>
           <p className="mt-0.5 text-base font-bold text-gray-900">
             {order.expected_at ? formatDate(order.expected_at) : '—'}
           </p>
@@ -173,12 +174,12 @@ export default function PurchaseDetailPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                <th className="px-4 py-3 font-medium">Produit</th>
-                <th className="px-4 py-3 text-right font-medium">Commandé</th>
-                <th className="px-4 py-3 text-right font-medium">Reçu</th>
-                <th className="px-4 py-3 text-right font-medium">Reliquat</th>
-                <th className="px-4 py-3 text-right font-medium">Coût unit.</th>
-                <th className="px-4 py-3 text-right font-medium">Total</th>
+                <th className="px-4 py-3 font-medium">{t('purchases.col_product')}</th>
+                <th className="px-4 py-3 text-right font-medium">{t('purchases.col_ordered')}</th>
+                <th className="px-4 py-3 text-right font-medium">{t('purchases.col_received')}</th>
+                <th className="px-4 py-3 text-right font-medium">{t('purchases.col_remaining')}</th>
+                <th className="px-4 py-3 text-right font-medium">{t('purchases.col_unit_cost')}</th>
+                <th className="px-4 py-3 text-right font-medium">{t('common.total')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -204,7 +205,7 @@ export default function PurchaseDetailPage() {
             </tbody>
             <tfoot>
               <tr className="border-t border-gray-100">
-                <td colSpan={5} className="px-4 py-3 text-right text-sm font-semibold text-gray-700">Total</td>
+                <td colSpan={5} className="px-4 py-3 text-right text-sm font-semibold text-gray-700">{t('common.total')}</td>
                 <td className="px-4 py-3 text-right text-base font-bold text-gray-900">{formatCurrency(itemsTotal)}</td>
               </tr>
             </tfoot>
@@ -215,46 +216,46 @@ export default function PurchaseDetailPage() {
       {/* Notes */}
       {order.notes && (
         <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Notes</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.notes')}</p>
           <p className="mt-1 text-sm text-gray-700">{order.notes}</p>
         </div>
       )}
 
       {/* Modal confirmer */}
-      <Modal isOpen={showConfirm} onClose={() => setShowConfirm(false)} title="Confirmer la commande" size="sm"
+      <Modal isOpen={showConfirm} onClose={() => setShowConfirm(false)} title={t('purchases.order_confirm_title')} size="sm"
         footer={<>
-          <Button variant="outline" onClick={() => setShowConfirm(false)}>Annuler</Button>
-          <Button loading={confirmMutation.isPending} onClick={() => confirmMutation.mutate()}>Confirmer</Button>
+          <Button variant="outline" onClick={() => setShowConfirm(false)}>{t('common.cancel')}</Button>
+          <Button loading={confirmMutation.isPending} onClick={() => confirmMutation.mutate()}>{t('common.confirm')}</Button>
         </>}
       >
-        <p className="text-sm text-gray-600">Le statut passera à "Commandé". Vous pourrez réceptionner les articles à la livraison.</p>
+        <p className="text-sm text-gray-600">{t('purchases.confirm_text')}</p>
       </Modal>
 
       {/* Modal annuler */}
-      <Modal isOpen={showCancel} onClose={() => setShowCancel(false)} title="Annuler le bon de commande" size="sm"
+      <Modal isOpen={showCancel} onClose={() => setShowCancel(false)} title={t('purchases.cancel_title')} size="sm"
         footer={<>
-          <Button variant="outline" onClick={() => setShowCancel(false)}>Retour</Button>
-          <Button variant="danger" loading={cancelMutation.isPending} onClick={() => cancelMutation.mutate()}>Annuler le bon</Button>
+          <Button variant="outline" onClick={() => setShowCancel(false)}>{t('common.back')}</Button>
+          <Button variant="danger" loading={cancelMutation.isPending} onClick={() => cancelMutation.mutate()}>{t('purchases.cancel_action')}</Button>
         </>}
       >
-        <p className="text-sm text-gray-600">Voulez-vous annuler ce bon de commande ? Aucun stock ne sera affecté.</p>
+        <p className="text-sm text-gray-600">{t('purchases.cancel_text')}</p>
       </Modal>
 
       {/* Modal réception */}
       <Modal
         isOpen={showReceive}
         onClose={() => { setShowReceive(false); setReceivedQtys({}); setLotNumbers({}); setExpiryDates({}) }}
-        title="Réceptionner les articles"
+        title={t('purchases.receive_modal_title')}
         size="lg"
         footer={<>
-          <Button variant="outline" onClick={() => { setShowReceive(false); setReceivedQtys({}); setLotNumbers({}); setExpiryDates({}) }}>Annuler</Button>
+          <Button variant="outline" onClick={() => { setShowReceive(false); setReceivedQtys({}); setLotNumbers({}); setExpiryDates({}) }}>{t('common.cancel')}</Button>
           <Button loading={receiveMutation.isPending} onClick={() => receiveMutation.mutate()}>
-            Valider la réception
+            {t('purchases.validate_reception')}
           </Button>
         </>}
       >
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">Saisissez les quantités effectivement reçues.</p>
+          <p className="text-sm text-gray-500">{t('purchases.receive_instructions')}</p>
           <div className="divide-y divide-gray-100">
             {receivableItems.map((item) => {
               const remaining  = parseFloat(item.quantity_ordered) - parseFloat(item.quantity_received)
@@ -264,7 +265,7 @@ export default function PurchaseDetailPage() {
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-900">{item.product?.name ?? `Produit #${item.product_id}`}</p>
-                      <p className="text-xs text-gray-500">Reliquat : {String(parseFloat(remaining.toFixed(3)))}</p>
+                      <p className="text-xs text-gray-500">{t('purchases.remaining_label')} : {String(parseFloat(remaining.toFixed(3)))}</p>
                     </div>
                     <input
                       type="number"
@@ -280,10 +281,10 @@ export default function PurchaseDetailPage() {
                   {hasExpiry && (
                     <div className="ml-0 flex flex-wrap gap-3 pl-0">
                       <div className="flex-1 min-w-[160px]">
-                        <label className="block text-xs text-gray-500 mb-0.5">N° de lot</label>
+                        <label className="block text-xs text-gray-500 mb-0.5">{t('purchases.lot_number')}</label>
                         <input
                           type="text"
-                          title="Numéro de lot"
+                          title={t('purchases.lot_number')}
                           placeholder="LOT-2024-001"
                           value={lotNumbers[item.id] ?? ''}
                           onChange={(e) => setLotNumbers((prev) => ({ ...prev, [item.id]: e.target.value }))}
@@ -291,10 +292,10 @@ export default function PurchaseDetailPage() {
                         />
                       </div>
                       <div className="flex-1 min-w-[160px]">
-                        <label className="block text-xs text-gray-500 mb-0.5">Date d'expiration</label>
+                        <label className="block text-xs text-gray-500 mb-0.5">{t('purchases.expiry_date')}</label>
                         <input
                           type="date"
-                          title="Date d'expiration"
+                          title={t('purchases.expiry_date')}
                           value={expiryDates[item.id] ?? ''}
                           onChange={(e) => setExpiryDates((prev) => ({ ...prev, [item.id]: e.target.value }))}
                           className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"

@@ -13,6 +13,7 @@ import {
   DocumentTextIcon,
   ShoppingBagIcon,
 } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getSupplier, updateSupplier } from '@/services/api/suppliers'
 import { getPurchaseOrders } from '@/services/api/purchases'
 import PhoneInput, { normalizePhone } from '@/components/ui/PhoneInput'
@@ -47,20 +48,21 @@ const STATUS_VARIANT: Record<PurchaseOrderStatus, 'default' | 'info' | 'warning'
   cancelled: 'danger',
 }
 
-const STATUS_LABEL: Record<PurchaseOrderStatus, string> = {
-  draft:     'Brouillon',
-  ordered:   'Commandé',
-  partial:   'Partiel',
-  received:  'Réceptionné',
-  cancelled: 'Annulé',
-}
-
 const FORM_ID = 'supplier-edit-form'
 
 export default function SupplierDetailPage() {
+  const { t } = useTranslation()
   const { uid } = useParams<{ uid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
+
+  const STATUS_LABEL: Record<PurchaseOrderStatus, string> = {
+    draft:     t('purchases.draft'),
+    ordered:   t('purchases.ordered'),
+    partial:   t('purchases.partial'),
+    received:  t('purchases.received'),
+    cancelled: t('purchases.cancelled'),
+  }
 
   const [editOpen, setEditOpen] = useState(false)
 
@@ -106,15 +108,14 @@ export default function SupplierDetailPage() {
       qc.invalidateQueries({ queryKey: ['supplier', uid] })
       qc.invalidateQueries({ queryKey: ['suppliers'] })
       setEditOpen(false)
-      toast.success('Fournisseur mis à jour.')
+      toast.success(t('suppliers.updated'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
-  if (loadingSupplier) return <div className="p-6 text-sm text-gray-400">Chargement…</div>
-  if (!supplier) return <div className="p-6 text-sm text-gray-400">Fournisseur introuvable.</div>
+  if (loadingSupplier) return <div className="p-6 text-sm text-gray-400">{t('common.loading')}</div>
+  if (!supplier) return <div className="p-6 text-sm text-gray-400">{t('suppliers.not_found')}</div>
 
-  // ── Stats ──────────────────────────────────────────────────────────────────
   const orders = purchases?.data ?? []
   const totalOrders   = purchases?.total ?? 0
   const totalAmount   = orders.reduce((sum, o) => sum + parseFloat(String(o.total_amount ?? 0)), 0)
@@ -122,7 +123,7 @@ export default function SupplierDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
-      <Breadcrumb items={[{ label: 'Fournisseurs', to: '/suppliers' }, { label: supplier.name }]} />
+      <Breadcrumb items={[{ label: t('suppliers.title'), to: '/suppliers' }, { label: supplier.name }]} />
 
       {/* En-tête */}
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -134,7 +135,7 @@ export default function SupplierDetailPage() {
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-slate-900">{supplier.name}</h1>
               <Badge variant={supplier.is_active ? 'success' : 'default'}>
-                {supplier.is_active ? 'Actif' : 'Inactif'}
+                {supplier.is_active ? t('common.active') : t('common.inactive')}
               </Badge>
             </div>
             {supplier.phone && (
@@ -146,12 +147,12 @@ export default function SupplierDetailPage() {
         <div className="flex gap-2">
           <CanDo permission="suppliers.edit">
             <Button variant="outline" icon={<PencilSquareIcon className="h-4 w-4" />} onClick={openEdit}>
-              Modifier
+              {t('common.edit')}
             </Button>
           </CanDo>
           <CanDo permission="purchases.create">
             <Button icon={<ShoppingBagIcon className="h-4 w-4" />} onClick={() => navigate('/purchases/new')}>
-              Nouveau bon
+              {t('suppliers.new_order')}
             </Button>
           </CanDo>
         </div>
@@ -161,7 +162,7 @@ export default function SupplierDetailPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* Coordonnées */}
         <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100 space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Coordonnées</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t('suppliers.contact_info')}</p>
 
           {supplier.phone ? (
             <div className="flex items-center gap-2 text-sm text-gray-700">
@@ -171,7 +172,7 @@ export default function SupplierDetailPage() {
           ) : (
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <PhoneIcon className="h-4 w-4 shrink-0" />
-              <span>Téléphone non renseigné</span>
+              <span>{t('suppliers.phone_missing')}</span>
             </div>
           )}
 
@@ -183,7 +184,7 @@ export default function SupplierDetailPage() {
           ) : (
             <div className="flex items-center gap-2 text-sm text-gray-400">
               <EnvelopeIcon className="h-4 w-4 shrink-0" />
-              <span>Email non renseigné</span>
+              <span>{t('suppliers.email_missing')}</span>
             </div>
           )}
 
@@ -204,18 +205,18 @@ export default function SupplierDetailPage() {
 
         {/* Statistiques */}
         <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100 space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Statistiques</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t('suppliers.stats_section')}</p>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">Total commandes</span>
+              <span className="text-sm text-gray-500">{t('suppliers.total_orders_label')}</span>
               <span className="text-sm font-semibold text-gray-900">{totalOrders}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">Montant total</span>
+              <span className="text-sm text-gray-500">{t('suppliers.total_amount_label')}</span>
               <span className="text-sm font-semibold text-gray-900">{formatCurrency(totalAmount)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">Dernière commande</span>
+              <span className="text-sm text-gray-500">{t('suppliers.last_order_label')}</span>
               <span className="text-sm font-semibold text-gray-900">
                 {lastOrderDate ? formatDate(lastOrderDate) : '—'}
               </span>
@@ -227,18 +228,18 @@ export default function SupplierDetailPage() {
       {/* Historique des bons de commande */}
       <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
         <div className="border-b border-gray-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-gray-900">Bons de commande</h2>
+          <h2 className="text-sm font-semibold text-gray-900">{t('suppliers.purchase_history')}</h2>
         </div>
 
         {loadingPurchases ? (
-          <div className="p-6 text-sm text-gray-400">Chargement…</div>
+          <div className="p-6 text-sm text-gray-400">{t('common.loading')}</div>
         ) : orders.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
             <ShoppingBagIcon className="h-8 w-8" />
-            <p className="text-sm">Aucun bon de commande pour ce fournisseur.</p>
+            <p className="text-sm">{t('suppliers.no_purchases_for_supplier')}</p>
             <CanDo permission="purchases.create">
               <Button variant="outline" size="sm" onClick={() => navigate('/purchases/new')}>
-                Créer un bon
+                {t('suppliers.create_order')}
               </Button>
             </CanDo>
           </div>
@@ -247,12 +248,12 @@ export default function SupplierDetailPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                  <th className="px-4 py-3 font-medium">Référence</th>
-                  <th className="px-4 py-3 font-medium">Date</th>
-                  <th className="px-4 py-3 font-medium">Livraison prévue</th>
-                  <th className="px-4 py-3 text-right font-medium">Articles</th>
-                  <th className="px-4 py-3 text-right font-medium">Total</th>
-                  <th className="px-4 py-3 text-center font-medium">Statut</th>
+                  <th className="px-4 py-3 font-medium">{t('common.reference')}</th>
+                  <th className="px-4 py-3 font-medium">{t('common.date')}</th>
+                  <th className="px-4 py-3 font-medium">{t('purchases.delivery_label')}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('purchases.articles_count')}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('common.total')}</th>
+                  <th className="px-4 py-3 text-center font-medium">{t('common.status')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -292,17 +293,17 @@ export default function SupplierDetailPage() {
       <Modal
         isOpen={editOpen}
         onClose={() => setEditOpen(false)}
-        title="Modifier le fournisseur"
+        title={t('suppliers.edit')}
         size="md"
         footer={
           <>
-            <Button variant="outline" type="button" onClick={() => setEditOpen(false)}>Annuler</Button>
-            <Button form={FORM_ID} type="submit" loading={updateMutation.isPending}>Enregistrer</Button>
+            <Button variant="outline" type="button" onClick={() => setEditOpen(false)}>{t('common.cancel')}</Button>
+            <Button form={FORM_ID} type="submit" loading={updateMutation.isPending}>{t('common.save')}</Button>
           </>
         }
       >
         <form id={FORM_ID} onSubmit={handleSubmit((v) => updateMutation.mutate(v))} className="space-y-3">
-          <Input label="Nom" error={errors.name?.message} required {...register('name')} />
+          <Input label={t('common.name')} error={errors.name?.message} required {...register('name')} />
           <Controller
             name="phone"
             control={control}
@@ -312,7 +313,7 @@ export default function SupplierDetailPage() {
                 control={control}
                 render={({ field: countryField }) => (
                   <PhoneInput
-                    label="Téléphone"
+                    label={t('common.phone')}
                     country={countryField.value}
                     onCountryChange={countryField.onChange}
                     phoneProps={{
@@ -327,9 +328,9 @@ export default function SupplierDetailPage() {
               />
             )}
           />
-          <Input label="Email" type="email" error={errors.email?.message} {...register('email')} />
-          <Textarea label="Adresse" {...register('address')} />
-          <Textarea label="Notes" {...register('notes')} />
+          <Input label={t('common.email')} type="email" error={errors.email?.message} {...register('email')} />
+          <Textarea label={t('common.address')} {...register('address')} />
+          <Textarea label={t('common.notes')} {...register('notes')} />
         </form>
       </Modal>
     </div>
