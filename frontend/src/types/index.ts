@@ -570,9 +570,12 @@ export interface UserWithGroups extends User {
 export interface CreateUserData {
   name: string
   email: string
-  password: string
   is_active?: boolean
   group_ids?: number[]
+}
+
+export interface CreateUserResponse extends UserWithGroups {
+  generated_password: string
 }
 
 export type UpdateUserData = Partial<Omit<CreateUserData, 'password'> & { password?: string }>

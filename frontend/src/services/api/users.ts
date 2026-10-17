@@ -1,5 +1,5 @@
 import apiClient, { API } from '@/lib/axios'
-import type { PaginatedResponse, UserWithGroups, CreateUserData, UpdateUserData } from '@/types'
+import type { PaginatedResponse, UserWithGroups, CreateUserData, CreateUserResponse, UpdateUserData } from '@/types'
 
 function clean(params: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(
@@ -18,8 +18,8 @@ export async function getUsers(params: {
   return data
 }
 
-export async function createUser(body: CreateUserData): Promise<UserWithGroups> {
-  const { data } = await apiClient.post<UserWithGroups>(`${API}/users`, body)
+export async function createUser(body: CreateUserData): Promise<CreateUserResponse> {
+  const { data } = await apiClient.post<CreateUserResponse>(`${API}/users`, body)
   return data
 }
 

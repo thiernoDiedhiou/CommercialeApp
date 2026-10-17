@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\PermissionService;
 use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -30,9 +31,14 @@ class UserController extends Controller
 
     public function store(StoreUserRequest $request): JsonResponse
     {
-        $plainPassword = $request->input('password');
+        // Mot de passe généré automatiquement — jamais saisi par l'admin.
+        // Retourné une seule fois dans la réponse pour que l'admin puisse le copier/transmettre.
+        $plainPassword = Str::password(12, symbols: false);
 
-        $user = User::create($request->safe()->except('group_ids'));
+        $user = User::create(array_merge(
+            $request->safe()->except('group_ids'),
+            ['password' => $plainPassword],
+        ));
 
         if ($request->filled('group_ids')) {
             $user->groups()->sync($request->group_ids);
@@ -40,12 +46,14 @@ class UserController extends Controller
 
         $user->load('groups:id,name');
 
-        // Envoie les identifiants par email si le nouvel utilisateur a une adresse email.
         $tenant = $this->tenantService->current();
         SendUserWelcomeJob::dispatch($tenant, $user, $plainPassword)
             ->onQueue('notifications');
 
-        return response()->json($user, 201);
+        return response()->json(array_merge(
+            $user->toArray(),
+            ['generated_password' => $plainPassword],
+        ), 201);
     }
 
     public function update(UpdateUserRequest $request, User $user): JsonResponse

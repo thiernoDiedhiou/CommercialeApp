@@ -61,17 +61,14 @@ type Tab = 'boutique' | 'vente' | 'facturation' | 'email' | 'users' | 'groups'
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 
+// Création : pas de mot de passe — généré par le backend
 const userCreateSchema = z.object({
-  name:                 z.string().min(2, 'Nom requis'),
-  email:                z.string().email('Email invalide'),
-  password:             z.string().min(8, '8 caractères min'),
-  password_confirmation: z.string().min(1, 'Confirmation requise'),
-  is_active:            z.boolean().optional(),
-}).refine((d) => d.password === d.password_confirmation, {
-  message: 'Les mots de passe ne correspondent pas',
-  path: ['password_confirmation'],
+  name:      z.string().min(2, 'Nom requis'),
+  email:     z.string().email('Email invalide'),
+  is_active: z.boolean().optional(),
 })
 
+// Édition : mot de passe optionnel (vide = inchangé)
 const userEditSchema = z.object({
   name:      z.string().min(2, 'Nom requis'),
   email:     z.string().email('Email invalide'),
@@ -592,7 +589,9 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([])
-  const [apiError, setApiError] = useState<string | null>(null)
+  const [apiError, setApiError]           = useState<string | null>(null)
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null)
+  const [copied, setCopied]               = useState(false)
 
   const schema = editing ? userEditSchema : userCreateSchema
 
@@ -602,22 +601,18 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
 
   useEffect(() => {
     if (!isOpen) return
-    reset({
-      name:                  editing?.name     ?? '',
-      email:                 editing?.email    ?? '',
-      password:              '',
-      password_confirmation: '',
-      is_active:             editing?.is_active ?? true,
-    })
+    reset({ name: editing?.name ?? '', email: editing?.email ?? '', is_active: editing?.is_active ?? true })
     setSelectedGroupIds(editing?.groups?.map((g) => g.id) ?? [])
     setApiError(null)
+    setGeneratedPassword(null)
+    setCopied(false)
   }, [isOpen, editing, reset])
 
   const mutation = useMutation({
     mutationFn: async (vals: UserValues) => {
       if (editing) {
         const body: Record<string, unknown> = { name: vals.name, email: vals.email, is_active: vals.is_active }
-        if (vals.password) body.password = vals.password
+        if ('password' in vals && vals.password) body.password = vals.password
         const u = await updateUser(editing.uid, body)
         await syncUserGroups(u.uid, selectedGroupIds)
         return u
@@ -625,15 +620,19 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
       return createUser({
         name:      vals.name,
         email:     vals.email,
-        password:  vals.password ?? '',
         is_active: vals.is_active ?? true,
         group_ids: selectedGroupIds,
       })
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: ['users'] })
-      toast.success(editing ? t('settings.user_updated') : t('settings.user_created'))
-      onClose()
+      if (!editing && 'generated_password' in result) {
+        // Affiche le mot de passe généré — ne pas fermer la modal tout de suite
+        setGeneratedPassword(result.generated_password)
+      } else {
+        toast.success(editing ? t('settings.user_updated') : t('settings.user_created'))
+        onClose()
+      }
     },
     onError: (e: unknown) => {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
@@ -641,11 +640,65 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
     },
   })
 
+  const handleCopy = () => {
+    if (!generatedPassword) return
+    navigator.clipboard.writeText(generatedPassword).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  const handleClose = () => {
+    if (generatedPassword) {
+      toast.success(t('settings.user_created'))
+    }
+    onClose()
+  }
+
   const toggleGroup = (id: number) =>
     setSelectedGroupIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     )
 
+  // ── Vue "mot de passe généré" ─────────────────────────────────────────────
+  if (generatedPassword) {
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title={t('settings.user_created_title')}
+        footer={
+          <Button className="w-full" onClick={handleClose}>{t('common.close')}</Button>
+        }
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">{t('settings.user_created_info')}</p>
+
+          <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+            <p className="text-xs font-medium text-indigo-500 mb-1">{t('settings.field_password')}</p>
+            <div className="flex items-center gap-2">
+              <span className="flex-1 font-mono text-lg font-bold tracking-widest text-indigo-700 select-all">
+                {generatedPassword}
+              </span>
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="rounded-md border border-indigo-300 bg-white px-3 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 transition"
+              >
+                {copied ? t('common.copied') : t('common.copy')}
+              </button>
+            </div>
+          </div>
+
+          <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            {t('settings.user_password_once')}
+          </p>
+        </div>
+      </Modal>
+    )
+  }
+
+  // ── Vue formulaire ────────────────────────────────────────────────────────
   return (
     <Modal
       isOpen={isOpen}
@@ -673,29 +726,20 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
           {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('settings.field_password')}{!editing && ' *'}
-            {editing && <span className="font-normal text-gray-400 ml-1">{t('settings.field_password_note')}</span>}
-          </label>
-          <input type="password" autoComplete="new-password" {...register('password')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
-          {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
-        </div>
-
-        {!editing && (
+        {editing && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('settings.field_password_confirm')} *
+              {t('settings.field_password')}
+              <span className="font-normal text-gray-400 ml-1">{t('settings.field_password_note')}</span>
             </label>
-            <input
-              type="password"
-              autoComplete="new-password"
-              {...register('password_confirmation')}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition"
-            />
-            {'password_confirmation' in errors && errors.password_confirmation && (
-              <p className="mt-1 text-xs text-red-500">{errors.password_confirmation.message}</p>
-            )}
+            <input type="password" autoComplete="new-password" {...register('password' as keyof UserCreateValues)} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
+            {'password' in errors && errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
+          </div>
+        )}
+
+        {!editing && (
+          <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 text-sm text-blue-700">
+            {t('settings.user_password_auto')}
           </div>
         )}
 
