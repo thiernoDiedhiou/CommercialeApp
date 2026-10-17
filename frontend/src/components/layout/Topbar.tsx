@@ -7,6 +7,7 @@ import {
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { Link } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/store/authStore'
 import apiClient from '@/lib/axios'
 import { cn } from '@/lib/utils'
@@ -24,6 +25,7 @@ interface TopbarProps {
 }
 
 export default function Topbar({ onMenuToggle }: TopbarProps) {
+  const { t } = useTranslation()
   const user   = useAuthStore((s) => s.user)
   const tenant = useAuthStore((s) => s.tenant)
   const logout = useAuthStore((s) => s.logout)
@@ -48,7 +50,7 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
         type="button"
         onClick={onMenuToggle}
         className="hidden md:flex lg:hidden -ml-1 rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
-        aria-label="Ouvrir le menu"
+        aria-label={t('common.open_menu')}
       >
         <Bars3Icon className="h-6 w-6" />
       </button>
@@ -125,7 +127,7 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
                 )}
               >
                 <UserCircleIcon className="h-4 w-4 text-gray-400" />
-                Mon profil
+                {t('auth.profile')}
               </Link>
             </MenuItem>
 
@@ -144,7 +146,7 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
                 )}
               >
                 <ArrowRightStartOnRectangleIcon className="h-4 w-4" />
-                {logoutMutation.isPending ? 'Déconnexion...' : 'Se déconnecter'}
+                {logoutMutation.isPending ? t('auth.logging_out') : t('auth.logout')}
               </button>
             </MenuItem>
           </div>

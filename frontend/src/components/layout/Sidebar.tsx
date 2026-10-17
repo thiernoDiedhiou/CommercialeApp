@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { X, ChevronDown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/store/authStore'
 import { useHomePath } from '@/hooks/useHomePath'
 import { NAV_ITEMS } from '@/lib/navItems'
@@ -18,6 +19,7 @@ function findParentPath(pathname: string): string | null {
 }
 
 function SidebarContent({ onClose }: SidebarContentProps) {
+  const { t }        = useTranslation()
   const permissions  = useAuthStore((s) => s.permissions)
   const tenant       = useAuthStore((s) => s.tenant)
   const planFeatures = useAuthStore((s) => s.planFeatures)
@@ -81,13 +83,13 @@ function SidebarContent({ onClose }: SidebarContentProps) {
             return (
               <div
                 key={item.path}
-                title={`Non inclus dans votre plan`}
+                title={t('nav.not_in_plan')}
                 className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-300 cursor-not-allowed select-none"
               >
                 <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                <span className="flex-1">{item.label}</span>
+                <span className="flex-1">{t(item.labelKey)}</span>
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-400">
-                  Plan+
+                  {t('common.plan_plus')}
                 </span>
               </div>
             )
@@ -114,7 +116,7 @@ function SidebarContent({ onClose }: SidebarContentProps) {
                 }
               >
                 <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                <span className="flex-1">{item.label}</span>
+                <span className="flex-1">{t(item.labelKey)}</span>
                 {hasChildren && (
                   <ChevronDown
                     className={cn(
@@ -132,10 +134,10 @@ function SidebarContent({ onClose }: SidebarContentProps) {
                       return (
                         <div
                           key={child.path}
-                          title="Non inclus dans votre plan"
+                          title={t('nav.not_in_plan')}
                           className="flex items-center rounded-lg px-3 py-1.5 text-sm font-medium text-gray-300 cursor-not-allowed select-none"
                         >
-                          {child.label}
+                          {t(child.labelKey)}
                         </div>
                       )
                     }
@@ -154,7 +156,7 @@ function SidebarContent({ onClose }: SidebarContentProps) {
                           )
                         }
                       >
-                        {child.label}
+                        {t(child.labelKey)}
                       </NavLink>
                     )
                   })}

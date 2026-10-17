@@ -16,14 +16,14 @@ import {
 } from 'lucide-react'
 
 export interface NavChild {
-  label:      string
+  labelKey:   string
   path:       string
   permission: string
   feature?:   string
 }
 
 export interface NavItem {
-  label:      string
+  labelKey:   string
   path:       string
   icon:       React.ComponentType<{ className?: string }>
   permission: string
@@ -32,46 +32,46 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: 'Tableau de bord', path: '/dashboard',  icon: LayoutDashboard, permission: 'dashboard.view' },
-  { label: 'Caisse POS',      path: '/pos',         icon: ShoppingCart,    permission: 'pos.access',     feature: 'pos' },
+  { labelKey: 'nav.dashboard',     path: '/dashboard',     icon: LayoutDashboard, permission: 'dashboard.view' },
+  { labelKey: 'nav.pos',           path: '/pos',            icon: ShoppingCart,    permission: 'pos.access',     feature: 'pos' },
   {
-    label: 'Ventes',          path: '/sales',        icon: Receipt,         permission: 'sales.view',
+    labelKey: 'nav.sales',         path: '/sales',          icon: Receipt,         permission: 'sales.view',
     children: [
-      { label: 'Retours',  path: '/returns', permission: 'returns.view' },
+      { labelKey: 'nav.returns',   path: '/returns', permission: 'returns.view' },
     ],
   },
-  { label: 'Factures',        path: '/invoices',     icon: FileText,        permission: 'invoices.view',  feature: 'invoicing' },
+  { labelKey: 'nav.invoices',      path: '/invoices',       icon: FileText,        permission: 'invoices.view',  feature: 'invoicing' },
   {
-    label: 'Produits',        path: '/products',     icon: Package,         permission: 'products.view',
+    labelKey: 'nav.products',      path: '/products',       icon: Package,         permission: 'products.view',
     children: [
-      { label: 'Catalogue',  path: '/products',   permission: 'products.view' },
-      { label: 'Catégories', path: '/categories', permission: 'categories.view' },
-      { label: 'Marques',    path: '/brands',     permission: 'products.view' },
+      { labelKey: 'nav.catalog',    path: '/products',   permission: 'products.view' },
+      { labelKey: 'nav.categories', path: '/categories', permission: 'categories.view' },
+      { labelKey: 'nav.brands',     path: '/brands',     permission: 'products.view' },
     ],
   },
-  { label: 'Fournisseurs',    path: '/suppliers',    icon: Truck,           permission: 'suppliers.view', feature: 'purchases' },
-  { label: 'Achats',          path: '/purchases',    icon: ShoppingBag,     permission: 'purchases.view', feature: 'purchases' },
+  { labelKey: 'nav.suppliers',     path: '/suppliers',      icon: Truck,           permission: 'suppliers.view', feature: 'purchases' },
+  { labelKey: 'nav.purchases',     path: '/purchases',      icon: ShoppingBag,     permission: 'purchases.view', feature: 'purchases' },
   {
-    label: 'Clients',         path: '/customers',    icon: Users,           permission: 'customers.view',
+    labelKey: 'nav.customers',     path: '/customers',      icon: Users,           permission: 'customers.view',
     children: [
-      { label: 'Créances', path: '/debts', permission: 'debts.view' },
+      { labelKey: 'nav.debts',     path: '/debts', permission: 'debts.view' },
     ],
   },
-  { label: 'Stock',           path: '/stock',        icon: Warehouse,       permission: 'stock.view' },
+  { labelKey: 'nav.stock',         path: '/stock',          icon: Warehouse,       permission: 'stock.view' },
   {
-    label: 'Rapports',        path: '/reports',      icon: BarChart3,       permission: 'reports.view',   feature: 'reports',
+    labelKey: 'nav.reports',       path: '/reports',        icon: BarChart3,       permission: 'reports.view',   feature: 'reports',
     children: [
-      { label: 'Analyses',        path: '/reports',       permission: 'reports.view',  feature: 'reports' },
-      { label: 'Sessions caisse', path: '/pos-sessions',  permission: 'reports.view',  feature: 'pos'     },
+      { labelKey: 'nav.analytics',    path: '/reports',      permission: 'reports.view', feature: 'reports' },
+      { labelKey: 'nav.pos_sessions', path: '/pos-sessions', permission: 'reports.view', feature: 'pos'     },
     ],
   },
   {
-    label: 'Boutique',        path: '/shop-orders',  icon: Store,           permission: 'shop.view',      feature: 'shop',
+    labelKey: 'nav.shop',          path: '/shop-orders',    icon: Store,           permission: 'shop.view',      feature: 'shop',
     children: [
-      { label: 'Commandes',           path: '/shop-orders',   permission: 'shop.orders',  feature: 'shop' },
-      { label: 'Paramètres boutique', path: '/shop-settings', permission: 'shop.manage',  feature: 'shop' },
+      { labelKey: 'nav.orders',        path: '/shop-orders',   permission: 'shop.orders',  feature: 'shop' },
+      { labelKey: 'nav.shop_settings', path: '/shop-settings', permission: 'shop.manage',  feature: 'shop' },
     ],
   },
-  { label: 'Journal d\'activité', path: '/activity-logs', icon: ClipboardList, permission: 'settings.view' },
-  { label: 'Paramètres',      path: '/settings',     icon: Settings,        permission: 'users.view' },
+  { labelKey: 'nav.activity_log',  path: '/activity-logs',  icon: ClipboardList,  permission: 'settings.view' },
+  { labelKey: 'nav.settings',      path: '/settings',        icon: Settings,       permission: 'users.view' },
 ]

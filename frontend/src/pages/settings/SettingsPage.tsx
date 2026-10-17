@@ -391,6 +391,7 @@ function BoutiqueTab() {
           secondary_color: updated.secondary_color,
           logo_url:        updated.logo_url ?? null,
           slug:            tenant?.slug ?? '',
+          locale:          tenant?.locale ?? 'fr',
         }, subscription, planFeatures)
       }
       setLogoFile(null)
@@ -1783,6 +1784,7 @@ function VenteTab() {
           secondary_color: updated.secondary_color,
           logo_url:        updated.logo_url ?? null,
           slug:            tenant?.slug ?? '',
+          locale:          tenant?.locale ?? 'fr',
         }, subscription, planFeatures)
       }
       setSaved(true)

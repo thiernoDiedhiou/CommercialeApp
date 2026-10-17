@@ -36,6 +36,7 @@ export interface TenantInfo {
   slug: string
   currency: string
   sector: string
+  locale: string
   rccm: string | null
   ninea: string | null
   primary_color: string | null

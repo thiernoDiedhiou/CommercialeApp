@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Outlet } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import Sidebar from './Sidebar'
 import Topbar from './Topbar'
 import BottomNav from './BottomNav'
@@ -11,6 +12,7 @@ import apiClient from '@/lib/axios'
 import type { LoginResponse } from '@/types'
 
 export default function Layout() {
+  const { i18n } = useTranslation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const swipeStartX = useRef<number | null>(null)
   const tenant           = useAuthStore((s) => s.tenant)
@@ -58,6 +60,9 @@ export default function Layout() {
       const { user: freshUser, permissions: freshPerms, tenant: freshTenant, subscription: freshSub, plan_features } = response.data
       setAuth(currentToken, freshUser, freshPerms, freshTenant, freshSub, plan_features)
       applyBrandColors(freshTenant.primary_color, freshTenant.secondary_color)
+      if (freshTenant.locale) {
+        i18n.changeLanguage(freshTenant.locale)
+      }
     }).catch(() => {
       // Silencieux — le cache localStorage reste valide si l'appel échoue
     })
