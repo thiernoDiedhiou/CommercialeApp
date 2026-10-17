@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { PlusIcon, AdjustmentsHorizontalIcon, ClipboardDocumentListIcon, TrashIcon, ArrowsUpDownIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import Pagination from '@/components/ui/Pagination'
@@ -20,29 +21,6 @@ import type { StockMovement, StockAlert, InventorySession } from '@/types'
 
 type Tab = 'movements' | 'alerts' | 'expiring' | 'inventaire'
 
-const TAB_LABELS: Record<Tab, string> = {
-  movements:  'Mouvements',
-  alerts:     'Alertes stock',
-  expiring:   'Lots expirants',
-  inventaire: 'Inventaires',
-}
-
-// ── Movement helpers ───────────────────────────────────────────────────────
-
-const TYPE_BADGE: Record<string, { variant: 'success' | 'danger' | 'warning' | 'default'; label: string }> = {
-  in:         { variant: 'success', label: 'Entrée' },
-  out:        { variant: 'danger',  label: 'Sortie' },
-  adjustment: { variant: 'warning', label: 'Inventaire' },
-  return:     { variant: 'default', label: 'Retour' },
-}
-
-const SOURCE_LABEL: Record<string, string> = {
-  manual:   'Manuel',
-  sale:     'Vente',
-  purchase: 'Achat',
-  return:   'Retour',
-}
-
 function movementDesignation(m: StockMovement): string {
   return [m.product?.name, m.variant?.attribute_summary].filter(Boolean).join(' — ')
 }
@@ -50,6 +28,7 @@ function movementDesignation(m: StockMovement): string {
 // ── Sub-tabs ──────────────────────────────────────────────────────────────
 
 function MovementsTab() {
+  const { t } = useTranslation()
   const [type, setType] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
@@ -57,6 +36,20 @@ function MovementsTab() {
 
   // Reset page on filter change
   useEffect(() => setPage(1), [type, from, to])
+
+  const TYPE_BADGE: Record<string, { variant: 'success' | 'danger' | 'warning' | 'default'; label: string }> = {
+    in:         { variant: 'success', label: t('stock.in') },
+    out:        { variant: 'danger',  label: t('stock.out') },
+    adjustment: { variant: 'warning', label: t('stock.type_adjustment') },
+    return:     { variant: 'default', label: t('stock.type_return') },
+  }
+
+  const SOURCE_LABEL: Record<string, string> = {
+    manual:   t('stock.source_manual'),
+    sale:     t('stock.source_sale'),
+    purchase: t('stock.source_purchase'),
+    return:   t('stock.source_return'),
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['stock', 'movements', type, from, to, page],
@@ -68,25 +61,25 @@ function MovementsTab() {
       {/* Filters */}
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Type</label>
+          <label className="block text-xs text-gray-500 mb-1">{t('stock.filter_type')}</label>
           <select
-            title="Filtrer par type"
+            title={t('stock.filter_movements')}
             value={type}
             onChange={(e) => setType(e.target.value)}
             className="rounded-lg border border-gray-200 py-2 px-3 text-sm bg-white"
           >
-            <option value="">Tous</option>
-            <option value="in">Entrée</option>
-            <option value="out">Sortie</option>
-            <option value="adjustment">Inventaire</option>
-            <option value="sale">Ventes</option>
+            <option value="">{t('common.all')}</option>
+            <option value="in">{t('stock.in')}</option>
+            <option value="out">{t('stock.out')}</option>
+            <option value="adjustment">{t('stock.type_adjustment')}</option>
+            <option value="sale">{t('stock.source_sale')}</option>
           </select>
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Du</label>
+          <label className="block text-xs text-gray-500 mb-1">{t('stock.filter_from')}</label>
           <input
             type="date"
-            title="Date de début"
+            title={t('stock.filter_date_from')}
             placeholder="jj/mm/aaaa"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
@@ -94,10 +87,10 @@ function MovementsTab() {
           />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Au</label>
+          <label className="block text-xs text-gray-500 mb-1">{t('stock.filter_to')}</label>
           <input
             type="date"
-            title="Date de fin"
+            title={t('stock.filter_date_to')}
             placeholder="jj/mm/aaaa"
             value={to}
             onChange={(e) => setTo(e.target.value)}
@@ -110,7 +103,7 @@ function MovementsTab() {
             onClick={() => { setType(''); setFrom(''); setTo('') }}
             className="text-xs text-brand-primary hover:underline self-end pb-2"
           >
-            Réinitialiser
+            {t('stock.reset_filters')}
           </button>
         )}
       </div>
@@ -120,7 +113,7 @@ function MovementsTab() {
         <table className="min-w-full divide-y divide-gray-100 text-sm">
           <thead className="bg-gray-50">
             <tr>
-              {['Date', 'Produit', 'Type', 'Quantité', 'Stock', 'Opérateur', 'Source'].map((h) => (
+              {[t('stock.date'), t('stock.product'), t('stock.type'), t('stock.quantity'), t('stock.title'), t('stock.col_operator'), t('stock.source')].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
                   {h}
                 </th>
@@ -145,8 +138,8 @@ function MovementsTab() {
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
                       <ArrowsUpDownIcon className="h-7 w-7 text-slate-400" />
                     </div>
-                    <p className="text-sm font-semibold text-slate-700">Aucun mouvement de stock</p>
-                    <p className="mt-1 text-xs text-slate-400">Les entrées et sorties de stock apparaîtront ici.</p>
+                    <p className="text-sm font-semibold text-slate-700">{t('stock.empty_title')}</p>
+                    <p className="mt-1 text-xs text-slate-400">{t('stock.empty_movements')}</p>
                   </div>
                 </td>
               </tr>
@@ -160,7 +153,7 @@ function MovementsTab() {
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDateTime(m.created_at)}</td>
                     <td className="px-4 py-3 font-medium text-gray-900 max-w-[200px]">
                       <p className="truncate">{movementDesignation(m)}</p>
-                      {m.lot && <p className="text-xs text-gray-400">Lot {m.lot.lot_number}</p>}
+                      {m.lot && <p className="text-xs text-gray-400">{t('stock.lot_prefix')} {m.lot.lot_number}</p>}
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={badge.variant}>{badge.label}</Badge>
@@ -203,8 +196,8 @@ function MovementsTab() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
               <ArrowsUpDownIcon className="h-7 w-7 text-slate-400" />
             </div>
-            <p className="text-sm font-semibold text-slate-700">Aucun mouvement de stock</p>
-            <p className="mt-1 text-xs text-slate-400">Les entrées et sorties de stock apparaîtront ici.</p>
+            <p className="text-sm font-semibold text-slate-700">{t('stock.empty_title')}</p>
+            <p className="mt-1 text-xs text-slate-400">{t('stock.empty_movements')}</p>
           </div>
         ) : (
           data?.data.map((m) => {
@@ -246,6 +239,7 @@ function MovementsTab() {
 }
 
 function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => void }) {
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -267,7 +261,7 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
         type="search"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="Rechercher un produit…"
+        placeholder={t('stock.search')}
         className="w-full max-w-xs rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition"
       />
 
@@ -276,7 +270,7 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
         <table className="min-w-full divide-y divide-gray-100 text-sm">
           <thead className="bg-gray-50">
             <tr>
-              {['Produit', 'Variante', 'Catégorie', 'Stock actuel', 'Seuil', 'État', ''].map((h) => (
+              {[t('stock.product'), t('stock.variant'), t('common.category'), t('stock.current_stock'), t('stock.threshold'), t('stock.state'), ''].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
                   {h}
                 </th>
@@ -295,7 +289,7 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
             ) : data?.data.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-400">
-                  Aucune alerte stock
+                  {t('stock.no_alerts')}
                 </td>
               </tr>
             ) : (
@@ -311,7 +305,7 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
                   <td className="px-4 py-3 text-gray-400 tabular-nums">{alert.threshold}</td>
                   <td className="px-4 py-3">
                     <Badge variant={alert.current_stock <= 0 ? 'danger' : 'warning'}>
-                      {alert.current_stock <= 0 ? 'Rupture' : 'Stock bas'}
+                      {alert.current_stock <= 0 ? t('stock.out_of_stock') : t('stock.low_stock')}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
@@ -327,7 +321,7 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
                         className="flex items-center gap-1 text-xs text-brand-primary hover:opacity-70 font-medium transition"
                       >
                         <AdjustmentsHorizontalIcon className="h-3.5 w-3.5" />
-                        Ajuster
+                        {t('stock.adjust_action')}
                       </button>
                     </CanDo>
                   </td>
@@ -348,7 +342,7 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
             </div>
           ))
         ) : data?.data.length === 0 ? (
-          <p className="py-8 text-center text-sm text-gray-400">Aucune alerte stock</p>
+          <p className="py-8 text-center text-sm text-gray-400">{t('stock.no_alerts')}</p>
         ) : (
           data?.data.map((alert: StockAlert) => (
             <div key={`${alert.product_id}-${alert.variant_id ?? 'base'}`} className="rounded-xl border border-gray-200 bg-white p-4">
@@ -358,13 +352,13 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
                   {alert.variant_summary && <p className="text-xs text-gray-400">{alert.variant_summary}</p>}
                 </div>
                 <Badge variant={alert.current_stock <= 0 ? 'danger' : 'warning'}>
-                  {alert.current_stock <= 0 ? 'Rupture' : 'Stock bas'}
+                  {alert.current_stock <= 0 ? t('stock.out_of_stock') : t('stock.low_stock')}
                 </Badge>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="font-bold tabular-nums text-gray-900">
                   {alert.current_stock}{alert.unit ? ` ${alert.unit}` : ''}
-                  <span className="text-xs font-normal text-gray-400 ml-1">/ seuil {alert.threshold}</span>
+                  <span className="text-xs font-normal text-gray-400 ml-1">/ {t('stock.threshold')} {alert.threshold}</span>
                 </span>
                 <CanDo permission="stock.adjust">
                   <button
@@ -378,7 +372,7 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
                     className="flex items-center gap-1 text-xs text-brand-primary font-medium"
                   >
                     <AdjustmentsHorizontalIcon className="h-3.5 w-3.5" />
-                    Ajuster
+                    {t('stock.adjust_action')}
                   </button>
                 </CanDo>
               </div>
@@ -400,14 +394,8 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
   )
 }
 
-const DAYS_OPTIONS = [
-  { value: 7,  label: '7 prochains jours' },
-  { value: 15, label: '15 prochains jours' },
-  { value: 30, label: '30 prochains jours' },
-  { value: 60, label: '60 prochains jours' },
-]
-
 function ExpiringTab() {
+  const { t } = useTranslation()
   const [search, setSearch]               = useState('')
   const [debouncedSearch, setDebounced]   = useState('')
   const [days, setDays]                   = useState(30)
@@ -427,6 +415,13 @@ function ExpiringTab() {
 
   const hasFilters = !!search || days !== 30
 
+  const DAYS_OPTIONS = [
+    { value: 7,  label: t('stock.days_7') },
+    { value: 15, label: t('stock.days_15') },
+    { value: 30, label: t('stock.days_30') },
+    { value: 60, label: t('stock.days_60') },
+  ]
+
   return (
     <div className="space-y-4">
       {/* Filters */}
@@ -435,14 +430,14 @@ function ExpiringTab() {
           type="search"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Rechercher un produit…"
+          placeholder={t('stock.search')}
           className="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition w-full max-w-xs"
         />
         <div>
-          <label htmlFor="expiring-days" className="block text-xs text-gray-500 mb-1">Fenêtre</label>
+          <label htmlFor="expiring-days" className="block text-xs text-gray-500 mb-1">{t('stock.window_label')}</label>
           <select
             id="expiring-days"
-            title="Filtrer par nombre de jours"
+            title={t('stock.filter_days')}
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
             className="rounded-lg border border-gray-200 py-2 px-3 text-sm bg-white"
@@ -458,7 +453,7 @@ function ExpiringTab() {
             onClick={() => { setSearch(''); setDays(30) }}
             className="text-xs text-brand-primary hover:underline self-end pb-2"
           >
-            Réinitialiser
+            {t('stock.reset_filters')}
           </button>
         )}
       </div>
@@ -468,7 +463,7 @@ function ExpiringTab() {
         <table className="min-w-full divide-y divide-gray-100 text-sm">
           <thead className="bg-gray-50">
             <tr>
-              {['Produit', 'Variante', 'Lot', 'Date expiry', 'Jours restants', 'Quantité'].map((h) => (
+              {[t('stock.product'), t('stock.variant'), t('stock.lot_prefix'), t('stock.expiry_date_col'), t('stock.days_remaining'), t('common.quantity')].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
                   {h}
                 </th>
@@ -488,8 +483,8 @@ function ExpiringTab() {
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400">
                   {debouncedSearch
-                    ? `Aucun lot expirant pour « ${debouncedSearch} » dans les ${days} prochains jours`
-                    : `Aucun lot expirant dans les ${days} prochains jours`}
+                    ? t('stock.no_expiring_search', { search: debouncedSearch, days })
+                    : t('stock.no_expiring', { days })}
                 </td>
               </tr>
             ) : (
@@ -504,7 +499,7 @@ function ExpiringTab() {
                     <td className="px-4 py-3 text-gray-700">{formatDate(lot.expiry_date)}</td>
                     <td className="px-4 py-3">
                       <Badge variant={expired || urgent ? 'danger' : 'warning'}>
-                        {expired ? 'Expiré' : lot.days_remaining === 0 ? "Aujourd'hui" : `${lot.days_remaining} j`}
+                        {expired ? t('stock.expired') : lot.days_remaining === 0 ? t('stock.today') : `${lot.days_remaining} j`}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 font-semibold tabular-nums text-gray-900">
@@ -530,8 +525,8 @@ function ExpiringTab() {
         ) : data?.data.length === 0 ? (
           <p className="py-8 text-center text-sm text-gray-400">
             {debouncedSearch
-              ? `Aucun lot expirant pour « ${debouncedSearch} » dans les ${days} prochains jours`
-              : `Aucun lot expirant dans les ${days} prochains jours`}
+              ? t('stock.no_expiring_search', { search: debouncedSearch, days })
+              : t('stock.no_expiring', { days })}
           </p>
         ) : (
           data?.data.map((lot) => {
@@ -545,11 +540,11 @@ function ExpiringTab() {
                     {lot.variant_summary && <p className="text-xs text-gray-400">{lot.variant_summary}</p>}
                   </div>
                   <Badge variant={expired || urgent ? 'danger' : 'warning'}>
-                    {expired ? 'Expiré' : lot.days_remaining === 0 ? "Aujourd'hui" : `${lot.days_remaining} j`}
+                    {expired ? t('stock.expired') : lot.days_remaining === 0 ? t('stock.today') : `${lot.days_remaining} j`}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>Lot <span className="font-mono text-gray-700">{lot.lot_number}</span> · expire le {formatDate(lot.expiry_date)}</span>
+                  <span>{t('stock.lot_prefix')} <span className="font-mono text-gray-700">{lot.lot_number}</span> · expire le {formatDate(lot.expiry_date)}</span>
                   <span className="font-semibold text-gray-900 tabular-nums">{lot.quantity_remaining}</span>
                 </div>
               </div>
@@ -574,6 +569,7 @@ function ExpiringTab() {
 // ── InventaireTab ─────────────────────────────────────────────────────────
 
 function InventaireTab() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [page, setPage] = useState(1)
@@ -603,7 +599,7 @@ function InventaireTab() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['inventory-sessions'] })
       setDeleteTarget(null)
-      toast.success('Inventaire supprimé.')
+      toast.success(t('stock.inventory_deleted'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -612,7 +608,7 @@ function InventaireTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">
-          Chaque inventaire liste tous vos produits — saisissez la quantité comptée pour détecter les écarts.
+          {t('stock.inventory_desc')}
         </p>
         <CanDo permission="stock.adjust">
           <Button
@@ -620,7 +616,7 @@ function InventaireTab() {
             icon={<PlusIcon className="h-4 w-4" />}
             onClick={() => setNewOpen(true)}
           >
-            Nouvel inventaire
+            {t('stock.new_inventory')}
           </Button>
         </CanDo>
       </div>
@@ -630,7 +626,7 @@ function InventaireTab() {
         <table className="min-w-full divide-y divide-gray-100 text-sm">
           <thead className="bg-gray-50">
             <tr>
-              {['Référence', 'Date', 'Créé par', 'Produits', 'Statut', ''].map((h) => (
+              {[t('common.reference'), t('common.date'), t('stock.created_by'), t('products.title'), t('common.status'), ''].map((h) => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
@@ -645,7 +641,7 @@ function InventaireTab() {
             ) : data?.data.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400">
-                  Aucun inventaire — créez-en un pour commencer.
+                  {t('stock.no_inventory')}
                 </td>
               </tr>
             ) : (
@@ -661,7 +657,7 @@ function InventaireTab() {
                   <td className="px-4 py-3 text-gray-600">{s.items_count ?? 0}</td>
                   <td className="px-4 py-3">
                     <Badge variant={s.status === 'confirmed' ? 'success' : 'warning'}>
-                      {s.status === 'confirmed' ? 'Confirmé' : 'Brouillon'}
+                      {s.status === 'confirmed' ? t('stock.confirmed') : t('purchases.draft')}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
@@ -694,7 +690,7 @@ function InventaireTab() {
             </div>
           ))
         ) : data?.data.length === 0 ? (
-          <p className="py-8 text-center text-sm text-gray-400">Aucun inventaire</p>
+          <p className="py-8 text-center text-sm text-gray-400">{t('stock.no_inventory_short')}</p>
         ) : (
           data?.data.map((s) => (
             <div
@@ -705,7 +701,7 @@ function InventaireTab() {
               <div className="flex items-center justify-between gap-2 mb-1">
                 <span className="font-mono text-sm font-semibold text-gray-900">{s.reference}</span>
                 <Badge variant={s.status === 'confirmed' ? 'success' : 'warning'}>
-                  {s.status === 'confirmed' ? 'Confirmé' : 'Brouillon'}
+                  {s.status === 'confirmed' ? t('stock.confirmed') : t('purchases.draft')}
                 </Badge>
               </div>
               <p className="text-xs text-gray-400">{formatDate(s.created_at)} · {s.items_count ?? 0} produit{(s.items_count ?? 0) > 1 ? 's' : ''}</p>
@@ -722,32 +718,32 @@ function InventaireTab() {
       <Modal
         isOpen={newOpen}
         onClose={() => setNewOpen(false)}
-        title="Nouvel inventaire"
+        title={t('stock.new_inventory')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={() => setNewOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setNewOpen(false)}>{t('common.cancel')}</Button>
             <Button
               icon={<ClipboardDocumentListIcon className="h-4 w-4" />}
               loading={createMutation.isPending}
               onClick={() => createMutation.mutate()}
             >
-              Créer
+              {t('common.create')}
             </Button>
           </>
         }
       >
         <div className="space-y-3">
           <p className="text-sm text-gray-500">
-            Un inventaire liste tous vos produits actifs. Saisissez les quantités comptées produit par produit, puis validez pour appliquer les ajustements.
+            {t('stock.new_inventory_desc')}
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optionnel)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('stock.notes_optional')}</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              placeholder="Ex : Inventaire mensuel octobre 2026…"
+              placeholder={t('stock.notes_placeholder')}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary resize-none"
             />
           </div>
@@ -758,23 +754,23 @@ function InventaireTab() {
       <Modal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title="Supprimer l'inventaire"
+        title={t('stock.delete_inventory_title')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
             <Button
               variant="danger"
               loading={deleteMutation.isPending}
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}
             >
-              Supprimer
+              {t('common.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-gray-600">
-          Supprimer définitivement <strong>{deleteTarget?.reference}</strong> ? Aucun ajustement ne sera appliqué.
+          {t('stock.delete_inventory_confirm')} <strong>{deleteTarget?.reference}</strong> ? {t('stock.delete_inventory_no_adjust')}
         </p>
       </Modal>
     </div>
@@ -784,6 +780,7 @@ function InventaireTab() {
 // ── Main page ─────────────────────────────────────────────────────────────
 
 export default function StockPage() {
+  const { t } = useTranslation()
   const location = useLocation()
   const qc = useQueryClient()
   const [tab, setTab] = useState<Tab>(
@@ -801,10 +798,10 @@ export default function StockPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Stock</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t('stock.title')}</h1>
         <CanDo permission="stock.adjust">
           <Button onClick={() => openAdjust()} icon={<PlusIcon className="h-4 w-4" />}>
-            Ajuster le stock
+            {t('stock.adjust')}
           </Button>
         </CanDo>
       </div>
@@ -812,19 +809,19 @@ export default function StockPage() {
       {/* Tabs */}
       <div className="border-b border-gray-200">
         <nav className="flex gap-6 -mb-px">
-          {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
+          {(['movements', 'alerts', 'expiring', 'inventaire'] as Tab[]).map((tabKey) => (
             <button
-              key={t}
+              key={tabKey}
               type="button"
-              onClick={() => setTab(t)}
+              onClick={() => setTab(tabKey)}
               className={[
                 'pb-3 text-sm font-medium border-b-2 transition',
-                tab === t
+                tab === tabKey
                   ? 'border-brand-primary text-brand-primary'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
               ].join(' ')}
             >
-              {TAB_LABELS[t]}
+              {t(`stock.tab_${tabKey === 'inventaire' ? 'inventory' : tabKey}`)}
             </button>
           ))}
         </nav>

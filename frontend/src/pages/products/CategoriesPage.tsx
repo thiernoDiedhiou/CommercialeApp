@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, PencilSquareIcon, TrashIcon, PhotoIcon, XMarkIcon, FolderOpenIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getCategories, createCategory, updateCategory, deleteCategory } from '@/services/api/categories'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
@@ -49,6 +50,7 @@ interface ImagePickerProps {
 }
 
 function ImagePicker({ currentUrl, onChange, onRemove }: ImagePickerProps) {
+  const { t } = useTranslation()
   const inputRef            = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(currentUrl)
 
@@ -78,18 +80,18 @@ function ImagePicker({ currentUrl, onChange, onRemove }: ImagePickerProps) {
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{t('categories.image_label')}</label>
       {preview ? (
         <div className="relative inline-block">
           <img
             src={preview}
-            alt="Aperçu"
+            alt={t('categories.image_preview')}
             className="h-20 w-20 rounded-xl object-cover border border-gray-200"
           />
           <button
             type="button"
             onClick={handleRemove}
-            aria-label="Supprimer l'image"
+            aria-label={t('categories.remove_image')}
             className="absolute -top-1.5 -right-1.5 rounded-full bg-red-500 text-white p-0.5 shadow"
           >
             <XMarkIcon className="h-3.5 w-3.5" />
@@ -102,7 +104,7 @@ function ImagePicker({ currentUrl, onChange, onRemove }: ImagePickerProps) {
           className="flex items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
         >
           <PhotoIcon className="h-5 w-5" />
-          Ajouter une image
+          {t('categories.add_image')}
         </button>
       )}
       {preview && (
@@ -111,14 +113,14 @@ function ImagePicker({ currentUrl, onChange, onRemove }: ImagePickerProps) {
           onClick={() => inputRef.current?.click()}
           className="mt-1.5 block text-xs text-brand-primary hover:underline"
         >
-          Changer l'image
+          {t('categories.change_image')}
         </button>
       )}
       <input
         ref={inputRef}
         type="file"
         accept="image/*"
-        aria-label="Choisir une image pour la catégorie"
+        aria-label={t('categories.choose_image')}
         className="sr-only"
         onChange={handleFile}
       />
@@ -128,6 +130,7 @@ function ImagePicker({ currentUrl, onChange, onRemove }: ImagePickerProps) {
 
 // ── Page principale ───────────────────────────────────────────────────────────
 export default function CategoriesPage() {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [modal, setModal]               = useState<ModalState>(null)
   const [deleteTarget, setDeleteTarget] = useState<FlatCategory | null>(null)
@@ -167,7 +170,7 @@ export default function CategoriesPage() {
       description: v.description || null,
       image      : imageFile,
     }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['categories'] }); setModal(null); toast.success('Catégorie créée avec succès.') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['categories'] }); setModal(null); toast.success(t('categories.created')) },
     onError  : (err) => toast.error(getApiErrorMessage(err)),
   })
 
@@ -179,13 +182,13 @@ export default function CategoriesPage() {
       image       : imageFile,
       remove_image: removeImage,
     }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['categories'] }); setModal(null); toast.success('Catégorie mise à jour.') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['categories'] }); setModal(null); toast.success(t('categories.updated')) },
     onError  : (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const deleteMutation = useMutation({
     mutationFn: (uid: string) => deleteCategory(uid),
-    onSuccess : () => { qc.invalidateQueries({ queryKey: ['categories'] }); setDeleteTarget(null); toast.success('Catégorie supprimée.') },
+    onSuccess : () => { qc.invalidateQueries({ queryKey: ['categories'] }); setDeleteTarget(null); toast.success(t('categories.deleted')) },
     onError   : (err) => toast.error(getApiErrorMessage(err)),
   })
 
@@ -203,7 +206,7 @@ export default function CategoriesPage() {
   const columns: Column<FlatCategory>[] = [
     {
       key   : 'name',
-      header: 'Nom',
+      header: t('common.name'),
       render: (c) => (
         <div className={`flex items-center gap-3${c.depth > 0 ? ' pl-5' : ''}`}>
           {c.depth > 0 && <span className="text-gray-300 text-xs select-none">└</span>}
@@ -224,14 +227,14 @@ export default function CategoriesPage() {
     },
     {
       key   : 'description',
-      header: 'Description',
+      header: t('common.description'),
       render: (c) => (
         <span className="text-sm text-gray-500 line-clamp-1">{c.description ?? '—'}</span>
       ),
     },
     {
       key   : 'products_count',
-      header: 'Produits',
+      header: t('products.title'),
       align : 'center',
       render: (c) => (
         <Badge variant={(c.products_count ?? 0) > 0 ? 'info' : 'default'}>
@@ -250,7 +253,7 @@ export default function CategoriesPage() {
               type="button"
               onClick={(e) => { e.stopPropagation(); setModal({ mode: 'edit', category: c }) }}
               className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-              title="Modifier"
+              title={t('common.edit')}
             >
               <PencilSquareIcon className="h-4 w-4" />
             </button>
@@ -260,7 +263,7 @@ export default function CategoriesPage() {
               type="button"
               onClick={(e) => { e.stopPropagation(); setDeleteTarget(c) }}
               className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
-              title="Supprimer"
+              title={t('common.delete')}
             >
               <TrashIcon className="h-4 w-4" />
             </button>
@@ -273,10 +276,10 @@ export default function CategoriesPage() {
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">Catégories</h1>
+        <h1 className="text-xl font-bold text-slate-900">{t('categories.title')}</h1>
         <CanDo permission="categories.create">
           <Button icon={<PlusIcon className="h-4 w-4" />} onClick={() => setModal({ mode: 'create' })}>
-            Nouvelle catégorie
+            {t('categories.new')}
           </Button>
         </CanDo>
       </div>
@@ -287,7 +290,7 @@ export default function CategoriesPage() {
         keyExtractor={(c) => c.id}
         loading={isLoading}
         skeletonRows={6}
-        emptyMessage={<EmptyState icon={<FolderOpenIcon className="h-7 w-7" />} title="Aucune catégorie pour l'instant" description="Organisez vos produits en catégories pour faciliter la navigation." />}
+        emptyMessage={<EmptyState icon={<FolderOpenIcon className="h-7 w-7" />} title={t('categories.empty_title')} description={t('categories.empty_desc')} />}
         mobileCard={(c) => (
           <div className="flex items-center gap-3 px-4 py-3">
             {c.image_url ? (
@@ -326,36 +329,36 @@ export default function CategoriesPage() {
       <Modal
         isOpen={modal !== null}
         onClose={() => setModal(null)}
-        title={modal?.mode === 'edit' ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
+        title={modal?.mode === 'edit' ? t('categories.edit') : t('categories.new')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" type="button" onClick={() => setModal(null)}>Annuler</Button>
+            <Button variant="outline" type="button" onClick={() => setModal(null)}>{t('common.cancel')}</Button>
             <Button form={FORM_ID} type="submit" loading={isMutating}>
-              {modal?.mode === 'edit' ? 'Enregistrer' : 'Créer'}
+              {modal?.mode === 'edit' ? t('common.save') : t('common.create')}
             </Button>
           </>
         }
       >
         <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-          <Input label="Nom" required error={errors.name?.message} {...register('name')} />
+          <Input label={t('common.name')} required error={errors.name?.message} {...register('name')} />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Catégorie parente
+              {t('categories.parent')}
             </label>
             <select
               {...register('parent_id')}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-primary"
             >
-              <option value="">Aucune (catégorie racine)</option>
+              <option value="">{t('categories.no_parent')}</option>
               {availableParents.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           </div>
 
-          <Textarea label="Description" {...register('description')} />
+          <Textarea label={t('common.description')} {...register('description')} />
 
           <ImagePicker
             currentUrl={modal?.mode === 'edit' ? modal.category.image_url : null}
@@ -369,35 +372,34 @@ export default function CategoriesPage() {
       <Modal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title="Supprimer la catégorie"
+        title={t('categories.delete_title')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
             <Button
               variant="danger"
               loading={deleteMutation.isPending}
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}
             >
-              Supprimer
+              {t('common.delete')}
             </Button>
           </>
         }
       >
         <div className="space-y-2 text-sm text-gray-600">
           <p>
-            Voulez-vous supprimer la catégorie{' '}
+            {t('categories.delete_confirm_text')}{' '}
             <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ?
           </p>
           {(deleteTarget?.products_count ?? 0) > 0 && (
             <p className="text-amber-600">
-              Cette catégorie contient {deleteTarget?.products_count} produit(s).
-              Veuillez d'abord déplacer ou supprimer ces produits.
+              {t('categories.has_products', { count: deleteTarget?.products_count })}
             </p>
           )}
           {(deleteTarget?.children?.length ?? 0) > 0 && (
             <p className="text-blue-600">
-              Les sous-catégories seront remontées au niveau racine.
+              {t('categories.children_warning')}
             </p>
           )}
         </div>

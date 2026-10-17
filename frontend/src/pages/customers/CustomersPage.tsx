@@ -10,6 +10,7 @@ import {
   ChevronRightIcon,
   UsersIcon,
 } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/services/api/customers'
 import { normalizePhone } from '@/components/ui/PhoneInput'
 import { toast } from '@/store/toastStore'
@@ -36,6 +37,7 @@ type ModalState =
   | null
 
 export default function CustomersPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const qc = useQueryClient()
 
@@ -86,7 +88,7 @@ export default function CustomersPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['customers'] })
       setModal(null)
-      toast.success('Client créé avec succès.')
+      toast.success(t('customers.created'))
     },
   })
 
@@ -104,7 +106,7 @@ export default function CustomersPage() {
       qc.invalidateQueries({ queryKey: ['customers'] })
       qc.invalidateQueries({ queryKey: ['customer', uid] })
       setModal(null)
-      toast.success('Client mis à jour.')
+      toast.success(t('customers.updated'))
     },
   })
 
@@ -114,7 +116,7 @@ export default function CustomersPage() {
     onSuccess: (_, customer) => {
       qc.invalidateQueries({ queryKey: ['customers'] })
       setToggleTarget(null)
-      toast.success(customer.is_active ? 'Client désactivé.' : 'Client activé.')
+      toast.success(customer.is_active ? t('customers.deactivated') : t('customers.activated'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -124,7 +126,7 @@ export default function CustomersPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['customers'] })
       setDeleteTarget(null)
-      toast.success('Client supprimé.')
+      toast.success(t('customers.deleted'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -142,14 +144,14 @@ export default function CustomersPage() {
   const columns: Column<Customer>[] = [
     {
       key: 'name',
-      header: 'Nom',
+      header: t('common.name'),
       render: (c) => (
         <span className="font-medium text-gray-900">{c.name}</span>
       ),
     },
     {
       key: 'phone',
-      header: 'Téléphone',
+      header: t('common.phone'),
       render: (c) => (
         <span className={c.phone ? 'text-sm text-gray-700' : 'text-sm text-gray-300'}>
           {c.phone ?? '—'}
@@ -158,7 +160,7 @@ export default function CustomersPage() {
     },
     {
       key: 'email',
-      header: 'Email',
+      header: t('common.email'),
       render: (c) => (
         <span className={c.email ? 'text-sm text-gray-700' : 'text-sm text-gray-300'}>
           {c.email ?? '—'}
@@ -167,11 +169,11 @@ export default function CustomersPage() {
     },
     {
       key: 'is_active',
-      header: 'Statut',
+      header: t('common.status'),
       align: 'center',
       render: (c) => (
         <Badge variant={c.is_active ? 'success' : 'default'}>
-          {c.is_active ? 'Actif' : 'Inactif'}
+          {c.is_active ? t('common.active') : t('common.inactive')}
         </Badge>
       ),
     },
@@ -186,7 +188,7 @@ export default function CustomersPage() {
             type="button"
             onClick={(e) => { e.stopPropagation(); navigate(`/customers/${c.uid}`) }}
             className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-            title="Voir le profil"
+            title={t('customers.view_profile')}
           >
             <EyeIcon className="h-4 w-4" />
           </button>
@@ -197,7 +199,7 @@ export default function CustomersPage() {
               type="button"
               onClick={(e) => { e.stopPropagation(); setModal({ mode: 'edit', customer: c }) }}
               className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-              title="Modifier"
+              title={t('common.edit')}
             >
               <PencilSquareIcon className="h-4 w-4" />
             </button>
@@ -213,7 +215,7 @@ export default function CustomersPage() {
                   ? 'text-gray-400 hover:bg-orange-50 hover:text-orange-500'
                   : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-600'
               }`}
-              title={c.is_active ? 'Désactiver' : 'Activer'}
+              title={c.is_active ? t('common.deactivate') : t('common.activate')}
             >
               <NoSymbolIcon className="h-4 w-4" />
             </button>
@@ -225,7 +227,7 @@ export default function CustomersPage() {
               type="button"
               onClick={(e) => { e.stopPropagation(); setDeleteTarget(c) }}
               className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
-              title="Supprimer"
+              title={t('common.delete')}
             >
               <TrashIcon className="h-4 w-4" />
             </button>
@@ -239,13 +241,13 @@ export default function CustomersPage() {
     <div className="space-y-4 p-4 sm:p-6">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">Clients</h1>
+        <h1 className="text-xl font-bold text-slate-900">{t('customers.title')}</h1>
         <CanDo permission="customers.create">
           <Button
             icon={<PlusIcon className="h-4 w-4" />}
             onClick={() => setModal({ mode: 'create' })}
           >
-            Nouveau client
+            {t('customers.new')}
           </Button>
         </CanDo>
       </div>
@@ -254,7 +256,7 @@ export default function CustomersPage() {
       <div className="flex flex-wrap gap-3">
         <div className="min-w-48 flex-1">
           <Input
-            placeholder="Rechercher un client…"
+            placeholder={t('customers.search')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -267,9 +269,9 @@ export default function CustomersPage() {
               setPage(1)
             }}
           >
-            <option value="">Tous statuts</option>
-            <option value="true">Actifs</option>
-            <option value="false">Inactifs</option>
+            <option value="">{t('customers.filter_all')}</option>
+            <option value="true">{t('customers.filter_active')}</option>
+            <option value="false">{t('customers.filter_inactive')}</option>
           </Select>
         </div>
       </div>
@@ -281,7 +283,7 @@ export default function CustomersPage() {
         keyExtractor={(c) => c.id}
         loading={isLoading}
         skeletonRows={8}
-        emptyMessage={<EmptyState icon={<UsersIcon className="h-7 w-7" />} title="Aucun client" description="Enregistrez vos clients pour suivre leurs achats et créances." />}
+        emptyMessage={<EmptyState icon={<UsersIcon className="h-7 w-7" />} title={t('customers.empty_title')} description={t('customers.empty_desc')} />}
         onRowClick={(c) => navigate(`/customers/${c.uid}`)}
         mobileCard={(c) => (
           <div className="flex items-center gap-3 px-4 py-3">
@@ -291,7 +293,7 @@ export default function CustomersPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="font-medium text-gray-900 truncate">{c.name}</span>
-                <Badge variant={c.is_active ? 'success' : 'default'}>{c.is_active ? 'Actif' : 'Inactif'}</Badge>
+                <Badge variant={c.is_active ? 'success' : 'default'}>{c.is_active ? t('common.active') : t('common.inactive')}</Badge>
               </div>
               {c.email && <p className="text-xs text-gray-500 truncate">{c.email}</p>}
               {c.phone && <p className="text-xs text-gray-400">{c.phone}</p>}
@@ -316,15 +318,15 @@ export default function CustomersPage() {
       <Modal
         isOpen={modal !== null}
         onClose={() => setModal(null)}
-        title={modal?.mode === 'edit' ? 'Modifier le client' : 'Nouveau client'}
+        title={modal?.mode === 'edit' ? t('customers.edit') : t('customers.new')}
         size="md"
         footer={
           <>
             <Button variant="outline" type="button" onClick={() => setModal(null)}>
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button form={FORM_ID} type="submit" loading={isMutating}>
-              {modal?.mode === 'edit' ? 'Enregistrer' : 'Créer'}
+              {modal?.mode === 'edit' ? t('common.save') : t('common.create')}
             </Button>
           </>
         }
@@ -345,27 +347,27 @@ export default function CustomersPage() {
       <Modal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title="Supprimer le client"
+        title={t('customers.delete_title')}
         size="sm"
         footer={
           <>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button
               variant="danger"
               loading={deleteMutation.isPending}
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}
             >
-              Supprimer
+              {t('common.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-gray-600">
-          Voulez-vous supprimer{' '}
+          {t('customers.delete_confirm')}{' '}
           <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ?
-          Cette action est irréversible.
+          {' '}{t('common.action_irreversible')}
         </p>
       </Modal>
 
@@ -373,29 +375,29 @@ export default function CustomersPage() {
       <Modal
         isOpen={!!toggleTarget}
         onClose={() => setToggleTarget(null)}
-        title={toggleTarget?.is_active ? 'Désactiver le client' : 'Activer le client'}
+        title={toggleTarget?.is_active ? t('customers.deactivate_title') : t('customers.activate_title')}
         size="sm"
         footer={
           <>
             <Button variant="outline" onClick={() => setToggleTarget(null)}>
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button
               variant={toggleTarget?.is_active ? 'danger' : undefined}
               loading={toggleMutation.isPending}
               onClick={() => toggleTarget && toggleMutation.mutate(toggleTarget)}
             >
-              {toggleTarget?.is_active ? 'Désactiver' : 'Activer'}
+              {toggleTarget?.is_active ? t('common.deactivate') : t('common.activate')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-gray-600">
-          Voulez-vous {toggleTarget?.is_active ? 'désactiver' : 'activer'} le client{' '}
+          {t(toggleTarget?.is_active ? 'customers.toggle_deactivate' : 'customers.toggle_activate')}{' '}
           <span className="font-semibold text-gray-900">«{toggleTarget?.name}»</span> ?
           {toggleTarget?.is_active && (
             <span className="mt-1 block text-xs text-gray-400">
-              Le client ne sera plus accessible depuis le POS.
+              {t('customers.toggle_pos_warning')}
             </span>
           )}
         </p>
