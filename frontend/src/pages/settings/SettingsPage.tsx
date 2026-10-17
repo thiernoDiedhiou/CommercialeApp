@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useTranslation } from 'react-i18next'
 import {
   UsersIcon,
   ShieldCheckIcon,
@@ -58,15 +59,6 @@ import type { UserWithGroups, Group, Permission, CreateGroupData } from '@/types
 
 type Tab = 'boutique' | 'vente' | 'facturation' | 'email' | 'users' | 'groups'
 
-const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: 'boutique',    label: 'Boutique',       icon: <BuildingStorefrontIcon className="h-4 w-4" /> },
-  { id: 'vente',       label: 'Vente & Caisse', icon: <CreditCardIcon className="h-4 w-4" /> },
-  { id: 'facturation', label: 'Facturation',    icon: <DocumentTextIcon className="h-4 w-4" /> },
-  { id: 'email',       label: 'Email',          icon: <EnvelopeSmtpIcon className="h-4 w-4" /> },
-  { id: 'users',       label: 'Utilisateurs',   icon: <UsersIcon className="h-4 w-4" /> },
-  { id: 'groups',      label: 'Groupes',        icon: <ShieldCheckIcon className="h-4 w-4" /> },
-]
-
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 
 const userSchema = z.object({
@@ -97,6 +89,7 @@ const smtpSchema = z.object({
 type SmtpValues = z.infer<typeof smtpSchema>
 
 function SmtpSection() {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [showPassword, setShowPassword] = useState(false)
   const [saved, setSaved]               = useState(false)
@@ -139,7 +132,7 @@ function SmtpSection() {
       qc.invalidateQueries({ queryKey: ['tenant-settings'] })
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
-      toast.success('Configuration SMTP enregistrée.')
+      toast.success(t('settings.smtp_saved_toast'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -153,43 +146,40 @@ function SmtpSection() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-sm font-semibold text-gray-800">Configuration email (SMTP)</h2>
-        <p className="mt-0.5 text-xs text-gray-500">
-          Configurez votre propre serveur email pour que les notifications (alertes stock, factures) soient
-          envoyées depuis votre adresse professionnelle. Si non renseigné, le serveur de la plateforme est utilisé.
-        </p>
+        <h2 className="text-sm font-semibold text-gray-800">{t('settings.smtp_title')}</h2>
+        <p className="mt-0.5 text-xs text-gray-500">{t('settings.smtp_desc')}</p>
       </div>
 
       <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input label="Serveur SMTP" placeholder="smtp.hostinger.com" {...register('smtp_host')} />
+          <Input label={t('settings.smtp_host')} placeholder="smtp.hostinger.com" {...register('smtp_host')} />
           <div className="flex gap-3">
             <div className="flex-1">
-              <Input label="Port" type="number" placeholder="587" {...register('smtp_port')} />
+              <Input label={t('settings.smtp_port')} type="number" placeholder="587" {...register('smtp_port')} />
             </div>
             <div>
-              <label htmlFor="smtp-enc" className="mb-1.5 block text-sm font-medium text-gray-700">Chiffrement</label>
+              <label htmlFor="smtp-enc" className="mb-1.5 block text-sm font-medium text-gray-700">{t('settings.smtp_encryption')}</label>
               <Select id="smtp-enc" {...register('smtp_encryption')}>
                 <option value="tls">TLS</option>
                 <option value="ssl">SSL</option>
               </Select>
             </div>
           </div>
-          <Input label="Utilisateur SMTP" placeholder="contact@ma-boutique.sn" {...register('smtp_username')} />
+          <Input label={t('settings.smtp_username')} placeholder="contact@ma-boutique.sn" {...register('smtp_username')} />
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Mot de passe SMTP</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('settings.smtp_password')}</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
-                aria-label="Mot de passe SMTP"
+                aria-label={t('settings.smtp_password')}
                 {...register('smtp_password')}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 pr-9 text-sm outline-none focus:border-brand-primary transition"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                aria-label={showPassword ? t('settings.smtp_hide_password') : t('settings.smtp_show_password')}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 {showPassword ? <EyeSlashIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
@@ -197,18 +187,18 @@ function SmtpSection() {
             </div>
           </div>
           <Input
-            label="Adresse expéditeur"
+            label={t('settings.smtp_from_address')}
             type="email"
             placeholder="contact@ma-boutique.sn"
             error={errors.smtp_from_address?.message}
             {...register('smtp_from_address')}
           />
-          <Input label="Nom expéditeur" placeholder="Ma Boutique Dakar" {...register('smtp_from_name')} />
+          <Input label={t('settings.smtp_from_name')} placeholder="Ma Boutique Dakar" {...register('smtp_from_name')} />
         </div>
 
         <div className="flex items-center gap-4">
           <Button type="submit" loading={mutation.isPending} disabled={!isDirty}>
-            Enregistrer
+            {t('common.save')}
           </Button>
           {data?.smtp_host && (
             <button
@@ -216,10 +206,10 @@ function SmtpSection() {
               onClick={clearSmtp}
               className="text-xs text-red-500 hover:underline"
             >
-              Supprimer la config SMTP
+              {t('settings.smtp_delete')}
             </button>
           )}
-          {saved && <span className="text-sm text-emerald-600 font-medium">SMTP enregistré ✓</span>}
+          {saved && <span className="text-sm text-emerald-600 font-medium">{t('settings.smtp_saved')}</span>}
         </div>
       </form>
     </div>
@@ -285,6 +275,7 @@ const COUNTRY_OPTIONS = [
 ]
 
 function BoutiqueTab() {
+  const { t } = useTranslation()
   const setAuth             = useAuthStore((s) => s.setAuth)
   const token               = useAuthStore((s) => s.token)
   const user                = useAuthStore((s) => s.user)
@@ -339,11 +330,11 @@ function BoutiqueTab() {
     if (!file) return
     const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']
     if (!ACCEPTED.includes(file.type)) {
-      setLogoError('Format non supporté. Utilisez JPEG, PNG, WebP ou SVG.')
+      setLogoError(t('settings.logo_invalid_format'))
       return
     }
     if (file.size > 2 * 1024 * 1024) {
-      setLogoError('Logo trop lourd. Maximum 2 Mo.')
+      setLogoError(t('settings.logo_too_large'))
       return
     }
     setLogoError(null)
@@ -399,21 +390,21 @@ function BoutiqueTab() {
       setLogoPreview(updated.logo_url ?? null)
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
-      toast.success('Paramètres de la boutique enregistrés.')
+      toast.success(t('settings.saved_shop'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   if (subscriptionExpired) return <SubscriptionLockedNotice />
-  if (isLoading) return <div className="text-sm text-gray-400">Chargement…</div>
-  if (isError) return <div className="rounded-xl bg-red-50 px-4 py-6 text-center text-sm text-red-600">Erreur lors du chargement des paramètres.</div>
+  if (isLoading) return <div className="text-sm text-gray-400">{t('settings.loading')}</div>
+  if (isError) return <div className="rounded-xl bg-red-50 px-4 py-6 text-center text-sm text-red-600">{t('settings.load_error')}</div>
 
   return (
     <div className="space-y-8">
     <form onSubmit={handleSubmit((v) => { if (!logoError) mutation.mutate(v) })} className="space-y-6">
       {/* Logo */}
       <div>
-        <p className="mb-2 text-sm font-medium text-gray-700">Logo de la boutique</p>
+        <p className="mb-2 text-sm font-medium text-gray-700">{t('settings.shop_logo')}</p>
         <div className="flex items-center gap-4">
           {logoPreview ? (
             <div className="relative">
@@ -426,7 +417,7 @@ function BoutiqueTab() {
                 type="button"
                 onClick={handleLogoRemove}
                 className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow hover:bg-red-600"
-                aria-label="Supprimer le logo"
+                aria-label={t('common.delete') + ' logo'}
               >
                 <XMarkIcon className="h-3 w-3" />
               </button>
@@ -447,9 +438,9 @@ function BoutiqueTab() {
               onClick={() => logoInputRef.current?.click()}
               className="text-sm font-medium text-brand-primary hover:underline"
             >
-              {logoPreview ? 'Changer le logo' : 'Ajouter un logo'}
+              {logoPreview ? t('settings.change_logo') : t('settings.add_logo')}
             </button>
-            <p className="text-xs text-gray-400">JPEG, PNG, WebP ou SVG — max 2 Mo</p>
+            <p className="text-xs text-gray-400">{t('settings.logo_format')}</p>
             {logoError && <p className="text-xs text-red-500">{logoError}</p>}
           </div>
           <input
@@ -458,15 +449,15 @@ function BoutiqueTab() {
             accept="image/jpeg,image/png,image/webp,image/svg+xml"
             className="hidden"
             onChange={handleLogoChange}
-            aria-label="Sélectionner un logo"
+            aria-label={t('settings.add_logo')}
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Input label="Nom du commerce" error={errors.name?.message} {...register('name')} />
+        <Input label={t('settings.shop_name')} error={errors.name?.message} {...register('name')} />
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">Secteur d'activité</label>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('settings.sector')}</label>
           <Select {...register('sector')}>
             {Object.entries(SECTOR_LABELS).map(([val, label]) => (
               <option key={val} value={val}>{label}</option>
@@ -474,7 +465,7 @@ function BoutiqueTab() {
           </Select>
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">Langue de l'interface</label>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('settings.language')}</label>
           <Select {...register('locale')}>
             {Object.entries(LOCALE_LABELS).map(([val, label]) => (
               <option key={val} value={val}>{label}</option>
@@ -482,7 +473,7 @@ function BoutiqueTab() {
           </Select>
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">Fuseau horaire</label>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('settings.timezone')}</label>
           <Select {...register('timezone')}>
             {TIMEZONE_OPTIONS.map((tz) => (
               <option key={tz} value={tz}>{tz}</option>
@@ -490,7 +481,7 @@ function BoutiqueTab() {
           </Select>
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">Pays</label>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('settings.country')}</label>
           <Select {...register('country')}>
             {COUNTRY_OPTIONS.map((c) => (
               <option key={c.code} value={c.code}>{c.label} ({c.code})</option>
@@ -508,7 +499,7 @@ function BoutiqueTab() {
             control={control}
             render={({ field: countryField }) => (
               <PhoneInput
-                label="Téléphone"
+                label={t('common.phone')}
                 country={countryField.value}
                 onCountryChange={countryField.onChange}
                 phoneProps={{
@@ -525,24 +516,24 @@ function BoutiqueTab() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Input label="Email" type="email" {...register('email')} />
-        <Input label="Adresse" {...register('address')} />
-        <Input label="Ville" {...register('city')} />
+        <Input label={t('common.email')} type="email" {...register('email')} />
+        <Input label={t('common.address')} {...register('address')} />
+        <Input label={t('common.city')} {...register('city')} />
       </div>
 
       <div>
-        <p className="mb-3 text-sm font-medium text-gray-700">Informations légales <span className="text-xs font-normal text-gray-400">(optionnel — apparaissent sur les factures)</span></p>
+        <p className="mb-3 text-sm font-medium text-gray-700">{t('settings.legal_info')} <span className="text-xs font-normal text-gray-400">{t('settings.legal_info_hint')}</span></p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input
             label="RCCM"
             placeholder="SN-DKR-2024-B-12345"
-            hint="Registre du Commerce et du Crédit Mobilier"
+            hint={t('settings.rccm_hint')}
             {...register('rccm')}
           />
           <Input
             label="NINEA"
             placeholder="012345678"
-            hint="Numéro d'Identification Nationale des Entreprises"
+            hint={t('settings.ninea_hint')}
             {...register('ninea')}
           />
         </div>
@@ -550,24 +541,24 @@ function BoutiqueTab() {
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-gray-700">
-          Description de l'activité
-          <span className="ml-1 text-xs font-normal text-gray-400">(optionnel)</span>
+          {t('settings.business_desc')}
+          <span className="ml-1 text-xs font-normal text-gray-400">({t('common.optional').toLowerCase()})</span>
         </label>
         <textarea
           rows={3}
           maxLength={500}
-          placeholder="Ex : Boutique de mode pour femmes, spécialisée dans les tenues traditionnelles et modernes…"
+          placeholder={t('settings.business_desc_placeholder')}
           className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
           {...register('business_description')}
         />
-        <p className="mt-1 text-xs text-gray-400">Courte description de votre activité. Peut apparaître sur la vitrine publique.</p>
+        <p className="mt-1 text-xs text-gray-400">{t('settings.business_desc_hint')}</p>
       </div>
 
       <div className="flex items-center gap-3">
         <Button type="submit" loading={mutation.isPending} disabled={!isDirty}>
-          Enregistrer
+          {t('common.save')}
         </Button>
-        {saved && <span className="text-sm text-emerald-600 font-medium">Paramètres enregistrés ✓</span>}
+        {saved && <span className="text-sm text-emerald-600 font-medium">{t('settings.saved_ok')}</span>}
       </div>
     </form>
     </div>
@@ -584,6 +575,7 @@ interface UserModalProps {
 }
 
 function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
@@ -623,12 +615,12 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['users'] })
-      toast.success(editing ? 'Utilisateur mis à jour.' : 'Utilisateur créé.')
+      toast.success(editing ? t('settings.user_updated') : t('settings.user_created'))
       onClose()
     },
     onError: (e: unknown) => {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
-      setApiError(msg ?? "Erreur lors de l'enregistrement.")
+      setApiError(msg ?? t('settings.save_error'))
     },
   })
 
@@ -641,33 +633,33 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={editing ? "Modifier l'utilisateur" : 'Nouvel utilisateur'}
+      title={editing ? t('settings.user_modal_edit') : t('settings.user_modal_create')}
       footer={
         <div className="flex gap-2 w-full">
-          <Button variant="secondary" className="flex-1" onClick={onClose}>Annuler</Button>
+          <Button variant="secondary" className="flex-1" onClick={onClose}>{t('common.cancel')}</Button>
           <Button type="submit" form="user-form" className="flex-1" loading={mutation.isPending}>
-            {editing ? 'Enregistrer' : 'Créer'}
+            {editing ? t('common.save') : t('common.create')}
           </Button>
         </div>
       }
     >
       <form id="user-form" onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.field_name_required')}</label>
           <input {...register('name')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
           {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.field_email_required')}</label>
           <input type="email" {...register('email')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
           {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Mot de passe{!editing && ' *'}
-            {editing && <span className="font-normal text-gray-400 ml-1">(vide = inchangé)</span>}
+            {t('settings.field_password')}{!editing && ' *'}
+            {editing && <span className="font-normal text-gray-400 ml-1">{t('settings.field_password_note')}</span>}
           </label>
           <input type="password" autoComplete="new-password" {...register('password')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
           {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
@@ -675,12 +667,12 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
 
         <div className="flex items-center gap-3">
           <input type="checkbox" id="is_active_u" {...register('is_active')} className="h-4 w-4 rounded border-gray-300 text-indigo-600" />
-          <label htmlFor="is_active_u" className="text-sm text-gray-700">Compte actif</label>
+          <label htmlFor="is_active_u" className="text-sm text-gray-700">{t('settings.field_active')}</label>
         </div>
 
         {groups.length > 0 && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Groupes</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.col_groups')}</label>
             <div className="flex flex-wrap gap-2">
               {groups.map((g) => {
                 const active = selectedGroupIds.includes(g.id)
@@ -714,6 +706,7 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
 // ─── UsersTab ─────────────────────────────────────────────────────────────────
 
 function UsersTab() {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const me = useAuthStore((s) => s.user)
   const [modalOpen, setModalOpen]     = useState(false)
@@ -732,7 +725,7 @@ function UsersTab() {
 
   const deleteMutation = useMutation({
     mutationFn: deleteUser,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['users'] }); toast.success('Utilisateur supprimé.') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['users'] }); toast.success(t('settings.user_deleted')) },
     onError: (err) => toast.error(getApiErrorMessage(err)),
     onSettled: () => setDeletingId(null),
   })
@@ -745,9 +738,9 @@ function UsersTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold text-gray-800">Utilisateurs</h2>
+        <h2 className="text-base font-semibold text-gray-800">{t('settings.users_title')}</h2>
         <Button size="sm" icon={<PlusIcon className="h-4 w-4" />} onClick={openCreate}>
-          Nouvel utilisateur
+          {t('settings.new_user')}
         </Button>
       </div>
 
@@ -768,11 +761,11 @@ function UsersTab() {
           <table className="w-full min-w-[480px] text-sm">
             <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
               <tr>
-                <th className="px-4 py-3 text-left">Nom</th>
-                <th className="px-4 py-3 text-left hidden sm:table-cell">Email</th>
-                <th className="px-4 py-3 text-left hidden md:table-cell">Groupes</th>
-                <th className="px-4 py-3 text-left">Statut</th>
-                <th className="px-4 py-3 sr-only">Actions</th>
+                <th className="px-4 py-3 text-left">{t('settings.col_name')}</th>
+                <th className="px-4 py-3 text-left hidden sm:table-cell">{t('settings.col_email')}</th>
+                <th className="px-4 py-3 text-left hidden md:table-cell">{t('settings.col_groups')}</th>
+                <th className="px-4 py-3 text-left">{t('settings.col_status')}</th>
+                <th className="px-4 py-3 sr-only">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 bg-white">
@@ -780,7 +773,7 @@ function UsersTab() {
                 <tr key={u.id} className="hover:bg-gray-50/50 transition">
                   <td className="px-4 py-3 font-medium text-gray-800">
                     {u.name}
-                    {u.id === me?.id && <span className="ml-2 text-xs text-indigo-500">(vous)</span>}
+                    {u.id === me?.id && <span className="ml-2 text-xs text-indigo-500">{t('settings.you')}</span>}
                     <p className="text-xs text-gray-400 sm:hidden">{u.email}</p>
                   </td>
                   <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{u.email}</td>
@@ -789,12 +782,12 @@ function UsersTab() {
                       {(u.groups ?? []).map((g) => (
                         <Badge key={g.id} variant="info" size="sm">{g.name}</Badge>
                       ))}
-                      {(u.groups ?? []).length === 0 && <span className="text-xs text-gray-400">Aucun</span>}
+                      {(u.groups ?? []).length === 0 && <span className="text-xs text-gray-400">{t('settings.no_groups')}</span>}
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant={u.is_active ? 'success' : 'default'} dot>
-                      {u.is_active ? 'Actif' : 'Inactif'}
+                      {u.is_active ? t('common.active') : t('common.inactive')}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
@@ -803,7 +796,7 @@ function UsersTab() {
                         type="button"
                         onClick={() => openEdit(u)}
                         className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600 transition"
-                        title="Modifier"
+                        title={t('common.edit')}
                       >
                         <PencilSquareIcon className="h-4 w-4" />
                       </button>
@@ -813,7 +806,7 @@ function UsersTab() {
                           onClick={() => setDeleteTarget(u)}
                           disabled={deletingId === u.uid}
                           className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 transition disabled:opacity-40"
-                          title="Supprimer"
+                          title={t('common.delete')}
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
@@ -837,11 +830,11 @@ function UsersTab() {
       <Modal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title="Supprimer l'utilisateur"
+        title={t('settings.delete_user_title')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
             <Button
               variant="danger"
               loading={deleteMutation.isPending}
@@ -852,15 +845,15 @@ function UsersTab() {
                 setDeleteTarget(null)
               }}
             >
-              Supprimer
+              {t('common.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-gray-600">
-          Voulez-vous supprimer{' '}
+          {t('settings.delete_user_confirm')}{' '}
           <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ?
-          {' '}Cette action est irréversible.
+          {' '}{t('common.action_irreversible')}
         </p>
       </Modal>
     </div>
@@ -897,6 +890,7 @@ interface PermissionsModalProps {
 }
 
 function PermissionsModal({ group, isOpen, onClose }: PermissionsModalProps) {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [checked, setChecked] = useState<number[]>([])
 
@@ -916,7 +910,7 @@ function PermissionsModal({ group, isOpen, onClose }: PermissionsModalProps) {
     mutationFn: () => syncGroupPermissions(group!.uid, checked),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['groups'] })
-      toast.success('Permissions mises à jour.')
+      toast.success(t('groups.permissions') + ' ' + t('settings.save_success').toLowerCase())
       onClose()
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -941,9 +935,9 @@ function PermissionsModal({ group, isOpen, onClose }: PermissionsModalProps) {
       size="lg"
       footer={
         <div className="flex gap-2 w-full">
-          <Button variant="secondary" className="flex-1" onClick={onClose}>Annuler</Button>
+          <Button variant="secondary" className="flex-1" onClick={onClose}>{t('common.cancel')}</Button>
           <Button className="flex-1" loading={mutation.isPending} onClick={() => mutation.mutate()}>
-            Enregistrer
+            {t('common.save')}
           </Button>
         </div>
       }
@@ -995,6 +989,7 @@ interface GroupModalProps {
 }
 
 function GroupModal({ isOpen, editing, onClose }: GroupModalProps) {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [apiError, setApiError] = useState<string | null>(null)
 
@@ -1015,12 +1010,12 @@ function GroupModal({ isOpen, editing, onClose }: GroupModalProps) {
         : createGroup(vals as CreateGroupData),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['groups'] })
-      toast.success(editing ? 'Groupe mis à jour.' : 'Groupe créé.')
+      toast.success(editing ? t('settings.group_updated') : t('settings.group_created'))
       onClose()
     },
     onError: (e: unknown) => {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message
-      setApiError(msg ?? "Erreur lors de l'enregistrement.")
+      setApiError(msg ?? t('settings.save_error'))
     },
   })
 
@@ -1028,27 +1023,27 @@ function GroupModal({ isOpen, editing, onClose }: GroupModalProps) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={editing ? 'Modifier le groupe' : 'Nouveau groupe'}
+      title={editing ? t('settings.group_modal_edit') : t('settings.group_modal_create')}
       size="sm"
       footer={
         <div className="flex gap-2 w-full">
-          <Button variant="secondary" className="flex-1" onClick={onClose}>Annuler</Button>
+          <Button variant="secondary" className="flex-1" onClick={onClose}>{t('common.cancel')}</Button>
           <Button type="submit" form="group-form" className="flex-1" loading={mutation.isPending}>
-            {editing ? 'Enregistrer' : 'Créer'}
+            {editing ? t('common.save') : t('common.create')}
           </Button>
         </div>
       }
     >
       <form id="group-form" onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.field_name_required')}</label>
           <input {...register('name')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
           {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Description <span className="font-normal text-gray-400">(optionnel)</span>
+            {t('settings.field_description')} <span className="font-normal text-gray-400">({t('common.optional').toLowerCase()})</span>
           </label>
           <textarea {...register('description')} rows={2} className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
         </div>
@@ -1066,6 +1061,7 @@ function GroupModal({ isOpen, editing, onClose }: GroupModalProps) {
 // ─── GroupsTab ────────────────────────────────────────────────────────────────
 
 function GroupsTab() {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [groupModalOpen, setGroupModalOpen]   = useState(false)
   const [editing, setEditing]                 = useState<Group | null>(null)
@@ -1081,7 +1077,7 @@ function GroupsTab() {
 
   const deleteMutation = useMutation({
     mutationFn: deleteGroup,
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['groups'] }); toast.success('Groupe supprimé.') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['groups'] }); toast.success(t('settings.group_deleted')) },
     onError: (err) => toast.error(getApiErrorMessage(err)),
     onSettled: () => setDeletingId(null),
   })
@@ -1093,9 +1089,9 @@ function GroupsTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold text-gray-800">Groupes & permissions</h2>
+        <h2 className="text-base font-semibold text-gray-800">{t('settings.groups_title')}</h2>
         <Button size="sm" icon={<PlusIcon className="h-4 w-4" />} onClick={openCreate}>
-          Nouveau groupe
+          {t('settings.new_group')}
         </Button>
       </div>
 
@@ -1110,9 +1106,9 @@ function GroupsTab() {
               <div>
                 <p className="font-medium text-gray-800">{g.name}</p>
                 <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-gray-400">
-                  <span>{g.users_count ?? 0} utilisateur{(g.users_count ?? 0) > 1 ? 's' : ''}</span>
+                  <span>{g.users_count ?? 0} {(g.users_count ?? 0) > 1 ? t('settings.user_plural') : t('settings.user_singular')}</span>
                   <span>·</span>
-                  <span>{g.permissions?.length ?? 0} permission{(g.permissions?.length ?? 0) > 1 ? 's' : ''}</span>
+                  <span>{g.permissions?.length ?? 0} {(g.permissions?.length ?? 0) > 1 ? t('settings.perm_plural') : t('settings.perm_singular')}</span>
                   {g.description && <><span>·</span><span className="italic">{g.description}</span></>}
                 </div>
               </div>
@@ -1123,13 +1119,13 @@ function GroupsTab() {
                   onClick={() => openPerms(g)}
                   className="rounded px-2.5 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 transition"
                 >
-                  Permissions
+                  {t('settings.permissions_btn')}
                 </button>
                 <button
                   type="button"
                   onClick={() => openEdit(g)}
                   className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600 transition"
-                  title="Renommer"
+                  title={t('settings.rename')}
                 >
                   <PencilSquareIcon className="h-4 w-4" />
                 </button>
@@ -1138,7 +1134,7 @@ function GroupsTab() {
                   onClick={() => setDeleteGroupTarget(g)}
                   disabled={deletingId === g.uid}
                   className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 transition disabled:opacity-40"
-                  title="Supprimer"
+                  title={t('common.delete')}
                 >
                   <TrashIcon className="h-4 w-4" />
                 </button>
@@ -1154,11 +1150,11 @@ function GroupsTab() {
       <Modal
         isOpen={!!deleteGroupTarget}
         onClose={() => setDeleteGroupTarget(null)}
-        title="Supprimer le groupe"
+        title={t('settings.delete_group_title')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={() => setDeleteGroupTarget(null)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setDeleteGroupTarget(null)}>{t('common.cancel')}</Button>
             <Button
               variant="danger"
               loading={deleteMutation.isPending}
@@ -1169,15 +1165,15 @@ function GroupsTab() {
                 setDeleteGroupTarget(null)
               }}
             >
-              Supprimer
+              {t('common.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-gray-600">
-          Voulez-vous supprimer le groupe{' '}
+          {t('settings.delete_group_confirm')}{' '}
           <span className="font-semibold text-gray-900">«{deleteGroupTarget?.name}»</span> ?
-          {' '}Les utilisateurs de ce groupe perdront ses permissions.
+          {' '}{t('settings.delete_group_effect')}
         </p>
       </Modal>
     </div>
@@ -1187,15 +1183,15 @@ function GroupsTab() {
 // ─── SubscriptionLockedNotice ─────────────────────────────────────────────────
 
 function SubscriptionLockedNotice() {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col items-center justify-center py-14 text-center space-y-3">
       <div className="rounded-full bg-amber-50 p-4">
         <CreditCardIcon className="h-7 w-7 text-amber-500" />
       </div>
-      <h3 className="text-sm font-semibold text-gray-900">Accès limité</h3>
+      <h3 className="text-sm font-semibold text-gray-900">{t('settings.locked_title')}</h3>
       <p className="text-sm text-gray-500 max-w-xs leading-relaxed">
-        Ces paramètres sont indisponibles tant que votre abonnement est expiré.
-        Renouvelez votre abonnement dans la section ci-dessus pour y accéder à nouveau.
+        {t('settings.locked_desc')}
       </p>
     </div>
   )
@@ -1203,28 +1199,30 @@ function SubscriptionLockedNotice() {
 
 // ─── SettingsPage ─────────────────────────────────────────────────────────────
 
-const STATUS_LABEL: Record<string, string> = {
-  trial:     'Essai gratuit',
-  active:    'Actif',
-  expired:   'Expiré',
-  cancelled: 'Annulé',
-}
 const STATUS_COLOR: Record<string, string> = {
   trial:     'bg-blue-100 text-blue-700',
   active:    'bg-emerald-100 text-emerald-700',
   expired:   'bg-red-100 text-red-700',
   cancelled: 'bg-gray-100 text-gray-500',
 }
-const CYCLE_LABEL: Record<string, string> = {
-  trial:    'Essai gratuit',
-  monthly:  'Mensuel',
-  yearly:   'Annuel',
-  lifetime: 'À vie',
-}
 
 function SubscriptionInfoCard() {
+  const { t } = useTranslation()
   const subscription        = useAuthStore((s) => s.subscription)
   const subscriptionExpired = useAuthStore((s) => s.subscriptionExpired)
+
+  const STATUS_LABEL: Record<string, string> = {
+    trial:     t('settings.status_trial'),
+    active:    t('settings.status_active'),
+    expired:   t('settings.status_expired'),
+    cancelled: t('settings.status_cancelled'),
+  }
+  const CYCLE_LABEL: Record<string, string> = {
+    trial:    t('settings.cycle_trial'),
+    monthly:  t('settings.cycle_monthly'),
+    yearly:   t('settings.cycle_yearly'),
+    lifetime: t('settings.cycle_lifetime'),
+  }
   const [searchParams, setSearchParams] = useSearchParams()
 
   const daysLeft       = subscription?.days_remaining ?? null
@@ -1282,7 +1280,7 @@ function SubscriptionInfoCard() {
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
           <CreditCardIcon className="h-4 w-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-800">Mon abonnement</h2>
+          <h2 className="text-sm font-semibold text-gray-800">{t('settings.my_subscription')}</h2>
         </div>
         {canRenew && !showRenew && !isExpired && (
           <button
@@ -1290,7 +1288,7 @@ function SubscriptionInfoCard() {
             onClick={() => setShowRenew(true)}
             className="text-xs font-semibold text-brand-primary hover:underline"
           >
-            Renouveler →
+            {t('settings.renew')}
           </button>
         )}
       </div>
@@ -1308,16 +1306,16 @@ function SubscriptionInfoCard() {
           </span>
         </div>
       ) : (
-        <p className="text-sm text-red-600 font-medium">Abonnement expiré</p>
+        <p className="text-sm text-red-600 font-medium">{t('settings.expired_sub')}</p>
       )}
 
       {subscription?.ends_at && (
         <p className={`mt-2 text-xs ${isExpiringSoon ? 'text-amber-600 font-medium' : 'text-gray-500'}`}>
-          {subscription.status === 'trial' ? "Essai jusqu'au" : "Valide jusqu'au"}{' '}
+          {subscription.status === 'trial' ? t('settings.trial_until') : t('settings.valid_until')}{' '}
           <span className="font-semibold">{formatDate(subscription!.ends_at!)}</span>
           {daysLeft !== null && daysLeft >= 0 && daysLeft <= 30 && (
             <span className="ml-1">
-              ({daysLeft === 0 ? "expire aujourd'hui" : daysLeft === 1 ? '1 jour restant' : `${daysLeft} jours restants`})
+              ({daysLeft === 0 ? t('settings.expires_today') : daysLeft === 1 ? t('settings.days_left_1') : t('settings.days_left', { n: daysLeft })})
             </span>
           )}
         </p>
@@ -1343,7 +1341,7 @@ function SubscriptionInfoCard() {
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
-                    {c === 'monthly' ? 'Mensuel' : 'Annuel'}
+                    {c === 'monthly' ? t('settings.cycle_monthly') : t('settings.cycle_yearly')}
                     {c === 'yearly' && discountPct && (
                       <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-bold text-green-700">
                         -{discountPct}%
@@ -1434,22 +1432,22 @@ function SubscriptionInfoCard() {
               className="w-full rounded-xl bg-brand-primary py-3 text-sm font-bold text-white shadow-sm hover:opacity-90 disabled:opacity-40 transition-all"
             >
               {renewMutation.isPending
-                ? 'Redirection vers le paiement…'
+                ? t('settings.redirecting_payment')
                 : selectedPlan
-                  ? `Payer avec ${selectedCycle === 'yearly' ? 'abonnement annuel' : 'abonnement mensuel'} →`
-                  : 'Sélectionner un plan pour continuer'}
+                  ? (selectedCycle === 'yearly' ? t('settings.pay_yearly') : t('settings.pay_monthly'))
+                  : t('settings.select_plan')}
             </button>
             <button
               type="button"
               onClick={() => { setShowRenew(false); setSelectedPlan('') }}
               className="w-full rounded-xl py-2.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
             >
-              Annuler
+              {t('common.cancel')}
             </button>
           </div>
 
           <p className="text-center text-xs text-gray-400">
-            🔒 Paiement sécurisé · Orange Money, Wave, Carte bancaire
+            {t('settings.secure_payment')}
           </p>
         </div>
       )}
@@ -1466,14 +1464,15 @@ const facturationSchema = z.object({
 })
 type FacturationValues = z.infer<typeof facturationSchema>
 
-const TX_STATUS: Record<string, { label: string; className: string }> = {
-  completed: { label: 'Payé',    className: 'bg-emerald-100 text-emerald-700' },
-  pending:   { label: 'En cours',className: 'bg-amber-100 text-amber-700' },
-  failed:    { label: 'Échoué', className: 'bg-red-100 text-red-700' },
-  cancelled: { label: 'Annulé', className: 'bg-gray-100 text-gray-500' },
-}
-
 function InvoiceHistory() {
+  const { t } = useTranslation()
+  const TX_STATUS: Record<string, { label: string; className: string }> = {
+    completed: { label: t('settings.tx_paid'),      className: 'bg-emerald-100 text-emerald-700' },
+    pending:   { label: t('settings.tx_pending'),   className: 'bg-amber-100 text-amber-700' },
+    failed:    { label: t('settings.tx_failed'),    className: 'bg-red-100 text-red-700' },
+    cancelled: { label: t('settings.tx_cancelled'), className: 'bg-gray-100 text-gray-500' },
+  }
+
   const { data, isLoading } = useQuery({
     queryKey: ['billing-transactions'],
     queryFn:  getBillingTransactions,
@@ -1486,16 +1485,16 @@ function InvoiceHistory() {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-gray-800">Historique de paiements</h3>
+      <h3 className="text-sm font-semibold text-gray-800">{t('settings.payment_history')}</h3>
       <div className="overflow-hidden rounded-xl border border-gray-100">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
             <tr>
-              <th className="px-4 py-2.5 text-left">Date</th>
-              <th className="px-4 py-2.5 text-left hidden sm:table-cell">Plan</th>
-              <th className="px-4 py-2.5 text-left hidden sm:table-cell">Cycle</th>
-              <th className="px-4 py-2.5 text-right">Montant</th>
-              <th className="px-4 py-2.5 text-center">Statut</th>
+              <th className="px-4 py-2.5 text-left">{t('settings.tx_date')}</th>
+              <th className="px-4 py-2.5 text-left hidden sm:table-cell">{t('settings.tx_plan')}</th>
+              <th className="px-4 py-2.5 text-left hidden sm:table-cell">{t('settings.tx_cycle')}</th>
+              <th className="px-4 py-2.5 text-right">{t('settings.tx_amount')}</th>
+              <th className="px-4 py-2.5 text-center">{t('settings.tx_status')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 bg-white">
@@ -1511,7 +1510,7 @@ function InvoiceHistory() {
               ))
               : transactions.map((tx) => {
                 const statusCfg = TX_STATUS[tx.status] ?? { label: tx.status, className: 'bg-gray-100 text-gray-500' }
-                const cycleLabel = tx.billing_cycle === 'yearly' ? 'Annuel' : 'Mensuel'
+                const cycleLabel = tx.billing_cycle === 'yearly' ? t('settings.tx_yearly') : t('settings.tx_monthly')
                 return (
                   <tr key={tx.id} className="hover:bg-gray-50/50">
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
@@ -1541,6 +1540,7 @@ function InvoiceHistory() {
 }
 
 function FacturationTab() {
+  const { t } = useTranslation()
   const qc                  = useQueryClient()
   const subscriptionExpired = useAuthStore((s) => s.subscriptionExpired)
 
@@ -1569,54 +1569,54 @@ function FacturationTab() {
       invoice_prefix: v.invoice_prefix || null,
       pdf_template:   v.pdf_template   || null,
     }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tenant-settings'] }); toast.success('Paramètres de facturation enregistrés.') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tenant-settings'] }); toast.success(t('settings.saved_billing')) },
     onError:   (err) => toast.error(getApiErrorMessage(err)),
   })
 
   if (subscriptionExpired) return <SubscriptionLockedNotice />
-  if (isLoading) return <div className="text-sm text-gray-400">Chargement…</div>
-  if (isError) return <div className="rounded-xl bg-red-50 px-4 py-6 text-center text-sm text-red-600">Erreur lors du chargement des paramètres.</div>
+  if (isLoading) return <div className="text-sm text-gray-400">{t('settings.loading')}</div>
+  if (isError) return <div className="rounded-xl bg-red-50 px-4 py-6 text-center text-sm text-red-600">{t('settings.load_error')}</div>
 
   return (
     <div className="space-y-8">
     <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="max-w-xl space-y-5">
-      <h2 className="text-base font-semibold text-gray-800">Paramètres de facturation</h2>
+      <h2 className="text-base font-semibold text-gray-800">{t('settings.billing_title')}</h2>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Pied de page des factures
+          {t('settings.invoice_footer')}
         </label>
         <textarea
           rows={3}
-          placeholder="Ex : TVA non applicable, art. 293B du CGI · RCCM SN-DKR-2024-B-12345"
+          placeholder={t('settings.invoice_footer_placeholder')}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary resize-none"
           {...register('invoice_footer')}
         />
-        <p className="mt-1 text-xs text-gray-400">Apparaît en bas de chaque PDF de facture. Laissez vide pour utiliser le défaut.</p>
+        <p className="mt-1 text-xs text-gray-400">{t('settings.invoice_footer_hint')}</p>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Préfixe de numérotation
+          {t('settings.invoice_prefix')}
         </label>
         <input
           type="text"
           maxLength={10}
-          placeholder="FAC (par défaut)"
+          placeholder={t('settings.invoice_prefix_placeholder')}
           className="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary font-mono"
           {...register('invoice_prefix')}
         />
-        <p className="mt-1 text-xs text-gray-400">Le numéro final sera du type <code className="bg-gray-100 px-1 rounded">PREFIXE-2025-00001</code>. Laissez vide pour garder "FAC".</p>
+        <p className="mt-1 text-xs text-gray-400">{t('settings.invoice_prefix_hint')}</p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">Modèle PDF</label>
+        <label className="block text-sm font-medium text-gray-700 mb-3">{t('settings.pdf_template')}</label>
         <div className="grid grid-cols-2 gap-3">
           {([
             {
               value: 'classic' as const,
-              label: 'Classique',
-              desc: 'En-tête coloré, identité forte',
+              label: t('settings.pdf_classic'),
+              desc: t('settings.pdf_classic_desc'),
               preview: (
                 <div className="w-full overflow-hidden rounded border border-gray-100">
                   <div className="flex items-center justify-between bg-brand-primary px-2 py-1.5">
@@ -1640,8 +1640,8 @@ function FacturationTab() {
             },
             {
               value: 'moderne' as const,
-              label: 'Moderne',
-              desc: 'Fond blanc, sobre et élégant',
+              label: t('settings.pdf_modern'),
+              desc: t('settings.pdf_modern_desc'),
               preview: (
                 <div className="w-full overflow-hidden rounded border border-gray-100">
                   <div
@@ -1682,7 +1682,7 @@ function FacturationTab() {
 
       <div className="flex justify-end">
         <Button type="submit" loading={isSubmitting || mutation.isPending} disabled={!isDirty}>
-          Enregistrer
+          {t('common.save')}
         </Button>
       </div>
     </form>
@@ -1715,6 +1715,7 @@ const POS_PAYMENT_OPTIONS = [
 ]
 
 function VenteTab() {
+  const { t } = useTranslation()
   const qc                  = useQueryClient()
   const subscriptionExpired = useAuthStore((s) => s.subscriptionExpired)
   const setAuth             = useAuthStore((s) => s.setAuth)
@@ -1789,14 +1790,14 @@ function VenteTab() {
       }
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
-      toast.success('Paramètres de vente enregistrés.')
+      toast.success(t('settings.saved_sales'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   if (subscriptionExpired) return <SubscriptionLockedNotice />
-  if (isLoading) return <div className="text-sm text-gray-400">Chargement…</div>
-  if (isError) return <div className="rounded-xl bg-red-50 px-4 py-6 text-center text-sm text-red-600">Erreur lors du chargement des paramètres.</div>
+  if (isLoading) return <div className="text-sm text-gray-400">{t('settings.loading')}</div>
+  if (isError) return <div className="rounded-xl bg-red-50 px-4 py-6 text-center text-sm text-red-600">{t('settings.load_error')}</div>
 
   return (
     <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-8">
@@ -1805,17 +1806,17 @@ function VenteTab() {
       <div>
         <div className="flex items-center gap-2 mb-3">
           <CurrencyDollarIcon className="h-4 w-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-800">Devise</h2>
+          <h2 className="text-sm font-semibold text-gray-800">{t('settings.currency')}</h2>
         </div>
         <div className="max-w-xs">
           <Select {...register('currency')}>
             {SUPPORTED_CURRENCIES.map((c) => (
               <option key={c.code} value={c.code}>
-                {c.code} — {c.symbol}{c.decimals === 0 ? ' (sans centimes)' : ''}
+                {c.code} — {c.symbol}{c.decimals === 0 ? ` ${t('settings.no_cents')}` : ''}
               </option>
             ))}
           </Select>
-          <p className="mt-1 text-xs text-gray-400">Affecte tous les montants affichés dans l'application.</p>
+          <p className="mt-1 text-xs text-gray-400">{t('settings.currency_hint')}</p>
         </div>
       </div>
 
@@ -1825,11 +1826,11 @@ function VenteTab() {
       <div>
         <div className="flex items-center gap-2 mb-3">
           <ReceiptPercentIcon className="h-4 w-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-800">TVA</h2>
+          <h2 className="text-sm font-semibold text-gray-800">{t('settings.vat_section')}</h2>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-md">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Taux par défaut (%)</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('settings.vat_rate')}</label>
             <input
               type="number"
               min={0}
@@ -1838,12 +1839,12 @@ function VenteTab() {
               {...register('default_vat_rate', { valueAsNumber: true })}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
             />
-            <p className="mt-1 text-xs text-gray-400">0 = exonéré de TVA. Utilisé par défaut sur les factures.</p>
+            <p className="mt-1 text-xs text-gray-400">{t('settings.vat_rate_hint')}</p>
           </div>
           <Input
-            label="Libellé TVA"
+            label={t('settings.vat_label')}
             placeholder="TVA"
-            hint="Affiché sur les factures (ex : TVA, TPS, VAT)"
+            hint={t('settings.vat_label_hint')}
             {...register('vat_label')}
           />
         </div>
@@ -1855,9 +1856,9 @@ function VenteTab() {
       <div>
         <div className="flex items-center gap-2 mb-3">
           <DevicePhoneMobileIcon className="h-4 w-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-800">Modes de paiement (caisse)</h2>
+          <h2 className="text-sm font-semibold text-gray-800">{t('settings.pos_payment')}</h2>
         </div>
-        <p className="mb-3 text-xs text-gray-500">Cochez les modes de paiement acceptés au point de vente. Au moins un mode est requis.</p>
+        <p className="mb-3 text-xs text-gray-500">{t('settings.pos_payment_hint')}</p>
         <div className="flex flex-wrap gap-2">
           {POS_PAYMENT_OPTIONS.map(({ value, label }) => {
             const active = (posMethods ?? []).includes(value)
@@ -1892,17 +1893,17 @@ function VenteTab() {
             className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-primary"
           />
           <div>
-            <span className="text-sm font-medium text-gray-700">Impression automatique du reçu</span>
-            <p className="text-xs text-gray-400 mt-0.5">Le dialogue d'impression s'ouvre automatiquement après chaque vente.</p>
+            <span className="text-sm font-medium text-gray-700">{t('settings.auto_print')}</span>
+            <p className="text-xs text-gray-400 mt-0.5">{t('settings.auto_print_hint')}</p>
           </div>
         </label>
       </div>
 
       <div className="flex items-center gap-3">
         <Button type="submit" loading={mutation.isPending} disabled={!isDirty}>
-          Enregistrer
+          {t('common.save')}
         </Button>
-        {saved && <span className="text-sm text-emerald-600 font-medium">Paramètres enregistrés ✓</span>}
+        {saved && <span className="text-sm text-emerald-600 font-medium">{t('settings.saved_ok')}</span>}
       </div>
     </form>
   )
@@ -1921,11 +1922,21 @@ function EmailTab() {
 }
 
 export default function SettingsPage() {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<Tab>('boutique')
+
+  const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
+    { id: 'boutique',    label: t('settings.shop_tab'),    icon: <BuildingStorefrontIcon className="h-4 w-4" /> },
+    { id: 'vente',       label: t('settings.sales_tab'),   icon: <CreditCardIcon className="h-4 w-4" /> },
+    { id: 'facturation', label: t('settings.billing_tab'), icon: <DocumentTextIcon className="h-4 w-4" /> },
+    { id: 'email',       label: t('settings.email_tab'),   icon: <EnvelopeSmtpIcon className="h-4 w-4" /> },
+    { id: 'users',       label: t('settings.users_tab'),   icon: <UsersIcon className="h-4 w-4" /> },
+    { id: 'groups',      label: t('settings.groups_tab'),  icon: <ShieldCheckIcon className="h-4 w-4" /> },
+  ]
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <h1 className="text-xl font-bold text-slate-900">Paramètres</h1>
+      <h1 className="text-xl font-bold text-slate-900">{t('settings.title')}</h1>
 
       {/* Carte abonnement — toujours visible en haut */}
       <SubscriptionInfoCard />
