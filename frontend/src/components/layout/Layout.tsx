@@ -49,6 +49,13 @@ export default function Layout() {
     }
   }, [tenant, applyBrandColors])
 
+  // Synchronise la langue dès que tenant.locale change (après sauvegarde des paramètres)
+  useEffect(() => {
+    if (tenant?.locale) {
+      i18n.changeLanguage(tenant.locale)
+    }
+  }, [tenant?.locale, i18n])
+
   // Au montage : rafraîchit les données depuis /auth/me qui retourne l'api_key.
   // Couvre aussi la restauration après F5 (tenantApiKey non persisté).
   useEffect(() => {
