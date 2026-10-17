@@ -12,6 +12,7 @@ import {
   CalendarDaysIcon,
   ExclamationCircleIcon,
 } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getCustomer, getCustomerSales, updateCustomer } from '@/services/api/customers'
 import { addPayment } from '@/services/api/sales'
 import Input from '@/components/ui/Input'
@@ -34,8 +35,6 @@ import type { Sale } from '@/types'
 
 const FORM_ID = 'customer-detail-form'
 
-// ── Date relative ─────────────────────────────────────────────────────────
-
 const rtf = new Intl.RelativeTimeFormat('fr', { numeric: 'auto' })
 
 function formatRelative(date: string | null): string {
@@ -52,20 +51,11 @@ function formatRelative(date: string | null): string {
   return rtf.format(Math.round(diffDays / 365), 'year')
 }
 
-// ── Statuts ventes ────────────────────────────────────────────────────────
-
 const STATUS_VARIANT: Record<Sale['status'], 'success' | 'warning' | 'danger'> = {
   confirmed: 'success',
   draft: 'warning',
   cancelled: 'danger',
 }
-const STATUS_LABEL: Record<Sale['status'], string> = {
-  confirmed: 'Confirmée',
-  draft: 'Brouillon',
-  cancelled: 'Annulée',
-}
-
-// ── KPI card ──────────────────────────────────────────────────────────────
 
 function KpiCard({
   icon,
@@ -92,12 +82,11 @@ function KpiCard({
   )
 }
 
-// ── Page principale ────────────────────────────────────────────────────────
-
 export default function CustomerDetailPage() {
   const { uid } = useParams<{ uid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { t } = useTranslation()
 
   const [salesPage, setSalesPage] = useState(1)
   const [editOpen, setEditOpen] = useState(false)
@@ -106,7 +95,12 @@ export default function CustomerDetailPage() {
   const [payMethod, setPayMethod] = useState('cash')
   const [payAmount, setPayAmount] = useState('')
 
-  // ── Données ───────────────────────────────────────────────────────────────
+  const STATUS_LABEL: Record<Sale['status'], string> = {
+    confirmed: t('sales.confirmed'),
+    draft: t('sales.draft'),
+    cancelled: t('sales.cancelled'),
+  }
+
   const { data: customer, isLoading: customerLoading } = useQuery({
     queryKey: ['customer', uid],
     queryFn: () => getCustomer(uid!),
@@ -120,14 +114,12 @@ export default function CustomerDetailPage() {
     placeholderData: (prev) => prev,
   })
 
-  // Toutes les ventes confirmées pour la section créances (sans pagination)
   const { data: allSalesData } = useQuery({
     queryKey: ['customer-sales-all', uid],
     queryFn: () => getCustomerSales(uid!, { page: 1, per_page: 200 }),
     enabled: !!uid && (customer?.outstanding_balance ?? 0) > 0,
   })
 
-  // ── Mutation encaissement rapide ──────────────────────────────────────────
   const payMutation = useMutation({
     mutationFn: () => addPayment(payingSale!.uid, {
       method: payMethod,
@@ -139,7 +131,7 @@ export default function CustomerDetailPage() {
       qc.invalidateQueries({ queryKey: ['debts'] })
       setPayOpen(false)
       setPayAmount('')
-      toast.success('Paiement enregistré.')
+      toast.success(t('customers.payment_registered'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -152,7 +144,6 @@ export default function CustomerDetailPage() {
     setPayOpen(true)
   }
 
-  // ── Mutation édition ──────────────────────────────────────────────────────
   const updateMutation = useMutation({
     mutationFn: (values: CustomerFormValues) =>
       updateCustomer(uid!, {
@@ -169,25 +160,24 @@ export default function CustomerDetailPage() {
     },
   })
 
-  // ── Colonnes ventes ───────────────────────────────────────────────────────
   const saleColumns: Column<Sale>[] = [
     {
       key: 'reference',
-      header: 'Référence',
+      header: t('common.reference'),
       render: (s) => (
         <span className="font-mono text-sm font-semibold text-gray-900">{s.reference}</span>
       ),
     },
     {
       key: 'confirmed_at',
-      header: 'Date',
+      header: t('common.date'),
       render: (s) => (
         <span className="text-sm text-gray-600">{formatDate(s.confirmed_at ?? s.created_at)}</span>
       ),
     },
     {
       key: 'total',
-      header: 'Montant',
+      header: t('common.amount'),
       align: 'right',
       render: (s) => (
         <span className="font-medium text-gray-900">{formatCurrency(s.total)}</span>
@@ -195,7 +185,7 @@ export default function CustomerDetailPage() {
     },
     {
       key: 'status',
-      header: 'Statut',
+      header: t('common.status'),
       align: 'center',
       render: (s) => (
         <Badge variant={STATUS_VARIANT[s.status]}>{STATUS_LABEL[s.status]}</Badge>
@@ -203,7 +193,7 @@ export default function CustomerDetailPage() {
     },
     {
       key: 'paid_amount',
-      header: 'Payé',
+      header: t('sales.paid'),
       align: 'right',
       render: (s) => (
         <span className="text-sm text-gray-700">{formatCurrency(s.paid_amount)}</span>
@@ -211,7 +201,7 @@ export default function CustomerDetailPage() {
     },
     {
       key: 'due',
-      header: 'Reste dû',
+      header: t('sales.due'),
       align: 'right',
       render: (s) => {
         const due = parseFloat(s.total) - parseFloat(s.paid_amount)
@@ -224,7 +214,6 @@ export default function CustomerDetailPage() {
     },
   ]
 
-  // ── États de chargement / erreur ──────────────────────────────────────────
   if (customerLoading) {
     return (
       <div className="space-y-4 p-4 sm:p-6">
@@ -244,9 +233,9 @@ export default function CustomerDetailPage() {
   if (!customer) {
     return (
       <div className="p-6">
-        <p className="text-sm text-gray-500">Client introuvable.</p>
+        <p className="text-sm text-gray-500">{t('customers.not_found')}</p>
         <Button variant="ghost" onClick={() => navigate('/customers')} className="mt-3">
-          Retour
+          {t('common.back')}
         </Button>
       </div>
     )
@@ -255,7 +244,7 @@ export default function CustomerDetailPage() {
   return (
     <div className="space-y-6 p-4 sm:p-6">
 
-      {/* Barre de navigation */}
+      {/* Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
@@ -263,7 +252,7 @@ export default function CustomerDetailPage() {
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
         >
           <ArrowLeftIcon className="h-4 w-4" />
-          Clients
+          {t('customers.title')}
         </button>
         <CanDo permission="customers.edit">
           <Button
@@ -271,7 +260,7 @@ export default function CustomerDetailPage() {
             icon={<PencilSquareIcon className="h-4 w-4" />}
             onClick={() => setEditOpen(true)}
           >
-            Modifier
+            {t('common.edit')}
           </Button>
         </CanDo>
       </div>
@@ -279,7 +268,6 @@ export default function CustomerDetailPage() {
       {/* Profil */}
       <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
         <div className="flex flex-wrap items-start gap-4">
-          {/* Avatar initiales */}
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-primary/10 text-2xl font-bold text-brand-primary select-none">
             {customer.name.charAt(0).toUpperCase()}
           </div>
@@ -288,7 +276,7 @@ export default function CustomerDetailPage() {
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-xl font-bold text-slate-900">{customer.name}</h1>
               <Badge variant={customer.is_active ? 'success' : 'default'}>
-                {customer.is_active ? 'Actif' : 'Inactif'}
+                {customer.is_active ? t('common.active') : t('common.inactive')}
               </Badge>
             </div>
 
@@ -326,18 +314,18 @@ export default function CustomerDetailPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           icon={<BanknotesIcon className="h-5 w-5" />}
-          label="Total achats"
+          label={t('customers.total_purchases')}
           value={formatCurrency(customer.total_purchases)}
         />
         <KpiCard
           icon={<ShoppingBagIcon className="h-5 w-5" />}
-          label="Nombre de ventes"
+          label={t('customers.sales_count_label')}
           value={String(customer.sales_count)}
-          sub={customer.sales_count === 1 ? 'commande' : 'commandes'}
+          sub={customer.sales_count === 1 ? t('customers.order_singular') : t('customers.order_plural')}
         />
         <KpiCard
           icon={<CalendarDaysIcon className="h-5 w-5" />}
-          label="Dernière visite"
+          label={t('customers.last_visit')}
           value={formatRelative(customer.last_purchase_at)}
           sub={customer.last_purchase_at ? formatDate(customer.last_purchase_at) : undefined}
         />
@@ -347,17 +335,17 @@ export default function CustomerDetailPage() {
               <ExclamationCircleIcon className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs text-red-500">Solde dû</p>
+              <p className="text-xs text-red-500">{t('customers.balance_owed')}</p>
               <p className="truncate text-lg font-bold text-red-700">{formatCurrency(customer.outstanding_balance)}</p>
-              <p className="text-xs text-red-400">{customer.unpaid_sales_count} vente(s) impayée(s)</p>
+              <p className="text-xs text-red-400">{t('customers.unpaid_count', { count: customer.unpaid_sales_count })}</p>
             </div>
           </div>
         ) : (
           <KpiCard
             icon={<ExclamationCircleIcon className="h-5 w-5" />}
-            label="Solde dû"
-            value="Soldé"
-            sub="Aucune créance"
+            label={t('customers.balance_owed')}
+            value={t('customers.paid_off')}
+            sub={t('customers.no_debts')}
           />
         )}
       </div>
@@ -369,7 +357,7 @@ export default function CustomerDetailPage() {
             <div className="flex items-center gap-2">
               <ExclamationCircleIcon className="h-4 w-4 text-red-500" />
               <h2 className="text-sm font-semibold text-red-700">
-                Créances — {formatCurrency(customer.outstanding_balance)} dû
+                {t('customers.debts_amount', { amount: formatCurrency(customer.outstanding_balance) })}
               </h2>
             </div>
           </div>
@@ -377,12 +365,12 @@ export default function CustomerDetailPage() {
             <table className="min-w-full divide-y divide-gray-100 text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Référence</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Date</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Total</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Payé</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Reste dû</th>
-                  <th className="sr-only">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.reference')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.date')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.total')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('sales.paid')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('sales.due')}</th>
+                  <th className="sr-only">{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -404,7 +392,7 @@ export default function CustomerDetailPage() {
                               onClick={() => openPayModal(sale)}
                               className="rounded-md bg-brand-primary px-2.5 py-1 text-xs font-semibold text-white hover:opacity-90 transition"
                             >
-                              Encaisser
+                              {t('customers.collect')}
                             </button>
                           </CanDo>
                         </td>
@@ -419,7 +407,7 @@ export default function CustomerDetailPage() {
 
       {/* Historique des ventes */}
       <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-        <h2 className="mb-4 text-sm font-semibold text-gray-700">Historique des ventes</h2>
+        <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('customers.sales_history')}</h2>
 
         <Table<Sale>
           columns={saleColumns}
@@ -427,7 +415,7 @@ export default function CustomerDetailPage() {
           keyExtractor={(s) => s.id}
           loading={salesLoading}
           skeletonRows={5}
-          emptyMessage="Aucune vente enregistrée pour ce client."
+          emptyMessage={t('customers.no_sales_for_customer')}
           onRowClick={(s) => navigate(`/sales/${s.uid}`)}
         />
 
@@ -448,17 +436,17 @@ export default function CustomerDetailPage() {
       <Modal
         isOpen={payOpen}
         onClose={() => setPayOpen(false)}
-        title="Encaisser un paiement"
+        title={t('customers.collect_payment_title')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={() => setPayOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setPayOpen(false)}>{t('common.cancel')}</Button>
             <Button
               loading={payMutation.isPending}
               disabled={!payAmount || parseFloat(payAmount) <= 0}
               onClick={() => payMutation.mutate()}
             >
-              Confirmer
+              {t('common.confirm')}
             </Button>
           </>
         }
@@ -466,23 +454,23 @@ export default function CustomerDetailPage() {
         {payingSale && (
           <div className="space-y-4">
             <div className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-600">
-              Vente <span className="font-mono font-semibold text-gray-900">{payingSale.reference}</span>
-              {' — '}Reste dû :{' '}
+              {t('customers.sale_reference', { ref: payingSale.reference })}
+              {' — '}{t('sales.due')} :{' '}
               <span className="font-bold text-red-600">
                 {formatCurrency(parseFloat(payingSale.total) - parseFloat(payingSale.paid_amount))}
               </span>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Mode de paiement</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('common.payment_method')}</label>
               <Select value={payMethod} onChange={(e) => setPayMethod(e.target.value)}>
-                <option value="cash">Espèces</option>
-                <option value="mobile_money">Mobile Money</option>
-                <option value="card">Carte bancaire</option>
-                <option value="bank_transfer">Virement bancaire</option>
+                <option value="cash">{t('sales.method_cash')}</option>
+                <option value="mobile_money">{t('sales.method_mobile_money')}</option>
+                <option value="card">{t('sales.method_card')}</option>
+                <option value="bank_transfer">{t('sales.method_bank_transfer')}</option>
               </Select>
             </div>
             <Input
-              label="Montant (FCFA)"
+              label={t('customers.amount_label')}
               type="number"
               min={1}
               value={payAmount}
@@ -496,26 +484,26 @@ export default function CustomerDetailPage() {
       <Modal
         isOpen={editOpen}
         onClose={() => setEditOpen(false)}
-        title="Modifier le client"
+        title={t('customers.edit')}
         size="md"
         footer={
           <>
             <Button variant="outline" type="button" onClick={() => setEditOpen(false)}>
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button
               form={FORM_ID}
               type="submit"
               loading={updateMutation.isPending}
             >
-              Enregistrer
+              {t('common.save')}
             </Button>
           </>
         }
       >
         {updateMutation.isError && (
           <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-            Une erreur est survenue. Veuillez réessayer.
+            {t('common.error_generic')}
           </p>
         )}
         <CustomerForm

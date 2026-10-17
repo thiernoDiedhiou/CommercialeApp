@@ -13,99 +13,13 @@ import {
   CogIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getActivityLogs } from '@/services/api/activityLogs'
 import type { ActivityLogEntry } from '@/services/api/activityLogs'
 import Pagination from '@/components/ui/Pagination'
 import CanDo from '@/components/ui/CanDo'
 import EmptyState from '@/components/ui/EmptyState'
 import { formatDateTime } from '@/lib/utils'
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function actionBadge(action: string) {
-  const map: Record<string, { label: string; className: string }> = {
-    login:   { label: 'Connexion',    className: 'bg-blue-100 text-blue-700' },
-    logout:  { label: 'Déconnexion',  className: 'bg-blue-100 text-blue-700' },
-    create:  { label: 'Créer',        className: 'bg-emerald-100 text-emerald-700' },
-    update:  { label: 'Modifier',     className: 'bg-amber-100 text-amber-700' },
-    delete:  { label: 'Supprimer',    className: 'bg-red-100 text-red-700' },
-    cancel:  { label: 'Annuler',      className: 'bg-red-100 text-red-700' },
-    send:    { label: 'Envoyer',      className: 'bg-purple-100 text-purple-700' },
-    payment: { label: 'Paiement',     className: 'bg-green-100 text-green-700' },
-    confirm: { label: 'Confirmer',    className: 'bg-emerald-100 text-emerald-700' },
-    receive: { label: 'Réceptionner', className: 'bg-emerald-100 text-emerald-700' },
-    import:        { label: 'Import',            className: 'bg-indigo-100 text-indigo-700' },
-    pdf:           { label: 'PDF',               className: 'bg-gray-100 text-gray-700' },
-    open_session:  { label: 'Ouverture session', className: 'bg-teal-100 text-teal-700' },
-    close_session: { label: 'Fermeture session', className: 'bg-teal-100 text-teal-700' },
-    sync:          { label: 'Sync hors-ligne',   className: 'bg-indigo-100 text-indigo-700' },
-  }
-  const config = map[action] ?? { label: action, className: 'bg-gray-100 text-gray-600' }
-  return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${config.className}`}>
-      {config.label}
-    </span>
-  )
-}
-
-const MODULE_CONFIG: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }> }> = {
-  auth:      { label: 'Auth',        Icon: ShieldCheckIcon },
-  sales:     { label: 'Ventes',      Icon: ShoppingCartIcon },
-  pos:       { label: 'POS',         Icon: ShoppingCartIcon },
-  products:  { label: 'Produits',    Icon: TagIcon },
-  invoices:  { label: 'Factures',    Icon: DocumentTextIcon },
-  purchases: { label: 'Achats',      Icon: TruckIcon },
-  customers: { label: 'Clients',     Icon: UserGroupIcon },
-  suppliers: { label: 'Fournisseurs',Icon: TruckIcon },
-  stock:     { label: 'Stock',       Icon: CubeIcon },
-  returns:   { label: 'Retours',     Icon: ArrowUturnLeftIcon },
-  settings:  { label: 'Paramètres',  Icon: CogIcon },
-}
-
-function ModuleBadge({ module }: { module: string }) {
-  const config = MODULE_CONFIG[module] ?? { label: module, Icon: CogIcon }
-  const { Icon, label } = config
-  return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium uppercase text-gray-500">
-      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-      {label}
-    </span>
-  )
-}
-
-const ACTIONS = [
-  { value: '',        label: 'Toutes les actions' },
-  { value: 'login',   label: 'Connexion' },
-  { value: 'logout',  label: 'Déconnexion' },
-  { value: 'create',  label: 'Créer' },
-  { value: 'update',  label: 'Modifier' },
-  { value: 'delete',  label: 'Supprimer' },
-  { value: 'cancel',  label: 'Annuler' },
-  { value: 'send',    label: 'Envoyer' },
-  { value: 'payment', label: 'Paiement' },
-  { value: 'import',       label: 'Import' },
-  { value: 'pdf',          label: 'PDF' },
-  { value: 'open_session', label: 'Ouverture session' },
-  { value: 'close_session',label: 'Fermeture session' },
-  { value: 'sync',         label: 'Sync hors-ligne' },
-]
-
-const MODULES = [
-  { value: '',          label: 'Tous les modules' },
-  { value: 'auth',      label: 'Auth' },
-  { value: 'sales',     label: 'Ventes' },
-  { value: 'pos',       label: 'POS' },
-  { value: 'products',  label: 'Produits' },
-  { value: 'invoices',  label: 'Factures' },
-  { value: 'purchases', label: 'Achats' },
-  { value: 'customers', label: 'Clients' },
-  { value: 'suppliers', label: 'Fournisseurs' },
-  { value: 'stock',     label: 'Stock' },
-  { value: 'returns',   label: 'Retours' },
-  { value: 'settings',  label: 'Paramètres' },
-]
-
-// ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function SkeletonRow() {
   return (
@@ -132,14 +46,97 @@ function SkeletonCard() {
   )
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
 export default function ActivityLogPage() {
+  const { t } = useTranslation()
   const [action, setAction]   = useState('')
   const [module, setModule]   = useState('')
   const [from, setFrom]       = useState('')
   const [to, setTo]           = useState('')
   const [page, setPage]       = useState(1)
+
+  const MODULE_CONFIG: Record<string, { label: string; Icon: React.ComponentType<{ className?: string }> }> = {
+    auth:      { label: t('activityLog.module_auth'),      Icon: ShieldCheckIcon },
+    sales:     { label: t('activityLog.module_sales'),     Icon: ShoppingCartIcon },
+    pos:       { label: t('activityLog.module_pos'),       Icon: ShoppingCartIcon },
+    products:  { label: t('activityLog.module_products'),  Icon: TagIcon },
+    invoices:  { label: t('activityLog.module_invoices'),  Icon: DocumentTextIcon },
+    purchases: { label: t('activityLog.module_purchases'), Icon: TruckIcon },
+    customers: { label: t('activityLog.module_customers'), Icon: UserGroupIcon },
+    suppliers: { label: t('activityLog.module_suppliers'), Icon: TruckIcon },
+    stock:     { label: t('activityLog.module_stock'),     Icon: CubeIcon },
+    returns:   { label: t('activityLog.module_returns'),   Icon: ArrowUturnLeftIcon },
+    settings:  { label: t('activityLog.module_settings'),  Icon: CogIcon },
+  }
+
+  const ACTION_MAP: Record<string, { label: string; className: string }> = {
+    login:         { label: t('activityLog.action_login'),         className: 'bg-blue-100 text-blue-700' },
+    logout:        { label: t('activityLog.action_logout'),        className: 'bg-blue-100 text-blue-700' },
+    create:        { label: t('activityLog.action_create'),        className: 'bg-emerald-100 text-emerald-700' },
+    update:        { label: t('activityLog.action_update'),        className: 'bg-amber-100 text-amber-700' },
+    delete:        { label: t('activityLog.action_delete'),        className: 'bg-red-100 text-red-700' },
+    cancel:        { label: t('activityLog.action_cancel'),        className: 'bg-red-100 text-red-700' },
+    send:          { label: t('activityLog.action_send'),          className: 'bg-purple-100 text-purple-700' },
+    payment:       { label: t('activityLog.action_payment'),       className: 'bg-green-100 text-green-700' },
+    confirm:       { label: t('activityLog.action_confirm'),       className: 'bg-emerald-100 text-emerald-700' },
+    receive:       { label: t('activityLog.action_receive'),       className: 'bg-emerald-100 text-emerald-700' },
+    import:        { label: t('activityLog.action_import'),        className: 'bg-indigo-100 text-indigo-700' },
+    pdf:           { label: t('activityLog.action_pdf'),           className: 'bg-gray-100 text-gray-700' },
+    open_session:  { label: t('activityLog.action_open_session'),  className: 'bg-teal-100 text-teal-700' },
+    close_session: { label: t('activityLog.action_close_session'), className: 'bg-teal-100 text-teal-700' },
+    sync:          { label: t('activityLog.action_sync'),          className: 'bg-indigo-100 text-indigo-700' },
+  }
+
+  const ACTIONS = [
+    { value: '',              label: t('activityLog.all_actions') },
+    { value: 'login',         label: t('activityLog.action_login') },
+    { value: 'logout',        label: t('activityLog.action_logout') },
+    { value: 'create',        label: t('activityLog.action_create') },
+    { value: 'update',        label: t('activityLog.action_update') },
+    { value: 'delete',        label: t('activityLog.action_delete') },
+    { value: 'cancel',        label: t('activityLog.action_cancel') },
+    { value: 'send',          label: t('activityLog.action_send') },
+    { value: 'payment',       label: t('activityLog.action_payment') },
+    { value: 'import',        label: t('activityLog.action_import') },
+    { value: 'pdf',           label: t('activityLog.action_pdf') },
+    { value: 'open_session',  label: t('activityLog.action_open_session') },
+    { value: 'close_session', label: t('activityLog.action_close_session') },
+    { value: 'sync',          label: t('activityLog.action_sync') },
+  ]
+
+  const MODULES = [
+    { value: '',          label: t('activityLog.all_modules') },
+    { value: 'auth',      label: t('activityLog.module_auth') },
+    { value: 'sales',     label: t('activityLog.module_sales') },
+    { value: 'pos',       label: t('activityLog.module_pos') },
+    { value: 'products',  label: t('activityLog.module_products') },
+    { value: 'invoices',  label: t('activityLog.module_invoices') },
+    { value: 'purchases', label: t('activityLog.module_purchases') },
+    { value: 'customers', label: t('activityLog.module_customers') },
+    { value: 'suppliers', label: t('activityLog.module_suppliers') },
+    { value: 'stock',     label: t('activityLog.module_stock') },
+    { value: 'returns',   label: t('activityLog.module_returns') },
+    { value: 'settings',  label: t('activityLog.module_settings') },
+  ]
+
+  function actionBadge(actionKey: string) {
+    const config = ACTION_MAP[actionKey] ?? { label: actionKey, className: 'bg-gray-100 text-gray-600' }
+    return (
+      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${config.className}`}>
+        {config.label}
+      </span>
+    )
+  }
+
+  function ModuleBadge({ module: mod }: { module: string }) {
+    const config = MODULE_CONFIG[mod] ?? { label: mod, Icon: CogIcon }
+    const { Icon, label } = config
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium uppercase text-gray-500">
+        <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+        {label}
+      </span>
+    )
+  }
 
   const filters = { action, module, from, to, page, per_page: 25 }
 
@@ -158,7 +155,7 @@ export default function ActivityLogPage() {
           <div>
             <div className="flex items-center gap-2">
               <BoltIcon className="h-6 w-6 text-brand-primary" aria-hidden="true" />
-              <h1 className="text-xl font-bold text-gray-900">Journal d'activité</h1>
+              <h1 className="text-xl font-bold text-gray-900">{t('activityLog.title')}</h1>
               {data && (
                 <span className="ml-2 rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-600">
                   {data.total}
@@ -166,7 +163,7 @@ export default function ActivityLogPage() {
               )}
             </div>
             <p className="mt-0.5 text-sm text-gray-500">
-              Traçabilité complète de toutes les actions
+              {t('activityLog.subtitle')}
             </p>
           </div>
         </div>
@@ -194,7 +191,7 @@ export default function ActivityLogPage() {
           </select>
 
           <div className="flex items-center gap-2">
-            <label htmlFor="al-from" className="text-sm text-gray-600 whitespace-nowrap">Du</label>
+            <label htmlFor="al-from" className="text-sm text-gray-600 whitespace-nowrap">{t('activityLog.from_label')}</label>
             <input
               id="al-from"
               type="date"
@@ -205,7 +202,7 @@ export default function ActivityLogPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <label htmlFor="al-to" className="text-sm text-gray-600 whitespace-nowrap">Au</label>
+            <label htmlFor="al-to" className="text-sm text-gray-600 whitespace-nowrap">{t('activityLog.to_label')}</label>
             <input
               id="al-to"
               type="date"
@@ -222,22 +219,22 @@ export default function ActivityLogPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Date &amp; Heure
+                  {t('activityLog.col_datetime')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Agent
+                  {t('activityLog.col_agent')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Action
+                  {t('activityLog.col_action')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Module
+                  {t('activityLog.col_module')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                  Description
+                  {t('activityLog.col_description')}
                 </th>
                 <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                  IP
+                  {t('activityLog.col_ip')}
                 </th>
               </tr>
             </thead>
@@ -248,7 +245,7 @@ export default function ActivityLogPage() {
                   ? (
                     <tr>
                       <td colSpan={6}>
-                        <EmptyState icon={<MagnifyingGlassIcon className="h-7 w-7" />} title="Aucune entrée trouvée" description="Essayez de modifier les filtres ou la période sélectionnée." />
+                        <EmptyState icon={<MagnifyingGlassIcon className="h-7 w-7" />} title={t('activityLog.empty_title')} description={t('activityLog.empty_desc')} />
                       </td>
                     </tr>
                   )
@@ -285,7 +282,7 @@ export default function ActivityLogPage() {
             ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
             : entries.length === 0
               ? (
-                <EmptyState icon={<MagnifyingGlassIcon className="h-7 w-7" />} title="Aucune entrée trouvée" description="Essayez de modifier les filtres ou la période sélectionnée." />
+                <EmptyState icon={<MagnifyingGlassIcon className="h-7 w-7" />} title={t('activityLog.empty_title')} description={t('activityLog.empty_desc')} />
               )
               : entries.map((entry) => (
                 <div key={entry.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm space-y-2">

@@ -12,6 +12,7 @@ import {
   LockClosedIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/store/authStore'
 import { updateProfile, uploadAvatar, deleteAvatar } from '@/services/api/profile'
 import { getApiErrorMessage } from '@/lib/errors'
@@ -19,8 +20,6 @@ import { toast } from '@/store/toastStore'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 
-// Redimensionne et compresse l'image côté client avant l'upload.
-// Produit un JPEG ≤ 512×512 px, qualité 0.85, taille typique < 100 Ko.
 function compressAvatar(file: File): Promise<File> {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -48,24 +47,19 @@ function compressAvatar(file: File): Promise<File> {
   })
 }
 
-// ── Schémas ───────────────────────────────────────────────────────────────────
-
 const infoSchema = z.object({
-  name: z.string().min(2, 'Nom requis (min 2 car.)'),
+  name: z.string().min(2),
 })
 type InfoValues = z.infer<typeof infoSchema>
 
 const passwordSchema = z.object({
-  current_password:      z.string().min(1, 'Mot de passe actuel requis'),
-  password:              z.string().min(8, '8 caractères minimum'),
-  password_confirmation: z.string().min(1, 'Confirmation requise'),
+  current_password:      z.string().min(1),
+  password:              z.string().min(8),
+  password_confirmation: z.string().min(1),
 }).refine((d) => d.password === d.password_confirmation, {
-  message: 'Les mots de passe ne correspondent pas.',
   path: ['password_confirmation'],
 })
 type PasswordValues = z.infer<typeof passwordSchema>
-
-// ── Sous-composant : carte section ────────────────────────────────────────────
 
 function Card({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -79,8 +73,6 @@ function Card({ title, icon, children }: { title: string; icon: React.ReactNode;
   )
 }
 
-// ── Sous-composant : champ mot de passe avec œil ─────────────────────────────
-
 function PasswordField({
   label,
   autoComplete,
@@ -92,6 +84,7 @@ function PasswordField({
   error?: string
   registration: ReturnType<ReturnType<typeof useForm>['register']>
 }) {
+  const { t } = useTranslation()
   const [visible, setVisible] = useState(false)
   return (
     <div>
@@ -108,7 +101,7 @@ function PasswordField({
           onClick={() => setVisible((v) => !v)}
           className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
           tabIndex={-1}
-          aria-label={visible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+          aria-label={visible ? t('profile.hide_password') : t('profile.show_password')}
         >
           {visible
             ? <EyeSlashIcon className="h-4 w-4" />
@@ -121,9 +114,8 @@ function PasswordField({
   )
 }
 
-// ── Page principale ───────────────────────────────────────────────────────────
-
 export default function ProfilePage() {
+  const { t } = useTranslation()
   const qc           = useQueryClient()
   const me           = useAuthStore((s) => s.user)
   const setAuth      = useAuthStore((s) => s.setAuth)
@@ -141,15 +133,13 @@ export default function ProfilePage() {
     ? me.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
     : '?'
 
-  // ── Mutation upload avatar ────────────────────────────────────────────────
-
   const avatarMutation = useMutation({
     mutationFn: (file: File) => uploadAvatar(file),
     onSuccess: (data) => {
       if (token && tenant) {
         setAuth(token, { ...me!, avatar: data.avatar }, perms, tenant, subscription, planFeatures)
       }
-      toast.success('Avatar mis à jour.')
+      toast.success(t('profile.avatar_updated'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -160,7 +150,7 @@ export default function ProfilePage() {
       if (token && tenant) {
         setAuth(token, { ...me!, avatar: null }, perms, tenant, subscription, planFeatures)
       }
-      toast.success('Avatar supprimé.')
+      toast.success(t('profile.avatar_deleted'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -173,11 +163,9 @@ export default function ProfilePage() {
       const compressed = await compressAvatar(file)
       avatarMutation.mutate(compressed)
     } catch {
-      toast.error('Impossible de lire ce fichier image.')
+      toast.error(t('profile.avatar_error'))
     }
   }
-
-  // ── Formulaire infos personnelles (nom uniquement) ────────────────────────
 
   const infoForm = useForm<InfoValues>({
     resolver: zodResolver(infoSchema),
@@ -192,13 +180,11 @@ export default function ProfilePage() {
       }
       qc.invalidateQueries({ queryKey: ['users'] })
       setInfoError(null)
-      toast.success('Nom mis à jour.')
+      toast.success(t('profile.name_updated'))
       infoForm.reset({ name: updated.name })
     },
     onError: (err) => setInfoError(getApiErrorMessage(err)),
   })
-
-  // ── Formulaire changement de mot de passe ─────────────────────────────────
 
   const passwordForm = useForm<PasswordValues>({
     resolver: zodResolver(passwordSchema),
@@ -214,7 +200,7 @@ export default function ProfilePage() {
     }),
     onSuccess: () => {
       setPasswordError(null)
-      toast.success('Mot de passe modifié avec succès.')
+      toast.success(t('profile.password_updated'))
       passwordForm.reset()
     },
     onError: (err) => setPasswordError(getApiErrorMessage(err)),
@@ -223,7 +209,7 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto max-w-xl space-y-5 p-4 sm:p-6">
 
-      {/* ── Avatar centré ───────────────────────────────────────────────────── */}
+      {/* Avatar */}
       <div className="flex flex-col items-center gap-3 pt-2 pb-4">
         <div className="relative group">
           {me?.avatar ? (
@@ -238,7 +224,6 @@ export default function ProfilePage() {
             </span>
           )}
 
-          {/* Spinner pendant l'upload */}
           {avatarMutation.isPending && (
             <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -246,13 +231,12 @@ export default function ProfilePage() {
           )}
         </div>
 
-        {/* Input fichier caché */}
         <input
           ref={fileInputRef}
           type="file"
           accept="image/*"
           className="sr-only"
-          aria-label="Choisir une photo de profil"
+          aria-label={t('profile.choose_avatar')}
           onChange={handleAvatarChange}
         />
 
@@ -264,7 +248,7 @@ export default function ProfilePage() {
             className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 shadow-sm hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50"
           >
             <CameraIcon className="h-4 w-4" />
-            Changer l'avatar
+            {t('profile.change_avatar')}
           </button>
 
           {me?.avatar && (
@@ -275,7 +259,7 @@ export default function ProfilePage() {
               className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm text-red-500 shadow-sm hover:bg-red-50 hover:text-red-700 transition-colors disabled:opacity-50"
             >
               <TrashIcon className="h-4 w-4" />
-              Supprimer
+              {t('profile.delete_avatar')}
             </button>
           )}
         </div>
@@ -283,26 +267,26 @@ export default function ProfilePage() {
         <p className="text-sm text-gray-400">{me?.email}</p>
       </div>
 
-      {/* ── Informations personnelles ───────────────────────────────────────── */}
-      <Card title="Informations personnelles" icon={<UserCircleIcon className="h-5 w-5" />}>
+      {/* Informations personnelles */}
+      <Card title={t('profile.personal_info')} icon={<UserCircleIcon className="h-5 w-5" />}>
         {infoError && (
           <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{infoError}</p>
         )}
         <form onSubmit={infoForm.handleSubmit((v) => infoMutation.mutate(v))} className="space-y-4">
           <Input
-            label="Nom complet"
+            label={t('profile.full_name')}
             error={infoForm.formState.errors.name?.message}
             {...infoForm.register('name')}
           />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Adresse email
+              {t('profile.email_address')}
             </label>
             <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
               <span className="flex-1">{me?.email}</span>
               <LockClosedIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
             </div>
-            <p className="mt-1 text-xs text-gray-400">L'email est l'identifiant de connexion et ne peut pas être modifié ici.</p>
+            <p className="mt-1 text-xs text-gray-400">{t('profile.email_readonly')}</p>
           </div>
           <div className="flex justify-end">
             <Button
@@ -310,39 +294,39 @@ export default function ProfilePage() {
               loading={infoMutation.isPending}
               disabled={!infoForm.formState.isDirty}
             >
-              Enregistrer
+              {t('common.save')}
             </Button>
           </div>
         </form>
       </Card>
 
-      {/* ── Changement de mot de passe ─────────────────────────────────────── */}
-      <Card title="Changer le mot de passe" icon={<KeyIcon className="h-5 w-5" />}>
+      {/* Changement de mot de passe */}
+      <Card title={t('profile.change_password')} icon={<KeyIcon className="h-5 w-5" />}>
         {passwordError && (
           <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{passwordError}</p>
         )}
         <form onSubmit={passwordForm.handleSubmit((v) => passwordMutation.mutate(v))} className="space-y-4">
           <PasswordField
-            label="Mot de passe actuel"
+            label={t('profile.current_password')}
             autoComplete="current-password"
             error={passwordForm.formState.errors.current_password?.message}
             registration={passwordForm.register('current_password')}
           />
           <PasswordField
-            label="Nouveau mot de passe"
+            label={t('profile.new_password')}
             autoComplete="new-password"
             error={passwordForm.formState.errors.password?.message}
             registration={passwordForm.register('password')}
           />
           <PasswordField
-            label="Confirmer le nouveau mot de passe"
+            label={t('profile.confirm_password')}
             autoComplete="new-password"
             error={passwordForm.formState.errors.password_confirmation?.message}
             registration={passwordForm.register('password_confirmation')}
           />
           <div className="flex justify-end">
             <Button type="submit" loading={passwordMutation.isPending}>
-              Changer le mot de passe
+              {t('profile.change_password')}
             </Button>
           </div>
         </form>

@@ -7,6 +7,7 @@ import {
   Banknote,
   Undo2,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import { getSale, cancelSale, openSalePdf, addPayment, getReturns } from '@/services/api/sales'
 import { SaleReturnModal } from '@/components/sales/SaleReturnModal'
@@ -28,39 +29,12 @@ const REFUND_BADGE: Record<RefundMethod, 'success' | 'info' | 'default'> = {
   credit: 'info',
   none:   'default',
 }
-const REFUND_LABEL: Record<RefundMethod, string> = {
-  cash:   'Espèces',
-  credit: 'Avoir client',
-  none:   'Sans remboursement',
-}
-
-// ── Constantes ─────────────────────────────────────────────────────────────
 
 const STATUS_VARIANT: Record<Sale['status'], 'success' | 'default' | 'danger'> = {
   confirmed: 'success',
   draft:     'default',
   cancelled: 'danger',
 }
-const STATUS_LABEL: Record<Sale['status'], string> = {
-  confirmed: 'Confirmée',
-  draft:     'Brouillon',
-  cancelled: 'Annulée',
-}
-
-const PAYMENT_METHOD_LABEL: Record<string, string> = {
-  cash:            'Espèces',
-  mobile_money:    'Mobile Money',
-  card:            'Carte bancaire',
-  bank_transfer:   'Virement bancaire',
-  cheque:          'Chèque',
-  credit:          'Crédit client',
-}
-
-function methodLabel(method: string): string {
-  return PAYMENT_METHOD_LABEL[method] ?? method
-}
-
-// ── Ligne de résumé financier ─────────────────────────────────────────────
 
 function SummaryRow({
   label,
@@ -81,12 +55,11 @@ function SummaryRow({
   )
 }
 
-// ── Page principale ────────────────────────────────────────────────────────
-
 export default function SaleDetailPage() {
   const { uid } = useParams<{ uid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { t } = useTranslation()
 
   const [cancelOpen, setCancelOpen] = useState(false)
   const [paymentOpen, setPaymentOpen] = useState(false)
@@ -95,7 +68,27 @@ export default function SaleDetailPage() {
   const [payAmount, setPayAmount] = useState('')
   const [pdfLoading, setPdfLoading] = useState(false)
 
-  // ── Données ───────────────────────────────────────────────────────────────
+  const STATUS_LABEL: Record<Sale['status'], string> = {
+    confirmed: t('sales.confirmed'),
+    draft:     t('sales.draft'),
+    cancelled: t('sales.cancelled'),
+  }
+
+  const REFUND_LABEL: Record<RefundMethod, string> = {
+    cash:   t('returns.refund_cash'),
+    credit: t('returns.refund_credit'),
+    none:   t('returns.refund_none'),
+  }
+
+  const PAYMENT_METHOD_LABEL: Record<string, string> = {
+    cash:          t('sales.method_cash'),
+    mobile_money:  t('sales.method_mobile_money'),
+    card:          t('sales.method_card'),
+    bank_transfer: t('sales.method_bank_transfer'),
+    cheque:        t('sales.method_cheque'),
+    credit:        t('sales.method_credit'),
+  }
+
   const { data: sale, isLoading } = useQuery({
     queryKey: ['sale', uid],
     queryFn: () => getSale(uid!),
@@ -109,7 +102,6 @@ export default function SaleDetailPage() {
   })
   const saleReturns = returnsData?.data ?? []
 
-  // ── Mutations ─────────────────────────────────────────────────────────────
   const cancelMutation = useMutation({
     mutationFn: () => cancelSale(uid!),
     onSuccess: () => {
@@ -130,7 +122,7 @@ export default function SaleDetailPage() {
       setPaymentOpen(false)
       setPayAmount('')
       setPayMethod('cash')
-      toast.success('Paiement enregistré.')
+      toast.success(t('sales.payment_recorded'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -140,7 +132,6 @@ export default function SaleDetailPage() {
     try { await openSalePdf(uid!, sale?.reference) } finally { setPdfLoading(false) }
   }
 
-  // ── Skeleton ──────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="space-y-4 p-4 sm:p-6">
@@ -162,9 +153,9 @@ export default function SaleDetailPage() {
   if (!sale) {
     return (
       <div className="p-6 text-sm text-gray-500">
-        Vente introuvable.{' '}
+        {t('sales.not_found')}{' '}
         <button className="text-brand-primary hover:underline" onClick={() => navigate('/sales')}>
-          Retour
+          {t('common.back')}
         </button>
       </div>
     )
@@ -176,11 +167,10 @@ export default function SaleDetailPage() {
   return (
     <div className="space-y-6 p-4 sm:p-6">
 
-      {/* Fil d'Ariane + actions */}
-      <Breadcrumb items={[{ label: 'Ventes', to: '/sales' }, { label: sale.reference }]} />
+      <Breadcrumb items={[{ label: t('sales.title'), to: '/sales' }, { label: sale.reference }]} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div /> {/* spacer left */}
+        <div />
 
         <div className="flex flex-wrap items-center gap-2">
           <CanDo permission="sales.pdf">
@@ -202,7 +192,7 @@ export default function SaleDetailPage() {
                 icon={<Banknote className="h-4 w-4" />}
                 onClick={() => { setPayAmount(String(due.toFixed(0))); setPaymentOpen(true) }}
               >
-                Encaisser le reste
+                {t('sales.collect_rest')}
               </Button>
             </CanDo>
           )}
@@ -215,7 +205,7 @@ export default function SaleDetailPage() {
                 icon={<Undo2 className="h-4 w-4" />}
                 onClick={() => setReturnOpen(true)}
               >
-                Retour
+                {t('returns.title')}
               </Button>
             </CanDo>
           )}
@@ -228,7 +218,7 @@ export default function SaleDetailPage() {
                 icon={<XCircle className="h-4 w-4" />}
                 onClick={() => setCancelOpen(true)}
               >
-                Annuler la vente
+                {t('sales.cancel_title')}
               </Button>
             </CanDo>
           )}
@@ -242,11 +232,11 @@ export default function SaleDetailPage() {
             <p className="font-mono text-2xl font-bold text-gray-900">{sale.reference}</p>
             <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500">
               <span>{formatDateTime(sale.confirmed_at ?? sale.created_at)}</span>
-              {sale.user && <span>· Vendeur : {sale.user.name}</span>}
+              {sale.user && <span>· {t('sales.vendor_label')} {sale.user.name}</span>}
             </div>
             {sale.customer && (
               <div className="mt-2 text-sm">
-                <span className="text-gray-500">Client : </span>
+                <span className="text-gray-500">{t('sales.customer_label')} </span>
                 <Link
                   to={`/customers/${sale.customer.uid}`}
                   className="font-medium text-brand-primary hover:underline"
@@ -268,25 +258,25 @@ export default function SaleDetailPage() {
       {/* Lignes de vente */}
       <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-700">Lignes</h2>
+          <h2 className="text-sm font-semibold text-gray-700">{t('sales.items_title')}</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-100 text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Désignation</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Qté</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Prix unit.</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Remise</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Total</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('sales.col_designation')}</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('sales.col_qty')}</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.unit_price')}</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.discount')}</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.total')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {(sale.items ?? []).map((item) => {
                 const designation = [
-                  item.product?.name ?? 'Produit supprimé',
+                  item.product?.name ?? t('sales.deleted_product'),
                   item.variant?.attribute_summary ? `— ${item.variant.attribute_summary}` : '',
-                  item.lot?.lot_number ? `(lot ${item.lot.lot_number})` : '',
+                  item.lot?.lot_number ? `(${t('stock.lot_prefix')} ${item.lot.lot_number})` : '',
                 ].filter(Boolean).join(' ')
 
                 const qty = item.unit_weight
@@ -318,27 +308,26 @@ export default function SaleDetailPage() {
         </div>
       </div>
 
-      {/* Résumé financier + Paiements — 2 colonnes sur desktop */}
+      {/* Résumé financier + Paiements */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
-        {/* Résumé financier */}
         <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">Récapitulatif</h2>
+          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('sales.summary_title')}</h2>
           <div className="space-y-2">
-            <SummaryRow label="Sous-total" value={formatCurrency(sale.subtotal)} />
+            <SummaryRow label={t('common.subtotal')} value={formatCurrency(sale.subtotal)} />
             {parseFloat(sale.discount_amount) > 0 && (
               <SummaryRow
-                label={`Remise${sale.discount_type === 'percent' ? ` (${sale.discount_value}%)` : ''}`}
+                label={`${t('common.discount')}${sale.discount_type === 'percent' ? ` (${sale.discount_value}%)` : ''}`}
                 value={`−${formatCurrency(sale.discount_amount)}`}
                 color="text-orange-500"
               />
             )}
             {parseFloat(sale.tax_amount) > 0 && (
-              <SummaryRow label="Taxes" value={formatCurrency(sale.tax_amount)} />
+              <SummaryRow label={t('common.tax')} value={formatCurrency(sale.tax_amount)} />
             )}
             <div className="border-t border-gray-100 pt-2">
               <SummaryRow
-                label="TOTAL"
+                label={t('common.total').toUpperCase()}
                 value={formatCurrency(sale.total)}
                 bold
                 color="text-brand-primary"
@@ -347,18 +336,17 @@ export default function SaleDetailPage() {
           </div>
         </div>
 
-        {/* Paiements */}
         <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">Paiements</h2>
+          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('sales.payments_title')}</h2>
 
           {(sale.payments ?? []).length === 0 ? (
-            <p className="text-sm text-gray-400">Aucun paiement enregistré.</p>
+            <p className="text-sm text-gray-400">{t('sales.no_payments')}</p>
           ) : (
             <ul className="divide-y divide-gray-50">
               {(sale.payments ?? []).map((p) => (
                 <li key={p.id} className="flex items-center justify-between py-2 text-sm">
                   <div>
-                    <p className="font-medium text-gray-800">{methodLabel(p.method)}</p>
+                    <p className="font-medium text-gray-800">{PAYMENT_METHOD_LABEL[p.method] ?? p.method}</p>
                     <p className="text-xs text-gray-400">{formatDateTime(p.paid_at)}</p>
                   </div>
                   <span className="font-medium text-gray-900">{formatCurrency(p.amount)}</span>
@@ -367,14 +355,13 @@ export default function SaleDetailPage() {
             </ul>
           )}
 
-          {/* Total payé + reste dû */}
           <div className="mt-4 space-y-1.5 border-t border-gray-100 pt-3">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Total payé</span>
+              <span className="text-gray-500">{t('sales.total_paid')}</span>
               <span className="font-semibold text-emerald-600">{formatCurrency(totalPaid)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Reste dû</span>
+              <span className="text-gray-500">{t('sales.due')}</span>
               {due > 0 ? (
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-red-600">{formatCurrency(due)}</span>
@@ -385,7 +372,7 @@ export default function SaleDetailPage() {
                         onClick={() => { setPayAmount(String(due.toFixed(0))); setPaymentOpen(true) }}
                         className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 transition border border-emerald-200"
                       >
-                        + Encaisser
+                        + {t('sales.collect')}
                       </button>
                     </CanDo>
                   )}
@@ -393,7 +380,7 @@ export default function SaleDetailPage() {
               ) : (
                 <Badge variant="success" dot>
                   <CheckCircle className="mr-1 h-3.5 w-3.5" />
-                  Soldé
+                  {t('sales.paid_off')}
                 </Badge>
               )}
             </div>
@@ -401,41 +388,41 @@ export default function SaleDetailPage() {
         </div>
       </div>
 
-      {/* Modal encaissement du reste */}
+      {/* Modal encaissement */}
       <Modal
         isOpen={paymentOpen}
         onClose={() => setPaymentOpen(false)}
-        title="Encaisser le reste dû"
+        title={t('sales.collect_modal_title')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={() => setPaymentOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setPaymentOpen(false)}>{t('common.cancel')}</Button>
             <Button
               loading={paymentMutation.isPending}
               disabled={!payAmount || parseFloat(payAmount) <= 0}
               onClick={() => paymentMutation.mutate()}
             >
-              Confirmer le paiement
+              {t('sales.collect_confirm')}
             </Button>
           </>
         }
       >
         <div className="space-y-4">
           <div className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-600">
-            Reste dû : <span className="font-bold text-red-600">{formatCurrency(due)}</span>
+            {t('sales.due')} : <span className="font-bold text-red-600">{formatCurrency(due)}</span>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Mode de paiement</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('common.payment_method')}</label>
             <Select value={payMethod} onChange={(e) => setPayMethod(e.target.value)}>
-              <option value="cash">Espèces</option>
-              <option value="mobile_money">Mobile Money</option>
-              <option value="card">Carte bancaire</option>
-              <option value="bank_transfer">Virement bancaire</option>
-              <option value="credit">Crédit client</option>
+              <option value="cash">{t('sales.method_cash')}</option>
+              <option value="mobile_money">{t('sales.method_mobile_money')}</option>
+              <option value="card">{t('sales.method_card')}</option>
+              <option value="bank_transfer">{t('sales.method_bank_transfer')}</option>
+              <option value="credit">{t('sales.method_credit')}</option>
             </Select>
           </div>
           <Input
-            label="Montant encaissé (FCFA)"
+            label={t('sales.collect_amount')}
             type="number"
             min={1}
             max={due}
@@ -444,7 +431,7 @@ export default function SaleDetailPage() {
           />
           {parseFloat(payAmount) > due && (
             <p className="text-xs text-amber-600">
-              Le montant dépasse le reste dû ({formatCurrency(due)}). Seul le montant exact sera enregistré.
+              {t('sales.amount_warning', { amount: formatCurrency(due) })}
             </p>
           )}
         </div>
@@ -456,7 +443,7 @@ export default function SaleDetailPage() {
           <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
             <Undo2 className="h-4 w-4 text-gray-400" />
             <h2 className="text-sm font-semibold text-gray-700">
-              Retours associés ({saleReturns.length})
+              {t('sales.returns_section')} ({saleReturns.length})
             </h2>
           </div>
           <ul className="divide-y divide-gray-50">
@@ -470,7 +457,7 @@ export default function SaleDetailPage() {
                   <span className="text-gray-400 text-xs">{formatDateTime(ret.created_at)}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="text-gray-500 text-xs">{ret.items_count} article(s)</span>
+                  <span className="text-gray-500 text-xs">{ret.items_count} {t('sales.articles_count')}</span>
                   <span className="font-semibold text-gray-900">{formatCurrency(ret.total)}</span>
                 </div>
               </li>
@@ -492,25 +479,25 @@ export default function SaleDetailPage() {
       <Modal
         isOpen={cancelOpen}
         onClose={() => setCancelOpen(false)}
-        title="Annuler la vente"
+        title={t('sales.cancel_title')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={() => setCancelOpen(false)}>Retour</Button>
+            <Button variant="outline" onClick={() => setCancelOpen(false)}>{t('common.back')}</Button>
             <Button
               variant="danger"
               loading={cancelMutation.isPending}
               onClick={() => cancelMutation.mutate()}
             >
-              Confirmer l'annulation
+              {t('sales.cancel_confirm_action')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-gray-600">
-          Annuler la vente{' '}
-          <span className="font-mono font-semibold text-gray-900">{sale.reference}</span> ?
-          Le stock sera restitué et cette action est irréversible.
+          {t('sales.cancel_title')}{' '}
+          <span className="font-mono font-semibold text-gray-900">{sale.reference}</span> ?{' '}
+          {t('sales.cancel_confirm_text')}
         </p>
       </Modal>
     </div>
