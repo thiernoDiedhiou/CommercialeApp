@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, PencilSquareIcon, TrashIcon, TagIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getBrands, createBrand, updateBrand, deleteBrand } from '@/services/api/brands'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
@@ -27,6 +28,7 @@ const FORM_ID = 'brand-form'
 type ModalState = { mode: 'create' } | { mode: 'edit'; brand: Brand } | null
 
 export default function BrandsPage() {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const [modal, setModal]               = useState<ModalState>(null)
   const [deleteTarget, setDeleteTarget] = useState<Brand | null>(null)
@@ -48,19 +50,19 @@ export default function BrandsPage() {
 
   const createMutation = useMutation({
     mutationFn: (v: FormValues) => createBrand({ name: v.name }),
-    onSuccess : () => { qc.invalidateQueries({ queryKey: ['brands'] }); setModal(null); toast.success('Marque créée avec succès.') },
+    onSuccess : () => { qc.invalidateQueries({ queryKey: ['brands'] }); setModal(null); toast.success(t('brands.created')) },
     onError   : (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const updateMutation = useMutation({
     mutationFn: ({ uid, v }: { uid: string; v: FormValues }) => updateBrand(uid, { name: v.name }),
-    onSuccess : () => { qc.invalidateQueries({ queryKey: ['brands'] }); setModal(null); toast.success('Marque mise à jour.') },
+    onSuccess : () => { qc.invalidateQueries({ queryKey: ['brands'] }); setModal(null); toast.success(t('brands.updated')) },
     onError   : (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const deleteMutation = useMutation({
     mutationFn: (uid: string) => deleteBrand(uid),
-    onSuccess : () => { qc.invalidateQueries({ queryKey: ['brands'] }); setDeleteTarget(null); toast.success('Marque supprimée.') },
+    onSuccess : () => { qc.invalidateQueries({ queryKey: ['brands'] }); setDeleteTarget(null); toast.success(t('brands.deleted')) },
     onError   : (err) => toast.error(getApiErrorMessage(err)),
   })
 
@@ -74,7 +76,7 @@ export default function BrandsPage() {
   const columns: Column<Brand>[] = [
     {
       key   : 'name',
-      header: 'Nom',
+      header: t('common.name'),
       render: (b) => <span className="font-medium text-gray-900">{b.name}</span>,
     },
     {
@@ -88,7 +90,7 @@ export default function BrandsPage() {
               type="button"
               onClick={(e) => { e.stopPropagation(); setModal({ mode: 'edit', brand: b }) }}
               className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-              title="Modifier"
+              title={t('common.edit')}
             >
               <PencilSquareIcon className="h-4 w-4" />
             </button>
@@ -98,7 +100,7 @@ export default function BrandsPage() {
               type="button"
               onClick={(e) => { e.stopPropagation(); setDeleteTarget(b) }}
               className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
-              title="Supprimer"
+              title={t('common.delete')}
             >
               <TrashIcon className="h-4 w-4" />
             </button>
@@ -111,10 +113,10 @@ export default function BrandsPage() {
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">Marques</h1>
+        <h1 className="text-xl font-bold text-slate-900">{t('brands.title')}</h1>
         <CanDo permission="products.create">
           <Button icon={<PlusIcon className="h-4 w-4" />} onClick={() => setModal({ mode: 'create' })}>
-            Nouvelle marque
+            {t('brands.new')}
           </Button>
         </CanDo>
       </div>
@@ -125,7 +127,7 @@ export default function BrandsPage() {
         keyExtractor={(b) => b.id}
         loading={isLoading}
         skeletonRows={5}
-        emptyMessage={<EmptyState icon={<TagIcon className="h-7 w-7" />} title="Aucune marque pour l'instant" description="Associez vos produits à leurs marques pour un catalogue plus structuré." />}
+        emptyMessage={<EmptyState icon={<TagIcon className="h-7 w-7" />} title={t('brands.empty_title')} description={t('brands.empty_desc')} />}
         mobileCard={(b) => (
           <div className="flex items-center justify-between gap-3 px-4 py-3">
             <span className="font-medium text-gray-900">{b.name}</span>
@@ -151,19 +153,19 @@ export default function BrandsPage() {
       <Modal
         isOpen={modal !== null}
         onClose={() => setModal(null)}
-        title={modal?.mode === 'edit' ? 'Modifier la marque' : 'Nouvelle marque'}
+        title={modal?.mode === 'edit' ? t('brands.edit') : t('brands.new')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" type="button" onClick={() => setModal(null)}>Annuler</Button>
+            <Button variant="outline" type="button" onClick={() => setModal(null)}>{t('common.cancel')}</Button>
             <Button form={FORM_ID} type="submit" loading={isMutating}>
-              {modal?.mode === 'edit' ? 'Enregistrer' : 'Créer'}
+              {modal?.mode === 'edit' ? t('common.save') : t('common.create')}
             </Button>
           </>
         }
       >
         <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-          <Input label="Nom" required error={errors.name?.message} {...register('name')} />
+          <Input label={t('common.name')} required error={errors.name?.message} {...register('name')} />
         </form>
       </Modal>
 
@@ -171,25 +173,25 @@ export default function BrandsPage() {
       <Modal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title="Supprimer la marque"
+        title={t('brands.delete_title')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
             <Button
               variant="danger"
               loading={deleteMutation.isPending}
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}
             >
-              Supprimer
+              {t('common.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-gray-600">
-          Voulez-vous supprimer la marque{' '}
-          <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ?
-          Cette action est irréversible.
+          {t('brands.delete_confirm')}{' '}
+          <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ?{' '}
+          {t('common.action_irreversible')}
         </p>
       </Modal>
     </div>

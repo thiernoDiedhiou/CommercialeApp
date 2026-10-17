@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, EyeIcon, CheckIcon, XCircleIcon, TrashIcon, ChevronRightIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import {
   getPurchaseOrders,
   confirmPurchaseOrder,
@@ -29,17 +30,18 @@ const STATUS_VARIANT: Record<PurchaseOrderStatus, 'default' | 'info' | 'warning'
   cancelled: 'danger',
 }
 
-const STATUS_LABEL: Record<PurchaseOrderStatus, string> = {
-  draft:     'Brouillon',
-  ordered:   'Commandé',
-  partial:   'Partiel',
-  received:  'Réceptionné',
-  cancelled: 'Annulé',
-}
-
 export default function PurchaseOrdersPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const qc = useQueryClient()
+
+  const STATUS_LABEL: Record<PurchaseOrderStatus, string> = {
+    draft:     t('purchases.draft'),
+    ordered:   t('purchases.ordered'),
+    partial:   t('purchases.partial'),
+    received:  t('purchases.received'),
+    cancelled: t('purchases.cancelled'),
+  }
 
   // ── Filtres ───────────────────────────────────────────────────────────────
   const [search, setSearch] = useState('')
@@ -85,35 +87,35 @@ export default function PurchaseOrdersPage() {
   const columns: Column<PurchaseOrder>[] = [
     {
       key: 'reference',
-      header: 'Référence',
+      header: t('purchases.reference'),
       render: (o) => <span className="font-mono text-sm font-semibold text-gray-900">{o.reference}</span>,
     },
     {
       key: 'supplier',
-      header: 'Fournisseur',
+      header: t('suppliers.title'),
       render: (o) => o.supplier
         ? <span className="text-sm text-gray-700">{o.supplier.name}</span>
         : <span className="text-sm text-gray-300">—</span>,
     },
     {
       key: 'created_at',
-      header: 'Date',
+      header: t('common.date'),
       render: (o) => <span className="text-sm text-gray-600">{formatDate(o.created_at)}</span>,
     },
     {
       key: 'expected_at',
-      header: 'Livraison prévue',
+      header: t('purchases.expected_at'),
       render: (o) => <span className="text-sm text-gray-600">{formatDate(o.expected_at)}</span>,
     },
     {
       key: 'items_count',
-      header: 'Articles',
+      header: t('purchases.items'),
       align: 'center',
       render: (o) => <span className="text-sm text-gray-700">{o.items_count ?? 0}</span>,
     },
     {
       key: 'status',
-      header: 'Statut',
+      header: t('common.status'),
       align: 'center',
       render: (o) => <Badge variant={STATUS_VARIANT[o.status]}>{STATUS_LABEL[o.status]}</Badge>,
     },
@@ -124,14 +126,14 @@ export default function PurchaseOrdersPage() {
       render: (o) => (
         <div className="flex items-center justify-end gap-1">
           <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/purchases/${o.uid}`) }}
-            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title="Voir le détail">
+            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title={t('common.view')}>
             <EyeIcon className="h-4 w-4" />
           </button>
 
           {o.status === 'draft' && (
             <CanDo permission="purchases.edit">
               <button type="button" onClick={(e) => { e.stopPropagation(); setConfirmTarget(o) }}
-                className="rounded p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600" title="Confirmer">
+                className="rounded p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600" title={t('purchases.order_action')}>
                 <CheckIcon className="h-4 w-4" />
               </button>
             </CanDo>
@@ -140,7 +142,7 @@ export default function PurchaseOrdersPage() {
           {(o.status === 'draft' || o.status === 'ordered') && (
             <CanDo permission="purchases.edit">
               <button type="button" onClick={(e) => { e.stopPropagation(); setCancelTarget(o) }}
-                className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title="Annuler">
+                className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title={t('common.cancel')}>
                 <XCircleIcon className="h-4 w-4" />
               </button>
             </CanDo>
@@ -149,7 +151,7 @@ export default function PurchaseOrdersPage() {
           {o.status === 'draft' && (
             <CanDo permission="purchases.delete">
               <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteTarget(o) }}
-                className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title="Supprimer">
+                className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title={t('common.delete')}>
                 <TrashIcon className="h-4 w-4" />
               </button>
             </CanDo>
@@ -162,26 +164,26 @@ export default function PurchaseOrdersPage() {
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">Bons de commande</h1>
+        <h1 className="text-xl font-bold text-slate-900">{t('purchases.title')}</h1>
         <CanDo permission="purchases.create">
           <Button icon={<PlusIcon className="h-4 w-4" />} onClick={() => navigate('/purchases/new')}>
-            Nouveau bon
+            {t('purchases.new')}
           </Button>
         </CanDo>
       </div>
 
       <div className="flex flex-wrap gap-3">
         <div className="min-w-48 flex-1">
-          <Input placeholder="Rechercher une référence…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder={t('purchases.search')} value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="w-40">
           <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">Tous statuts</option>
-            <option value="draft">Brouillon</option>
-            <option value="ordered">Commandé</option>
-            <option value="partial">Partiel</option>
-            <option value="received">Réceptionné</option>
-            <option value="cancelled">Annulé</option>
+            <option value="">{t('purchases.filter_all')}</option>
+            <option value="draft">{t('purchases.draft')}</option>
+            <option value="ordered">{t('purchases.ordered')}</option>
+            <option value="partial">{t('purchases.partial')}</option>
+            <option value="received">{t('purchases.received')}</option>
+            <option value="cancelled">{t('purchases.cancelled')}</option>
           </Select>
         </div>
       </div>
@@ -192,7 +194,7 @@ export default function PurchaseOrdersPage() {
         keyExtractor={(o) => o.id}
         loading={isLoading}
         skeletonRows={8}
-        emptyMessage={<EmptyState icon={<ShoppingCartIcon className="h-7 w-7" />} title="Aucune commande fournisseur" description="Créez un bon de commande pour réapprovisionner votre stock." />}
+        emptyMessage={<EmptyState icon={<ShoppingCartIcon className="h-7 w-7" />} title={t('purchases.empty_title')} description={t('purchases.empty_desc')} />}
         onRowClick={(o) => navigate(`/purchases/${o.uid}`)}
         mobileCard={(o) => (
           <div className="flex items-center gap-3 px-4 py-3">
@@ -203,7 +205,7 @@ export default function PurchaseOrdersPage() {
               </div>
               <p className="text-sm text-gray-600 truncate">{o.supplier?.name ?? '—'}</p>
               <p className="text-xs text-gray-400 mt-0.5">
-                {formatDate(o.created_at)} · {o.items_count ?? 0} article{(o.items_count ?? 0) > 1 ? 's' : ''}
+                {formatDate(o.created_at)} · {o.items_count ?? 0} {t('purchases.items')}
               </p>
             </div>
             <ChevronRightIcon className="h-4 w-4 text-gray-300 shrink-0" />
@@ -216,44 +218,44 @@ export default function PurchaseOrdersPage() {
       )}
 
       {/* Modal confirmer */}
-      <Modal isOpen={!!confirmTarget} onClose={() => setConfirmTarget(null)} title="Confirmer la commande" size="sm"
+      <Modal isOpen={!!confirmTarget} onClose={() => setConfirmTarget(null)} title={t('purchases.order_confirm_title')} size="sm"
         footer={<>
-          <Button variant="outline" onClick={() => setConfirmTarget(null)}>Annuler</Button>
+          <Button variant="outline" onClick={() => setConfirmTarget(null)}>{t('common.cancel')}</Button>
           <Button loading={confirmMutation.isPending} onClick={() => confirmTarget && confirmMutation.mutate(confirmTarget.uid)}>
-            Confirmer
+            {t('purchases.order_action')}
           </Button>
         </>}
       >
         <p className="text-sm text-gray-600">
-          Confirmer le bon <span className="font-mono font-semibold text-gray-900">{confirmTarget?.reference}</span> ? Le statut passera à "Commandé".
+          {t('purchases.order_confirm')} <span className="font-mono font-semibold text-gray-900">{confirmTarget?.reference}</span> ?
         </p>
       </Modal>
 
       {/* Modal annuler */}
-      <Modal isOpen={!!cancelTarget} onClose={() => setCancelTarget(null)} title="Annuler le bon de commande" size="sm"
+      <Modal isOpen={!!cancelTarget} onClose={() => setCancelTarget(null)} title={t('purchases.cancel_title')} size="sm"
         footer={<>
-          <Button variant="outline" onClick={() => setCancelTarget(null)}>Retour</Button>
+          <Button variant="outline" onClick={() => setCancelTarget(null)}>{t('common.back')}</Button>
           <Button variant="danger" loading={cancelMutation.isPending} onClick={() => cancelTarget && cancelMutation.mutate(cancelTarget.uid)}>
-            Annuler le bon
+            {t('purchases.cancel_action')}
           </Button>
         </>}
       >
         <p className="text-sm text-gray-600">
-          Voulez-vous annuler le bon <span className="font-mono font-semibold text-gray-900">{cancelTarget?.reference}</span> ? Aucun stock ne sera affecté.
+          {t('purchases.cancel_confirm')} <span className="font-mono font-semibold text-gray-900">{cancelTarget?.reference}</span> ?
         </p>
       </Modal>
 
       {/* Modal supprimer */}
-      <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Supprimer le bon" size="sm"
+      <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title={t('purchases.delete_title')} size="sm"
         footer={<>
-          <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+          <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
           <Button variant="danger" loading={deleteMutation.isPending} onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}>
-            Supprimer
+            {t('common.delete')}
           </Button>
         </>}
       >
         <p className="text-sm text-gray-600">
-          Supprimer définitivement <span className="font-mono font-semibold text-gray-900">{deleteTarget?.reference}</span> ?
+          {t('purchases.delete_confirm')} <span className="font-mono font-semibold text-gray-900">{deleteTarget?.reference}</span> ?
         </p>
       </Modal>
     </div>

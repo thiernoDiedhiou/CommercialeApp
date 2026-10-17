@@ -404,7 +404,11 @@
     "receive_partial": "Réception partielle",
     "order_date": "Date de commande",
     "order_action": "Commander",
-    "download_pdf": "Télécharger PDF"
+    "download_pdf": "Télécharger PDF",
+    "expected_at": "Livraison prévue",
+    "order_confirm_title": "Confirmer la commande",
+    "cancel_title": "Annuler le bon de commande",
+    "cancel_action": "Annuler le bon"
   },
   "customers": {
     "title": "Clients",

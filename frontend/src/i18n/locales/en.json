@@ -404,7 +404,11 @@
     "receive_partial": "Partial receipt",
     "order_date": "Order date",
     "order_action": "Place order",
-    "download_pdf": "Download PDF"
+    "download_pdf": "Download PDF",
+    "expected_at": "Expected delivery",
+    "order_confirm_title": "Confirm order",
+    "cancel_title": "Cancel purchase order",
+    "cancel_action": "Cancel order"
   },
   "customers": {
     "title": "Customers",
