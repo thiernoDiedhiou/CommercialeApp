@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Receipt, TrendingUp, Banknote, Wallet } from 'lucide-react'
 import { ChartBarIcon, PresentationChartLineIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getDashboardSummary } from '@/services/api/dashboard'
 import { useAuthStore } from '@/store/authStore'
 import PageHeader from '@/components/ui/PageHeader'
@@ -16,6 +17,7 @@ const STALE_TIME       = 60_000
 const REFETCH_INTERVAL = 60_000
 
 export default function DashboardPage() {
+  const { t } = useTranslation()
   const subscriptionExpired = useAuthStore((s) => s.subscriptionExpired)
 
   const { data, isLoading } = useQuery({
@@ -34,7 +36,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Tableau de bord" />
+      <PageHeader title={t('dashboard.title')} />
 
       {/* Zone 1 — KPI Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -43,20 +45,20 @@ export default function DashboardPage() {
         ) : (
           <>
             <KpiCard
-              title="Ventes du jour"
+              title={t('dashboard.sales_today')}
               value={locked ? '—' : (today?.sales_count ?? 0)}
-              subtitle="tous canaux"
+              subtitle={t('dashboard.all_channels')}
               color="blue"
               icon={<Receipt className="h-5 w-5" />}
             >
               {!locked && (today?.shop_orders_count ?? 0) > 0 && (
                 <ul className="space-y-1">
                   <li className="flex justify-between text-xs text-gray-500">
-                    <span>POS</span>
+                    <span>{t('dashboard.pos')}</span>
                     <span>{today?.pos_sales_count ?? 0}</span>
                   </li>
                   <li className="flex justify-between text-xs text-gray-500">
-                    <span>Boutique en ligne</span>
+                    <span>{t('dashboard.online_shop')}</span>
                     <span>{today?.shop_orders_count ?? 0}</span>
                   </li>
                 </ul>
@@ -64,20 +66,20 @@ export default function DashboardPage() {
             </KpiCard>
 
             <KpiCard
-              title="Chiffre d'affaires"
+              title={t('dashboard.revenue_today')}
               value={locked ? '—' : formatCurrency(today?.revenue ?? 0)}
-              subtitle="tous canaux"
+              subtitle={t('dashboard.all_channels')}
               color="green"
               icon={<Banknote className="h-5 w-5" />}
             >
               {!locked && (today?.shop_orders_revenue ?? 0) > 0 && (
                 <ul className="space-y-1">
                   <li className="flex justify-between text-xs text-gray-500">
-                    <span>POS</span>
+                    <span>{t('dashboard.pos')}</span>
                     <span>{formatCurrency(today?.pos_revenue ?? 0)}</span>
                   </li>
                   <li className="flex justify-between text-xs text-gray-500">
-                    <span>Boutique en ligne</span>
+                    <span>{t('dashboard.online_shop')}</span>
                     <span>{formatCurrency(today?.shop_orders_revenue ?? 0)}</span>
                   </li>
                 </ul>
@@ -85,18 +87,18 @@ export default function DashboardPage() {
             </KpiCard>
 
             <KpiCard
-              title="Bénéfice"
+              title={t('dashboard.profit')}
               value={locked ? '—' : formatCurrency(Math.abs(profit))}
-              subtitle={locked ? '' : (profit >= 0 ? '▲ positif' : '▼ négatif')}
+              subtitle={locked ? '' : (profit >= 0 ? t('dashboard.profit_positive') : t('dashboard.profit_negative'))}
               trend={locked ? undefined : (profit >= 0 ? 'up' : 'down')}
               color="purple"
               icon={<TrendingUp className="h-5 w-5" />}
             />
 
             <KpiCard
-              title="Encaissements du jour"
+              title={t('dashboard.collected_day')}
               value={locked ? '—' : formatCurrency(todayCollected)}
-              subtitle="POS"
+              subtitle={t('dashboard.pos')}
               color="amber"
               icon={<Wallet className="h-5 w-5" />}
             >
@@ -118,7 +120,7 @@ export default function DashboardPage() {
       {/* Zone 2 — Graphique semaine + Top produits */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100 lg:col-span-2">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">CA des 7 derniers jours</h2>
+          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('dashboard.week_chart')}</h2>
           {isLoading ? (
             <div className="h-[220px] animate-pulse rounded-lg bg-gray-100" />
           ) : (data?.week_chart ?? []).length === 0 ? (
@@ -126,8 +128,8 @@ export default function DashboardPage() {
               <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
                 <PresentationChartLineIcon className="h-6 w-6 text-slate-400" />
               </div>
-              <p className="text-sm font-semibold text-slate-700">Aucune vente cette semaine</p>
-              <p className="mt-1 text-xs text-slate-400">Le chiffre d'affaires des 7 derniers jours apparaîtra ici.</p>
+              <p className="text-sm font-semibold text-slate-700">{t('dashboard.no_sales_week')}</p>
+              <p className="mt-1 text-xs text-slate-400">{t('dashboard.no_sales_week_desc')}</p>
             </div>
           ) : (
             <WeekChart data={data!.week_chart} />
@@ -135,7 +137,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">Top 5 produits</h2>
+          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('dashboard.top_products')}</h2>
           {isLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -150,8 +152,8 @@ export default function DashboardPage() {
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
                 <ChartBarIcon className="h-7 w-7 text-slate-400" />
               </div>
-              <p className="text-sm font-semibold text-slate-700">Aucune vente aujourd'hui</p>
-              <p className="mt-1 text-xs text-slate-400">Vos produits les plus vendus apparaîtront ici.</p>
+              <p className="text-sm font-semibold text-slate-700">{t('dashboard.no_sales_today')}</p>
+              <p className="mt-1 text-xs text-slate-400">{t('dashboard.top_products_desc')}</p>
             </div>
           ) : (
             <ul className="divide-y divide-gray-50">
@@ -169,7 +171,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="ml-2 shrink-0 text-right">
                       <p className="text-sm font-medium text-gray-900">{formatCurrency(p.revenue)}</p>
-                      <p className="text-xs text-gray-400">{p.quantity_sold} u.</p>
+                      <p className="text-xs text-gray-400">{p.quantity_sold} {t('dashboard.unit_sold')}</p>
                     </div>
                   </Link>
                 </li>
@@ -190,7 +192,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">Ventes récentes</h2>
+          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('dashboard.recent_sales_section')}</h2>
           <RecentSalesList sales={data?.recent_sales ?? []} loading={isLoading} />
         </div>
       </div>

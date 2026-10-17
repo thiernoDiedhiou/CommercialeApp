@@ -10,19 +10,13 @@ import {
   ClockIcon,
   BanknotesIcon,
 } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getDebts } from '@/services/api/customers'
 import { SkeletonRow } from '@/components/ui/Skeleton'
 import Pagination from '@/components/ui/Pagination'
 import { formatCurrency } from '@/lib/utils'
 
 type SortKey = 'amount_desc' | 'amount_asc' | 'oldest_first' | 'name_asc'
-
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: 'amount_desc',  label: 'Montant (décroissant)' },
-  { value: 'amount_asc',   label: 'Montant (croissant)' },
-  { value: 'oldest_first', label: 'Plus ancienne créance' },
-  { value: 'name_asc',     label: 'Nom (A → Z)' },
-]
 
 function debtAgeDays(dateStr: string | null): number {
   if (!dateStr) return 0
@@ -40,10 +34,18 @@ function AgeBadge({ days }: { days: number }) {
 }
 
 export default function DebtsPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [sort, setSort]     = useState<SortKey>('amount_desc')
   const [page, setPage]     = useState(1)
+
+  const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+    { value: 'amount_desc',  label: t('customers.sort_amount_desc') },
+    { value: 'amount_asc',   label: t('customers.sort_amount_asc') },
+    { value: 'oldest_first', label: t('customers.sort_oldest') },
+    { value: 'name_asc',     label: t('customers.sort_name_asc') },
+  ]
 
   const { data, isLoading } = useQuery({
     queryKey: ['debts', { search, sort, page }],
@@ -67,7 +69,7 @@ export default function DebtsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <ExclamationCircleIcon className="h-6 w-6 text-red-400" />
-          <h1 className="text-xl font-bold text-slate-900">Créances clients</h1>
+          <h1 className="text-xl font-bold text-slate-900">{t('customers.debts_title')}</h1>
         </div>
       </div>
 
@@ -79,7 +81,7 @@ export default function DebtsPage() {
               <BanknotesIcon className="h-6 w-6 text-red-500" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Total dû</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">{t('customers.total_due')}</p>
               <p className="text-xl font-bold text-red-600">{formatCurrency(totalDebt)}</p>
             </div>
           </div>
@@ -88,7 +90,7 @@ export default function DebtsPage() {
               <UserGroupIcon className="h-6 w-6 text-orange-500" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Clients débiteurs</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">{t('customers.debtor_clients')}</p>
               <p className="text-xl font-bold text-gray-900">{totalClients}</p>
             </div>
           </div>
@@ -97,7 +99,7 @@ export default function DebtsPage() {
               <ClockIcon className="h-6 w-6 text-amber-500" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Plus ancienne</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">{t('customers.oldest_debt_age')}</p>
               <p className="text-xl font-bold text-gray-900">
                 {oldestDays > 0 ? `${oldestDays} j` : '—'}
               </p>
@@ -112,7 +114,7 @@ export default function DebtsPage() {
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="search"
-            placeholder="Nom ou téléphone…"
+            placeholder={t('customers.debt_search_placeholder')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
@@ -148,8 +150,8 @@ export default function DebtsPage() {
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
                     <BanknotesIcon className="h-7 w-7 text-green-400" />
                   </div>
-                  <p className="font-medium text-gray-700">Aucune créance en cours</p>
-                  <p className="text-sm text-gray-400">Tous les clients sont à jour de leurs paiements.</p>
+                  <p className="font-medium text-gray-700">{t('customers.debt_empty_title')}</p>
+                  <p className="text-sm text-gray-400">{t('customers.up_to_date')}</p>
                 </div>
               </div>
             )
@@ -179,7 +181,7 @@ export default function DebtsPage() {
                       <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-400">
                         {row.phone && <span>{row.phone}</span>}
                         <span className="inline-flex items-center rounded-full bg-red-50 px-1.5 py-0.5 text-xs font-semibold text-red-700">
-                          {row.unpaid_sales_count} impayée{row.unpaid_sales_count > 1 ? 's' : ''}
+                          {row.unpaid_sales_count} {t('customers.unpaid_suffix')}
                         </span>
                         {row.oldest_debt_date && <AgeBadge days={days} />}
                       </div>
@@ -196,12 +198,12 @@ export default function DebtsPage() {
           <table className="min-w-full divide-y divide-gray-100 text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Client</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Téléphone</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Ventes impayées</th>
-                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">Ancienneté</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Solde dû</th>
-                <th className="sr-only">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('customers.title')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.phone')}</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">{t('customers.unpaid_sales')}</th>
+                <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">{t('customers.age_label')}</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('customers.balance_due')}</th>
+                <th className="sr-only">{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -219,8 +221,8 @@ export default function DebtsPage() {
                         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-50">
                           <BanknotesIcon className="h-7 w-7 text-green-400" />
                         </div>
-                        <p className="font-medium text-gray-700">Aucune créance en cours</p>
-                        <p className="text-sm text-gray-400">Tous les clients sont à jour de leurs paiements.</p>
+                        <p className="font-medium text-gray-700">{t('customers.debt_empty_title')}</p>
+                        <p className="text-sm text-gray-400">{t('customers.up_to_date')}</p>
                       </div>
                     </td>
                   </tr>
@@ -288,7 +290,7 @@ export default function DebtsPage() {
       {/* Légende ancienneté */}
       {rows.length > 0 && (
         <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
-          <span className="font-medium">Ancienneté :</span>
+          <span className="font-medium">{t('customers.age_legend')}</span>
           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700">≤ 7 j</span>
           <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700">8 – 30 j</span>
           <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2 py-0.5 font-medium text-orange-700">31 – 60 j</span>
