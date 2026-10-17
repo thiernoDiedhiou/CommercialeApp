@@ -24,7 +24,7 @@ const schema = z.object({
   admin_name:     z.string().min(2, 'Votre nom est requis').max(150),
   admin_email:    z.string().email('Email invalide'),
   admin_password: z.string().min(8, '8 caractères minimum'),
-  confirm:        z.string(),
+  confirm:        z.string().min(1, 'Veuillez confirmer votre mot de passe'),
 }).refine((d) => d.admin_password === d.confirm, {
   message: 'Les mots de passe ne correspondent pas',
   path:    ['confirm'],
@@ -70,7 +70,7 @@ export default function RegisterPage() {
 
   const { register, handleSubmit, control, trigger, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { sector: 'general' },
+    defaultValues: { sector: 'general', phone: '', phone_country: 'SN', admin_name: '', admin_email: '', admin_password: '', confirm: '' },
   })
 
   const passwordValue = useWatch({ control, name: 'admin_password' }) ?? ''
