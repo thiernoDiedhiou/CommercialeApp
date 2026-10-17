@@ -1,4 +1,4 @@
-import apiClient from '@/lib/axios'
+import apiClient, { API } from '@/lib/axios'
 import type { ProductAttribute, AttributeValue } from '@/types'
 
 /**
@@ -6,7 +6,7 @@ import type { ProductAttribute, AttributeValue } from '@/types'
  * Retourne tous les attributs avec leurs valeurs (sans pagination).
  */
 export async function getAttributes(): Promise<ProductAttribute[]> {
-  const { data } = await apiClient.get<{ data: ProductAttribute[] }>('/api/v1/attributes')
+  const { data } = await apiClient.get<{ data: ProductAttribute[] }>(`${API}/attributes`)
   return data.data
 }
 
@@ -15,12 +15,12 @@ export async function createAttribute(body: {
   slug?: string
   sort_order?: number
 }): Promise<ProductAttribute> {
-  const { data } = await apiClient.post<{ data: ProductAttribute }>('/api/v1/attributes', body)
+  const { data } = await apiClient.post<{ data: ProductAttribute }>(`${API}/attributes`, body)
   return data.data
 }
 
 export async function deleteAttribute(attributeId: number): Promise<void> {
-  await apiClient.delete(`/api/v1/attributes/${attributeId}`)
+  await apiClient.delete(`${API}/attributes/${attributeId}`)
 }
 
 export async function createAttributeValue(
@@ -28,7 +28,7 @@ export async function createAttributeValue(
   body: { value: string; color_hex?: string; sort_order?: number },
 ): Promise<AttributeValue> {
   const { data } = await apiClient.post<{ data: AttributeValue }>(
-    `/api/v1/attributes/${attributeId}/values`,
+    `${API}/attributes/${attributeId}/values`,
     body,
   )
   return data.data
@@ -38,5 +38,5 @@ export async function deleteAttributeValue(
   attributeId: number,
   valueId: number,
 ): Promise<void> {
-  await apiClient.delete(`/api/v1/attributes/${attributeId}/values/${valueId}`)
+  await apiClient.delete(`${API}/attributes/${attributeId}/values/${valueId}`)
 }

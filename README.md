@@ -169,7 +169,12 @@ saas-commercial/
 │   │   ├── migrations/         # 33 migrations (préfixe 2026_MM_DD)
 │   │   └── seeders/            # DatabaseSeeder, DemoDataSeeder, SuperAdminSeeder
 │   ├── resources/views/pdf/    # invoice.blade.php, invoice_doc.blade.php
-│   ├── routes/api.php          # Routes tenant + routes super admin /api/v1/admin/*
+│   ├── routes/
+│   │   ├── api.php             # Point d'entrée — require les 3 sous-fichiers
+│   │   └── api/
+│   │       ├── public.php      # Landing page, boutique publique, webhooks
+│   │       ├── admin.php       # Super Admin (/api/v1/admin/*)
+│   │       └── tenant.php      # Routes authentifiées tenant (/api/v1/*)
 │   └── tests/Feature/          # Auth, Invoice, Pos, Product, Purchase, Report,
 │                               # Sales, Stock, Tenant
 │
@@ -209,7 +214,7 @@ saas-commercial/
         │   ├── cartStore.ts        # Zustand — panier POS
         │   └── toastStore.ts       # Zustand — notifications toast
         ├── lib/
-        │   ├── axios.ts        # intercepteur tenant (401→logout, erreurs→toast)
+        │   ├── axios.ts        # intercepteur tenant (401→logout, erreurs→toast) + export `API = '/api/v1'`
         │   ├── adminAxios.ts   # intercepteur super admin (pas de X-Tenant-ID)
         │   ├── errors.ts       # getApiErrorMessage() + traductions Laravel→FR
         │   └── utils.ts        # formatCurrency(), formatDate(), cn()

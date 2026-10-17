@@ -1,4 +1,4 @@
-import apiClient from '@/lib/axios'
+import apiClient, { API } from '@/lib/axios'
 
 export interface BillingTransaction {
   id          : number
@@ -16,7 +16,7 @@ export async function initiateRenewal(
   billingCycle: 'monthly' | 'yearly',
 ): Promise<{ checkout_url: string }> {
   const { data } = await apiClient.post<{ data: { checkout_url: string } }>(
-    '/api/v1/billing/initiate',
+    `${API}/billing/initiate`,
     { plan_uid: planUid, billing_cycle: billingCycle },
   )
   return data.data
@@ -28,6 +28,6 @@ export async function getBillingTransactions(): Promise<{
   last_page   : number
   total       : number
 }> {
-  const { data } = await apiClient.get('/api/v1/billing/transactions')
+  const { data } = await apiClient.get(`${API}/billing/transactions`)
   return data
 }

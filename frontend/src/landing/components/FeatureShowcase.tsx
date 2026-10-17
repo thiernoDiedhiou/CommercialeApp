@@ -10,7 +10,7 @@ const TABS = [
     label: 'Caisse POS',
     Icon:  ShoppingCartIcon,
     url:   'app.didisphere.shop/pos',
-    desc:  'Encaissez en quelques secondes. Espèces, Orange Money ou Wave — tout en un clic. Cliquez sur les produits pour essayer.',
+    desc:  'Encaissez en quelques secondes. Espèces, Orange Money ou Wave tout en un clic. Cliquez sur les produits pour essayer.',
   },
   {
     key:   'reports',
@@ -24,7 +24,7 @@ const TABS = [
     label: 'Boutique en ligne',
     Icon:  GlobeAltIcon,
     url:   'boutique.didisphere.shop/demo',
-    desc:  'Partagez votre catalogue avec un simple lien. Vos clients commandent directement — sans commission.',
+    desc:  'Partagez votre catalogue avec un simple lien. Vos clients commandent directement sans commission.',
   },
 ]
 

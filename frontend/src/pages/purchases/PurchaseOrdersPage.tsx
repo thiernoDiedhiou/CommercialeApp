@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { PlusIcon, EyeIcon, CheckIcon, XCircleIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, EyeIcon, CheckIcon, XCircleIcon, TrashIcon, ChevronRightIcon, ShoppingCartIcon } from '@heroicons/react/24/outline'
 import {
   getPurchaseOrders,
   confirmPurchaseOrder,
@@ -9,6 +9,7 @@ import {
   deletePurchaseOrder,
 } from '@/services/api/purchases'
 import { Table } from '@/components/ui/Table'
+import EmptyState from '@/components/ui/EmptyState'
 import type { Column } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
@@ -161,7 +162,7 @@ export default function PurchaseOrdersPage() {
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900">Bons de commande</h1>
+        <h1 className="text-xl font-bold text-slate-900">Bons de commande</h1>
         <CanDo permission="purchases.create">
           <Button icon={<PlusIcon className="h-4 w-4" />} onClick={() => navigate('/purchases/new')}>
             Nouveau bon
@@ -191,8 +192,23 @@ export default function PurchaseOrdersPage() {
         keyExtractor={(o) => o.id}
         loading={isLoading}
         skeletonRows={8}
-        emptyMessage="Aucun bon de commande trouvé."
+        emptyMessage={<EmptyState icon={<ShoppingCartIcon className="h-7 w-7" />} title="Aucune commande fournisseur" description="Créez un bon de commande pour réapprovisionner votre stock." />}
         onRowClick={(o) => navigate(`/purchases/${o.uid}`)}
+        mobileCard={(o) => (
+          <div className="flex items-center gap-3 px-4 py-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-mono text-sm font-semibold text-gray-900">{o.reference}</span>
+                <Badge variant={STATUS_VARIANT[o.status]}>{STATUS_LABEL[o.status]}</Badge>
+              </div>
+              <p className="text-sm text-gray-600 truncate">{o.supplier?.name ?? '—'}</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {formatDate(o.created_at)} · {o.items_count ?? 0} article{(o.items_count ?? 0) > 1 ? 's' : ''}
+              </p>
+            </div>
+            <ChevronRightIcon className="h-4 w-4 text-gray-300 shrink-0" />
+          </div>
+        )}
       />
 
       {data && data.last_page > 1 && (

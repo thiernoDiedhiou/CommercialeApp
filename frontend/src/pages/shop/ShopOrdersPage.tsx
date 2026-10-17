@@ -5,7 +5,8 @@ import type { ShopOrderAdmin, ShopOrderAdminItem } from '@/shop/services/shop'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
 import { formatDateTime } from '@/lib/utils'
-import { XMarkIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, ShoppingBagIcon } from '@heroicons/react/24/outline'
+import EmptyState from '@/components/ui/EmptyState'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -46,7 +47,7 @@ export default function ShopOrdersPage() {
   const [page,         setPage]         = useState(1)
 
   // Modal détail
-  const [detailId,    setDetailId]    = useState<number | null>(null)
+  const [detailUid,   setDetailUid]   = useState<string | null>(null)
   const [detailOpen,  setDetailOpen]  = useState(false)
 
   const debRef = useRef<ReturnType<typeof setTimeout>>()
@@ -74,20 +75,20 @@ export default function ShopOrdersPage() {
   })
 
   const { data: detailResp } = useQuery({
-    queryKey: ['shop-order', detailId],
-    queryFn : () => getShopOrder(detailId!),
-    enabled : !!detailId,
+    queryKey: ['shop-order', detailUid],
+    queryFn : () => getShopOrder(detailUid!),
+    enabled : !!detailUid,
   })
 
   // ── Mutation statut ────────────────────────────────────────────────────────
 
   const statusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: string }) =>
-      updateShopOrderStatus(id, status),
+    mutationFn: ({ uid, status }: { uid: string; status: string }) =>
+      updateShopOrderStatus(uid, status),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['shop-orders'] })
-      qc.invalidateQueries({ queryKey: ['shop-order', detailId] })
-      qc.invalidateQueries({ queryKey: ['dashboard-summary'] }) // stats temps réel
+      qc.invalidateQueries({ queryKey: ['shop-order', detailUid] })
+      qc.invalidateQueries({ queryKey: ['dashboard-summary'] })
       toast.success('Statut mis à jour')
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -97,8 +98,8 @@ export default function ShopOrdersPage() {
   const lastPage    = data?.last_page ?? 1
   const total       = data?.total ?? 0
 
-  const openDetail = (id: number) => { setDetailId(id); setDetailOpen(true) }
-  const closeDetail = () => { setDetailOpen(false); setDetailId(null) }
+  const openDetail  = (uid: string) => { setDetailUid(uid); setDetailOpen(true) }
+  const closeDetail = () => { setDetailOpen(false); setDetailUid(null) }
 
   return (
     <div className="space-y-4">
@@ -142,7 +143,7 @@ export default function ShopOrdersPage() {
             <div className="w-7 h-7 rounded-full border-4 border-gray-200 border-t-gray-500 animate-spin" />
           </div>
         ) : orders.length === 0 ? (
-          <div className="text-center py-16 text-gray-400 text-sm">Aucune commande</div>
+          <EmptyState icon={<ShoppingBagIcon className="h-7 w-7" />} title="Aucune commande pour l'instant" description="Les commandes passées sur votre boutique en ligne apparaîtront ici." />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -158,10 +159,10 @@ export default function ShopOrdersPage() {
               <tbody className="divide-y divide-gray-50">
                 {orders.map((order) => (
                   <OrderRow
-                    key={order.id}
+                    key={order.uid}
                     order={order}
-                    onDetail={() => openDetail(order.id)}
-                    onStatus={(status) => statusMutation.mutate({ id: order.id, status })}
+                    onDetail={() => openDetail(order.uid)}
+                    onStatus={(status) => statusMutation.mutate({ uid: order.uid, status })}
                     isUpdating={statusMutation.isPending}
                   />
                 ))}
@@ -192,7 +193,7 @@ export default function ShopOrdersPage() {
           order={detailResp?.data ?? null}
           whatsappUrl={detailResp?.whatsapp_url ?? null}
           onClose={closeDetail}
-          onStatus={(status) => statusMutation.mutate({ id: detailId!, status })}
+          onStatus={(status) => statusMutation.mutate({ uid: detailUid!, status })}
           isUpdating={statusMutation.isPending}
         />
       )}

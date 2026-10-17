@@ -1,15 +1,52 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { UserCircleIcon, KeyIcon, EyeIcon, EyeSlashIcon, LockClosedIcon } from '@heroicons/react/24/outline'
+import {
+  CameraIcon,
+  TrashIcon,
+  KeyIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  LockClosedIcon,
+  UserCircleIcon,
+} from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/authStore'
-import { updateProfile } from '@/services/api/profile'
+import { updateProfile, uploadAvatar, deleteAvatar } from '@/services/api/profile'
 import { getApiErrorMessage } from '@/lib/errors'
 import { toast } from '@/store/toastStore'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
+
+// Redimensionne et compresse l'image côté client avant l'upload.
+// Produit un JPEG ≤ 512×512 px, qualité 0.85, taille typique < 100 Ko.
+function compressAvatar(file: File): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onerror = reject
+    img.onload = () => {
+      URL.revokeObjectURL(img.src)
+      const MAX = 512
+      const ratio = Math.min(MAX / img.width, MAX / img.height, 1)
+      const w = Math.round(img.width * ratio)
+      const h = Math.round(img.height * ratio)
+      const canvas = document.createElement('canvas')
+      canvas.width  = w
+      canvas.height = h
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { reject(new Error('canvas toBlob failed')); return }
+          resolve(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }))
+        },
+        'image/jpeg',
+        0.85,
+      )
+    }
+    img.src = URL.createObjectURL(file)
+  })
+}
 
 // ── Schémas ───────────────────────────────────────────────────────────────────
 
@@ -96,8 +133,49 @@ export default function ProfilePage() {
   const subscription = useAuthStore((s) => s.subscription)
   const planFeatures = useAuthStore((s) => s.planFeatures)
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [infoError,     setInfoError]     = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
+
+  const initials = me?.name
+    ? me.name.split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+    : '?'
+
+  // ── Mutation upload avatar ────────────────────────────────────────────────
+
+  const avatarMutation = useMutation({
+    mutationFn: (file: File) => uploadAvatar(file),
+    onSuccess: (data) => {
+      if (token && tenant) {
+        setAuth(token, { ...me!, avatar: data.avatar }, perms, tenant, subscription, planFeatures)
+      }
+      toast.success('Avatar mis à jour.')
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
+  })
+
+  const deleteAvatarMutation = useMutation({
+    mutationFn: deleteAvatar,
+    onSuccess: () => {
+      if (token && tenant) {
+        setAuth(token, { ...me!, avatar: null }, perms, tenant, subscription, planFeatures)
+      }
+      toast.success('Avatar supprimé.')
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
+  })
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    try {
+      const compressed = await compressAvatar(file)
+      avatarMutation.mutate(compressed)
+    } catch {
+      toast.error('Impossible de lire ce fichier image.')
+    }
+  }
 
   // ── Formulaire infos personnelles (nom uniquement) ────────────────────────
 
@@ -144,12 +222,68 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-xl space-y-5 p-4 sm:p-6">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900">Mon profil</h1>
-        <p className="mt-0.5 text-sm text-gray-500">{me?.email}</p>
+
+      {/* ── Avatar centré ───────────────────────────────────────────────────── */}
+      <div className="flex flex-col items-center gap-3 pt-2 pb-4">
+        <div className="relative group">
+          {me?.avatar ? (
+            <img
+              src={me.avatar}
+              alt={me.name}
+              className="h-24 w-24 rounded-full object-cover ring-4 ring-white shadow-lg"
+            />
+          ) : (
+            <span className="flex h-24 w-24 items-center justify-center rounded-full bg-brand-primary text-white text-3xl font-bold ring-4 ring-white shadow-lg">
+              {initials}
+            </span>
+          )}
+
+          {/* Spinner pendant l'upload */}
+          {avatarMutation.isPending && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            </div>
+          )}
+        </div>
+
+        {/* Input fichier caché */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          aria-label="Choisir une photo de profil"
+          onChange={handleAvatarChange}
+        />
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={avatarMutation.isPending || deleteAvatarMutation.isPending}
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 shadow-sm hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50"
+          >
+            <CameraIcon className="h-4 w-4" />
+            Changer l'avatar
+          </button>
+
+          {me?.avatar && (
+            <button
+              type="button"
+              onClick={() => deleteAvatarMutation.mutate()}
+              disabled={avatarMutation.isPending || deleteAvatarMutation.isPending}
+              className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm text-red-500 shadow-sm hover:bg-red-50 hover:text-red-700 transition-colors disabled:opacity-50"
+            >
+              <TrashIcon className="h-4 w-4" />
+              Supprimer
+            </button>
+          )}
+        </div>
+
+        <p className="text-sm text-gray-400">{me?.email}</p>
       </div>
 
-      {/* ── Informations personnelles ───────────────────────────────────── */}
+      {/* ── Informations personnelles ───────────────────────────────────────── */}
       <Card title="Informations personnelles" icon={<UserCircleIcon className="h-5 w-5" />}>
         {infoError && (
           <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{infoError}</p>
@@ -160,7 +294,6 @@ export default function ProfilePage() {
             error={infoForm.formState.errors.name?.message}
             {...infoForm.register('name')}
           />
-          {/* Email en lecture seule — identifiant de connexion non modifiable ici */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Adresse email
@@ -183,7 +316,7 @@ export default function ProfilePage() {
         </form>
       </Card>
 
-      {/* ── Changement de mot de passe ─────────────────────────────────── */}
+      {/* ── Changement de mot de passe ─────────────────────────────────────── */}
       <Card title="Changer le mot de passe" icon={<KeyIcon className="h-5 w-5" />}>
         {passwordError && (
           <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{passwordError}</p>

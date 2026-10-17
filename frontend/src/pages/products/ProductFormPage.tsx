@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { getProduct, createProduct, updateProduct, createVariant, deleteProduct } from '@/services/api/products'
+import { adjustStock } from '@/services/api/stock'
 import { getApiErrorMessage } from '@/lib/errors'
 import { toast } from '@/store/toastStore'
 import Button from '@/components/ui/Button'
@@ -46,6 +47,10 @@ const schema = z.object({
   is_weight_based: z.boolean().default(false),
   has_expiry: z.boolean().default(false),
   description: z.string().optional(),
+  initial_stock: z.preprocess(
+    (v) => (typeof v === 'number' && isNaN(v) ? 0 : v),
+    z.number().min(0).optional(),
+  ),
   variants: z
     .array(
       z.object({
@@ -218,6 +223,7 @@ export default function ProductFormPage() {
     control,
     watch,
     setValue,
+    getValues,
     reset,
     formState: { errors },
   } = useForm<FormValues>({
@@ -252,9 +258,26 @@ export default function ProductFormPage() {
     }
   }, [product, reset])
 
-  const hasVariants = watch('has_variants')
-  const price = watch('price') ?? 0
-  const sku = watch('sku') ?? ''
+  const hasVariants    = watch('has_variants')
+  const isWeightBased  = watch('is_weight_based')
+  const price          = watch('price') ?? 0
+  const sku            = watch('sku') ?? ''
+
+  const variantsSectionRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll vers la section Variantes dès que le toggle est activé
+  useEffect(() => {
+    if (hasVariants && variantsSectionRef.current) {
+      variantsSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [hasVariants])
+
+  // Pré-remplir l'unité "kg" quand "Vendu au poids" est activé et que le champ est vide
+  useEffect(() => {
+    if (isWeightBased && !getValues('unit')) {
+      setValue('unit', 'kg')
+    }
+  }, [isWeightBased]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
   const MAX_SIZE_BYTES = 2 * 1024 * 1024 // 2 Mo
@@ -285,8 +308,19 @@ export default function ProductFormPage() {
 
   const createMutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      const { variants, ...productData } = values
+      const { variants, initial_stock, ...productData } = values
       const created = await createProduct(productData, imageFile)
+
+      // Stock initial (produits sans variantes uniquement)
+      if (!created.has_variants && initial_stock && initial_stock > 0) {
+        await adjustStock({
+          product_id: created.id,
+          type: 'in',
+          quantity: initial_stock,
+          note: 'Stock initial',
+        })
+      }
+
       if (created.has_variants && variants?.length) {
         // allSettled : tente toutes les variantes avant de décider du rollback
         const results = await Promise.allSettled(
@@ -343,7 +377,7 @@ export default function ProductFormPage() {
     <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">
+          <h1 className="text-xl font-bold text-slate-900">
             {isEdit ? 'Modifier le produit' : 'Nouveau produit'}
           </h1>
           <p className="mt-0.5 text-xs text-gray-400">
@@ -499,6 +533,23 @@ export default function ProductFormPage() {
               {...register('alert_threshold', { valueAsNumber: true })}
             />
           </div>
+          {!isEdit && !hasVariants && (
+            <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                Stock initial
+                <span className="ml-1.5 text-xs font-normal text-gray-400">optionnel</span>
+              </label>
+              <Input
+                type="number"
+                min={0}
+                step="any"
+                placeholder="0"
+                hint="Quantité disponible dès la création. Enregistrée comme mouvement de stock."
+                error={errors.initial_stock?.message}
+                {...register('initial_stock', { valueAsNumber: true })}
+              />
+            </div>
+          )}
         </Section>
 
         {/* Section : Options */}
@@ -546,13 +597,15 @@ export default function ProductFormPage() {
 
         {/* Section : Variantes (création uniquement) */}
         {hasVariants && !isEdit && (
-          <Section title="Variantes">
-            <VariantManager
-              productPrice={price}
-              productSku={sku}
-              onChange={(variants) => setValue('variants', variants)}
-            />
-          </Section>
+          <div ref={variantsSectionRef}>
+            <Section title="Variantes">
+              <VariantManager
+                productPrice={price}
+                productSku={sku}
+                onChange={(variants) => setValue('variants', variants)}
+              />
+            </Section>
+          </div>
         )}
 
         {/* Erreur globale */}

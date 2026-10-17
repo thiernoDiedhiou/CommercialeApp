@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Badge from '@/components/ui/Badge'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { ClipboardDocumentListIcon } from '@heroicons/react/24/outline'
 import type { RecentTransaction } from '@/types'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 
@@ -49,7 +50,15 @@ export default function RecentSalesList({ sales, loading }: Props) {
   }
 
   if (sales.length === 0) {
-    return <p className="text-sm text-gray-400">Aucune vente récente</p>
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+          <ClipboardDocumentListIcon className="h-7 w-7 text-slate-400" />
+        </div>
+        <p className="text-sm font-semibold text-slate-700">Aucune vente récente</p>
+        <p className="mt-1 text-xs text-slate-400">Les dernières transactions apparaîtront ici.</p>
+      </div>
+    )
   }
 
   return (

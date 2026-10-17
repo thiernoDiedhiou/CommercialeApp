@@ -1,4 +1,4 @@
-import apiClient from '@/lib/axios'
+import apiClient, { API } from '@/lib/axios'
 import type { Supplier, CreateSupplierData, PaginatedResponse } from '@/types'
 
 function clean(params: Record<string, unknown>): Record<string, unknown> {
@@ -12,27 +12,27 @@ export async function getSuppliers(params: {
   is_active?: boolean
   page?: number
 } = {}): Promise<PaginatedResponse<Supplier>> {
-  const { data } = await apiClient.get<PaginatedResponse<Supplier>>('/api/v1/suppliers', {
+  const { data } = await apiClient.get<PaginatedResponse<Supplier>>(`${API}/suppliers`, {
     params: clean(params as Record<string, unknown>),
   })
   return data
 }
 
 export async function getSupplier(uid: string): Promise<Supplier> {
-  const { data } = await apiClient.get<{ data: Supplier }>(`/api/v1/suppliers/${uid}`)
+  const { data } = await apiClient.get<{ data: Supplier }>(`${API}/suppliers/${uid}`)
   return data.data
 }
 
 export async function createSupplier(body: CreateSupplierData): Promise<Supplier> {
-  const { data } = await apiClient.post<{ data: Supplier }>('/api/v1/suppliers', body)
+  const { data } = await apiClient.post<{ data: Supplier }>(`${API}/suppliers`, body)
   return data.data
 }
 
 export async function updateSupplier(uid: string, body: Partial<CreateSupplierData>): Promise<Supplier> {
-  const { data } = await apiClient.put<{ data: Supplier }>(`/api/v1/suppliers/${uid}`, body)
+  const { data } = await apiClient.put<{ data: Supplier }>(`${API}/suppliers/${uid}`, body)
   return data.data
 }
 
 export async function deleteSupplier(uid: string): Promise<void> {
-  await apiClient.delete(`/api/v1/suppliers/${uid}`)
+  await apiClient.delete(`${API}/suppliers/${uid}`)
 }

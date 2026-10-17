@@ -1,13 +1,14 @@
 import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { PlusIcon, PencilSquareIcon, TrashIcon, ArrowUpTrayIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilSquareIcon, TrashIcon, ArrowUpTrayIcon, ArrowDownTrayIcon, CubeIcon } from '@heroicons/react/24/outline'
 import { getProducts, deleteProduct } from '@/services/api/products'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
 import { getCategories } from '@/services/api/categories'
 import { importProducts, downloadImportTemplate } from '@/services/api/import'
 import { Table } from '@/components/ui/Table'
+import EmptyState from '@/components/ui/EmptyState'
 import type { Column } from '@/components/ui/Table'
 import Pagination from '@/components/ui/Pagination'
 import Badge from '@/components/ui/Badge'
@@ -167,6 +168,9 @@ export default function ProductsPage() {
       header: 'Stock',
       align: 'right',
       render: (p) => {
+        if (p.has_variants) {
+          return <span className="text-xs text-gray-400 italic">variantes</span>
+        }
         const low = p.alert_threshold !== null && p.stock_quantity <= p.alert_threshold
         return (
           <span className={`font-semibold ${low ? 'text-red-600' : 'text-emerald-600'}`}>
@@ -177,7 +181,8 @@ export default function ProductsPage() {
     },
     {
       key: 'actions',
-      header: '',
+      header: 'Actions',
+      headerClassName: 'sr-only',
       align: 'right',
       render: (p) => (
         <div className="flex items-center justify-end gap-1">
@@ -210,7 +215,7 @@ export default function ProductsPage() {
     <div className="space-y-4 p-4 sm:p-6">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900">Produits</h1>
+        <h1 className="text-xl font-bold text-slate-900">Produits</h1>
         <div className="flex gap-2">
           <CanDo permission="products.import">
             <Button
@@ -271,8 +276,42 @@ export default function ProductsPage() {
         keyExtractor={(p) => p.id}
         loading={isLoading}
         skeletonRows={8}
-        emptyMessage="Aucun produit trouvé."
+        emptyMessage={<EmptyState icon={<CubeIcon className="h-7 w-7" />} title="Aucun produit" description="Ajoutez vos produits ou importez-les via le fichier CSV." />}
         onRowClick={(p) => navigate(`/products/${p.uid}`)}
+        mobileCard={(p) => {
+          const cat = flatCats.find((c) => c.id === p.category_id)
+          const low = !p.has_variants && p.alert_threshold !== null && p.stock_quantity <= p.alert_threshold
+          return (
+            <div className="flex items-start gap-3 px-4 py-3">
+              <div className="h-10 w-10 shrink-0 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
+                {p.image_url
+                  ? <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
+                  : <span className="text-xs font-semibold text-gray-400">{p.name.charAt(0).toUpperCase()}</span>
+                }
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 truncate">{p.name}</p>
+                    {p.sku && <p className="text-xs font-mono text-gray-400">{p.sku}</p>}
+                    {cat && <p className="text-xs text-gray-400">{cat.name}</p>}
+                  </div>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <span className="font-medium text-gray-900">{formatCurrency(p.price)}</span>
+                    {!p.has_variants && (
+                      <span className={`text-xs font-semibold ${low ? 'text-red-600' : 'text-emerald-600'}`}>
+                        Stock : {p.stock_quantity}
+                      </span>
+                    )}
+                    {p.has_variants && (
+                      <span className="text-xs text-gray-400 italic">variantes</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        }}
       />
 
       {/* Pagination */}

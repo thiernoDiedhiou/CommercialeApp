@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useForm, useFieldArray, Controller } from 'react-hook-form'
+import { useForm, useFieldArray, Controller, useWatch } from 'react-hook-form'
 import PriceInput from '@/components/ui/PriceInput'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -196,8 +196,10 @@ export default function AdminPlansPage() {
 // ── Carte plan ────────────────────────────────────────────────────────────────
 
 function PlanCard({ plan, onEdit, onDelete }: { plan: Plan; onEdit: () => void; onDelete: () => void }) {
-  const monthly = Math.round(parseFloat(plan.price_monthly)).toLocaleString('fr-FR')
-  const yearly  = plan.price_yearly ? Math.round(parseFloat(plan.price_yearly)).toLocaleString('fr-FR') : null
+  const monthly  = Math.round(parseFloat(plan.price_monthly)).toLocaleString('fr-FR')
+  const yearly   = plan.price_yearly ? Math.round(parseFloat(plan.price_yearly)).toLocaleString('fr-FR') : null
+  const [featExpanded, setFeatExpanded] = useState(false)
+  const toggleFeat = useCallback(() => setFeatExpanded((v) => !v), [])
 
   return (
     <div className="rounded-xl bg-gray-900 border border-gray-800 p-5 flex flex-col gap-4">
@@ -287,13 +289,21 @@ function PlanCard({ plan, onEdit, onDelete }: { plan: Plan; onEdit: () => void; 
         <div className="border-t border-gray-800 pt-3">
           <p className="text-xs font-medium text-gray-500 mb-2">Description marketing</p>
           <ul className="space-y-1">
-            {plan.features.slice(0, 3).map((f, i) => (
-              <li key={i} className="text-xs text-gray-400 truncate">• {f}</li>
+            {(featExpanded ? plan.features : plan.features.slice(0, 3)).map((f, i) => (
+              <li key={i} className="text-xs text-gray-400">• {f}</li>
             ))}
-            {plan.features.length > 3 && (
-              <li className="text-xs text-gray-600">+{plan.features.length - 3} autres…</li>
-            )}
           </ul>
+          {plan.features.length > 3 && (
+            <button
+              type="button"
+              onClick={toggleFeat}
+              className="mt-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition"
+            >
+              {featExpanded
+                ? '▲ Réduire'
+                : `+${plan.features.length - 3} autres…`}
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -315,12 +325,22 @@ function PlanModal({ plan, onClose, onSaved }: { plan: Plan | null; onClose: () 
     feature_stock_alerts: false, feature_multi_user: false, feature_custom_domain: false,
   }
 
-  const { register, control, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, control, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues,
   })
 
   const { fields, append, remove, move } = useFieldArray({ control, name: 'features' })
+
+  const watchedMonthly  = useWatch({ control, name: 'price_monthly' })
+  const watchedDiscount = useWatch({ control, name: 'yearly_discount_pct' })
+
+  useEffect(() => {
+    if (watchedMonthly > 0 && watchedDiscount && watchedDiscount > 0 && watchedDiscount < 100) {
+      const computed = Math.round(watchedMonthly * 12 * (1 - watchedDiscount / 100))
+      setValue('price_yearly', computed, { shouldValidate: false })
+    }
+  }, [watchedMonthly, watchedDiscount, setValue])
 
   const mutation = useMutation({
     mutationFn: (v: FormValues) => isEdit
@@ -430,6 +450,9 @@ function PlanModal({ plan, onClose, onSaved }: { plan: Plan | null; onClose: () 
                     />
                   )}
                 />
+                {watchedDiscount && watchedDiscount > 0 && watchedMonthly > 0 && (
+                  <p className="mt-1 text-xs text-emerald-400">Calculé automatiquement (−{watchedDiscount}%)</p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

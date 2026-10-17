@@ -11,6 +11,11 @@ const LARAVEL_TRANSLATIONS: Record<string, string> = {
   'The image field must not be greater than 2048 kilobytes.': 'Image trop lourde. Maximum 2 Mo.',
   'The image may not be greater than 2048 kilobytes.': 'Image trop lourde. Maximum 2 Mo.',
   'The image field must be a file.': 'Le fichier n\'a pas pu être lu. Réessayez.',
+  'The avatar field must be a file of type: jpeg, jpg, png, webp.': 'Format non supporté. Utilisez JPEG, JPG, PNG ou WebP.',
+  'The avatar field must not be greater than 5120 kilobytes.': 'Image trop lourde. Maximum 5 Mo.',
+  'The avatar field must be a file.': 'Le fichier n\'a pas pu être lu. Réessayez.',
+  'The avatar must be a file of type: jpeg, jpg, png, webp.': 'Format non supporté. Utilisez JPEG, JPG, PNG ou WebP.',
+  'The avatar must not be greater than 5120 kilobytes.': 'Image trop lourde. Maximum 5 Mo.',
   'The phone field is invalid.': 'Le numéro de téléphone est invalide pour le pays sélectionné.',
   'The phone is invalid.': 'Le numéro de téléphone est invalide pour le pays sélectionné.',
 }

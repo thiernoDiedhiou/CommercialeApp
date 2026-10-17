@@ -19,15 +19,19 @@ class InvoiceSentMail extends Mailable
     public function __construct(
         public readonly Invoice $invoice,
         public readonly Tenant $tenant,
+        public readonly ?string $customSubject = null,
+        public readonly ?string $customMessage = null,
     ) {
-        $this->invoice->loadMissing(['customer', 'items.product']);
+        $this->invoice->loadMissing(['customer', 'items.product', 'creditNoteFor:id,reference']);
     }
 
     public function envelope(): Envelope
     {
-        return new Envelope(
-            subject: "Facture {$this->invoice->reference} — {$this->tenant->name}",
-        );
+        $label   = $this->invoice->isQuote() ? 'Devis' : ($this->invoice->isCreditNote() ? 'Avoir' : 'Facture');
+        $subject = $this->customSubject
+            ?? "{$label} {$this->invoice->reference} — {$this->tenant->name}";
+
+        return new Envelope(subject: $subject);
     }
 
     public function content(): Content
@@ -53,7 +57,7 @@ class InvoiceSentMail extends Mailable
                     'tenant'  => $tenant,
                     'footer'  => $footer,
                 ])->output(),
-                "facture-{$invoice->reference}.pdf",
+                ($invoice->isCreditNote() ? 'avoir' : ($invoice->isQuote() ? 'devis' : 'facture')) . "-{$invoice->reference}.pdf",
             )->withMime('application/pdf'),
         ];
     }

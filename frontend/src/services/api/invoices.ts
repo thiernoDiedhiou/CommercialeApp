@@ -1,9 +1,11 @@
-import apiClient from '@/lib/axios'
+import apiClient, { API } from '@/lib/axios'
 import type {
   Invoice,
+  InvoicePayment,
   CreateInvoiceData,
   UpdateInvoiceData,
   PaginatedResponse,
+  PaymentMethod,
 } from '@/types'
 
 function clean(params: Record<string, unknown>): Record<string, unknown> {
@@ -15,6 +17,7 @@ function clean(params: Record<string, unknown>): Record<string, unknown> {
 // ── Factures ──────────────────────────────────────────────────────────────
 
 export async function getInvoices(params: {
+  type?: string
   status?: string
   customer_id?: number
   search?: string
@@ -22,50 +25,79 @@ export async function getInvoices(params: {
   to?: string
   page?: number
 } = {}): Promise<PaginatedResponse<Invoice>> {
-  const { data } = await apiClient.get<PaginatedResponse<Invoice>>('/api/v1/invoices', {
+  const { data } = await apiClient.get<PaginatedResponse<Invoice>>(`${API}/invoices`, {
     params: clean(params as Record<string, unknown>),
   })
   return data
 }
 
 export async function getInvoice(uid: string): Promise<Invoice> {
-  const { data } = await apiClient.get<{ data: Invoice }>(`/api/v1/invoices/${uid}`)
+  const { data } = await apiClient.get<{ data: Invoice }>(`${API}/invoices/${uid}`)
   return data.data
 }
 
 export async function createInvoice(body: CreateInvoiceData): Promise<Invoice> {
-  const { data } = await apiClient.post<{ data: Invoice }>('/api/v1/invoices', body)
+  const { data } = await apiClient.post<{ data: Invoice }>(`${API}/invoices`, body)
   return data.data
 }
 
 export async function updateInvoice(uid: string, body: UpdateInvoiceData): Promise<Invoice> {
-  const { data } = await apiClient.put<{ data: Invoice }>(`/api/v1/invoices/${uid}`, body)
+  const { data } = await apiClient.put<{ data: Invoice }>(`${API}/invoices/${uid}`, body)
   return data.data
 }
 
 export async function deleteInvoice(uid: string): Promise<void> {
-  await apiClient.delete(`/api/v1/invoices/${uid}`)
+  await apiClient.delete(`${API}/invoices/${uid}`)
 }
 
-export async function sendInvoice(uid: string): Promise<Invoice> {
-  const { data } = await apiClient.post<{ data: Invoice }>(`/api/v1/invoices/${uid}/send`)
+export async function sendInvoice(uid: string, body?: { email?: string; subject?: string; message?: string }): Promise<Invoice> {
+  const { data } = await apiClient.post<{ data: Invoice }>(`${API}/invoices/${uid}/send`, body ?? {})
   return data.data
 }
 
-export async function recordInvoicePayment(uid: string, amount: number): Promise<Invoice> {
-  const { data } = await apiClient.post<{ data: Invoice }>(`/api/v1/invoices/${uid}/payment`, {
-    amount,
-  })
+export async function recordInvoicePayment(uid: string, body: {
+  amount: number
+  method?: PaymentMethod
+  paid_at?: string
+  reference?: string
+  note?: string
+}): Promise<Invoice> {
+  const { data } = await apiClient.post<{ data: Invoice }>(`${API}/invoices/${uid}/payment`, body)
+  return data.data
+}
+
+export async function getInvoicePayments(uid: string): Promise<InvoicePayment[]> {
+  const { data } = await apiClient.get<{ data: InvoicePayment[] }>(`${API}/invoices/${uid}/payments`)
+  return data.data
+}
+
+export async function duplicateInvoice(uid: string): Promise<Invoice> {
+  const { data } = await apiClient.post<{ data: Invoice }>(`${API}/invoices/${uid}/duplicate`)
+  return data.data
+}
+
+export async function convertQuoteToInvoice(uid: string): Promise<Invoice> {
+  const { data } = await apiClient.post<{ data: Invoice }>(`${API}/invoices/${uid}/convert-to-invoice`)
+  return data.data
+}
+
+export async function createCreditNote(uid: string): Promise<Invoice> {
+  const { data } = await apiClient.post<{ data: Invoice }>(`${API}/invoices/${uid}/credit-note`)
+  return data.data
+}
+
+export async function sendInvoiceReminder(uid: string): Promise<Invoice> {
+  const { data } = await apiClient.post<{ data: Invoice }>(`${API}/invoices/${uid}/send-reminder`)
   return data.data
 }
 
 export async function cancelInvoice(uid: string): Promise<Invoice> {
-  const { data } = await apiClient.post<{ data: Invoice }>(`/api/v1/invoices/${uid}/cancel`)
+  const { data } = await apiClient.post<{ data: Invoice }>(`${API}/invoices/${uid}/cancel`)
   return data.data
 }
 
 export async function openInvoicePdf(uid: string, reference?: string): Promise<void> {
-  const response = await apiClient.get(`/api/v1/invoices/${uid}/pdf`, {
+  const response = await apiClient.get(`${API}/invoices/${uid}/pdf`, {
     responseType: 'blob',
   })
   const filename = reference ? `facture-${reference}.pdf` : `facture-${uid}.pdf`

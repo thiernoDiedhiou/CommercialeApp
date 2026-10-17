@@ -1,4 +1,4 @@
-import apiClient from '@/lib/axios'
+import apiClient, { API } from '@/lib/axios'
 import type { DashboardSummary } from '@/types'
 
 /**
@@ -6,6 +6,6 @@ import type { DashboardSummary } from '@/types'
  * Le backend retourne l'objet directement (pas de wrapper { data: ... }).
  */
 export async function getDashboardSummary(): Promise<DashboardSummary> {
-  const { data } = await apiClient.get<DashboardSummary>('/api/v1/dashboard/summary')
+  const { data } = await apiClient.get<DashboardSummary>(`${API}/dashboard/summary`)
   return data
 }

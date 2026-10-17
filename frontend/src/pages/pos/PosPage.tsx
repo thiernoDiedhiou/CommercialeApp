@@ -22,6 +22,7 @@ import {
   createPosSale,
   type CreateSalePayload,
 } from '@/services/api/pos'
+import { toast } from '@/store/toastStore'
 
 import { ProductCard } from '@/components/pos/ProductCard'
 import { CartItemRow } from '@/components/pos/CartItemRow'
@@ -31,6 +32,7 @@ import { WeightModal } from '@/components/pos/WeightModal'
 import { PaymentModal } from '@/components/pos/PaymentModal'
 import { ReceiptModal, type SaleReceipt } from '@/components/pos/ReceiptModal'
 import { BarcodeScannerModal } from '@/components/pos/BarcodeScannerModal'
+import { SessionModal } from '@/components/pos/SessionModal'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 
@@ -66,6 +68,7 @@ export default function PosPage() {
   }, [tenant, applyBrandColors])
 
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products')
+  const [sessionModal, setSessionModal] = useState<'open' | 'close' | null>(null)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [categoryId, setCategoryId] = useState<number | null>(null)
@@ -228,6 +231,28 @@ export default function PosPage() {
     }
   }
 
+  // ── Scan code-barres → ajout direct au panier ────────────────────────────
+  const handleScan = async (barcode: string) => {
+    try {
+      let results = await getPosProducts({ search: barcode })
+      // EAN-13 → UPC-A : certains lecteurs suppriment le zéro de tête sur 12 chiffres
+      if (results.length === 0 && /^\d{12}$/.test(barcode)) {
+        results = await getPosProducts({ search: `0${barcode}` })
+      }
+      if (results.length === 1) {
+        handleProductClick(results[0])
+        toast.success(`${results[0].name} ajouté au panier`)
+      } else if (results.length === 0) {
+        toast.error(`Aucun produit trouvé pour ce code : ${barcode}`)
+      } else {
+        // Plusieurs résultats → afficher dans la grille pour sélection manuelle
+        setSearch(barcode)
+      }
+    } catch {
+      setSearch(barcode)
+    }
+  }
+
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="flex h-screen flex-col bg-gray-100 overflow-hidden">
@@ -248,13 +273,23 @@ export default function PosPage() {
           )}
           <h1 className="text-base font-semibold text-gray-800">Caisse POS</h1>
           {session ? (
-            <span className="hidden sm:inline-flex rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-              Session ouverte
-            </span>
+            <button
+              type="button"
+              onClick={() => setSessionModal('close')}
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-0.5 text-xs font-medium text-green-700 hover:bg-green-200 transition"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              Session ouverte · Fermer
+            </button>
           ) : (
-            <span className="hidden sm:inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
-              Pas de session
-            </span>
+            <button
+              type="button"
+              onClick={() => setSessionModal('open')}
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-0.5 text-xs font-medium text-amber-700 hover:bg-amber-200 transition"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+              Ouvrir une session
+            </button>
           )}
         </div>
         <div className="flex items-center gap-2">
@@ -297,7 +332,14 @@ export default function PosPage() {
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher un produit ou scanner un code-barres…"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && search.trim()) {
+                    e.preventDefault()
+                    handleScan(search.trim())
+                    setSearch('')
+                  }
+                }}
+                placeholder="Rechercher ou scanner (douchette → Entrée)…"
                 className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-brand-primary focus:bg-white transition"
                 autoFocus={!isMobile}
               />
@@ -583,8 +625,24 @@ export default function PosPage() {
 
       <BarcodeScannerModal
         isOpen={scannerOpen}
-        onScan={(barcode) => setSearch(barcode)}
+        onScan={handleScan}
         onClose={() => setScannerOpen(false)}
+      />
+
+      <SessionModal
+        isOpen={sessionModal !== null}
+        mode={sessionModal ?? 'open'}
+        session={session}
+        currency={tenant?.currency ?? 'XOF'}
+        onOpened={(s) => {
+          qc.setQueryData(['pos-session'], s)
+          setSessionModal(null)
+        }}
+        onClosed={() => {
+          qc.setQueryData(['pos-session'], null)
+          setSessionModal(null)
+        }}
+        onClose={() => setSessionModal(null)}
       />
 
       <Modal

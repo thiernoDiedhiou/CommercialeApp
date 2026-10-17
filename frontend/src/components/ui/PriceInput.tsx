@@ -1,4 +1,4 @@
-import { useState, useRef, forwardRef } from 'react'
+import { useState, useRef, useEffect, forwardRef } from 'react'
 import { cn } from '@/lib/utils'
 
 const INTEGER_CURRENCIES = new Set(['XOF', 'XAF', 'GNF'])
@@ -62,22 +62,20 @@ const PriceInput = forwardRef<HTMLInputElement, PriceInputProps>(({
 
   const [display, setDisplay] = useState(() => normalizeDisplay(value, isInt))
 
-  // Synchronisation de la valeur externe (ex: reset() de React Hook Form).
-  // On le fait pendant le rendu (pas dans useEffect) pour eviter le flash
-  // d'affichage non formate avant que l'effet ne se declenche.
-  const lastSyncedValue = useRef<number | null | undefined>(value)
-
-  if (lastSyncedValue.current !== value) {
-    lastSyncedValue.current = value
-    setDisplay(normalizeDisplay(value, isInt))
-  }
+  // Synchronisation quand la valeur externe change (ex: reset() de React Hook Form)
+  const prevValueRef = useRef<number | null | undefined>(value)
+  useEffect(() => {
+    if (prevValueRef.current !== value) {
+      prevValueRef.current = value
+      setDisplay(normalizeDisplay(value, isInt))
+    }
+  })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw    = e.target.value
     const parsed = parseRaw(raw, isInt)
-    // On pre-marque la valeur numerique sortante pour que la verification
-    // ci-dessus l'ignore au prochain rendu du Controller.
-    lastSyncedValue.current = parsed
+    // On marque la valeur sortante pour que le useEffect l'ignore
+    prevValueRef.current = parsed
     setDisplay(normalizeDisplay(raw, isInt))
     onChange?.(parsed)
   }

@@ -10,6 +10,7 @@ import {
 import { useSuperAdminStore } from '@/store/superAdminStore'
 import { adminLogout } from '@/services/api/admin'
 import ToastContainer from '@/components/ui/ToastContainer'
+import AdminBottomNav from './AdminBottomNav'
 import NotificationBell from '@/components/ui/NotificationBell'
 import {
   getAdminNotifications,
@@ -47,7 +48,7 @@ export default function AdminLayout() {
       {/* Logo */}
       <div className="h-16 flex items-center gap-2.5 px-4 border-b border-gray-800 shrink-0">
         <Link to="/admin/dashboard" className="shrink-0">
-          <img src="/logo_mode_sombre_texte_claire.svg" alt="DiDi Sphere" className="h-8 w-auto" />
+          <img src="/logo_mode_sombre_texte_claire.svg" alt="DiDi Sphere" className="h-14 w-auto [mix-blend-mode:screen]" />
         </Link>
         <button
           type="button"
@@ -107,20 +108,20 @@ export default function AdminLayout() {
       <div className="flex-1 min-w-0 flex flex-col">
 
         {/* Topbar */}
-        <header className="sticky top-0 z-20 h-16 flex items-center gap-4 px-4 lg:px-6 bg-gray-900 border-b border-gray-800">
+        <header className="sticky top-0 z-20 h-16 flex items-center gap-2 lg:gap-4 px-3 lg:px-6 bg-gray-900 border-b border-gray-800">
           {/* Hamburger mobile */}
           <button
             type="button"
             aria-label="Ouvrir le menu"
             onClick={() => setOpen(true)}
-            className="lg:hidden rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white transition"
+            className="lg:hidden rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition"
           >
             <Bars3Icon className="h-5 w-5" />
           </button>
 
           {/* Logo mobile */}
           <Link to="/admin/dashboard" className="lg:hidden shrink-0">
-            <img src="/logo_mode_sombre_texte_claire.svg" alt="DiDi Sphere" className="h-7 w-auto" />
+            <img src="/logo_mode_sombre_texte_claire.svg" alt="DiDi Sphere" className="h-14 w-auto [mix-blend-mode:screen]" />
           </Link>
 
           <div className="flex-1" />
@@ -137,13 +138,21 @@ export default function AdminLayout() {
 
           {/* Profil Super Admin */}
           <Menu as="div" className="relative">
-            <MenuButton className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
-              <UserCircleIcon className="h-6 w-6 shrink-0 text-gray-400" />
+            <MenuButton className="flex items-center gap-2 rounded-lg px-2 sm:px-3 py-2 text-sm font-medium text-gray-300 hover:bg-gray-800 hover:text-white transition-colors">
+              {admin?.avatar ? (
+                <img
+                  src={admin.avatar}
+                  alt={admin.name}
+                  className="h-8 w-8 rounded-full object-cover shrink-0 ring-2 ring-gray-700"
+                />
+              ) : (
+                <UserCircleIcon className="h-7 w-7 shrink-0 text-gray-400" />
+              )}
               <span className="hidden sm:block leading-tight text-left">
                 <span className="block text-sm font-medium text-gray-200">{admin?.name}</span>
                 <span className="block text-xs text-gray-500">{admin?.email}</span>
               </span>
-              <ChevronDownIcon className="h-4 w-4 text-gray-500 shrink-0" />
+              <ChevronDownIcon className="hidden sm:block h-4 w-4 text-gray-500 shrink-0" />
             </MenuButton>
 
             <MenuItems
@@ -160,6 +169,21 @@ export default function AdminLayout() {
                 <p className="text-xs font-semibold text-gray-200 truncate">{admin?.name}</p>
                 <p className="text-xs text-gray-500 truncate">{admin?.email}</p>
               </div>
+
+              <MenuItem>
+                <Link
+                  to="/admin/profile"
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-300 transition-colors',
+                    'data-[focus]:bg-gray-800 hover:bg-gray-800',
+                  )}
+                >
+                  <UserCircleIcon className="h-4 w-4" />
+                  Mon profil
+                </Link>
+              </MenuItem>
+
+              <div className="border-t border-gray-800 my-1" />
 
               <MenuItem>
                 <button
@@ -181,10 +205,13 @@ export default function AdminLayout() {
         </header>
 
         {/* Contenu de la page */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto pb-16 lg:pb-0">
           <Outlet />
         </main>
       </div>
+
+      {/* Bottom nav — mobile uniquement */}
+      <AdminBottomNav />
 
       <ToastContainer />
     </div>

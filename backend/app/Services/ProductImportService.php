@@ -87,11 +87,7 @@ class ProductImportService
 
                 // Gestion du SKU existant
                 if ($data['sku'] !== '') {
-                    $existing = Product::withoutGlobalScopes()
-                        ->where('tenant_id', $tenantId)
-                        ->where('sku', $data['sku'])
-                        ->whereNull('deleted_at')
-                        ->first();
+                    $existing = Product::where('sku', $data['sku'])->first();
 
                     if ($existing) {
                         if ($updateExisting) {

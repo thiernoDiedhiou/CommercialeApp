@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { PlusIcon, PencilSquareIcon, TrashIcon, NoSymbolIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilSquareIcon, TrashIcon, NoSymbolIcon, TruckIcon } from '@heroicons/react/24/outline'
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/services/api/suppliers'
 import PhoneInput, { normalizePhone } from '@/components/ui/PhoneInput'
 import { toast } from '@/store/toastStore'
@@ -17,6 +18,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Input'
 import CanDo from '@/components/ui/CanDo'
+import EmptyState from '@/components/ui/EmptyState'
 import type { Supplier } from '@/types'
 
 const schema = z.object({
@@ -36,6 +38,7 @@ type ModalState = { mode: 'create' } | { mode: 'edit'; supplier: Supplier } | nu
 
 export default function SuppliersPage() {
   const qc = useQueryClient()
+  const navigate = useNavigate()
 
   // ── Filtres ───────────────────────────────────────────────────────────────
   const [search, setSearch] = useState('')
@@ -161,22 +164,22 @@ export default function SuppliersPage() {
       header: '',
       align: 'right',
       render: (s) => (
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           <CanDo permission="suppliers.edit">
-            <button type="button" onClick={(e) => { e.stopPropagation(); setModal({ mode: 'edit', supplier: s }) }}
+            <button type="button" onClick={() => setModal({ mode: 'edit', supplier: s })}
               className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title="Modifier">
               <PencilSquareIcon className="h-4 w-4" />
             </button>
           </CanDo>
           <CanDo permission="suppliers.edit">
-            <button type="button" onClick={(e) => { e.stopPropagation(); setToggleTarget(s) }}
+            <button type="button" onClick={() => setToggleTarget(s)}
               className={`rounded p-1.5 transition-colors ${s.is_active ? 'text-gray-400 hover:bg-orange-50 hover:text-orange-500' : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-600'}`}
               title={s.is_active ? 'Désactiver' : 'Activer'}>
               <NoSymbolIcon className="h-4 w-4" />
             </button>
           </CanDo>
           <CanDo permission="suppliers.delete">
-            <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteTarget(s) }}
+            <button type="button" onClick={() => setDeleteTarget(s)}
               className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title="Supprimer">
               <TrashIcon className="h-4 w-4" />
             </button>
@@ -189,7 +192,7 @@ export default function SuppliersPage() {
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900">Fournisseurs</h1>
+        <h1 className="text-xl font-bold text-slate-900">Fournisseurs</h1>
         <CanDo permission="suppliers.create">
           <Button icon={<PlusIcon className="h-4 w-4" />} onClick={() => setModal({ mode: 'create' })}>
             Nouveau fournisseur
@@ -207,7 +210,34 @@ export default function SuppliersPage() {
         keyExtractor={(s) => s.id}
         loading={isLoading}
         skeletonRows={8}
-        emptyMessage="Aucun fournisseur trouvé."
+        onRowClick={(s) => navigate(`/suppliers/${s.uid}`)}
+        emptyMessage={<EmptyState icon={<TruckIcon className="h-7 w-7" />} title="Aucun fournisseur pour l'instant" description="Renseignez vos fournisseurs pour créer des bons de commande." />}
+        mobileCard={(s) => (
+          <div className="flex items-start justify-between gap-3 px-4 py-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="font-medium text-gray-900">{s.name}</span>
+                <Badge variant={s.is_active ? 'success' : 'default'}>{s.is_active ? 'Actif' : 'Inactif'}</Badge>
+              </div>
+              {s.phone && <p className="text-xs text-gray-500">{s.phone}</p>}
+              {s.email && <p className="text-xs text-gray-400 truncate">{s.email}</p>}
+            </div>
+            <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+              <CanDo permission="suppliers.edit">
+                <button type="button" onClick={() => setModal({ mode: 'edit', supplier: s })}
+                  className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+                  <PencilSquareIcon className="h-4 w-4" />
+                </button>
+              </CanDo>
+              <CanDo permission="suppliers.delete">
+                <button type="button" onClick={() => setDeleteTarget(s)}
+                  className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600">
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </CanDo>
+            </div>
+          </div>
+        )}
       />
 
       {data && data.last_page > 1 && (

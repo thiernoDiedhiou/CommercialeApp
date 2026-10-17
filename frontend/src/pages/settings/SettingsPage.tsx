@@ -16,11 +16,12 @@ import {
   EyeIcon,
   EyeSlashIcon,
 } from '@heroicons/react/24/outline'
-import { CreditCardIcon } from '@heroicons/react/24/outline'
+import { CreditCardIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/authStore'
 import { formatDate } from '@/lib/utils'
 import { getPublicPlans } from '@/services/api/public'
-import { initiateRenewal } from '@/services/api/billing'
+import { initiateRenewal, getBillingTransactions } from '@/services/api/billing'
+import type { BillingTransaction } from '@/services/api/billing'
 import { getTenantSettings, updateTenantSettings } from '@/services/api/settings'
 import { SUPPORTED_CURRENCIES } from '@/hooks/useCurrency'
 import Input from '@/components/ui/Input'
@@ -51,12 +52,13 @@ import type { UserWithGroups, Group, Permission, CreateGroupData } from '@/types
 
 // ─── Tab IDs ──────────────────────────────────────────────────────────────────
 
-type Tab = 'boutique' | 'users' | 'groups'
+type Tab = 'boutique' | 'facturation' | 'users' | 'groups'
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: 'boutique', label: 'Boutique',     icon: <BuildingStorefrontIcon className="h-4 w-4" /> },
-  { id: 'users',    label: 'Utilisateurs', icon: <UsersIcon className="h-4 w-4" /> },
-  { id: 'groups',   label: 'Groupes',      icon: <ShieldCheckIcon className="h-4 w-4" /> },
+  { id: 'boutique',    label: 'Boutique',     icon: <BuildingStorefrontIcon className="h-4 w-4" /> },
+  { id: 'facturation', label: 'Facturation',  icon: <DocumentTextIcon className="h-4 w-4" /> },
+  { id: 'users',       label: 'Utilisateurs', icon: <UsersIcon className="h-4 w-4" /> },
+  { id: 'groups',      label: 'Groupes',      icon: <ShieldCheckIcon className="h-4 w-4" /> },
 ]
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
@@ -218,6 +220,8 @@ function SmtpSection() {
   )
 }
 
+// PdfTemplateSection supprimée — le sélecteur est désormais dans l'onglet Facturation
+
 // ─── BoutiqueTab ─────────────────────────────────────────────────────────────
 
 const boutiqueSchema = z.object({
@@ -245,13 +249,14 @@ const SECTOR_LABELS: Record<string, string> = {
 }
 
 function BoutiqueTab() {
-  const setAuth        = useAuthStore((s) => s.setAuth)
-  const token          = useAuthStore((s) => s.token)
-  const user           = useAuthStore((s) => s.user)
-  const perms          = useAuthStore((s) => s.permissions)
-  const tenant         = useAuthStore((s) => s.tenant)
-  const subscription   = useAuthStore((s) => s.subscription)
-  const planFeatures   = useAuthStore((s) => s.planFeatures)
+  const setAuth             = useAuthStore((s) => s.setAuth)
+  const token               = useAuthStore((s) => s.token)
+  const user                = useAuthStore((s) => s.user)
+  const perms               = useAuthStore((s) => s.permissions)
+  const tenant              = useAuthStore((s) => s.tenant)
+  const subscription        = useAuthStore((s) => s.subscription)
+  const planFeatures        = useAuthStore((s) => s.planFeatures)
+  const subscriptionExpired = useAuthStore((s) => s.subscriptionExpired)
   const [saved, setSaved] = useState(false)
 
   const [logoFile, setLogoFile]       = useState<File | null>(null)
@@ -260,9 +265,11 @@ function BoutiqueTab() {
   const [logoError, setLogoError]     = useState<string | null>(null)
   const logoInputRef = useRef<HTMLInputElement>(null)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['tenant-settings'],
     queryFn:  getTenantSettings,
+    enabled:  !subscriptionExpired,
+    retry:    false,
   })
 
   const { register, handleSubmit, reset, control, formState: { errors, isDirty } } = useForm<BoutiqueValues>({
@@ -354,7 +361,9 @@ function BoutiqueTab() {
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
+  if (subscriptionExpired) return <SubscriptionLockedNotice />
   if (isLoading) return <div className="text-sm text-gray-400">Chargement…</div>
+  if (isError) return <div className="rounded-xl bg-red-50 px-4 py-6 text-center text-sm text-red-600">Erreur lors du chargement des paramètres.</div>
 
   return (
     <div className="space-y-8">
@@ -799,11 +808,19 @@ const MODULE_LABELS: Record<string, string> = {
   categories: 'Catégories',
   variants:   'Variantes',
   stock:      'Stock',
-  customers:  'Clients',
-  sales:      'Ventes',
   pos:        'Point de vente',
+  sales:      'Ventes',
+  returns:    'Retours',
+  customers:  'Clients',
+  debts:      'Créances',
+  suppliers:  'Fournisseurs',
+  purchases:  'Achats',
+  invoices:   'Facturation',
+  reports:    'Rapports',
   users:      'Utilisateurs',
   groups:     'Groupes',
+  settings:   'Paramètres',
+  shop:       'Boutique en ligne',
 }
 
 interface PermissionsModalProps {
@@ -1100,6 +1117,23 @@ function GroupsTab() {
   )
 }
 
+// ─── SubscriptionLockedNotice ─────────────────────────────────────────────────
+
+function SubscriptionLockedNotice() {
+  return (
+    <div className="flex flex-col items-center justify-center py-14 text-center space-y-3">
+      <div className="rounded-full bg-amber-50 p-4">
+        <CreditCardIcon className="h-7 w-7 text-amber-500" />
+      </div>
+      <h3 className="text-sm font-semibold text-gray-900">Accès limité</h3>
+      <p className="text-sm text-gray-500 max-w-xs leading-relaxed">
+        Ces paramètres sont indisponibles tant que votre abonnement est expiré.
+        Renouvelez votre abonnement dans la section ci-dessus pour y accéder à nouveau.
+      </p>
+    </div>
+  )
+}
+
 // ─── SettingsPage ─────────────────────────────────────────────────────────────
 
 const STATUS_LABEL: Record<string, string> = {
@@ -1125,8 +1159,18 @@ function SubscriptionInfoCard() {
   const subscription        = useAuthStore((s) => s.subscription)
   const subscriptionExpired = useAuthStore((s) => s.subscriptionExpired)
   const [searchParams, setSearchParams] = useSearchParams()
-  const [showRenew, setShowRenew]       = useState(() => searchParams.get('renouveler') === '1')
-  const [selectedPlan, setSelectedPlan] = useState<string>('')
+
+  const daysLeft       = subscription?.days_remaining ?? null
+  const isExpiringSoon = daysLeft !== null && daysLeft <= 7
+  const isExpired      = subscriptionExpired
+    || subscription?.status === 'expired'
+    || subscription?.status === 'cancelled'
+  const canRenew = isExpiringSoon || isExpired
+
+  const [showRenew, setShowRenew] = useState(
+    () => searchParams.get('renouveler') === '1' || isExpired,
+  )
+  const [selectedPlan,  setSelectedPlan]  = useState<string>('')
   const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'yearly'>('monthly')
 
   // Nettoie le param ?renouveler=1 de l'URL une fois le formulaire ouvert
@@ -1136,12 +1180,26 @@ function SubscriptionInfoCard() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-ouvrir le formulaire de renouvellement dès que l'abonnement expire
+  useEffect(() => {
+    if (isExpired) setShowRenew(true)
+  }, [isExpired])
+
   const { data: plans = [] } = useQuery({
     queryKey: ['public-plans'],
     queryFn : getPublicPlans,
-    enabled : showRenew,
     staleTime: 5 * 60 * 1000,
   })
+
+  // Pré-sélectionner le plan actuel quand les plans sont chargés
+  useEffect(() => {
+    if (plans.length > 0 && !selectedPlan) {
+      const match = subscription?.plan_slug
+        ? plans.find((p) => p.slug === subscription.plan_slug)
+        : null
+      setSelectedPlan(match ? match.uid : plans[0].uid)
+    }
+  }, [plans]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const renewMutation = useMutation({
     mutationFn: () => initiateRenewal(selectedPlan, selectedCycle),
@@ -1152,13 +1210,6 @@ function SubscriptionInfoCard() {
   // Afficher la carte même si subscription=null dès qu'un 402 a été reçu
   if (!subscription && !subscriptionExpired) return null
 
-  const daysLeft       = subscription?.days_remaining ?? null
-  const isExpiringSoon = daysLeft !== null && daysLeft <= 7
-  const isExpired      = subscriptionExpired
-    || subscription?.status === 'expired'
-    || subscription?.status === 'cancelled'
-  const canRenew = isExpiringSoon || isExpired
-
   return (
     <div className="rounded-xl bg-white p-4 sm:p-5 shadow-sm ring-1 ring-gray-100">
       <div className="flex items-center justify-between gap-2 mb-3">
@@ -1166,7 +1217,7 @@ function SubscriptionInfoCard() {
           <CreditCardIcon className="h-4 w-4 text-gray-400" />
           <h2 className="text-sm font-semibold text-gray-800">Mon abonnement</h2>
         </div>
-        {canRenew && !showRenew && (
+        {canRenew && !showRenew && !isExpired && (
           <button
             type="button"
             onClick={() => setShowRenew(true)}
@@ -1339,12 +1390,248 @@ function SubscriptionInfoCard() {
   )
 }
 
+// ─── FacturationTab ──────────────────────────────────────────────────────────
+
+const facturationSchema = z.object({
+  invoice_footer: z.string().max(500).optional(),
+  invoice_prefix: z.string().max(10).optional(),
+  pdf_template:   z.enum(['classic', 'moderne']).optional(),
+})
+type FacturationValues = z.infer<typeof facturationSchema>
+
+const TX_STATUS: Record<string, { label: string; className: string }> = {
+  completed: { label: 'Payé',    className: 'bg-emerald-100 text-emerald-700' },
+  pending:   { label: 'En cours',className: 'bg-amber-100 text-amber-700' },
+  failed:    { label: 'Échoué', className: 'bg-red-100 text-red-700' },
+  cancelled: { label: 'Annulé', className: 'bg-gray-100 text-gray-500' },
+}
+
+function InvoiceHistory() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['billing-transactions'],
+    queryFn:  getBillingTransactions,
+    staleTime: 2 * 60 * 1000,
+  })
+
+  const transactions: BillingTransaction[] = data?.data ?? []
+
+  if (!isLoading && transactions.length === 0) return null
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-semibold text-gray-800">Historique de paiements</h3>
+      <div className="overflow-hidden rounded-xl border border-gray-100">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th className="px-4 py-2.5 text-left">Date</th>
+              <th className="px-4 py-2.5 text-left hidden sm:table-cell">Plan</th>
+              <th className="px-4 py-2.5 text-left hidden sm:table-cell">Cycle</th>
+              <th className="px-4 py-2.5 text-right">Montant</th>
+              <th className="px-4 py-2.5 text-center">Statut</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50 bg-white">
+            {isLoading
+              ? Array.from({ length: 3 }).map((_, i) => (
+                <tr key={i}>
+                  {Array.from({ length: 5 }).map((__, j) => (
+                    <td key={j} className="px-4 py-3">
+                      <div className="h-4 rounded bg-gray-100 animate-pulse" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+              : transactions.map((tx) => {
+                const statusCfg = TX_STATUS[tx.status] ?? { label: tx.status, className: 'bg-gray-100 text-gray-500' }
+                const cycleLabel = tx.billing_cycle === 'yearly' ? 'Annuel' : 'Mensuel'
+                return (
+                  <tr key={tx.id} className="hover:bg-gray-50/50">
+                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                      {formatDate(tx.created_at)}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-gray-800 hidden sm:table-cell">
+                      {tx.plan?.name ?? '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{cycleLabel}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-gray-800 whitespace-nowrap">
+                      {tx.amount.toLocaleString('fr-FR')} {tx.currency}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusCfg.className}`}>
+                        {statusCfg.label}
+                      </span>
+                    </td>
+                  </tr>
+                )
+              })
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function FacturationTab() {
+  const qc                  = useQueryClient()
+  const subscriptionExpired = useAuthStore((s) => s.subscriptionExpired)
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['tenant-settings'],
+    queryFn:  getTenantSettings,
+    enabled:  !subscriptionExpired,
+    retry:    false,
+  })
+
+  const { register, handleSubmit, reset, formState: { isDirty, isSubmitting } } = useForm<FacturationValues>({
+    resolver: zodResolver(facturationSchema),
+  })
+
+  useEffect(() => {
+    if (data) reset({
+      invoice_footer: data.invoice_footer ?? '',
+      invoice_prefix: data.invoice_prefix ?? '',
+      pdf_template:   (data.pdf_template as FacturationValues['pdf_template']) ?? 'classic',
+    })
+  }, [data, reset])
+
+  const mutation = useMutation({
+    mutationFn: (v: FacturationValues) => updateTenantSettings({
+      invoice_footer: v.invoice_footer || null,
+      invoice_prefix: v.invoice_prefix || null,
+      pdf_template:   v.pdf_template   || null,
+    }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['tenant-settings'] }); toast.success('Paramètres de facturation enregistrés.') },
+    onError:   (err) => toast.error(getApiErrorMessage(err)),
+  })
+
+  if (subscriptionExpired) return <SubscriptionLockedNotice />
+  if (isLoading) return <div className="text-sm text-gray-400">Chargement…</div>
+  if (isError) return <div className="rounded-xl bg-red-50 px-4 py-6 text-center text-sm text-red-600">Erreur lors du chargement des paramètres.</div>
+
+  return (
+    <div className="space-y-8">
+    <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="max-w-xl space-y-5">
+      <h2 className="text-base font-semibold text-gray-800">Paramètres de facturation</h2>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Pied de page des factures
+        </label>
+        <textarea
+          rows={3}
+          placeholder="Ex : TVA non applicable, art. 293B du CGI · RCCM SN-DKR-2024-B-12345"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary resize-none"
+          {...register('invoice_footer')}
+        />
+        <p className="mt-1 text-xs text-gray-400">Apparaît en bas de chaque PDF de facture. Laissez vide pour utiliser le défaut.</p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Préfixe de numérotation
+        </label>
+        <input
+          type="text"
+          maxLength={10}
+          placeholder="FAC (par défaut)"
+          className="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary font-mono"
+          {...register('invoice_prefix')}
+        />
+        <p className="mt-1 text-xs text-gray-400">Le numéro final sera du type <code className="bg-gray-100 px-1 rounded">PREFIXE-2025-00001</code>. Laissez vide pour garder "FAC".</p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-3">Modèle PDF</label>
+        <div className="grid grid-cols-2 gap-3">
+          {([
+            {
+              value: 'classic' as const,
+              label: 'Classique',
+              desc: 'En-tête coloré, identité forte',
+              preview: (
+                <div className="w-full overflow-hidden rounded border border-gray-100">
+                  <div className="flex items-center justify-between bg-brand-primary px-2 py-1.5">
+                    <div>
+                      <div className="h-1.5 w-12 rounded bg-white/70 mb-0.5" />
+                      <div className="h-1 w-8 rounded bg-white/40" />
+                    </div>
+                    <div className="text-right">
+                      <div className="h-1.5 w-10 rounded bg-white/70 mb-0.5" />
+                      <div className="h-1 w-8 rounded bg-white/50" />
+                    </div>
+                  </div>
+                  <div className="bg-white p-1.5 space-y-1">
+                    <div className="flex gap-1"><div className="flex-1 h-3.5 rounded bg-gray-100" /><div className="flex-1 h-3.5 rounded bg-gray-100" /></div>
+                    <div className="h-0.5 w-full rounded bg-gray-200" />
+                    <div className="h-0.5 w-4/5 rounded bg-gray-100" />
+                    <div className="h-0.5 w-3/5 rounded bg-gray-100" />
+                  </div>
+                </div>
+              ),
+            },
+            {
+              value: 'moderne' as const,
+              label: 'Moderne',
+              desc: 'Fond blanc, sobre et élégant',
+              preview: (
+                <div className="w-full overflow-hidden rounded border border-gray-100">
+                  <div
+                    className="flex items-center justify-between bg-white px-2 py-1.5"
+                    style={{ borderTop: '2.5px solid var(--brand-primary, #2563eb)' }}
+                  >
+                    <div>
+                      <div className="h-1.5 w-12 rounded bg-gray-800 mb-0.5" />
+                      <div className="h-1 w-8 rounded bg-gray-300" />
+                    </div>
+                    <div className="text-right">
+                      <div className="h-2 w-10 rounded bg-brand-primary mb-0.5" />
+                      <div className="h-1 w-8 rounded bg-gray-300" />
+                    </div>
+                  </div>
+                  <div className="bg-white p-1.5 space-y-1">
+                    <div className="flex gap-1"><div className="flex-1 h-3.5 rounded bg-gray-100" /><div className="flex-1 h-3.5 rounded bg-gray-100" /></div>
+                    <div className="h-0.5 w-full rounded bg-gray-200" />
+                    <div className="h-0.5 w-4/5 rounded bg-gray-100" />
+                    <div className="h-0.5 w-3/5 rounded bg-gray-100" />
+                  </div>
+                </div>
+              ),
+            },
+          ]).map(({ value, label, desc, preview }) => (
+            <label key={value}
+              className="flex flex-col gap-2 rounded-xl border-2 p-2.5 cursor-pointer transition has-[:checked]:border-brand-primary has-[:checked]:bg-brand-primary/5 border-gray-200 hover:border-gray-300">
+              <input type="radio" value={value} {...register('pdf_template')} className="sr-only" />
+              {preview}
+              <div>
+                <p className="text-xs font-semibold text-gray-800">{label}</p>
+                <p className="text-[10px] text-gray-400 leading-tight">{desc}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button type="submit" loading={isSubmitting || mutation.isPending} disabled={!isDirty}>
+          Enregistrer
+        </Button>
+      </div>
+    </form>
+
+    <hr className="border-gray-100" />
+    <InvoiceHistory />
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('boutique')
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <h1 className="text-xl font-bold text-gray-900">Paramètres</h1>
+      <h1 className="text-xl font-bold text-slate-900">Paramètres</h1>
 
       {/* Carte abonnement — toujours visible en haut */}
       <SubscriptionInfoCard />
@@ -1370,9 +1657,10 @@ export default function SettingsPage() {
       </div>
 
       <div className="rounded-xl bg-white p-4 sm:p-5 shadow-sm ring-1 ring-gray-100">
-        {activeTab === 'boutique' && <BoutiqueTab />}
-        {activeTab === 'users'    && <UsersTab />}
-        {activeTab === 'groups'   && <GroupsTab />}
+        {activeTab === 'boutique'    && <BoutiqueTab />}
+        {activeTab === 'facturation' && <FacturationTab />}
+        {activeTab === 'users'       && <UsersTab />}
+        {activeTab === 'groups'      && <GroupsTab />}
       </div>
     </div>
   )

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -182,7 +182,9 @@ function CustomerPicker({ initialName = '', onChange }: { initialName?: string; 
 
 export default function InvoiceFormPage() {
   const { uid } = useParams<{ uid: string }>()
+  const [searchParams] = useSearchParams()
   const isEdit = !!uid
+  const isQuoteCreation = !isEdit && searchParams.get('type') === 'quote'
   const navigate = useNavigate()
   const qc = useQueryClient()
   const currency = useAuthStore((s) => s.tenant?.currency ?? 'XOF')
@@ -206,8 +208,8 @@ export default function InvoiceFormPage() {
     if (invoiceData) {
       reset({
         customer_id:    invoiceData.customer?.id ?? undefined,
-        issue_date:     invoiceData.issue_date,
-        due_date:       invoiceData.due_date ?? '',
+        issue_date:     invoiceData.issue_date?.slice(0, 10),
+        due_date:       invoiceData.due_date?.slice(0, 10) ?? '',
         discount_type:  invoiceData.discount_type,
         discount_value: parseFloat(invoiceData.discount_value),
         tax_rate:       parseFloat(invoiceData.tax_rate),
@@ -241,6 +243,7 @@ export default function InvoiceFormPage() {
     const validItems = items.filter((i) => i.description.trim())
     if (validItems.length === 0) throw new Error('Ajoutez au moins une ligne.')
     return {
+      type:           isQuoteCreation ? 'quote' as const : (invoiceData?.type ?? 'invoice' as const),
       customer_id:    v.customer_id ?? null,
       issue_date:     v.issue_date,
       due_date:       v.due_date || null,
@@ -259,9 +262,17 @@ export default function InvoiceFormPage() {
     }
   }
 
+  const docLabel = isEdit
+    ? (invoiceData?.type === 'quote' ? 'devis' : 'facture')
+    : (isQuoteCreation ? 'devis' : 'facture')
+
   const createMutation = useMutation({
     mutationFn: (v: FormValues) => createInvoice(buildPayload(v)),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); toast.success('Facture créée.'); navigate('/invoices') },
+    onSuccess: (inv) => {
+      qc.invalidateQueries({ queryKey: ['invoices'] })
+      toast.success(`${isQuoteCreation ? 'Devis' : 'Facture'} créé(e).`)
+      navigate(`/invoices/${inv.uid}`)
+    },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
   const updateMutation = useMutation({
@@ -291,8 +302,8 @@ export default function InvoiceFormPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
-      <h1 className="text-xl font-bold text-gray-900">
-        {isEdit ? 'Modifier la facture' : 'Nouvelle facture'}
+      <h1 className="text-xl font-bold text-slate-900">
+        {isEdit ? `Modifier le ${docLabel}` : `Nouveau ${docLabel}`}
       </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -550,7 +561,7 @@ export default function InvoiceFormPage() {
             Annuler
           </Button>
           <Button type="submit" loading={isPending}>
-            {isEdit ? 'Enregistrer' : 'Créer la facture'}
+            {isEdit ? 'Enregistrer' : `Créer le ${docLabel}`}
           </Button>
         </div>
       </form>

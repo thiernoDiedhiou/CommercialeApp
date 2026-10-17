@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Events\SaleCancelled;
+use App\Events\SaleCreated;
 use App\Exceptions\SaleException;
 use App\Exceptions\StockInsufficientException;
 use App\Models\Payment;
@@ -14,6 +16,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class SaleService
 {
@@ -175,6 +178,8 @@ class SaleService
             // Eager load complet — évite N+1 dans le contrôleur, la facture PDF, etc.
             $sale->load(self::EAGER_LOAD);
 
+            SaleCreated::dispatch($sale);
+
             return $sale;
         });
     }
@@ -222,6 +227,8 @@ class SaleService
                 'status'       => 'cancelled',
                 'cancelled_at' => now(),
             ]);
+
+            SaleCancelled::dispatch($sale);
 
             return $sale->fresh(self::EAGER_LOAD);
         });

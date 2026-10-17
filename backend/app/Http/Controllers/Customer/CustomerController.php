@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Customer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Customer\StoreCustomerRequest;
 use App\Http\Requests\Customer\UpdateCustomerRequest;
+use App\Http\Resources\CustomerResource;
+use App\Http\Resources\SaleResource;
 use App\Models\Customer;
 use App\Models\Sale;
+use App\Services\ActivityLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,6 +22,10 @@ class CustomerController extends Controller
             ->orderBy('name')
             ->paginate(20);
 
+        $customers->setCollection(
+            $customers->getCollection()->map(fn ($c) => (new CustomerResource($c))->toArray(request()))
+        );
+
         return response()->json($customers);
     }
 
@@ -26,7 +33,9 @@ class CustomerController extends Controller
     {
         $customer = Customer::create($request->validated());
 
-        return response()->json(['data' => $customer], 201);
+        ActivityLogService::log('create', 'customers', 'Client "' . $customer->name . '" créé');
+
+        return response()->json(['data' => new CustomerResource($customer)], 201);
     }
 
     public function show(Customer $customer): JsonResponse
@@ -48,13 +57,16 @@ class CustomerController extends Controller
         );
 
         return response()->json([
-            'data' => array_merge($customer->toArray(), [
-                'sales_count'         => (int) $stats->sales_count,
-                'total_purchases'     => (float) $stats->total_purchases,
-                'last_purchase_at'    => $stats->last_purchase_at,
-                'outstanding_balance' => (float) $outstandingBalance,
-                'unpaid_sales_count'  => $unpaidSales->count(),
-            ]),
+            'data' => array_merge(
+                (new CustomerResource($customer))->toArray(request()),
+                [
+                    'sales_count'         => (int) $stats->sales_count,
+                    'total_purchases'     => (float) $stats->total_purchases,
+                    'last_purchase_at'    => $stats->last_purchase_at,
+                    'outstanding_balance' => (float) $outstandingBalance,
+                    'unpaid_sales_count'  => $unpaidSales->count(),
+                ]
+            ),
         ]);
     }
 
@@ -62,18 +74,25 @@ class CustomerController extends Controller
     {
         $customer->update($request->validated());
 
-        return response()->json(['data' => $customer->fresh()]);
+        ActivityLogService::log('update', 'customers', 'Client "' . $customer->name . '" mis à jour');
+
+        return response()->json(['data' => new CustomerResource($customer->fresh())]);
     }
 
     public function destroy(Customer $customer): JsonResponse
     {
+        $name = $customer->name;
+
         if ($customer->sales()->exists()) {
-            // Désactivation — le client a un historique de ventes
             $customer->update(['is_active' => false]);
+            ActivityLogService::log('delete', 'customers', 'Client "' . $name . '" supprimé');
             return response()->json(['message' => 'Client désactivé (historique de ventes conservé).']);
         }
 
         $customer->delete();
+
+        ActivityLogService::log('delete', 'customers', 'Client "' . $name . '" supprimé');
+
         return response()->json(null, 204);
     }
 
@@ -86,6 +105,10 @@ class CustomerController extends Controller
             ->when($request->status, fn($q) => $q->where('status', $request->status))
             ->latest('id')
             ->paginate(20);
+
+        $sales->setCollection(
+            $sales->getCollection()->map(fn ($s) => (new SaleResource($s))->toArray(request()))
+        );
 
         return response()->json($sales);
     }

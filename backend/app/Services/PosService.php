@@ -101,10 +101,11 @@ class PosService
         $difference   = round($closingCash - $expectedCash, 2);
 
         $session->update([
-            'closing_cash' => $closingCash,
-            'closed_at'    => $sessionEnd,
-            'status'       => 'closed',
-            'notes'        => $notes,
+            'closing_cash'    => $closingCash,
+            'cash_difference' => $difference,
+            'closed_at'       => $sessionEnd,
+            'status'          => 'closed',
+            'notes'           => $notes,
         ]);
 
         return [
@@ -118,6 +119,32 @@ class PosService
                 'difference'        => $difference,
             ],
         ];
+    }
+
+    // ─── Historique des sessions ──────────────────────────────────────────────
+
+    /**
+     * Liste paginée des sessions de caisse du tenant courant.
+     * Les agrégats (ventes, total) sont calculés via sous-requêtes SQL.
+     */
+    public function sessions(int $perPage = 25): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        return PosSession::with('user:id,name')
+            ->addSelect([
+                'pos_sessions.*',
+                'sales_count' => Sale::selectRaw('COUNT(*)')
+                    ->whereColumn('user_id', 'pos_sessions.user_id')
+                    ->where('status', 'confirmed')
+                    ->whereRaw('confirmed_at >= pos_sessions.opened_at')
+                    ->whereRaw('(pos_sessions.closed_at IS NULL OR confirmed_at <= pos_sessions.closed_at)'),
+                'total_confirmed' => Sale::selectRaw('COALESCE(SUM(total), 0)')
+                    ->whereColumn('user_id', 'pos_sessions.user_id')
+                    ->where('status', 'confirmed')
+                    ->whereRaw('confirmed_at >= pos_sessions.opened_at')
+                    ->whereRaw('(pos_sessions.closed_at IS NULL OR confirmed_at <= pos_sessions.closed_at)'),
+            ])
+            ->orderByDesc('opened_at')
+            ->paginate($perPage);
     }
 
     // ─── Synchronisation hors-ligne ────────────────────────────────────────────

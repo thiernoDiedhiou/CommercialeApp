@@ -3,25 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Facture {{ $sale->reference }}</title>
+    <title>Reçu {{ $sale->reference }}</title>
+    @php
+        $primaryColor   = $tenant->primary_color   ?? '#2563eb';
+        $secondaryColor = $tenant->secondary_color ?? $primaryColor;
+        $logoBase64     = null;
+        $logoMime       = 'image/png';
+        if ($tenant->logo_path) {
+            $logoFullPath = \Illuminate\Support\Facades\Storage::disk('public')->path($tenant->logo_path);
+            if (file_exists($logoFullPath)) {
+                $logoBase64 = base64_encode(file_get_contents($logoFullPath));
+                $ext        = strtolower(pathinfo($logoFullPath, PATHINFO_EXTENSION));
+                $logoMime   = match($ext) {
+                    'svg'        => 'image/svg+xml',
+                    'jpg','jpeg' => 'image/jpeg',
+                    'webp'       => 'image/webp',
+                    default      => 'image/png',
+                };
+            }
+        }
+        // Normalise les anciens noms de template
+        $tpl = match($template ?? 'classic') {
+            'classique', 'classic' => 'classic',
+            'epure', 'pro'         => 'classic',
+            'moderne'              => 'moderne',
+            default                => 'classic',
+        };
+        $isFullyPaid = $sale->amountRemaining() <= 0 && $sale->payments->isNotEmpty();
+    @endphp
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1a1a1a; }
+        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1a1a1a; background: #ffffff; }
 
-        /* ── En-tête ── */
-        .header { background-color: {{ $tenant->primary_color ?? '#2563eb' }}; color: #ffffff; padding: 20px 24px; }
-        .header-grid { display: table; width: 100%; }
-        .header-left  { display: table-cell; width: 60%; vertical-align: middle; }
-        .header-right { display: table-cell; width: 40%; vertical-align: middle; text-align: right; }
-        .header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
-        .header .sub { font-size: 10px; opacity: 0.85; margin-top: 2px; }
-        .invoice-title { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-        .invoice-ref   { font-size: 12px; margin-top: 3px; }
+        /* ── Watermark PAYÉ ── */
+        .watermark {
+            position: fixed;
+            top: 38%; left: 0; width: 100%;
+            text-align: center; z-index: 1000;
+            font-size: 100px; font-weight: 900; letter-spacing: 12px;
+            color: rgba(22,163,74,0.10);
+            transform: rotate(-30deg);
+        }
 
-        /* ── Corps ── */
-        .body { padding: 20px 24px; }
+        /* ── Footer fixe ── */
+        .footer {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            border-top: 1px solid #e2e8f0;
+            padding: 10px 24px;
+            text-align: center;
+            color: #94a3b8; font-size: 10px;
+            background: #ffffff;
+        }
+        .body { padding-bottom: 60px; }
 
-        /* ── Méta : vendeur / client / date ── */
+        /* ── Méta ── */
         .meta-grid { display: table; width: 100%; margin-bottom: 18px; }
         .meta-col  { display: table-cell; width: 50%; vertical-align: top; }
         .meta-col + .meta-col { padding-left: 16px; }
@@ -40,7 +76,7 @@
         .item-variant { font-size: 10px; color: #64748b; }
 
         /* ── Totaux ── */
-        .totals-wrap { display: table; width: 100%; margin-bottom: 16px; }
+        .totals-wrap   { display: table; width: 100%; margin-bottom: 16px; }
         .totals-spacer { display: table-cell; width: 55%; }
         .totals-box    { display: table-cell; width: 45%; }
         .totals-row    { display: table; width: 100%; }
@@ -49,10 +85,8 @@
         .totals-divider { border-top: 1px solid #e2e8f0; margin: 4px 0; }
         .totals-total .totals-label,
         .totals-total .totals-value {
-            font-size: 13px;
-            font-weight: 700;
-            color: {{ $tenant->primary_color ?? '#2563eb' }};
-            padding-top: 6px;
+            font-size: 13px; font-weight: 700;
+            color: {{ $primaryColor }}; padding-top: 6px;
         }
 
         /* ── Paiements ── */
@@ -61,39 +95,96 @@
         .payments-table td { padding: 5px 8px; font-size: 11px; border-bottom: 1px solid #f1f5f9; }
         .payments-table td.num { text-align: right; }
         .badge-due { display: inline-block; background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; margin-top: 8px; }
-
-        /* ── Pied de page ── */
-        .footer { margin-top: 28px; border-top: 1px solid #e2e8f0; padding-top: 12px; text-align: center; color: #94a3b8; font-size: 10px; }
     </style>
 </head>
 <body>
 
-{{-- ── En-tête tenant ────────────────────────────────────────────────── --}}
-<div class="header">
-    <div class="header-grid">
-        <div class="header-left">
-            <h1>{{ $tenant->name }}</h1>
-            @if($tenant->address ?? null)
-                <p class="sub">{{ $tenant->address }}</p>
+@if($isFullyPaid)
+<div class="watermark">PAYÉ</div>
+@endif
+
+{{-- ══ EN-TÊTE ══ --}}
+@if($tpl === 'moderne')
+{{-- Moderne : fond blanc + ligne couleur en haut + titre en couleur --}}
+<div style="border-top: 5px solid {{ $primaryColor }}; padding: 22px 28px 18px; background: #ffffff;">
+    <div style="display:table; width:100%;">
+        <div style="display:table-cell; width:60%; vertical-align:middle;">
+            @if($logoBase64)
+                <img src="data:{{ $logoMime }};base64,{{ $logoBase64 }}"
+                     alt="{{ $tenant->name }}"
+                     style="max-height:70px; max-width:180px; object-fit:contain; display:block; margin-bottom:8px;">
             @endif
-            @if($tenant->phone ?? null)
-                <p class="sub">{{ $tenant->phone }}</p>
-            @endif
-            @if($tenant->rccm ?? null)
-                <p class="sub">RCCM : {{ $tenant->rccm }}</p>
-            @endif
-            @if($tenant->ninea ?? null)
-                <p class="sub">NINEA : {{ $tenant->ninea }}</p>
-            @endif
+            <p style="font-size:16px; font-weight:700; color:#0f172a; margin-bottom:4px;">{{ $tenant->name }}</p>
+            @php
+                $contactParts = array_filter([$tenant->address ?? null, $tenant->phone ?? null, $tenant->email ?? null]);
+                $legalLine = '';
+                if ($tenant->rccm ?? null) {
+                    $legalLine = 'RCCM : ' . $tenant->rccm;
+                    if ($tenant->ninea ?? null) { $legalLine .= ' · NINEA : ' . $tenant->ninea; }
+                }
+            @endphp
+            <p style="font-size:10px; color:#64748b; line-height:1.6;">
+                {{ implode(' · ', $contactParts) }}
+                @if($legalLine)<br>{{ $legalLine }}@endif
+            </p>
         </div>
-        <div class="header-right">
-            <p class="invoice-title">Facture</p>
-            <p class="invoice-ref">{{ $sale->reference }}</p>
+        <div style="display:table-cell; width:40%; vertical-align:middle; text-align:right;">
+            <p style="font-size:22px; font-weight:800; letter-spacing:2px; color:{{ $primaryColor }}; text-transform:uppercase;">
+                Reçu de vente
+            </p>
+            <p style="font-size:12px; color:#64748b; margin-top:4px;">{{ $sale->reference }}</p>
+            <p style="font-size:11px; color:#94a3b8; margin-top:2px;">
+                {{ $sale->confirmed_at?->format('d/m/Y') ?? now()->format('d/m/Y') }}
+            </p>
         </div>
     </div>
 </div>
+@else
+{{-- Classique : bandeau coloré compact (même structure que les factures) --}}
+<div style="background-color:{{ $primaryColor }}; color:#ffffff; padding:14px 24px;">
+    <div style="display:table; width:100%;">
 
-<div class="body">
+        {{-- Gauche : logo inline + nom + infos condensées --}}
+        <div style="display:table-cell; width:60%; vertical-align:middle;">
+            <div style="display:table; width:100%;">
+                @if($logoBase64)
+                <div style="display:table-cell; vertical-align:middle; padding-right:10px; width:1%;">
+                    <img src="data:{{ $logoMime }};base64,{{ $logoBase64 }}"
+                         alt="{{ $tenant->name }}"
+                         style="max-height:88px; max-width:200px; object-fit:contain; display:block;">
+                </div>
+                @endif
+                <div style="display:table-cell; vertical-align:middle;">
+                    <p style="font-size:17px; font-weight:700; color:#ffffff;">{{ $tenant->name }}</p>
+                    @php
+                        $line1 = implode(' · ', array_filter([$tenant->address ?? null, $tenant->phone ?? null]));
+                        $line2 = $tenant->email ?? null;
+                        $line3 = implode(' · ', array_filter([
+                            $tenant->rccm  ? 'RCCM : '  . $tenant->rccm  : null,
+                            $tenant->ninea ? 'NINEA : ' . $tenant->ninea : null,
+                        ]));
+                    @endphp
+                    @if($line1) <p style="font-size:9.5px; opacity:0.85; margin-top:1px; line-height:1.5;">{{ $line1 }}</p> @endif
+                    @if($line2) <p style="font-size:9.5px; opacity:0.85; margin-top:1px; line-height:1.5;">{{ $line2 }}</p> @endif
+                    @if($line3) <p style="font-size:9.5px; opacity:0.85; margin-top:1px; line-height:1.5;">{{ $line3 }}</p> @endif
+                </div>
+            </div>
+        </div>
+
+        {{-- Droite : titre + référence + date --}}
+        <div style="display:table-cell; width:40%; vertical-align:middle; text-align:right;">
+            <p style="font-size:22px; font-weight:800; letter-spacing:2px; color:#ffffff; text-transform:uppercase;">Reçu de vente</p>
+            <p style="font-size:12px; color:rgba(255,255,255,0.9); margin-top:2px;">{{ $sale->reference }}</p>
+            <p style="font-size:11px; color:rgba(255,255,255,0.75); margin-top:6px;">
+                {{ $sale->confirmed_at?->format('d/m/Y') ?? now()->format('d/m/Y') }}
+            </p>
+        </div>
+
+    </div>
+</div>
+@endif
+
+<div class="body" style="padding:20px 24px 60px;">
 
     {{-- ── Méta : vendeur & client ────────────────────────────────────── --}}
     <div class="meta-grid" style="margin-top:16px">
@@ -178,10 +269,7 @@
             @if($sale->discount_amount > 0)
             <div class="totals-row">
                 <div class="totals-label">
-                    Remise
-                    @if($sale->discount_type === 'percent')
-                        ({{ number_format($sale->discount_value, 0) }}%)
-                    @endif
+                    Remise {{ $sale->discount_type === 'percent' ? '(' . number_format($sale->discount_value, 0) . '%)' : '' }}
                 </div>
                 <div class="totals-value" style="color:#b91c1c">− {{ number_format($sale->discount_amount, 0, ',', ' ') }} {{ $tenant->currency }}</div>
             </div>
@@ -226,9 +314,10 @@
 
 </div>
 
-{{-- ── Pied de page ────────────────────────────────────────────────────── --}}
+{{-- ── Pied de page fixé en bas de page ───────────────────────────────── --}}
 <div class="footer">
     <p>{{ $footer }}</p>
+    <p style="margin-top:3px; color:#cbd5e1">Imprimé le {{ now()->format('d/m/Y à H:i') }}</p>
 </div>
 
 </body>

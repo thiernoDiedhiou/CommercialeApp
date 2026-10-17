@@ -1,4 +1,4 @@
-import apiClient from '@/lib/axios'
+import apiClient, { API } from '@/lib/axios'
 import type { ImportResult } from '@/types'
 
 /**
@@ -13,7 +13,7 @@ export async function importProducts(
   form.append('file', file)
   if (updateExisting) form.append('update_existing', '1')
 
-  const { data } = await apiClient.post<ImportResult>('/api/v1/products/import', form, {
+  const { data } = await apiClient.post<ImportResult>(`${API}/products/import`, form, {
     headers: { 'Content-Type': undefined }, // laisse le navigateur générer la boundary multipart
     validateStatus: (s) => s === 200 || s === 207, // 207 = import partiel avec erreurs
   })
@@ -22,7 +22,7 @@ export async function importProducts(
 
 /** Télécharge le fichier CSV modèle pré-rempli avec des exemples. */
 export async function downloadImportTemplate(): Promise<void> {
-  const response = await apiClient.get('/api/v1/products/import/template', {
+  const response = await apiClient.get(`${API}/products/import/template`, {
     responseType: 'blob',
   })
   const url = URL.createObjectURL(response.data as Blob)

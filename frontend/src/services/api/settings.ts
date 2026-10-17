@@ -1,4 +1,4 @@
-import apiClient from '@/lib/axios'
+import apiClient, { API } from '@/lib/axios'
 
 export interface TenantSettings {
   name:            string
@@ -21,10 +21,14 @@ export interface TenantSettings {
   smtp_password:     string | null
   smtp_from_address: string | null
   smtp_from_name:    string | null
+  // Documents
+  pdf_template:      string | null
+  invoice_footer:    string | null
+  invoice_prefix:    string | null
 }
 
 export async function getTenantSettings(): Promise<TenantSettings> {
-  const { data } = await apiClient.get<{ data: TenantSettings }>('/api/v1/settings')
+  const { data } = await apiClient.get<{ data: TenantSettings }>(`${API}/settings`)
   return data.data
 }
 
@@ -43,12 +47,12 @@ export async function updateTenantSettings(
     if (logo) form.append('logo', logo)
     if (removeLogo) form.append('remove_logo', '1')
     const { data } = await apiClient.post<{ data: TenantSettings }>(
-      '/api/v1/settings',
+      `${API}/settings`,
       form,
       { headers: { 'Content-Type': undefined } },
     )
     return data.data
   }
-  const { data } = await apiClient.put<{ data: TenantSettings }>('/api/v1/settings', body)
+  const { data } = await apiClient.put<{ data: TenantSettings }>(`${API}/settings`, body)
   return data.data
 }

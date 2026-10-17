@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { PlusIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilSquareIcon, TrashIcon, TagIcon } from '@heroicons/react/24/outline'
 import { getBrands, createBrand, updateBrand, deleteBrand } from '@/services/api/brands'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
@@ -13,6 +13,7 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import CanDo from '@/components/ui/CanDo'
+import EmptyState from '@/components/ui/EmptyState'
 import type { Brand } from '@/types'
 
 const schema = z.object({
@@ -110,7 +111,7 @@ export default function BrandsPage() {
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900">Marques</h1>
+        <h1 className="text-xl font-bold text-slate-900">Marques</h1>
         <CanDo permission="products.create">
           <Button icon={<PlusIcon className="h-4 w-4" />} onClick={() => setModal({ mode: 'create' })}>
             Nouvelle marque
@@ -124,7 +125,26 @@ export default function BrandsPage() {
         keyExtractor={(b) => b.id}
         loading={isLoading}
         skeletonRows={5}
-        emptyMessage="Aucune marque trouvée."
+        emptyMessage={<EmptyState icon={<TagIcon className="h-7 w-7" />} title="Aucune marque pour l'instant" description="Associez vos produits à leurs marques pour un catalogue plus structuré." />}
+        mobileCard={(b) => (
+          <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <span className="font-medium text-gray-900">{b.name}</span>
+            <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+              <CanDo permission="products.edit">
+                <button type="button" onClick={() => setModal({ mode: 'edit', brand: b })}
+                  className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+                  <PencilSquareIcon className="h-4 w-4" />
+                </button>
+              </CanDo>
+              <CanDo permission="products.delete">
+                <button type="button" onClick={() => setDeleteTarget(b)}
+                  className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600">
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </CanDo>
+            </div>
+          </div>
+        )}
       />
 
       {/* ── Modal création / édition ── */}

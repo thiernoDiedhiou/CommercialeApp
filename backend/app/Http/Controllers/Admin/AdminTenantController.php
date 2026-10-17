@@ -272,6 +272,25 @@ class AdminTenantController extends Controller
         return response()->json(['data' => $this->formatTenant($tenant)]);
     }
 
+    // ── POST /api/v1/admin/tenants/{tenant}/rotate-api-key ───────────────────
+    public function rotateApiKey(Tenant $tenant): JsonResponse
+    {
+        $oldApiKey = $tenant->api_key;
+        $newApiKey = \Illuminate\Support\Str::random(64);
+
+        $tenant->update(['api_key' => $newApiKey]);
+
+        // Invalide l'ancienne clé dans Redis — elle cesse d'être valide immédiatement.
+        // La nouvelle clé n'est pas encore cachée ; le premier appel fera un lookup DB.
+        $this->tenantService->flushCache($oldApiKey);
+
+        // La clé n'est retournée qu'une seule fois — elle est dans $hidden normalement.
+        return response()->json([
+            'api_key' => $newApiKey,
+            'message' => 'Clé API régénérée. Copiez-la maintenant — elle ne sera plus affichée.',
+        ]);
+    }
+
     public function suspend(Tenant $tenant): JsonResponse
     {
         $tenant->update(['is_active' => false]);

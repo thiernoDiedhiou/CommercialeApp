@@ -7,6 +7,7 @@ use App\Http\Requests\Pos\CloseSessionRequest;
 use App\Http\Requests\Pos\OpenSessionRequest;
 use App\Http\Requests\Pos\SyncOfflineRequest;
 use App\Models\PosSession;
+use App\Services\ActivityLogService;
 use App\Services\PosService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,6 +42,8 @@ class PosController extends Controller
                 notes:        $request->input('notes'),
             );
 
+            ActivityLogService::log('open_session', 'pos', 'Session POS ouverte (fonds : ' . number_format((float) $request->input('opening_cash', 0)) . ')');
+
             return response()->json(['session' => $session], 201);
         } catch (\DomainException $e) {
             return response()->json(['message' => $e->getMessage()], 409);
@@ -61,10 +64,17 @@ class PosController extends Controller
                 notes:       $request->input('notes'),
             );
 
+            ActivityLogService::log('close_session', 'pos', 'Session POS fermée (fonds : ' . number_format((float) $request->input('closing_cash')) . ')');
+
             return response()->json($result);
         } catch (\DomainException $e) {
             return response()->json(['message' => $e->getMessage()], 409);
         }
+    }
+
+    public function sessions(): JsonResponse
+    {
+        return response()->json($this->posService->sessions());
     }
 
     public function syncOffline(SyncOfflineRequest $request): JsonResponse
@@ -73,6 +83,9 @@ class PosController extends Controller
             sales: $request->input('sales'),
             user:  $request->user(),
         );
+
+        $count = count($request->input('sales', []));
+        ActivityLogService::log('sync', 'pos', "Synchronisation hors-ligne : {$count} vente(s) importée(s)");
 
         return response()->json($result);
     }

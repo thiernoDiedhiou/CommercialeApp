@@ -19,7 +19,7 @@ export default function ShopProductDetailPage() {
 
   const { data, isLoading } = useQuery({
     queryKey : ['shop-product', slug, productId],
-    queryFn  : () => getShopProduct(slug, Number(productId)),
+    queryFn  : () => getShopProduct(slug, productId),
     staleTime: 2 * 60 * 1000,
     enabled  : !!slug && !!productId,
   })

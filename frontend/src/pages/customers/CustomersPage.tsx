@@ -7,6 +7,8 @@ import {
   PencilSquareIcon,
   TrashIcon,
   NoSymbolIcon,
+  ChevronRightIcon,
+  UsersIcon,
 } from '@heroicons/react/24/outline'
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '@/services/api/customers'
 import { normalizePhone } from '@/components/ui/PhoneInput'
@@ -21,6 +23,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Select } from '@/components/ui/Input'
 import CanDo from '@/components/ui/CanDo'
+import EmptyState from '@/components/ui/EmptyState'
 import CustomerForm from '@/components/customers/CustomerForm'
 import type { CustomerFormValues } from '@/components/customers/CustomerForm'
 import type { Customer } from '@/types'
@@ -236,7 +239,7 @@ export default function CustomersPage() {
     <div className="space-y-4 p-4 sm:p-6">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900">Clients</h1>
+        <h1 className="text-xl font-bold text-slate-900">Clients</h1>
         <CanDo permission="customers.create">
           <Button
             icon={<PlusIcon className="h-4 w-4" />}
@@ -278,8 +281,24 @@ export default function CustomersPage() {
         keyExtractor={(c) => c.id}
         loading={isLoading}
         skeletonRows={8}
-        emptyMessage="Aucun client trouvé."
+        emptyMessage={<EmptyState icon={<UsersIcon className="h-7 w-7" />} title="Aucun client" description="Enregistrez vos clients pour suivre leurs achats et créances." />}
         onRowClick={(c) => navigate(`/customers/${c.uid}`)}
+        mobileCard={(c) => (
+          <div className="flex items-center gap-3 px-4 py-3">
+            <div className="h-9 w-9 shrink-0 rounded-full bg-brand-primary/10 flex items-center justify-center">
+              <span className="text-sm font-semibold text-brand-primary">{c.name.charAt(0).toUpperCase()}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="font-medium text-gray-900 truncate">{c.name}</span>
+                <Badge variant={c.is_active ? 'success' : 'default'}>{c.is_active ? 'Actif' : 'Inactif'}</Badge>
+              </div>
+              {c.email && <p className="text-xs text-gray-500 truncate">{c.email}</p>}
+              {c.phone && <p className="text-xs text-gray-400">{c.phone}</p>}
+            </div>
+            <ChevronRightIcon className="h-4 w-4 text-gray-300 shrink-0" />
+          </div>
+        )}
       />
 
       {/* Pagination */}

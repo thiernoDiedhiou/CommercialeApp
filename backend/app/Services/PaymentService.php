@@ -33,7 +33,7 @@ class PaymentService
      */
     public function initiateRenewal(Tenant $tenant, Plan $plan, string $billingCycle): string
     {
-        $amount   = $billingCycle === 'yearly'
+        $amount = $billingCycle === 'yearly'
             ? (int) ($plan->price_yearly ?? $plan->price_monthly * 12)
             : (int) $plan->price_monthly;
 
@@ -58,8 +58,12 @@ class PaymentService
             // checkout_url est stocké à la création pour éviter toute dépendance
             // au provider (Bictorys n'expose pas de reconstruction depuis un token).
             if ($this->gateway->verifyPayment($existing->provider_token) === PaymentStatus::Pending) {
-                return $existing->checkout_url ?? $this->buildCheckoutUrl($existing->provider_token);
+                // Toujours utiliser checkout_url stocké — évite la dépendance au provider
+                // (buildCheckoutUrl ne fonctionnerait pas pour Bictorys/CinetPay)
+                return $existing->checkout_url
+                    ?? $this->createFreshInvoice($tenant, $plan, $billingCycle, $amount, $currency, $idempotencyKey);
             }
+
             return $this->createFreshInvoice($tenant, $plan, $billingCycle, $amount, $currency, $idempotencyKey);
         }
 
@@ -68,15 +72,15 @@ class PaymentService
 
     private function createFreshInvoice(
         Tenant $tenant,
-        Plan   $plan,
+        Plan $plan,
         string $billingCycle,
-        int    $amount,
+        int $amount,
         string $currency,
         string $idempotencyKey,
     ): string {
         $frontendUrl = rtrim(config('app.frontend_url', 'https://didisphere.shop'), '/');
-        $adminName   = $tenant->users()->whereHas('groups', fn ($q) => $q->where('name', 'Administrateur'))->first()?->name ?? $tenant->name;
-        $adminEmail  = $tenant->email;
+        $adminName = $tenant->users()->whereHas('groups', fn ($q) => $q->where('name', 'Administrateur'))->first()?->name ?? $tenant->name;
+        $adminEmail = $tenant->email;
 
         $request = new PaymentRequest(
             idempotencyKey: $idempotencyKey,
@@ -94,37 +98,51 @@ class PaymentService
         $ttl = config('payment.link_ttl', 3600);
 
         try {
-            PaymentTransaction::updateOrCreate(
-                ['idempotency_key' => $idempotencyKey],
-                [
-                    'tenant_id'      => $tenant->id,
-                    'plan_id'        => $plan->id,
-                    'provider'       => config('payment.provider') ?? 'null',
-                    'provider_token' => $result->providerToken,
-                    'checkout_url'   => $result->checkoutUrl,
-                    'billing_cycle'  => $billingCycle,
-                    'amount'         => $amount,
-                    'currency'       => $currency,
-                    'status'         => 'pending',
-                    'expires_at'     => now()->addSeconds($ttl),
-                ]
-            );
+            PaymentTransaction::create([
+                'idempotency_key' => $idempotencyKey,
+                'tenant_id' => $tenant->id,
+                'plan_id' => $plan->id,
+                'provider' => config('payment.provider') ?? 'null',
+                'provider_token' => $result->providerToken,
+                'checkout_url' => $result->checkoutUrl,
+                'billing_cycle' => $billingCycle,
+                'amount' => $amount,
+                'currency' => $currency,
+                'status' => 'pending',
+                'expires_at' => now()->addSeconds($ttl),
+            ]);
         } catch (UniqueConstraintViolationException) {
-            // Double-clic ou double requête simultanée du même tenant :
-            // la transaction a déjà été créée par l'autre requête — on retourne
-            // simplement l'URL existante sans créer de doublon.
-            Log::info("initiateRenewal: collision idempotency_key [{$idempotencyKey}] — transaction déjà créée, URL réutilisée.");
+            $conflict = PaymentTransaction::where('idempotency_key', $idempotencyKey)->first();
+
+            if ($conflict?->isCompleted()) {
+                // Déjà payé ce mois — retourner l'URL de la transaction existante
+                return $conflict->checkout_url ?? $result->checkoutUrl;
+            }
+
+            if ($conflict && $conflict->isFailed()) {
+                // Retry après échec — réinitialiser via DB::table
+                // (transition failed→pending intentionnelle : contourne le guard d'immuabilité)
+                DB::table('payment_transactions')
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->update([
+                        'provider_token' => $result->providerToken,
+                        'checkout_url' => $result->checkoutUrl,
+                        'status' => 'pending',
+                        'expires_at' => now()->addSeconds($ttl),
+                        'updated_at' => now(),
+                    ]);
+
+                return $result->checkoutUrl;
+            }
+
+            // Race condition (requêtes simultanées) — retourner l'URL de la transaction
+            // déjà créée par l'autre requête (possède bien un enregistrement DB)
+            Log::info("initiateRenewal: collision idempotency_key [{$idempotencyKey}] — race condition.");
+
+            return $conflict?->checkout_url ?? $result->checkoutUrl;
         }
 
         return $result->checkoutUrl;
-    }
-
-    private function buildCheckoutUrl(string $providerToken): string
-    {
-        $mode = config('payment.paydunya.mode', 'test');
-        return $mode === 'live'
-            ? "https://checkout.paydunya.com/{$providerToken}"
-            : "https://checkout.sandbox.paydunya.com/{$providerToken}";
     }
 
     // ── Vérification fallback (webhook manqué) ────────────────────────────────
@@ -154,6 +172,7 @@ class PaymentService
                     $this->activateSubscription($fresh);
                 }
             });
+
             return 'completed';
         }
 
@@ -161,6 +180,7 @@ class PaymentService
             DB::table('payment_transactions')
                 ->where('id', $transaction->id)
                 ->update(['status' => 'failed', 'updated_at' => now()]);
+
             return 'failed';
         }
 
@@ -181,9 +201,10 @@ class PaymentService
     {
         if (! $this->gateway->verifyWebhookSignature($request)) {
             Log::warning('Payment webhook: signature invalide', [
-                'ip'      => $request->ip(),
+                'ip' => $request->ip(),
                 'headers' => $request->headers->all(),
             ]);
+
             return;
         }
 
@@ -201,6 +222,7 @@ class PaymentService
                 Log::warning('Payment webhook: transaction introuvable', [
                     'provider_token' => $event->providerToken,
                 ]);
+
                 return;
             }
 
@@ -219,20 +241,20 @@ class PaymentService
             }
 
             // Stocker le moyen de paiement réel et le payload brut avant traitement
-            $transaction->webhook_payload      = $event->rawPayload;
+            $transaction->webhook_payload = $event->rawPayload;
             $transaction->payment_method_label = $event->paymentMethodLabel;
 
             match ($event->status) {
                 PaymentStatus::Completed => $this->activateSubscription($transaction),
-                PaymentStatus::Failed    => $transaction->update([
-                    'status'               => 'failed',
+                PaymentStatus::Failed => $transaction->update([
+                    'status' => 'failed',
                     'payment_method_label' => $event->paymentMethodLabel,
-                    'webhook_payload'      => $event->rawPayload,
+                    'webhook_payload' => $event->rawPayload,
                 ]),
                 PaymentStatus::Cancelled => $transaction->update([
-                    'status'               => 'cancelled',
+                    'status' => 'cancelled',
                     'payment_method_label' => $event->paymentMethodLabel,
-                    'webhook_payload'      => $event->rawPayload,
+                    'webhook_payload' => $event->rawPayload,
                 ]),
                 default => null, // Pending — on attend
             };
@@ -245,16 +267,16 @@ class PaymentService
      */
     private function activateSubscription(PaymentTransaction $transaction): void
     {
-        $tenant        = $transaction->tenant;
-        $plan          = $transaction->plan;
-        $billingCycle  = $transaction->billing_cycle;
+        $tenant = $transaction->tenant;
+        $plan = $transaction->plan;
+        $billingCycle = $transaction->billing_cycle;
 
         if (! $plan) {
             throw new RuntimeException("PaymentTransaction #{$transaction->id} : plan introuvable.");
         }
 
         $daysMap = ['monthly' => 30, 'yearly' => 365];
-        $days    = $daysMap[$billingCycle] ?? 30;
+        $days = $daysMap[$billingCycle] ?? 30;
 
         // Désactiver les abonnements actifs ou en essai précédents
         TenantSubscription::where('tenant_id', $tenant->id)
@@ -262,32 +284,38 @@ class PaymentService
             ->update(['status' => 'expired', 'ends_at' => now()]);
 
         $subscription = TenantSubscription::create([
-            'tenant_id'    => $tenant->id,
-            'plan_id'      => $plan->id,
-            'billing_cycle'=> $billingCycle,
-            'status'       => 'active',
-            'starts_at'    => now(),
-            'ends_at'      => now()->addDays($days),
+            'tenant_id' => $tenant->id,
+            'plan_id' => $plan->id,
+            'billing_cycle' => $billingCycle,
+            'status' => 'active',
+            'starts_at' => now(),
+            'ends_at' => now()->addDays($days),
         ]);
 
         // Génère le numéro de facture — format ABN-YYYY-XXXXX
         // Basé sur l'ID auto-increment (unique par définition) plutôt que COUNT(*)
         // qui causerait des doublons en cas de paiements simultanés.
-        $year          = now()->format('Y');
+        $year = now()->format('Y');
         $invoiceNumber = sprintf('ABN-%s-%05d', $year, $transaction->id);
 
         // Mise à jour de la transaction — état final immuable
+        // payment_method_label et webhook_payload sont déjà renseignés par le webhook ;
+        // ne pas les écraser ici (ils seraient null si appelé depuis checkAndComplete)
         $transaction->update([
-            'status'               => 'completed',
-            'invoice_number'       => $invoiceNumber,
-            'subscription_id'      => $subscription->id,
-            'payment_method_label' => $transaction->payment_method_label, // déjà set par parseWebhook
-            'webhook_payload'      => $transaction->webhook_payload,
+            'status' => 'completed',
+            'invoice_number' => $invoiceNumber,
+            'subscription_id' => $subscription->id,
         ]);
 
         Log::info("Abonnement activé : tenant #{$tenant->id}, plan {$plan->name}, cycle {$billingCycle}");
 
-        // Envoi de la facture par email — hors transaction DB
-        SendSubscriptionInvoiceJob::dispatch($transaction->fresh())->onQueue('notifications');
+        // Dispatch après commit — évite l'envoi d'email si la transaction DB est annulée
+        $transactionId = $transaction->id;
+        DB::afterCommit(function () use ($transactionId) {
+            $fresh = PaymentTransaction::find($transactionId);
+            if ($fresh) {
+                SendSubscriptionInvoiceJob::dispatch($fresh)->onQueue('notifications');
+            }
+        });
     }
 }

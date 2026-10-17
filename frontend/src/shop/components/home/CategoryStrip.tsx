@@ -30,7 +30,7 @@ export default function CategoryStrip({ categories, selectedId, onSelect }: Prop
           <button
             type="button"
             onClick={() => onSelect(null)}
-            className="shrink-0 flex flex-col items-center gap-1 focus:outline-none group w-[60px]"
+            className="shrink-0 flex flex-col items-center gap-1 focus:outline-none group w-[72px]"
           >
             <div className={`h-11 w-11 rounded-xl flex items-center justify-center transition-all duration-200 ${
               selectedId === null
@@ -41,7 +41,7 @@ export default function CategoryStrip({ categories, selectedId, onSelect }: Prop
                 <IconGrid />
               </span>
             </div>
-            <span className={`text-[11px] font-medium leading-tight text-center w-full truncate ${
+            <span className={`text-[11px] font-medium leading-tight text-center w-full line-clamp-2 break-words ${
               selectedId === null ? 'text-[var(--shop-secondary,#374151)]' : 'text-gray-500'
             }`}>
               Tous
@@ -58,7 +58,7 @@ export default function CategoryStrip({ categories, selectedId, onSelect }: Prop
                 key={cat.id}
                 type="button"
                 onClick={() => onSelect(cat.id)}
-                className="shrink-0 flex flex-col items-center gap-1 focus:outline-none group w-[60px]"
+                className="shrink-0 flex flex-col items-center gap-1 focus:outline-none group w-[72px]"
               >
                 <div className={`h-11 w-11 rounded-xl overflow-hidden transition-all duration-200 ${
                   isSelected
@@ -79,7 +79,7 @@ export default function CategoryStrip({ categories, selectedId, onSelect }: Prop
                   )}
                 </div>
                 <span
-                  className={`text-[11px] font-medium leading-tight text-center w-full truncate ${
+                  className={`text-[11px] font-medium leading-tight text-center w-full line-clamp-2 break-words ${
                     isSelected ? 'text-[var(--shop-secondary,#374151)]' : 'text-gray-500'
                   }`}
                   title={cat.name}

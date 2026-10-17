@@ -22,6 +22,7 @@ import Layout from '@/components/layout/Layout'
 import AdminLayout from '@/components/admin/AdminLayout'
 import AdminLoginPage from '@/pages/admin/AdminLoginPage'
 import AdminDashboardPage from '@/pages/admin/AdminDashboardPage'
+import AdminProfilePage from '@/pages/admin/AdminProfilePage'
 import AdminTenantsPage from '@/pages/admin/AdminTenantsPage'
 import AdminTenantDetailPage from '@/pages/admin/AdminTenantDetailPage'
 import AdminPlansPage from '@/pages/admin/AdminPlansPage'
@@ -37,15 +38,20 @@ import SalesPage from '@/pages/sales/SalesPage'
 import SaleDetailPage from '@/pages/sales/SaleDetailPage'
 import ReturnsPage from '@/pages/sales/ReturnsPage'
 import DebtsPage from '@/pages/customers/DebtsPage'
+import DebtDetailPage from '@/pages/customers/DebtDetailPage'
 import PosPage from '@/pages/pos/PosPage'
+import PosSessionsPage from '@/pages/pos/PosSessionsPage'
 import StockPage from '@/pages/stock/StockPage'
+import InventorySessionPage from '@/pages/stock/InventorySessionPage'
 import ReportsPage from '@/pages/reports/ReportsPage'
 import ToastContainer from '@/components/ui/ToastContainer'
 import InvoicesPage from '@/pages/invoices/InvoicesPage'
 import InvoiceFormPage from '@/pages/invoices/InvoiceFormPage'
 import InvoiceDetailPage from '@/pages/invoices/InvoiceDetailPage'
+import ActivityLogPage from '@/pages/settings/ActivityLogPage'
 import SettingsPage from '@/pages/settings/SettingsPage'
 import SuppliersPage from '@/pages/purchases/SuppliersPage'
+import SupplierDetailPage from '@/pages/purchases/SupplierDetailPage'
 import PurchaseOrdersPage from '@/pages/purchases/PurchaseOrdersPage'
 import PurchaseFormPage from '@/pages/purchases/PurchaseFormPage'
 import PurchaseDetailPage from '@/pages/purchases/PurchaseDetailPage'
@@ -58,6 +64,14 @@ import ProfilePage from '@/pages/profile/ProfilePage'
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
   if (!token) return <Navigate to="/login" replace />
+  return <>{children}</>
+}
+
+// Redirige vers la première page accessible si la permission est absente
+function RequirePermission({ permission, children }: { permission: string; children: React.ReactNode }) {
+  const permissions = useAuthStore((s) => s.permissions)
+  const homePath    = useHomePath()
+  if (!permissions.includes(permission)) return <Navigate to={homePath} replace />
   return <>{children}</>
 }
 
@@ -121,32 +135,37 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="dashboard"        element={<DashboardPage />} />
-          <Route path="sales"            element={<SalesPage />} />
+          <Route path="dashboard"        element={<RequirePermission permission="dashboard.view"><DashboardPage /></RequirePermission>} />
+          <Route path="pos-sessions"     element={<RequirePermission permission="pos.access"><PosSessionsPage /></RequirePermission>} />
+          <Route path="sales"            element={<RequirePermission permission="sales.view"><SalesPage /></RequirePermission>} />
           <Route path="sales/new"        element={<Navigate to="/pos" replace />} />
-          <Route path="sales/:uid"        element={<SaleDetailPage />} />
-          <Route path="returns"          element={<ReturnsPage />} />
-          <Route path="products"           element={<ProductsPage />} />
-          <Route path="products/new"       element={<ProductFormPage />} />
-          <Route path="products/:uid"       element={<ProductDetailPage />} />
-          <Route path="products/:uid/edit"  element={<ProductFormPage />} />
-          <Route path="categories"         element={<CategoriesPage />} />
-          <Route path="brands"             element={<BrandsPage />} />
-          <Route path="customers"         element={<CustomersPage />} />
-          <Route path="customers/:uid"    element={<CustomerDetailPage />} />
-          <Route path="debts"            element={<DebtsPage />} />
-          <Route path="stock"               element={<StockPage />} />
-          <Route path="reports"               element={<ReportsPage />} />
-          <Route path="invoices"             element={<InvoicesPage />} />
-          <Route path="invoices/new"         element={<InvoiceFormPage />} />
-          <Route path="invoices/:uid"         element={<InvoiceDetailPage />} />
-          <Route path="invoices/:uid/edit"    element={<InvoiceFormPage />} />
-          <Route path="suppliers"         element={<SuppliersPage />} />
-          <Route path="purchases"         element={<PurchaseOrdersPage />} />
-          <Route path="purchases/new"     element={<PurchaseFormPage />} />
-          <Route path="purchases/:uid"     element={<PurchaseDetailPage />} />
-          <Route path="purchases/:uid/edit" element={<PurchaseFormPage />} />
+          <Route path="sales/:uid"        element={<RequirePermission permission="sales.view"><SaleDetailPage /></RequirePermission>} />
+          <Route path="returns"          element={<RequirePermission permission="returns.view"><ReturnsPage /></RequirePermission>} />
+          <Route path="products"           element={<RequirePermission permission="products.view"><ProductsPage /></RequirePermission>} />
+          <Route path="products/new"       element={<RequirePermission permission="products.create"><ProductFormPage /></RequirePermission>} />
+          <Route path="products/:uid"       element={<RequirePermission permission="products.view"><ProductDetailPage /></RequirePermission>} />
+          <Route path="products/:uid/edit"  element={<RequirePermission permission="products.edit"><ProductFormPage /></RequirePermission>} />
+          <Route path="categories"         element={<RequirePermission permission="categories.view"><CategoriesPage /></RequirePermission>} />
+          <Route path="brands"             element={<RequirePermission permission="products.view"><BrandsPage /></RequirePermission>} />
+          <Route path="customers"         element={<RequirePermission permission="customers.view"><CustomersPage /></RequirePermission>} />
+          <Route path="customers/:uid"    element={<RequirePermission permission="customers.view"><CustomerDetailPage /></RequirePermission>} />
+          <Route path="debts"            element={<RequirePermission permission="debts.view"><DebtsPage /></RequirePermission>} />
+          <Route path="debts/:uid"       element={<RequirePermission permission="debts.view"><DebtDetailPage /></RequirePermission>} />
+          <Route path="stock"                        element={<RequirePermission permission="stock.view"><StockPage /></RequirePermission>} />
+          <Route path="stock/inventory/:uid"         element={<RequirePermission permission="stock.view"><InventorySessionPage /></RequirePermission>} />
+          <Route path="reports"               element={<RequirePermission permission="reports.view"><ReportsPage /></RequirePermission>} />
+          <Route path="invoices"             element={<RequirePermission permission="invoices.view"><InvoicesPage /></RequirePermission>} />
+          <Route path="invoices/new"         element={<RequirePermission permission="invoices.create"><InvoiceFormPage /></RequirePermission>} />
+          <Route path="invoices/:uid"         element={<RequirePermission permission="invoices.view"><InvoiceDetailPage /></RequirePermission>} />
+          <Route path="invoices/:uid/edit"    element={<RequirePermission permission="invoices.edit"><InvoiceFormPage /></RequirePermission>} />
+          <Route path="suppliers"         element={<RequirePermission permission="suppliers.view"><SuppliersPage /></RequirePermission>} />
+          <Route path="suppliers/:uid"    element={<RequirePermission permission="suppliers.view"><SupplierDetailPage /></RequirePermission>} />
+          <Route path="purchases"         element={<RequirePermission permission="purchases.view"><PurchaseOrdersPage /></RequirePermission>} />
+          <Route path="purchases/new"     element={<RequirePermission permission="purchases.create"><PurchaseFormPage /></RequirePermission>} />
+          <Route path="purchases/:uid"     element={<RequirePermission permission="purchases.view"><PurchaseDetailPage /></RequirePermission>} />
+          <Route path="purchases/:uid/edit" element={<RequirePermission permission="purchases.edit"><PurchaseFormPage /></RequirePermission>} />
           <Route path="profile"           element={<ProfilePage />} />
+          <Route path="activity-logs"     element={<ActivityLogPage />} />
           <Route path="settings"          element={<SettingsPage />} />
           <Route path="shop-settings"     element={<ShopSettingsPage />} />
           <Route path="shop-orders"       element={<ShopOrdersPage />} />
@@ -183,6 +202,7 @@ export default function App() {
           <Route path="plans"         element={<AdminPlansPage />} />
           <Route path="subscriptions"  element={<AdminSubscriptionsPage />} />
           <Route path="site-settings"  element={<AdminSiteSettingsPage />} />
+          <Route path="profile"        element={<AdminProfilePage />} />
         </Route>
       </Routes>
 

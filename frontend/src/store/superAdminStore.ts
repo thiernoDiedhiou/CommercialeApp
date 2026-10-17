@@ -5,13 +5,15 @@ interface SuperAdminInfo {
   id: number
   name: string
   email: string
+  avatar: string | null
 }
 
 interface SuperAdminState {
   token: string | null
   admin: SuperAdminInfo | null
-  setAuth: (token: string, admin: SuperAdminInfo) => void
-  logout: () => void
+  setAuth:   (token: string, admin: SuperAdminInfo) => void
+  updateAdmin: (admin: SuperAdminInfo) => void
+  logout:    () => void
 }
 
 export const useSuperAdminStore = create<SuperAdminState>()(
@@ -19,8 +21,9 @@ export const useSuperAdminStore = create<SuperAdminState>()(
     (set) => ({
       token: null,
       admin: null,
-      setAuth: (token, admin) => set({ token, admin }),
-      logout: () => set({ token: null, admin: null }),
+      setAuth:     (token, admin) => set({ token, admin }),
+      updateAdmin: (admin)        => set({ admin }),
+      logout:      ()             => set({ token: null, admin: null }),
     }),
     { name: 'super-admin-auth' },
   ),

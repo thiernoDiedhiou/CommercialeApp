@@ -33,7 +33,7 @@ export default function AdminLoginPage() {
           <img
             src="/logo_mode_sombre_texte_claire.svg"
             alt="DiDi Sphere"
-            className="h-16 w-auto mx-auto mb-4"
+            className="h-16 w-auto mx-auto mb-4 [mix-blend-mode:screen]"
           />
           <h1 className="text-2xl font-bold text-white">DiDi Sphere</h1>
           <p className="text-sm text-gray-400 mt-1">Accès réservé aux administrateurs plateforme</p>

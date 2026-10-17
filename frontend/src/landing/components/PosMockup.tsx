@@ -1,12 +1,30 @@
 import { useState, useEffect } from 'react'
 
+const PRODUCT_COLORS: Record<number, { bg: string; text: string }> = {
+  1: { bg: 'bg-red-100',    text: 'text-red-600'    },
+  2: { bg: 'bg-blue-100',   text: 'text-blue-600'   },
+  3: { bg: 'bg-amber-100',  text: 'text-amber-700'  },
+  4: { bg: 'bg-pink-100',   text: 'text-pink-600'   },
+  5: { bg: 'bg-green-100',  text: 'text-green-700'  },
+  6: { bg: 'bg-orange-100', text: 'text-orange-600' },
+}
+
+function initials(name: string) {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+}
+
 const MOCK_PRODUCTS = [
-  { id: 1, name: 'Coca-Cola 33cl',    price: 600,  emoji: '🥤' },
-  { id: 2, name: 'Eau Kirène 1.5L',   price: 500,  emoji: '💧' },
-  { id: 3, name: 'Pain de mie',        price: 750,  emoji: '🍞' },
-  { id: 4, name: 'Sucre 1kg',          price: 800,  emoji: '🍬' },
-  { id: 5, name: 'Riz Parfumé 5kg',    price: 2500, emoji: '🌾' },
-  { id: 6, name: 'Huile Végétale 1L',  price: 1200, emoji: '🍶' },
+  { id: 1, name: 'Coca-Cola 33cl',   price: 600  },
+  { id: 2, name: 'Eau Kirène 1.5L',  price: 500  },
+  { id: 3, name: 'Pain de mie',       price: 750  },
+  { id: 4, name: 'Sucre 1kg',         price: 800  },
+  { id: 5, name: 'Riz Parfumé 5kg',   price: 2500 },
+  { id: 6, name: 'Huile Végétale 1L', price: 1200 },
 ]
 
 const PAYMENT_METHODS = ['Espèces', 'Orange Money', 'Wave']
@@ -46,18 +64,23 @@ export default function PosMockup() {
       <div className="w-1/2 border-r border-gray-100 p-2 flex flex-col">
         <p className="text-[8px] font-bold text-gray-400 uppercase mb-1.5 px-0.5">Produits</p>
         <div className="grid grid-cols-2 gap-1 overflow-y-auto flex-1 min-h-0">
-          {MOCK_PRODUCTS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => add(p)}
-              className="flex flex-col items-start gap-0.5 rounded-lg border border-gray-100 p-2 hover:border-ds-blue/50 hover:bg-ds-blue-light/40 transition-all text-left"
-            >
-              <span className="text-base leading-none">{p.emoji}</span>
-              <span className="text-[7px] font-semibold text-gray-700 leading-tight line-clamp-2 mt-0.5">{p.name}</span>
-              <span className="text-[7px] font-bold text-ds-blue">{p.price.toLocaleString('fr-FR')} F</span>
-            </button>
-          ))}
+          {MOCK_PRODUCTS.map((p) => {
+            const col = PRODUCT_COLORS[p.id]
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => add(p)}
+                className="flex flex-col items-start gap-0.5 rounded-lg border border-gray-100 p-2 hover:border-ds-blue/50 hover:bg-ds-blue-light/40 transition-all text-left"
+              >
+                <span className={`h-6 w-6 rounded-md flex items-center justify-center text-[7px] font-black ${col.bg} ${col.text}`}>
+                  {initials(p.name)}
+                </span>
+                <span className="text-[7px] font-semibold text-gray-700 leading-tight line-clamp-2 mt-0.5">{p.name}</span>
+                <span className="text-[7px] font-bold text-ds-blue">{p.price.toLocaleString('fr-FR')} F</span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -66,8 +89,12 @@ export default function PosMockup() {
         <p className="text-[8px] font-bold text-gray-400 uppercase mb-1.5 px-0.5">Ticket en cours</p>
 
         {paid ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-1">
-            <span className="text-3xl">✅</span>
+          <div className="flex-1 flex flex-col items-center justify-center gap-2">
+            <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+              <svg viewBox="0 0 16 16" className="h-4 w-4 text-green-600 fill-current">
+                <path d="M13.5 3.5L6 11 2.5 7.5l-1 1L6 13l8.5-8.5-1-1z" />
+              </svg>
+            </div>
             <p className="text-[9px] font-bold text-ds-green">Paiement reçu !</p>
             <p className="text-[7px] text-gray-400">Nouveau ticket…</p>
           </div>

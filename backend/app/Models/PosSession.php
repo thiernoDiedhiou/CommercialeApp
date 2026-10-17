@@ -17,15 +17,17 @@ class PosSession extends Model
         'closed_at',
         'opening_cash',
         'closing_cash',
+        'cash_difference',
         'status',
         'notes',
     ];
 
     protected $casts = [
-        'opened_at'    => 'datetime',
-        'closed_at'    => 'datetime',
-        'opening_cash' => 'decimal:2',
-        'closing_cash' => 'decimal:2',
+        'opened_at'       => 'datetime',
+        'closed_at'       => 'datetime',
+        'opening_cash'    => 'decimal:2',
+        'closing_cash'    => 'decimal:2',
+        'cash_difference' => 'decimal:2',
     ];
 
     // ─── Relations ────────────────────────────────────────────────────────────

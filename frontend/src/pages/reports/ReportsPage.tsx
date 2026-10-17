@@ -11,6 +11,9 @@ import {
   ArchiveBoxIcon,
   ArrowUpIcon,
   ArrowDownIcon,
+  PresentationChartLineIcon,
+  ChartBarIcon,
+  CubeIcon,
 } from '@heroicons/react/24/outline'
 import {
   getSalesReport, exportSalesCsv,
@@ -75,7 +78,19 @@ function SalesTab({ data, isLoading }: { data?: SalesReport; isLoading: boolean 
     )
   }
 
-  if (!data) return null
+  if (!data) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+          <PresentationChartLineIcon className="h-7 w-7 text-slate-400" />
+        </div>
+        <p className="text-sm font-semibold text-slate-700">Aucune donnée pour cette période</p>
+        <p className="mt-1.5 max-w-xs text-xs text-slate-400 leading-relaxed">
+          Sélectionnez une autre période ou vérifiez que des ventes ont été enregistrées.
+        </p>
+      </div>
+    )
+  }
 
   const { summary, chart } = data
 
@@ -109,7 +124,13 @@ function SalesTab({ data, isLoading }: { data?: SalesReport; isLoading: boolean 
       <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
         <h2 className="mb-4 text-sm font-semibold text-gray-700">Évolution du chiffre d'affaires</h2>
         {chart.length === 0 ? (
-          <p className="py-8 text-center text-sm text-gray-400">Aucune donnée pour cette période.</p>
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+              <ChartBarIcon className="h-7 w-7 text-slate-400" />
+            </div>
+            <p className="text-sm font-semibold text-slate-700">Aucune vente sur cette période</p>
+            <p className="mt-1 text-xs text-slate-400">Élargissez la période pour voir les données.</p>
+          </div>
         ) : (
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={chart} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
@@ -154,8 +175,12 @@ function ProductsTab({ data, isLoading }: { data?: ProductsReport; isLoading: bo
 
   if (!data?.data.length) {
     return (
-      <div className="rounded-xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100">
-        <p className="text-sm text-gray-400">Aucune vente sur cette période.</p>
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+          <ShoppingCartIcon className="h-7 w-7 text-slate-400" />
+        </div>
+        <p className="text-sm font-semibold text-slate-700">Aucune vente sur cette période</p>
+        <p className="mt-1.5 max-w-xs text-xs text-slate-400 leading-relaxed">Élargissez la période pour voir les produits vendus.</p>
       </div>
     )
   }
@@ -262,8 +287,12 @@ function StockTab({ data, isLoading }: { data?: StockReport; isLoading: boolean 
 
       {/* Table */}
       {data.data.length === 0 ? (
-        <div className="rounded-xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100">
-          <p className="text-sm text-gray-400">Aucun mouvement de stock sur cette période.</p>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+            <CubeIcon className="h-7 w-7 text-slate-400" />
+          </div>
+          <p className="text-sm font-semibold text-slate-700">Aucun mouvement de stock sur cette période</p>
+          <p className="mt-1.5 max-w-xs text-xs text-slate-400 leading-relaxed">Élargissez la période pour voir les mouvements de stock.</p>
         </div>
       ) : (
         <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
@@ -369,7 +398,7 @@ export default function ReportsPage() {
     <div className="space-y-5 p-4 sm:p-6">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900">Rapports</h1>
+        <h1 className="text-xl font-bold text-slate-900">Rapports</h1>
         <Button
           variant="outline"
           icon={<ArrowDownTrayIcon className="h-4 w-4" />}

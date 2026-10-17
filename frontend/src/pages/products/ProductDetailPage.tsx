@@ -130,7 +130,7 @@ export default function ProductDetailPage() {
 
   const editLotMutation = useMutation({
     mutationFn: (data: { expiry_date: string; is_active: boolean; notes: string }) =>
-      updateProductLot(uid!, editLot!.id, {
+      updateProductLot(uid!, editLot!.uid, {
         expiry_date: data.expiry_date || null,
         is_active:   data.is_active,
         notes:       data.notes || null,
@@ -199,7 +199,7 @@ export default function ProductDetailPage() {
           )}
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-bold text-gray-900">{product.name}</h1>
+              <h1 className="text-xl font-bold text-slate-900">{product.name}</h1>
               {!product.is_active && <Badge variant="danger">Inactif</Badge>}
               {hasVariants && <Badge variant="info">Variantes</Badge>}
               {product.is_weight_based && <Badge variant="default">Poids</Badge>}

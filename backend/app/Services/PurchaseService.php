@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use LogicException;
+use App\Services\ActivityLogService;
 
 class PurchaseService
 {
@@ -67,7 +68,11 @@ class PurchaseService
                 ]);
             }
 
-            return $order->load(['supplier', 'user', 'items.product', 'items.variant']);
+            $order->load(['supplier', 'user', 'items.product', 'items.variant']);
+
+            ActivityLogService::log('create', 'purchases', 'Bon de commande ' . $order->reference . ' créé');
+
+            return $order;
         });
     }
 
@@ -85,6 +90,8 @@ class PurchaseService
         }
 
         $order->update(['status' => PurchaseOrder::STATUS_ORDERED]);
+
+        ActivityLogService::log('confirm', 'purchases', 'Bon de commande ' . $order->reference . ' confirmé');
 
         return $order->fresh();
     }
@@ -181,6 +188,8 @@ class PurchaseService
                 'received_at' => $allReceived ? now() : $order->received_at,
             ]);
 
+            ActivityLogService::log('receive', 'purchases', 'Bon de commande ' . $order->reference . ' reçu');
+
             return $order->fresh(['supplier', 'user', 'items.product', 'items.variant']);
         });
     }
@@ -200,6 +209,8 @@ class PurchaseService
         }
 
         $order->update(['status' => PurchaseOrder::STATUS_CANCELLED]);
+
+        ActivityLogService::log('cancel', 'purchases', 'Bon de commande ' . $order->reference . ' annulé');
 
         return $order->fresh();
     }

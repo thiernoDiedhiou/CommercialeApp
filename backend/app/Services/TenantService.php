@@ -59,23 +59,27 @@ class TenantService
             return match ($setting->type) {
                 'boolean' => filter_var($setting->value, FILTER_VALIDATE_BOOLEAN),
                 'integer' => (int) $setting->value,
-                'float'   => (float) $setting->value,
+                'float' => (float) $setting->value,
                 'json',
-                'array'   => json_decode($setting->value, true),
-                default   => $setting->value,
+                'array' => json_decode($setting->value, true),
+                default => $setting->value,
             };
         });
     }
 
     /**
-     * Invalide le cache du tenant (après modification de l'api_key ou désactivation).
+     * Invalide le cache du tenant (après modification des paramètres ou désactivation).
      */
     public function flushCache(string $apiKey): void
     {
         Cache::forget("tenant:api_key:{$apiKey}");
 
         if ($this->currentTenant) {
-            Cache::forget("tenant:{$this->currentId()}:setting:*");
+            $tenantId = $this->currentId();
+            // Cache::forget() ne supporte pas les wildcards — on itère sur chaque clé de setting.
+            $this->currentTenant->settings()->pluck('key')->each(function (string $key) use ($tenantId) {
+                Cache::forget("tenant:{$tenantId}:setting:{$key}");
+            });
         }
     }
 }

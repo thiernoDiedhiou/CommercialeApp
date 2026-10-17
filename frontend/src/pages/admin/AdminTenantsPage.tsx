@@ -203,13 +203,18 @@ export default function AdminTenantsPage() {
             key={v}
             type="button"
             onClick={() => setView(v)}
-            className={`px-4 py-2.5 text-sm font-medium transition border-b-2 -mb-px ${
+            className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition border-b-2 -mb-px ${
               view === v
                 ? 'border-indigo-500 text-white'
                 : 'border-transparent text-gray-500 hover:text-gray-300'
             }`}
           >
-            {v === 'active' ? 'Actifs' : '🗑 Corbeille'}
+            {v === 'active' ? 'Actifs' : (
+              <>
+                <TrashIcon className="h-3.5 w-3.5" />
+                Corbeille
+              </>
+            )}
           </button>
         ))}
       </div>

@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { PlusIcon, PencilSquareIcon, TrashIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { PlusIcon, PencilSquareIcon, TrashIcon, PhotoIcon, XMarkIcon, FolderOpenIcon } from '@heroicons/react/24/outline'
 import { getCategories, createCategory, updateCategory, deleteCategory } from '@/services/api/categories'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
@@ -13,6 +13,7 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Input, { Textarea } from '@/components/ui/Input'
 import CanDo from '@/components/ui/CanDo'
+import EmptyState from '@/components/ui/EmptyState'
 import Badge from '@/components/ui/Badge'
 import type { Category } from '@/types'
 
@@ -272,7 +273,7 @@ export default function CategoriesPage() {
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900">Catégories</h1>
+        <h1 className="text-xl font-bold text-slate-900">Catégories</h1>
         <CanDo permission="categories.create">
           <Button icon={<PlusIcon className="h-4 w-4" />} onClick={() => setModal({ mode: 'create' })}>
             Nouvelle catégorie
@@ -286,7 +287,39 @@ export default function CategoriesPage() {
         keyExtractor={(c) => c.id}
         loading={isLoading}
         skeletonRows={6}
-        emptyMessage="Aucune catégorie trouvée."
+        emptyMessage={<EmptyState icon={<FolderOpenIcon className="h-7 w-7" />} title="Aucune catégorie pour l'instant" description="Organisez vos produits en catégories pour faciliter la navigation." />}
+        mobileCard={(c) => (
+          <div className="flex items-center gap-3 px-4 py-3">
+            {c.image_url ? (
+              <img src={c.image_url} alt={c.name} className="h-10 w-10 rounded-lg object-cover shrink-0 border border-gray-100" />
+            ) : (
+              <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                <span className="text-xs font-semibold text-gray-400">{c.name.charAt(0).toUpperCase()}</span>
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className={`font-medium text-gray-900${c.depth > 0 ? ' pl-2' : ''}`}>{c.name}</span>
+                <Badge variant={(c.products_count ?? 0) > 0 ? 'info' : 'default'}>{c.products_count ?? 0}</Badge>
+              </div>
+              {c.description && <p className="text-xs text-gray-400 line-clamp-1">{c.description}</p>}
+            </div>
+            <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+              <CanDo permission="categories.edit">
+                <button type="button" onClick={() => setModal({ mode: 'edit', category: c })}
+                  className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+                  <PencilSquareIcon className="h-4 w-4" />
+                </button>
+              </CanDo>
+              <CanDo permission="categories.delete">
+                <button type="button" onClick={() => setDeleteTarget(c)}
+                  className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600">
+                  <TrashIcon className="h-4 w-4" />
+                </button>
+              </CanDo>
+            </div>
+          </div>
+        )}
       />
 
       {/* ── Modal création / édition ── */}
@@ -315,7 +348,7 @@ export default function CategoriesPage() {
               {...register('parent_id')}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-primary"
             >
-              <option value="">— Aucune (catégorie racine) —</option>
+              <option value="">Aucune (catégorie racine)</option>
               {availableParents.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}

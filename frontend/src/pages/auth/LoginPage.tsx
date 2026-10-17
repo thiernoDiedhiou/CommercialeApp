@@ -91,7 +91,7 @@ export default function LoginPage() {
               <img
                 src={isDark ? '/logo_mode_sombre_texte_claire.svg' : '/logo_mode_claire.svg'}
                 alt="DiDi Sphere"
-                className="relative h-11 w-auto"
+                className={`relative h-14 w-auto${isDark ? ' [mix-blend-mode:screen]' : ''}`}
               />
             </div>
             <h1 className="text-[1.6rem] font-bold tracking-tight text-gray-900 dark:text-white leading-tight">

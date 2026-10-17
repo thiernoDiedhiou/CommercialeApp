@@ -153,8 +153,9 @@
     "module": "settings",
     "display_name": "Paramètres",
     "permissions": [
-      { "name": "settings.view", "display_name": "Voir les paramètres",     "action": "view" },
-      { "name": "settings.edit", "display_name": "Modifier les paramètres", "action": "edit" }
+      { "name": "settings.view",        "display_name": "Voir les paramètres",        "action": "view"   },
+      { "name": "settings.edit",        "display_name": "Modifier les paramètres",    "action": "edit"   },
+      { "name": "activity_logs.view",   "display_name": "Voir le journal d'activité", "action": "view"   }
     ]
   },
   {

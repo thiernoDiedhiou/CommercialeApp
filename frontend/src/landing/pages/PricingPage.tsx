@@ -248,14 +248,14 @@ export default function PricingPage() {
         <div className="rounded-2xl bg-gray-950 p-10 text-white">
           <h2 className="text-2xl font-extrabold mb-3">Vous hésitez encore ?</h2>
           <p className="text-gray-400 mb-6">
-            Essayez DiDi Sphere gratuitement — si ce n'est pas pour vous, vous ne payez rien.
+            Essayez DiDi Sphere gratuitement. Si ce n'est pas pour vous, vous ne payez rien.
           </p>
           <button
             type="button"
             onClick={() => navigate('/inscription')}
             className="rounded-xl bg-ds-blue px-8 py-3 text-sm font-bold text-white hover:bg-ds-blue-dark transition-all"
           >
-            Démarrer l'essai gratuit →
+            Démarrer l'essai gratuit
           </button>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import apiClient from '@/lib/axios'
+import apiClient, { API } from '@/lib/axios'
 import type { StockMovement, StockAlert, ExpiringSoon, PaginatedResponse } from '@/types'
 
 function clean(params: Record<string, unknown>): Record<string, unknown> {
@@ -17,7 +17,7 @@ export async function getMovements(
   } = {},
 ): Promise<PaginatedResponse<StockMovement>> {
   const { data } = await apiClient.get<PaginatedResponse<StockMovement>>(
-    '/api/v1/stock/movements',
+    `${API}/stock/movements`,
     { params: clean(params as Record<string, unknown>) },
   )
   return data
@@ -31,7 +31,7 @@ export async function getAlerts(
   } = {},
 ): Promise<PaginatedResponse<StockAlert>> {
   const { data } = await apiClient.get<PaginatedResponse<StockAlert>>(
-    '/api/v1/stock/alerts',
+    `${API}/stock/alerts`,
     { params: clean(params as Record<string, unknown>) },
   )
   return data
@@ -41,7 +41,7 @@ export async function getExpiring(
   params: { page?: number; search?: string; days?: number } = {},
 ): Promise<PaginatedResponse<ExpiringSoon>> {
   const { data } = await apiClient.get<PaginatedResponse<ExpiringSoon>>(
-    '/api/v1/stock/expiring',
+    `${API}/stock/expiring`,
     { params: clean(params as Record<string, unknown>) },
   )
   return data
@@ -60,6 +60,6 @@ export interface AdjustStockData {
 export async function adjustStock(
   payload: AdjustStockData,
 ): Promise<{ data: StockMovement; stock_after: number }> {
-  const { data } = await apiClient.post('/api/v1/stock/adjust', payload)
+  const { data } = await apiClient.post(`${API}/stock/adjust`, payload)
   return data
 }

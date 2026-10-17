@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
+import PriceInput from '@/components/ui/PriceInput'
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { formatCurrency } from '@/lib/utils'
 
@@ -14,7 +15,7 @@ const METHODS = [
 
 interface PaymentLine {
   method: string
-  amount: string
+  amount: number | null
   reference: string
 }
 
@@ -28,7 +29,7 @@ interface Props {
 
 export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }: Props) {
   const [lines, setLines] = useState<PaymentLine[]>([
-    { method: 'cash', amount: String(total), reference: '' },
+    { method: 'cash', amount: total, reference: '' },
   ])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -36,32 +37,33 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
   // Reset when modal opens
   useEffect(() => {
     if (isOpen) {
-      setLines([{ method: 'cash', amount: String(total), reference: '' }])
+      setLines([{ method: 'cash', amount: total, reference: '' }])
       setError(null)
     }
   }, [isOpen, total])
 
-  const totalPaid   = lines.reduce((s, l) => s + (parseFloat(l.amount) || 0), 0)
-  const remaining   = Math.max(0, total - totalPaid)
-  const overpaid    = totalPaid - total
-  const hasCustomer = !!customerName
-  // Paiement partiel autorisé uniquement si un client est sélectionné (dette trackée)
-  const canConfirm  = totalPaid > 0 && lines.every((l) => l.method) && (totalPaid >= total || hasCustomer)
+  const totalPaid    = lines.reduce((s, l) => s + (l.amount ?? 0), 0)
+  const remaining    = Math.max(0, total - totalPaid)
+  const overpaid     = totalPaid - total
+  const hasCustomer  = !!customerName
+  const fullCredit   = hasCustomer && totalPaid === 0
+  // Si client présent → paiement 0 autorisé (créance totale). Sans client → paiement complet obligatoire.
+  const canConfirm   = lines.every((l) => l.method) && (totalPaid >= total || hasCustomer)
 
   const updateLine = (i: number, patch: Partial<PaymentLine>) =>
     setLines((ls) => ls.map((l, idx) => (idx === i ? { ...l, ...patch } : l)))
 
   const addLine = () =>
-    setLines((ls) => [...ls, { method: 'cash', amount: String(remaining || 0), reference: '' }])
+    setLines((ls) => [...ls, { method: 'cash', amount: remaining || null, reference: '' }])
 
   const removeLine = (i: number) => setLines((ls) => ls.filter((_, idx) => idx !== i))
 
   const fillExact = (i: number) => {
     const others = lines.reduce(
-      (s, l, idx) => s + (idx !== i ? parseFloat(l.amount) || 0 : 0),
+      (s, l, idx) => s + (idx !== i ? (l.amount ?? 0) : 0),
       0,
     )
-    updateLine(i, { amount: String(Math.max(0, total - others)) })
+    updateLine(i, { amount: Math.max(0, total - others) || null })
   }
 
   const handleConfirm = async () => {
@@ -70,10 +72,10 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
     try {
       await onConfirm(
         lines
-          .filter((l) => parseFloat(l.amount) > 0)
+          .filter((l) => (l.amount ?? 0) > 0)
           .map((l) => ({
             method: l.method,
-            amount: parseFloat(l.amount),
+            amount: l.amount!,
             ...(l.reference ? { reference: l.reference } : {}),
           })),
       )
@@ -101,7 +103,7 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
             disabled={!canConfirm || loading}
             loading={loading}
           >
-            Confirmer la vente
+            {fullCredit ? 'Enregistrer à crédit' : 'Confirmer la vente'}
           </Button>
         </div>
       }
@@ -133,13 +135,12 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
                 </option>
               ))}
             </select>
-            <input
-              type="number"
-              min={0}
+            <PriceInput
               value={line.amount}
-              onChange={(e) => updateLine(i, { amount: e.target.value })}
-              className="w-32 rounded-lg border border-gray-200 py-2 px-2 text-sm text-right"
-              placeholder="0"
+              onChange={(v) => updateLine(i, { amount: v })}
+              compact
+              className="w-32 text-right py-2 px-2"
+              aria-label="Montant"
             />
             <button
               type="button"
@@ -163,26 +164,38 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
         ))}
       </div>
 
+      {/* Vente à crédit totale */}
+      {fullCredit && (
+        <div className="mt-4 rounded-lg bg-blue-50 border border-blue-200 px-4 py-3 text-sm text-blue-700">
+          <p className="font-semibold">Vente à crédit — aucun versement</p>
+          <p className="mt-0.5 text-blue-500">
+            La totalité ({formatCurrency(total)}) sera enregistrée comme créance pour <strong>{customerName}</strong>.
+          </p>
+        </div>
+      )}
+
       {/* Remaining / change */}
-      <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
-        <span className="text-sm text-gray-500">
-          {overpaid > 0 ? 'Monnaie à rendre' : remaining > 0 ? 'Reste à payer' : 'Soldé'}
-        </span>
-        <span
-          className={`text-lg font-bold ${
-            remaining > 0 ? 'text-red-500' : overpaid > 0 ? 'text-amber-600' : 'text-green-600'
-          }`}
-        >
-          {remaining > 0
-            ? formatCurrency(remaining)
-            : overpaid > 0
-              ? formatCurrency(overpaid)
-              : '✓'}
-        </span>
-      </div>
+      {!fullCredit && (
+        <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
+          <span className="text-sm text-gray-500">
+            {overpaid > 0 ? 'Monnaie à rendre' : remaining > 0 ? 'Reste à payer' : 'Soldé'}
+          </span>
+          <span
+            className={`text-lg font-bold ${
+              remaining > 0 ? 'text-red-500' : overpaid > 0 ? 'text-amber-600' : 'text-green-600'
+            }`}
+          >
+            {remaining > 0
+              ? formatCurrency(remaining)
+              : overpaid > 0
+                ? formatCurrency(overpaid)
+                : '✓'}
+          </span>
+        </div>
+      )}
 
       {/* Add payment line */}
-      {remaining > 0 && lines.length < 4 && (
+      {remaining > 0 && !fullCredit && lines.length < 4 && (
         <button
           type="button"
           onClick={addLine}

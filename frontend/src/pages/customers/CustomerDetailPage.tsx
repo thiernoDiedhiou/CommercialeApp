@@ -286,7 +286,7 @@ export default function CustomerDetailPage() {
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-bold text-gray-900">{customer.name}</h1>
+              <h1 className="text-xl font-bold text-slate-900">{customer.name}</h1>
               <Badge variant={customer.is_active ? 'success' : 'default'}>
                 {customer.is_active ? 'Actif' : 'Inactif'}
               </Badge>

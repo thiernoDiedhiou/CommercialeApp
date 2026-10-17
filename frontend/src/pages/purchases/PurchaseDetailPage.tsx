@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeftIcon, CheckIcon, XCircleIcon, TruckIcon } from '@heroicons/react/24/outline'
+import { Check, XCircle, Truck } from 'lucide-react'
+import Breadcrumb from '@/components/ui/Breadcrumb'
 import {
   getPurchaseOrder,
   confirmPurchaseOrder,
@@ -35,7 +36,6 @@ const STATUS_LABEL: Record<PurchaseOrderStatus, string> = {
 
 export default function PurchaseDetailPage() {
   const { uid } = useParams<{ uid: string }>()
-  const navigate = useNavigate()
   const qc = useQueryClient()
 
   const { data: order, isLoading } = useQuery({
@@ -106,49 +106,64 @@ export default function PurchaseDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
+      {/* Fil d'Ariane */}
+      <Breadcrumb items={[{ label: 'Commandes fournisseurs', to: '/purchases' }, { label: order.reference }]} />
+
       {/* En-tête */}
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={() => navigate('/purchases')}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100" aria-label="Retour">
-            <ArrowLeftIcon className="h-5 w-5" />
-          </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-mono text-xl font-bold text-gray-900">{order.reference}</h1>
-              <Badge variant={STATUS_VARIANT[order.status]}>{STATUS_LABEL[order.status]}</Badge>
-            </div>
-            <p className="mt-0.5 text-sm text-gray-500">
-              {order.supplier ? order.supplier.name : 'Sans fournisseur'}
-              {' · '}
-              {formatDate(order.created_at)}
-              {order.expected_at && ` · Livraison prévue le ${formatDate(order.expected_at)}`}
-            </p>
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="font-mono text-xl font-bold text-slate-900">{order.reference}</h1>
+            <Badge variant={STATUS_VARIANT[order.status]}>{STATUS_LABEL[order.status]}</Badge>
           </div>
+          <p className="mt-0.5 text-sm text-gray-500">
+            {order.supplier ? order.supplier.name : 'Sans fournisseur'}
+            {' · '}
+            {formatDate(order.created_at)}
+            {order.expected_at && ` · Livraison prévue le ${formatDate(order.expected_at)}`}
+          </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
           {canConfirm && (
             <CanDo permission="purchases.edit">
-              <Button variant="outline" icon={<CheckIcon className="h-4 w-4" />} onClick={() => setShowConfirm(true)}>
+              <Button variant="outline" icon={<Check className="h-4 w-4" />} onClick={() => setShowConfirm(true)}>
                 Confirmer
               </Button>
             </CanDo>
           )}
           {canReceive && (
             <CanDo permission="purchases.receive">
-              <Button icon={<TruckIcon className="h-4 w-4" />} onClick={() => setShowReceive(true)}>
+              <Button icon={<Truck className="h-4 w-4" />} onClick={() => setShowReceive(true)}>
                 Réceptionner
               </Button>
             </CanDo>
           )}
           {canCancel && (
             <CanDo permission="purchases.edit">
-              <Button variant="danger" icon={<XCircleIcon className="h-4 w-4" />} onClick={() => setShowCancel(true)}>
+              <Button variant="danger" icon={<XCircle className="h-4 w-4" />} onClick={() => setShowCancel(true)}>
                 Annuler
               </Button>
             </CanDo>
           )}
+        </div>
+      </div>
+
+      {/* Récapitulatif */}
+      <div className="grid grid-cols-3 gap-3 sm:gap-4">
+        <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-100 text-center">
+          <p className="text-xs text-gray-500">Articles</p>
+          <p className="mt-0.5 text-lg font-bold text-gray-900">{(order.items ?? []).length}</p>
+        </div>
+        <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-100 text-center">
+          <p className="text-xs text-gray-500">Montant total</p>
+          <p className="mt-0.5 text-base font-bold text-gray-900">{formatCurrency(itemsTotal)}</p>
+        </div>
+        <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-100 text-center">
+          <p className="text-xs text-gray-500">Livraison prévue</p>
+          <p className="mt-0.5 text-base font-bold text-gray-900">
+            {order.expected_at ? formatDate(order.expected_at) : '—'}
+          </p>
         </div>
       </div>
 

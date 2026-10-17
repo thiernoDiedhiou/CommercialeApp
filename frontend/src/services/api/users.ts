@@ -1,4 +1,4 @@
-import apiClient from '@/lib/axios'
+import apiClient, { API } from '@/lib/axios'
 import type { PaginatedResponse, UserWithGroups, CreateUserData, UpdateUserData } from '@/types'
 
 function clean(params: Record<string, unknown>): Record<string, unknown> {
@@ -12,28 +12,28 @@ export async function getUsers(params: {
   is_active?: boolean
   page?: number
 } = {}): Promise<PaginatedResponse<UserWithGroups>> {
-  const { data } = await apiClient.get<PaginatedResponse<UserWithGroups>>('/api/v1/users', {
+  const { data } = await apiClient.get<PaginatedResponse<UserWithGroups>>(`${API}/users`, {
     params: clean(params as Record<string, unknown>),
   })
   return data
 }
 
 export async function createUser(body: CreateUserData): Promise<UserWithGroups> {
-  const { data } = await apiClient.post<UserWithGroups>('/api/v1/users', body)
+  const { data } = await apiClient.post<UserWithGroups>(`${API}/users`, body)
   return data
 }
 
 export async function updateUser(uid: string, body: UpdateUserData): Promise<UserWithGroups> {
-  const { data } = await apiClient.put<UserWithGroups>(`/api/v1/users/${uid}`, body)
+  const { data } = await apiClient.put<UserWithGroups>(`${API}/users/${uid}`, body)
   return data
 }
 
 export async function deleteUser(uid: string): Promise<void> {
-  await apiClient.delete(`/api/v1/users/${uid}`)
+  await apiClient.delete(`${API}/users/${uid}`)
 }
 
 export async function syncUserGroups(userUid: string, groupIds: number[]): Promise<UserWithGroups> {
-  const { data } = await apiClient.post<UserWithGroups>(`/api/v1/users/${userUid}/groups`, {
+  const { data } = await apiClient.post<UserWithGroups>(`${API}/users/${userUid}/groups`, {
     group_ids: groupIds,
   })
   return data

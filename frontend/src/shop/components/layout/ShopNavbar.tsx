@@ -154,7 +154,7 @@ export default function ShopNavbar({ slug }: Props) {
                 <img
                   src={shopConfig.logo_url}
                   alt={shopConfig.name}
-                  className="max-h-10 object-contain"
+                  className="max-h-14 w-auto object-contain"
                 />
               ) : (
                 <span className="text-lg font-semibold text-gray-900 truncate max-w-[140px]">
@@ -290,9 +290,17 @@ export default function ShopNavbar({ slug }: Props) {
         >
           {/* Header panneau */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <span className="font-semibold text-gray-900">
-              {shopConfig?.name ?? 'Menu'}
-            </span>
+            {shopConfig?.logo_url ? (
+              <img
+                src={shopConfig.logo_url}
+                alt={shopConfig.name}
+                className="max-h-10 w-auto object-contain"
+              />
+            ) : (
+              <span className="font-semibold text-gray-900 truncate max-w-[180px]">
+                {shopConfig?.name ?? 'Menu'}
+              </span>
+            )}
             <button
               type="button"
               onClick={close}

@@ -149,14 +149,13 @@ class PublicShopController extends Controller
 
     // ── GET /api/v1/public/{slug}/products/{productId} ────────────────────────
 
-    public function product(Request $request): JsonResponse
+    public function product(string $slug, string $uid): JsonResponse
     {
-        $productId = (int) $request->route('productId');
-
         $product = Product::with(['category', 'activeVariants'])
+            ->where('uid', $uid)
             ->where('is_active', true)
             ->where('is_for_sale', true)
-            ->findOrFail($productId);
+            ->firstOrFail();
 
         return response()->json(['data' => $this->formatProduct($product, detailed: true)]);
     }
@@ -375,6 +374,7 @@ class PublicShopController extends Controller
 
         $data = [
             'id'               => $product->id,
+            'uid'              => $product->uid,
             'name'             => $product->name,
             'slug'             => $product->slug,
             'price'            => (float) $product->price,

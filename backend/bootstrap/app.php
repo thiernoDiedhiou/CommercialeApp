@@ -26,6 +26,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
         // ResolveTenant s'exécute en premier sur toutes les routes API
         $middleware->api(prepend: [
             ResolveTenant::class,
+            \App\Http\Middleware\SetSecurityHeaders::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

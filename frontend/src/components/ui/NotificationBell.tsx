@@ -95,8 +95,8 @@ export default function NotificationBell({ queryKey, fetchFn, markReadFn, markAl
     : 'relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors'
 
   const dropdownBase = dark
-    ? 'absolute right-0 top-full mt-2 w-80 rounded-xl border border-gray-700 bg-gray-900 shadow-2xl z-50'
-    : 'absolute right-0 top-full mt-2 w-80 rounded-xl border border-gray-200 bg-white shadow-2xl z-50'
+    ? 'fixed inset-x-2 top-16 rounded-xl border border-gray-700 bg-gray-900 shadow-2xl z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80'
+    : 'fixed inset-x-2 top-16 rounded-xl border border-gray-200 bg-white shadow-2xl z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80'
 
   const headerText  = dark ? 'text-white'      : 'text-gray-900'
   const subText     = dark ? 'text-gray-400'   : 'text-gray-500'

@@ -8,11 +8,11 @@ import {
   ArrowLeftIcon, BuildingStorefrontIcon, UsersIcon,
   NoSymbolIcon, CheckCircleIcon, TrashIcon, LinkIcon, ClipboardDocumentIcon,
   CreditCardIcon, ClockIcon, ShoppingBagIcon, CurrencyDollarIcon,
-  ChartBarSquareIcon,
+  ChartBarSquareIcon, KeyIcon,
 } from '@heroicons/react/24/outline'
 import {
   getAdminTenant, updateAdminTenant,
-  suspendTenant, activateTenant, deleteAdminTenant,
+  suspendTenant, activateTenant, deleteAdminTenant, rotateApiKey,
   getAdminPlans, getTenantSubscription, assignSubscription, updateSubscription,
   getTenantSubscriptionHistory, getTenantStats,
 } from '@/services/api/admin'
@@ -30,7 +30,7 @@ const schema = z.object({
     .min(2, 'Slug trop court')
     .max(80, 'Slug trop long')
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Minuscules, chiffres et tirets uniquement'),
-  sector:          z.enum(['general', 'food', 'fashion', 'cosmetic']),
+  sector:          z.string().min(2, 'Secteur requis'),
   currency:        z.string().min(3).max(3),
   custom_domain:   z.string().max(253).optional().or(z.literal('')),
   phone:           z.string().optional(),
@@ -84,7 +84,8 @@ export default function AdminTenantDetailPage() {
   const { uid } = useParams<{ uid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen]     = useState(false)
+  const [newApiKey, setNewApiKey]         = useState<string | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-tenant', uid],
@@ -140,6 +141,12 @@ export default function AdminTenantDetailPage() {
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
+  const rotateKeyMutation = useMutation({
+    mutationFn: () => rotateApiKey(uid!),
+    onSuccess: (res) => setNewApiKey(res.api_key),
+    onError: (err) => toast.error(getApiErrorMessage(err)),
+  })
+
   const deleteMutation = useMutation({
     mutationFn: () => deleteAdminTenant(uid!),
     onSuccess: () => {
@@ -166,27 +173,29 @@ export default function AdminTenantDetailPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl">
+    <div className="flex flex-col min-h-full">
+    <div className="flex-1 p-4 sm:p-6 space-y-5 sm:space-y-6 max-w-5xl">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        {/* Identité tenant */}
+        <div className="flex items-center gap-3 min-w-0">
           <button type="button" onClick={() => navigate('/admin/tenants')}
             title="Retour à la liste"
-            className="rounded-lg p-2 text-gray-400 hover:bg-gray-800 hover:text-white transition">
+            className="shrink-0 rounded-lg p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white transition">
             <ArrowLeftIcon className="h-5 w-5" />
           </button>
           {tenant.logo_url ? (
             <img src={tenant.logo_url} alt={tenant.name}
-              className="h-14 w-14 rounded-xl object-contain bg-gray-800 p-1 border border-gray-700" />
+              className="h-12 w-12 shrink-0 rounded-xl object-contain bg-gray-800 p-1 border border-gray-700" />
           ) : (
-            <div className="h-14 w-14 rounded-xl bg-indigo-900/50 flex items-center justify-center text-2xl font-bold text-indigo-300 border border-gray-700">
+            <div className="h-12 w-12 shrink-0 rounded-xl bg-indigo-900/50 flex items-center justify-center text-xl font-bold text-indigo-300 border border-gray-700">
               {tenant.name.charAt(0).toUpperCase()}
             </div>
           )}
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-xl font-bold text-white">{tenant.name}</h1>
-              <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg sm:text-xl font-bold text-white truncate">{tenant.name}</h1>
+              <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${
                 tenant.is_active
                   ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-800'
                   : 'bg-red-900/50 text-red-400 border border-red-800'
@@ -194,49 +203,60 @@ export default function AdminTenantDetailPage() {
                 {tenant.is_active ? 'Actif' : 'Suspendu'}
               </span>
             </div>
-            <p className="text-sm text-gray-400 mt-0.5 font-mono">{tenant.slug}</p>
-            <p className="text-xs text-gray-500 mt-0.5">
-              {SECTOR_LABELS[tenant.sector] ?? tenant.sector} · {tenant.currency} · Créé le {tenant.created_at}
+            <p className="text-sm text-gray-400 mt-0.5 font-mono truncate">{tenant.slug}</p>
+            <p className="text-xs text-gray-500 mt-0.5 truncate">
+              {SECTOR_LABELS[tenant.sector] ?? tenant.sector} · {tenant.currency} · Créé le {formatDate(tenant.created_at)}
             </p>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 pl-9 sm:pl-0">
           {tenant.is_active ? (
             <button type="button" onClick={() => suspendMutation.mutate()}
               disabled={suspendMutation.isPending}
-              className="flex items-center gap-2 rounded-lg border border-orange-700 px-3 py-2 text-sm text-orange-400 hover:bg-orange-900/20 disabled:opacity-50 transition">
-              <NoSymbolIcon className="h-4 w-4" />
-              Suspendre
+              className="flex items-center gap-1.5 rounded-lg border border-orange-700 px-2.5 sm:px-3 py-2 text-sm text-orange-400 hover:bg-orange-900/20 disabled:opacity-50 transition">
+              <NoSymbolIcon className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Suspendre</span>
             </button>
           ) : (
             <button type="button" onClick={() => activateMutation.mutate()}
               disabled={activateMutation.isPending}
-              className="flex items-center gap-2 rounded-lg border border-emerald-700 px-3 py-2 text-sm text-emerald-400 hover:bg-emerald-900/20 disabled:opacity-50 transition">
-              <CheckCircleIcon className="h-4 w-4" />
-              Activer
+              className="flex items-center gap-1.5 rounded-lg border border-emerald-700 px-2.5 sm:px-3 py-2 text-sm text-emerald-400 hover:bg-emerald-900/20 disabled:opacity-50 transition">
+              <CheckCircleIcon className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Activer</span>
             </button>
           )}
           <button type="button"
+            onClick={() => {
+              if (confirm('Régénérer la clé API ? L\'ancienne clé cessera de fonctionner immédiatement.'))
+                rotateKeyMutation.mutate()
+            }}
+            disabled={rotateKeyMutation.isPending}
+            title="Régénérer la clé API"
+            className="flex items-center gap-1.5 rounded-lg border border-yellow-700 px-2.5 sm:px-3 py-2 text-sm text-yellow-400 hover:bg-yellow-900/20 disabled:opacity-50 transition">
+            <KeyIcon className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Clé API</span>
+          </button>
+          <button type="button"
             onClick={() => setDeleteOpen(true)}
             disabled={deleteMutation.isPending}
-            className="flex items-center gap-2 rounded-lg border border-red-800 px-3 py-2 text-sm text-red-400 hover:bg-red-900/20 disabled:opacity-50 transition">
-            <TrashIcon className="h-4 w-4" />
-            Supprimer
+            className="flex items-center gap-1.5 rounded-lg border border-red-800 px-2.5 sm:px-3 py-2 text-sm text-red-400 hover:bg-red-900/20 disabled:opacity-50 transition">
+            <TrashIcon className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Supprimer</span>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-5">
         {/* Formulaire d'édition */}
-        <div className="lg:col-span-3 rounded-xl bg-gray-900 border border-gray-800 p-5 space-y-4">
+        <div className="lg:col-span-3 rounded-xl bg-gray-900 border border-gray-800 p-4 sm:p-5 space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <BuildingStorefrontIcon className="h-4 w-4 text-gray-400" />
             <h2 className="text-sm font-semibold text-white">Informations</h2>
           </div>
 
-          <form onSubmit={handleSubmit((v) => updateMutation.mutate(v))} className="space-y-4">
+          <form id="tenant-detail-form" onSubmit={handleSubmit((v) => updateMutation.mutate(v))} className="space-y-4">
             <Field label="Nom *" error={errors.name?.message}>
               <input {...register('name')} className={inputCls} />
             </Field>
@@ -259,6 +279,9 @@ export default function AdminTenantDetailPage() {
             <div className="grid grid-cols-2 gap-3">
               <Field label="Secteur">
                 <select {...register('sector')} className={inputCls}>
+                  {tenant.sector && !['general', 'food', 'fashion', 'cosmetic'].includes(tenant.sector) && (
+                    <option value={tenant.sector}>{tenant.sector}</option>
+                  )}
                   <option value="general">Commerce général</option>
                   <option value="food">Alimentation</option>
                   <option value="fashion">Mode</option>
@@ -340,17 +363,11 @@ export default function AdminTenantDetailPage() {
               </div>
             </div>
 
-            <div className="flex justify-end pt-2">
-              <button type="submit" disabled={updateMutation.isPending || !isDirty}
-                className="px-4 py-2 rounded-lg bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50 transition">
-                {updateMutation.isPending ? 'Enregistrement…' : 'Enregistrer les modifications'}
-              </button>
-            </div>
           </form>
         </div>
 
         {/* Utilisateurs */}
-        <div className="lg:col-span-2 rounded-xl bg-gray-900 border border-gray-800 p-5">
+        <div className="lg:col-span-2 rounded-xl bg-gray-900 border border-gray-800 p-4 sm:p-5">
           <div className="flex items-center gap-2 mb-4">
             <UsersIcon className="h-4 w-4 text-gray-400" />
             <h2 className="text-sm font-semibold text-white">
@@ -395,6 +412,34 @@ export default function AdminTenantDetailPage() {
       {/* Lien de connexion tenant */}
       <LoginLinkCard apiKey={tenant.api_key} slug={tenant.slug} customDomain={tenant.custom_domain} />
 
+      {/* Modal nouvelle clé API — affichée une seule fois après rotation */}
+      {newApiKey && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+          <div className="w-full max-w-md rounded-xl bg-gray-900 border border-yellow-700 p-6 space-y-4 shadow-xl">
+            <div className="flex items-center gap-2 text-yellow-400">
+              <KeyIcon className="h-5 w-5 shrink-0" />
+              <h3 className="text-base font-semibold">Nouvelle clé API générée</h3>
+            </div>
+            <p className="text-xs text-gray-400">
+              Copiez cette clé maintenant. Elle ne sera plus affichée une fois ce modal fermé.
+            </p>
+            <div className="flex items-center gap-2 rounded-lg bg-gray-800 border border-gray-700 px-3 py-2">
+              <code className="flex-1 text-xs text-yellow-300 break-all font-mono">{newApiKey}</code>
+              <button type="button"
+                onClick={() => { navigator.clipboard.writeText(newApiKey); toast.success('Clé copiée !') }}
+                className="shrink-0 rounded p-1 text-gray-400 hover:text-white hover:bg-gray-700 transition">
+                <ClipboardDocumentIcon className="h-4 w-4" />
+              </button>
+            </div>
+            <button type="button"
+              onClick={() => setNewApiKey(null)}
+              className="w-full rounded-lg bg-yellow-700 hover:bg-yellow-600 text-white text-sm font-medium py-2 transition">
+              J'ai copié la clé — fermer
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Modal confirmation suppression */}
       <ConfirmModal
         isOpen={deleteOpen}
@@ -412,6 +457,44 @@ export default function AdminTenantDetailPage() {
           </span>
         </p>
       </ConfirmModal>
+    </div>
+
+    {/* ── Barre sticky Enregistrer ─────────────────────────────────────── */}
+    <div className="sticky bottom-0 z-10 border-t border-gray-800 bg-gray-900/95 backdrop-blur-sm px-4 sm:px-6 py-3">
+      <div className="flex max-w-5xl items-center gap-4">
+        <button
+          type="submit"
+          form="tenant-detail-form"
+          disabled={updateMutation.isPending || !isDirty}
+          className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          {updateMutation.isPending ? 'Enregistrement…' : 'Enregistrer les modifications'}
+        </button>
+
+        {isDirty && (
+          <>
+            <button
+              type="button"
+              onClick={() => tenant && reset({
+                name: tenant.name, slug: tenant.slug, sector: tenant.sector as FormValues['sector'],
+                currency: tenant.currency, custom_domain: tenant.custom_domain ?? '',
+                phone: tenant.phone ?? '', email: tenant.email ?? '',
+                address: tenant.address ?? '', city: tenant.city ?? '',
+                primary_color: tenant.primary_color ?? '#4F46E5',
+                secondary_color: tenant.secondary_color ?? '#7C3AED',
+              })}
+              className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
+            >
+              Annuler
+            </button>
+            <span className="ml-auto text-xs text-amber-400 flex items-center gap-1.5">
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-400" />
+              Modifications non enregistrées
+            </span>
+          </>
+        )}
+      </div>
+    </div>
     </div>
   )
 }
@@ -516,12 +599,23 @@ function SubscriptionCard({ tenantId }: { tenantId: string }) {
             <div>Début : <span className="text-gray-200">{formatDate(subscription.starts_at)}</span></div>
             {subscription.ends_at && (
               <div>
-                Fin : <span className={`font-medium ${(subscription.days_remaining ?? 99) <= 7 ? 'text-red-400' : 'text-gray-200'}`}>
-                  {formatDate(subscription.ends_at)}
-                  {subscription.days_remaining !== null && subscription.days_remaining >= 0 && (
-                    <span className="ml-1 text-gray-500">({subscription.days_remaining}j restants)</span>
-                  )}
-                </span>
+                {(() => {
+                  const isActive = ['trial', 'active'].includes(subscription.status)
+                  const endingSoon = isActive && (subscription.days_remaining ?? 99) <= 7
+                  return (
+                    <span>
+                      Fin :{' '}
+                      <span className={`font-medium ${endingSoon ? 'text-red-400' : 'text-gray-200'}`}>
+                        {formatDate(subscription.ends_at!)}
+                      </span>
+                      {isActive && subscription.days_remaining !== null && subscription.days_remaining >= 0 && (
+                        <span className={`ml-1 text-xs ${endingSoon ? 'text-red-500' : 'text-gray-500'}`}>
+                          ({subscription.days_remaining}j restants)
+                        </span>
+                      )}
+                    </span>
+                  )
+                })()}
               </div>
             )}
           </div>
@@ -529,11 +623,14 @@ function SubscriptionCard({ tenantId }: { tenantId: string }) {
             <p className="text-xs text-gray-500 italic">{subscription.notes}</p>
           )}
           {['trial', 'active'].includes(subscription.status) && (
-            <button type="button" onClick={() => cancelMutation.mutate()}
-              disabled={cancelMutation.isPending}
-              className="text-xs text-red-500 hover:text-red-400 transition disabled:opacity-50">
-              {cancelMutation.isPending ? 'Annulation…' : 'Résilier l\'abonnement'}
-            </button>
+            <div className="pt-1">
+              <button type="button" onClick={() => cancelMutation.mutate()}
+                disabled={cancelMutation.isPending}
+                className="flex items-center gap-1.5 rounded-lg border border-red-800 px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-900/20 transition disabled:opacity-50">
+                <NoSymbolIcon className="h-3.5 w-3.5 shrink-0" />
+                {cancelMutation.isPending ? 'Annulation…' : 'Résilier l\'abonnement'}
+              </button>
+            </div>
           )}
         </div>
       ) : (
@@ -553,7 +650,7 @@ function SubscriptionCard({ tenantId }: { tenantId: string }) {
               <select value={planId} onChange={(e) => setPlanId(Number(e.target.value))}
                 aria-label="Sélectionner un plan"
                 className={inputCls}>
-                <option value="">— Choisir un plan —</option>
+                <option value="">Choisir un plan</option>
                 {plans.filter((p) => p.is_active).map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name} — {Math.round(parseFloat(p.price_monthly)).toLocaleString('fr-FR')} XOF/mois

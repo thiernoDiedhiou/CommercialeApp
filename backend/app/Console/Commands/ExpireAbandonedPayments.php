@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Models\PaymentTransaction;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -14,31 +13,30 @@ use Illuminate\Support\Facades\DB;
  */
 class ExpireAbandonedPayments extends Command
 {
-    protected $signature   = 'billing:expire-abandoned';
+    protected $signature = 'billing:expire-abandoned';
+
     protected $description = 'Marque les transactions pending expirées comme annulées';
 
     public function handle(): int
     {
-        $count = PaymentTransaction::where('status', 'pending')
-            ->where('expires_at', '<', now())
-            ->count();
-
-        if ($count === 0) {
-            $this->info('Aucune transaction abandonnée.');
-            return 0;
-        }
-
-        // Mise à jour directe via DB pour contourner le boot() immuable
-        // (on passe de pending → cancelled, ce n'est pas une mutation d'un état final)
-        DB::table('payment_transactions')
+        // UPDATE atomique — WHERE status='pending' garantit que les transactions
+        // completed/failed ne sont jamais touchées, même sans le guard Eloquent.
+        // rowsAffected() reflète l'état réel après l'opération, sans TOCTOU.
+        $affected = DB::table('payment_transactions')
             ->where('status', 'pending')
             ->where('expires_at', '<', now())
             ->update([
-                'status'     => 'cancelled',
+                'status' => 'cancelled',
                 'updated_at' => now(),
             ]);
 
-        $this->info("✓ {$count} transaction(s) abandonnée(s) marquées cancelled.");
+        if ($affected === 0) {
+            $this->info('Aucune transaction abandonnée.');
+
+            return 0;
+        }
+
+        $this->info("✓ {$affected} transaction(s) abandonnée(s) marquées cancelled.");
 
         return 0;
     }

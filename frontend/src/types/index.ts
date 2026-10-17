@@ -236,6 +236,7 @@ export interface ProductVariant {
 
 export interface ProductLot {
   id: number
+  uid: string
   product_id: number
   product_variant_id: number | null
   lot_number: string
@@ -245,6 +246,11 @@ export interface ProductLot {
   purchase_price: string | null
   is_active: boolean
   notes: string | null
+}
+
+export interface ProductLotRegularizeResult {
+  data: ProductLot
+  orphaned_absorbed: number
 }
 
 export interface CreateProductData {
@@ -342,6 +348,7 @@ export interface PurchaseOrder {
   notes: string | null
   created_at: string
   items_count?: number
+  total_amount?: string | number | null
   supplier?: Pick<Supplier, 'id' | 'name'> | null
   user?: Pick<User, 'id' | 'name'>
   items?: PurchaseOrderItem[]
@@ -399,10 +406,34 @@ export interface DebtRow {
   email: string | null
   unpaid_sales_count: number
   outstanding_balance: number
+  oldest_debt_date: string | null
 }
 
 export interface DebtPageResponse extends PaginatedResponse<DebtRow> {
   global_outstanding: number
+}
+
+/** Vente impayée dans le détail d'un débiteur */
+export interface DebtSale {
+  uid: string
+  reference: string
+  sale_date: string
+  total: number
+  paid_amount: number
+  remaining: number
+}
+
+/** Réponse GET /debts/{uid} */
+export interface DebtDetail {
+  customer: {
+    uid: string
+    name: string
+    phone: string | null
+    email: string | null
+  }
+  sales: DebtSale[]
+  total_outstanding: number
+  unpaid_count: number
 }
 
 export interface CreateCustomerData {
@@ -498,6 +529,13 @@ export interface PosSession {
   notes: string | null
 }
 
+export interface PosSessionWithStats extends PosSession {
+  user: { id: number; name: string }
+  sales_count: number
+  total_confirmed: number
+  cash_difference: number | null
+}
+
 export interface PosDraft {
   id: number
   name: string | null
@@ -545,6 +583,28 @@ export interface CreateGroupData {
 // ── Invoices ──────────────────────────────────────────────────────────────
 
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled'
+export type InvoiceType   = 'invoice' | 'quote'
+
+export type PaymentMethod = 'cash' | 'bank_transfer' | 'mobile_money' | 'check' | 'other'
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  cash:          'Espèces',
+  bank_transfer: 'Virement bancaire',
+  mobile_money:  'Mobile Money',
+  check:         'Chèque',
+  other:         'Autre',
+}
+
+export interface InvoicePayment {
+  id: number
+  invoice_id: number
+  amount: string
+  method: PaymentMethod
+  paid_at: string
+  reference: string | null
+  note: string | null
+  user?: Pick<User, 'id' | 'name'>
+}
 
 export interface InvoiceItem {
   id: number
@@ -561,6 +621,7 @@ export interface InvoiceItem {
 export interface Invoice {
   id: number
   uid: string
+  type: InvoiceType
   reference: string
   status: InvoiceStatus
   issue_date: string
@@ -575,6 +636,11 @@ export interface Invoice {
   paid_amount: string
   notes: string | null
   footer: string | null
+  pdf_template: string | null
+  reminder_count: number
+  last_reminder_at: string | null
+  converted_to_id: number | null
+  credit_note_for_id: number | null
   sent_at: string | null
   paid_at: string | null
   cancelled_at: string | null
@@ -583,6 +649,9 @@ export interface Invoice {
   customer?: Pick<Customer, 'id' | 'name' | 'phone' | 'email' | 'address'> | null
   user?: Pick<User, 'id' | 'name'>
   items?: InvoiceItem[]
+  payments?: InvoicePayment[]
+  credit_note_for?: { uid: string; reference: string } | null
+  converted_to?:    { uid: string; reference: string } | null
 }
 
 export interface CreateInvoiceItemData {
@@ -594,6 +663,7 @@ export interface CreateInvoiceItemData {
 }
 
 export interface CreateInvoiceData {
+  type?: InvoiceType
   customer_id?: number | null
   issue_date: string
   due_date?: string | null
@@ -602,6 +672,7 @@ export interface CreateInvoiceData {
   tax_rate?: number
   notes?: string | null
   footer?: string | null
+  pdf_template?: string | null
   items: CreateInvoiceItemData[]
 }
 
@@ -714,6 +785,37 @@ export interface CreateSaleReturnData {
   reason?: string | null
   refund_method: RefundMethod
   items: { sale_item_id: number; quantity: number }[]
+}
+
+// ── Inventory ─────────────────────────────────────────────────────────────
+
+export type InventoryStatus = 'draft' | 'confirmed'
+
+export interface InventorySession {
+  id: number
+  uid: string
+  reference: string
+  status: InventoryStatus
+  notes: string | null
+  created_at: string
+  confirmed_at: string | null
+  items_count?: number
+  creator?: Pick<User, 'id' | 'name'>
+  confirmer?: Pick<User, 'id' | 'name'>
+}
+
+export interface InventoryLine {
+  product_id: number
+  product_uid: string
+  variant_id: number | null
+  name: string
+  sku: string
+  variant_summary: string | null
+  category_name: string | null
+  unit: string | null
+  expected_qty: number
+  counted_qty: number | null
+  item_id: number | null
 }
 
 // ── API error ─────────────────────────────────────────────────────────────

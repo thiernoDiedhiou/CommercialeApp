@@ -17,9 +17,12 @@ class ResolveTenant
     {
         // Super admin, boutique publique et auth (login/logout/me/reset)
         // résolvent eux-mêmes leur contexte tenant — pas besoin de X-Tenant-ID.
-        if (str_starts_with($request->getPathInfo(), '/api/v1/admin')  ||
-            str_starts_with($request->getPathInfo(), '/api/v1/public') ||
-            str_starts_with($request->getPathInfo(), '/api/v1/auth')) {
+        // Slash final obligatoire pour éviter qu'un préfixe partiel (/api/v1/authorize)
+        // hérite accidentellement du bypass.
+        $path = $request->getPathInfo();
+        if (str_starts_with($path, '/api/v1/admin/')  ||
+            str_starts_with($path, '/api/v1/public/') ||
+            str_starts_with($path, '/api/v1/auth/')) {
             return $next($request);
         }
 

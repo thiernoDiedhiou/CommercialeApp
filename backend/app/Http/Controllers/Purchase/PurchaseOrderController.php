@@ -11,6 +11,7 @@ use App\Models\PurchaseOrderItem;
 use App\Services\PurchaseService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use LogicException;
 
 class PurchaseOrderController extends Controller
@@ -21,6 +22,11 @@ class PurchaseOrderController extends Controller
     {
         $orders = PurchaseOrder::with(['supplier:id,name', 'user:id,name'])
             ->withCount('items')
+            ->addSelect([
+                'total_amount' => DB::table('purchase_order_items')
+                    ->selectRaw('COALESCE(SUM(quantity_ordered * unit_cost), 0)')
+                    ->whereColumn('purchase_order_id', 'purchase_orders.id'),
+            ])
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->when($request->supplier_id, fn ($q) => $q->where('supplier_id', $request->supplier_id))
             ->when($request->search, fn ($q) => $q->where('reference', 'like', "%{$request->search}%"))

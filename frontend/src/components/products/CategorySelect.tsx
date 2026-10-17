@@ -128,7 +128,7 @@ export default function CategorySelect({
           error={error}
           disabled={isLoading}
         >
-          <option value="">— Aucune catégorie —</option>
+          <option value="">Aucune catégorie</option>
           {options.map((opt) => (
             <option key={opt.id} value={opt.id}>
               {opt.depth > 0 ? '    '.repeat(opt.depth) + opt.label : opt.label}

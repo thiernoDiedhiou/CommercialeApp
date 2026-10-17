@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Category;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Category\StoreCategoryRequest;
 use App\Http\Requests\Category\UpdateCategoryRequest;
+use App\Http\Resources\CategoryResource;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
@@ -22,7 +23,7 @@ class CategoryController extends Controller
         ->orderBy('name')
         ->get();
 
-        return response()->json(['data' => $categories]);
+        return response()->json(['data' => CategoryResource::collection($categories)]);
     }
 
     public function store(StoreCategoryRequest $request): JsonResponse
@@ -37,7 +38,7 @@ class CategoryController extends Controller
         unset($data['remove_image']);
         $category = Category::create($data);
 
-        return response()->json(['data' => $category], 201);
+        return response()->json(['data' => new CategoryResource($category)], 201);
     }
 
     public function update(UpdateCategoryRequest $request, Category $category): JsonResponse
@@ -65,7 +66,7 @@ class CategoryController extends Controller
         unset($data['remove_image']);
         $category->update($data);
 
-        return response()->json(['data' => $category->fresh()]);
+        return response()->json(['data' => new CategoryResource($category->fresh())]);
     }
 
     public function destroy(Category $category): JsonResponse

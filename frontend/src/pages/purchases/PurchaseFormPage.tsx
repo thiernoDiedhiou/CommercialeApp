@@ -230,7 +230,7 @@ export default function PurchaseFormPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
-      <h1 className="text-xl font-bold text-gray-900">
+      <h1 className="text-xl font-bold text-slate-900">
         {isEdit ? 'Modifier le bon de commande' : 'Nouveau bon de commande'}
       </h1>
 

@@ -142,7 +142,7 @@ export default function AdminSubscriptionsPage() {
               <th className="px-4 py-3 text-left">Statut</th>
               <th className="px-4 py-3 text-left">Début</th>
               <th className="px-4 py-3 text-left">Fin</th>
-              <th className="px-4 py-3 text-left">Restant</th>
+              <th className="px-4 py-3 text-left">Échéance</th>
               <th className="sr-only px-4 py-3">Actions</th>
             </tr>
           </thead>
@@ -188,9 +188,17 @@ export default function AdminSubscriptionsPage() {
                   <td className="px-4 py-3 text-gray-400 text-xs">{formatDate(sub.ends_at)}</td>
                   <td className="px-4 py-3 text-xs">
                     {['active', 'trial'].includes(sub.status) && sub.days_remaining !== null && sub.days_remaining !== undefined ? (
-                      <span className={sub.days_remaining <= 7 ? 'text-red-400 font-medium' : 'text-gray-400'}>
-                        {sub.days_remaining === 0 ? "Aujourd'hui" : `${sub.days_remaining}j`}
-                      </span>
+                      sub.days_remaining < 0 ? (
+                        <span className="text-red-400 font-medium" title={`Dépassé de ${Math.abs(sub.days_remaining)} jour(s)`}>
+                          Échu {Math.abs(sub.days_remaining)}j
+                        </span>
+                      ) : sub.days_remaining === 0 ? (
+                        <span className="text-red-400 font-semibold">Aujourd'hui</span>
+                      ) : (
+                        <span className={sub.days_remaining <= 7 ? 'text-amber-400 font-medium' : 'text-gray-400'}>
+                          {sub.days_remaining}j
+                        </span>
+                      )
                     ) : (
                       <span className="text-gray-600">—</span>
                     )}

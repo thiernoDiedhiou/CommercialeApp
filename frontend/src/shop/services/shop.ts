@@ -24,6 +24,7 @@ export interface ShopVariant {
 
 export interface ShopProduct {
   id               : number
+  uid              : string
   name             : string
   slug             : string
   price            : number
@@ -90,6 +91,7 @@ export interface CreateOrderResponse {
 // Admin
 export interface ShopOrderAdmin {
   id               : number
+  uid              : string
   reference        : string
   customer_name    : string
   customer_phone   : string
@@ -144,7 +146,7 @@ export async function getShopProducts(
   return data
 }
 
-export async function getShopProduct(slug: string, productId: number): Promise<{ data: ShopProduct }> {
+export async function getShopProduct(slug: string, productId: string): Promise<{ data: ShopProduct }> {
   const { data } = await shopApi.get<{ data: ShopProduct }>(
     `/api/v1/public/${slug}/products/${productId}`,
   )
@@ -203,18 +205,18 @@ export async function getShopOrders(params?: {
   return data
 }
 
-export async function getShopOrder(id: number): Promise<{
+export async function getShopOrder(uid: string): Promise<{
   data         : ShopOrderAdmin
   whatsapp_url : string | null
 }> {
-  const { data } = await apiClient.get(`/api/v1/shop/orders/${id}`)
+  const { data } = await apiClient.get(`/api/v1/shop/orders/${uid}`)
   return data
 }
 
 export async function updateShopOrderStatus(
-  id     : number,
+  uid    : string,
   status : string,
 ): Promise<{ data: ShopOrderAdmin }> {
-  const { data } = await apiClient.put(`/api/v1/shop/orders/${id}/status`, { status })
+  const { data } = await apiClient.put(`/api/v1/shop/orders/${uid}/status`, { status })
   return data
 }

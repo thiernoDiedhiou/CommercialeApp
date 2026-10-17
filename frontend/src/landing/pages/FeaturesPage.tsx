@@ -15,7 +15,7 @@ const FEATURE_GROUPS = [
     features: [
       { icon: ShoppingCartIcon, title: 'Caisse POS', desc: 'Encaissez en boutique ou sur mobile. Mode hors-ligne avec synchronisation automatique. Reçu imprimable.' },
       { icon: ArrowPathIcon,    title: 'Retours & Avoirs', desc: 'Gérez les retours clients, générez des avoirs et réajustez le stock automatiquement.' },
-      { icon: TagIcon,          title: 'Variantes produit', desc: 'Taille, couleur, pointure — créez des combinaisons sans limite pour chaque produit.' },
+      { icon: TagIcon,          title: 'Variantes produit', desc: 'Taille, couleur, pointure : créez des combinaisons sans limite pour chaque produit.' },
     ],
   },
   {
@@ -125,7 +125,7 @@ export default function FeaturesPage() {
           Tout ce qu'il faut pour gérer votre commerce
         </h1>
         <p className="text-lg text-gray-500 dark:text-gray-400 leading-relaxed">
-          DiDi Sphere centralise toutes les opérations de votre boutique — des ventes à la comptabilité — dans un seul outil pensé pour l'Afrique de l'Ouest.
+          DiDi Sphere centralise toutes les opérations de votre boutique, des ventes à la comptabilité, dans un seul outil pensé pour l'Afrique de l'Ouest.
         </p>
       </div>
 
@@ -204,7 +204,7 @@ export default function FeaturesPage() {
             onClick={() => navigate('/inscription')}
             className="rounded-xl bg-ds-blue px-8 py-4 text-base font-bold text-white hover:bg-ds-blue-dark transition-all shadow-lg shadow-ds-blue/30"
           >
-            Démarrer gratuitement →
+            Démarrer gratuitement
           </button>
         </div>
       </section>

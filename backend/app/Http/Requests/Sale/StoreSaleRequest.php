@@ -30,10 +30,24 @@ class StoreSaleRequest extends FormRequest
             'items.*.unit_weight'      => ['nullable', 'numeric', 'min:0'],
             'items.*.discount'         => ['nullable', 'numeric', 'min:0'],
 
-            'payments'                 => ['required', 'array', 'min:1'],
-            'payments.*.method'        => ['required', 'in:cash,card,transfer,mobile_money,credit'],
+            // Paiements optionnels : tableau vide = vente à crédit (customer_id requis dans ce cas)
+            'payments'                 => ['nullable', 'array'],
+            'payments.*.method'        => ['required', 'in:cash,card,transfer,mobile_money,credit,wave,orange_money,free_money,bank,cheque,other'],
             'payments.*.amount'        => ['required', 'numeric', 'min:0.01'],
             'payments.*.reference'     => ['nullable', 'string', 'max:100'],
         ];
+    }
+
+    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    {
+        $validator->after(function (\Illuminate\Validation\Validator $v) {
+            $payments = $this->input('payments', []);
+            if (empty($payments) && ! $this->input('customer_id')) {
+                $v->errors()->add(
+                    'payments',
+                    'Un paiement est requis pour une vente sans client identifié.',
+                );
+            }
+        });
     }
 }

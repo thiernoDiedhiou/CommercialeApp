@@ -17,6 +17,7 @@ import {
   markAllTenantNotificationsRead,
   deleteTenantNotification,
 } from '@/services/api/notifications'
+import { useHomePath } from '@/hooks/useHomePath'
 
 interface TopbarProps {
   onMenuToggle: () => void
@@ -24,7 +25,9 @@ interface TopbarProps {
 
 export default function Topbar({ onMenuToggle }: TopbarProps) {
   const user   = useAuthStore((s) => s.user)
+  const tenant = useAuthStore((s) => s.tenant)
   const logout = useAuthStore((s) => s.logout)
+  const homePath = useHomePath()
 
   const logoutMutation = useMutation({
     mutationFn: () => apiClient.post('/api/v1/auth/logout'),
@@ -40,17 +43,34 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-4 shadow-sm lg:px-6">
-      {/* Hamburger mobile */}
+      {/* Hamburger — tablette md-lg (la BottomNav couvre les phones) */}
       <button
         type="button"
         onClick={onMenuToggle}
-        className="lg:hidden -ml-1 rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+        className="hidden md:flex lg:hidden -ml-1 rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
         aria-label="Ouvrir le menu"
       >
         <Bars3Icon className="h-6 w-6" />
       </button>
 
-      <div className="flex-1" />
+      {/* Logo / nom du tenant — visible uniquement sur mobile (sidebar cachée) */}
+      <Link
+        to={homePath}
+        className="flex lg:hidden items-center gap-2 min-w-0 flex-1"
+      >
+        {tenant?.logo_url ? (
+          <img
+            src={tenant.logo_url}
+            alt={tenant.name}
+            className="h-7 w-7 shrink-0 rounded-md object-contain"
+          />
+        ) : null}
+        <span className="truncate text-sm font-bold text-brand-primary">
+          {tenant?.name ?? 'Gestion Commerciale'}
+        </span>
+      </Link>
+
+      <div className="hidden lg:flex flex-1" />
 
       {/* Notifications */}
       <NotificationBell
@@ -64,11 +84,18 @@ export default function Topbar({ onMenuToggle }: TopbarProps) {
       {/* Menu utilisateur — Headless UI Menu */}
       <Menu as="div" className="relative">
         <MenuButton className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
-          {/* Avatar initiales */}
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-primary text-white text-xs font-semibold shrink-0">
-            {initials}
-          </span>
-          <span className="hidden sm:block max-w-[140px] truncate">{user?.name}</span>
+          {/* Avatar : photo ou initiales */}
+          {user?.avatar ? (
+            <img
+              src={user.avatar}
+              alt={user.name}
+              className="h-8 w-8 rounded-full object-cover shrink-0 ring-1 ring-gray-200"
+            />
+          ) : (
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-primary text-white text-xs font-semibold shrink-0">
+              {initials}
+            </span>
+          )}
           <ChevronDownIcon className="h-4 w-4 text-gray-400 shrink-0" />
         </MenuButton>
 

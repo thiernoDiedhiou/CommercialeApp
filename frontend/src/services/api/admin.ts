@@ -1,4 +1,5 @@
 import adminAxios from '@/lib/adminAxios'
+import { API } from '@/lib/axios'
 
 // ── Auth ──────────────────────────────────────────────────────────────────
 
@@ -6,6 +7,7 @@ export interface SuperAdminInfo {
   id: number
   name: string
   email: string
+  avatar: string | null
 }
 
 export interface AdminLoginResponse {
@@ -14,12 +16,35 @@ export interface AdminLoginResponse {
 }
 
 export async function adminLogin(email: string, password: string): Promise<AdminLoginResponse> {
-  const { data } = await adminAxios.post<AdminLoginResponse>('/api/v1/admin/auth/login', { email, password })
+  const { data } = await adminAxios.post<AdminLoginResponse>(`${API}/admin/auth/login`, { email, password })
   return data
 }
 
 export async function adminLogout(): Promise<void> {
-  await adminAxios.post('/api/v1/admin/auth/logout')
+  await adminAxios.post(`${API}/admin/auth/logout`)
+}
+
+export async function updateAdminProfile(body: {
+  name: string
+  current_password?: string
+  password?: string
+  password_confirmation?: string
+}): Promise<SuperAdminInfo> {
+  const { data } = await adminAxios.put<{ data: SuperAdminInfo }>(`${API}/admin/auth/profile`, body)
+  return data.data
+}
+
+export async function uploadAdminAvatar(file: File): Promise<{ avatar: string }> {
+  const form = new FormData()
+  form.append('avatar', file)
+  const { data } = await adminAxios.post<{ avatar: string }>(`${API}/admin/auth/avatar`, form, {
+    headers: { 'Content-Type': undefined },
+  })
+  return data
+}
+
+export async function deleteAdminAvatar(): Promise<void> {
+  await adminAxios.delete(`${API}/admin/auth/avatar`)
 }
 
 // ── Stats ─────────────────────────────────────────────────────────────────
@@ -55,7 +80,7 @@ export interface AdminStats {
 }
 
 export async function getAdminStats(): Promise<AdminStats> {
-  const { data } = await adminAxios.get<{ data: AdminStats }>('/api/v1/admin/stats')
+  const { data } = await adminAxios.get<{ data: AdminStats }>(`${API}/admin/stats`)
   return data.data
 }
 
@@ -141,52 +166,59 @@ export interface TenantUser {
 }
 
 export async function getAdminTenants(params: { search?: string; is_active?: boolean; plan_id?: number; page?: number; trashed?: boolean } = {}): Promise<PaginatedTenants> {
-  const { data } = await adminAxios.get<PaginatedTenants>('/api/v1/admin/tenants', { params })
+  const { data } = await adminAxios.get<PaginatedTenants>(`${API}/admin/tenants`, { params })
   return data
 }
 
 export async function restoreTenant(uid: string): Promise<AdminTenant> {
-  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${uid}/restore`)
+  const { data } = await adminAxios.post<{ data: AdminTenant }>(`${API}/admin/tenants/${uid}/restore`)
   return data.data
 }
 
 export async function scheduleTenantDeletion(uid: string): Promise<AdminTenant> {
-  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${uid}/schedule-deletion`)
+  const { data } = await adminAxios.post<{ data: AdminTenant }>(`${API}/admin/tenants/${uid}/schedule-deletion`)
   return data.data
 }
 
 export async function cancelTenantDeletion(uid: string): Promise<AdminTenant> {
-  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${uid}/cancel-deletion`)
+  const { data } = await adminAxios.post<{ data: AdminTenant }>(`${API}/admin/tenants/${uid}/cancel-deletion`)
   return data.data
 }
 
 export async function getAdminTenant(uid: string): Promise<{ data: AdminTenant; users: TenantUser[] }> {
-  const { data } = await adminAxios.get<{ data: AdminTenant; users: TenantUser[] }>(`/api/v1/admin/tenants/${uid}`)
+  const { data } = await adminAxios.get<{ data: AdminTenant; users: TenantUser[] }>(`${API}/admin/tenants/${uid}`)
   return data
 }
 
 export async function createAdminTenant(body: CreateTenantData): Promise<AdminTenant> {
-  const { data } = await adminAxios.post<{ data: AdminTenant }>('/api/v1/admin/tenants', body)
+  const { data } = await adminAxios.post<{ data: AdminTenant }>(`${API}/admin/tenants`, body)
   return data.data
 }
 
 export async function updateAdminTenant(uid: string, body: UpdateTenantData): Promise<AdminTenant> {
-  const { data } = await adminAxios.put<{ data: AdminTenant }>(`/api/v1/admin/tenants/${uid}`, body)
+  const { data } = await adminAxios.put<{ data: AdminTenant }>(`${API}/admin/tenants/${uid}`, body)
   return data.data
 }
 
 export async function suspendTenant(uid: string): Promise<AdminTenant> {
-  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${uid}/suspend`)
+  const { data } = await adminAxios.post<{ data: AdminTenant }>(`${API}/admin/tenants/${uid}/suspend`)
   return data.data
 }
 
 export async function activateTenant(uid: string): Promise<AdminTenant> {
-  const { data } = await adminAxios.post<{ data: AdminTenant }>(`/api/v1/admin/tenants/${uid}/activate`)
+  const { data } = await adminAxios.post<{ data: AdminTenant }>(`${API}/admin/tenants/${uid}/activate`)
   return data.data
 }
 
 export async function deleteAdminTenant(uid: string): Promise<void> {
-  await adminAxios.delete(`/api/v1/admin/tenants/${uid}`)
+  await adminAxios.delete(`${API}/admin/tenants/${uid}`)
+}
+
+export async function rotateApiKey(uid: string): Promise<{ api_key: string; message: string }> {
+  const { data } = await adminAxios.post<{ api_key: string; message: string }>(
+    `${API}/admin/tenants/${uid}/rotate-api-key`,
+  )
+  return data
 }
 
 // ── Plans ─────────────────────────────────────────────────────────────────
@@ -253,27 +285,27 @@ export interface PlanFormData {
 }
 
 export async function getAdminPlans(): Promise<Plan[]> {
-  const { data } = await adminAxios.get<{ data: Plan[] }>('/api/v1/admin/plans')
+  const { data } = await adminAxios.get<{ data: Plan[] }>(`${API}/admin/plans`)
   return data.data
 }
 
 export async function getAdminPlan(uid: string): Promise<Plan> {
-  const { data } = await adminAxios.get<{ data: Plan }>(`/api/v1/admin/plans/${uid}`)
+  const { data } = await adminAxios.get<{ data: Plan }>(`${API}/admin/plans/${uid}`)
   return data.data
 }
 
 export async function createAdminPlan(body: PlanFormData): Promise<Plan> {
-  const { data } = await adminAxios.post<{ data: Plan }>('/api/v1/admin/plans', body)
+  const { data } = await adminAxios.post<{ data: Plan }>(`${API}/admin/plans`, body)
   return data.data
 }
 
 export async function updateAdminPlan(uid: string, body: Partial<PlanFormData>): Promise<Plan> {
-  const { data } = await adminAxios.put<{ data: Plan }>(`/api/v1/admin/plans/${uid}`, body)
+  const { data } = await adminAxios.put<{ data: Plan }>(`${API}/admin/plans/${uid}`, body)
   return data.data
 }
 
 export async function deleteAdminPlan(uid: string): Promise<void> {
-  await adminAxios.delete(`/api/v1/admin/plans/${uid}`)
+  await adminAxios.delete(`${API}/admin/plans/${uid}`)
 }
 
 // ── Abonnements ───────────────────────────────────────────────────────────
@@ -298,7 +330,7 @@ export interface SubscriptionSummary {
 }
 
 export async function getTenantSubscription(tenantUid: string): Promise<Subscription | null> {
-  const { data } = await adminAxios.get<{ data: Subscription | null }>(`/api/v1/admin/tenants/${tenantUid}/subscription`)
+  const { data } = await adminAxios.get<{ data: Subscription | null }>(`${API}/admin/tenants/${tenantUid}/subscription`)
   return data.data
 }
 
@@ -309,7 +341,7 @@ export async function assignSubscription(tenantUid: string, body: {
   ends_at?: string
   notes?: string
 }): Promise<Subscription> {
-  const { data } = await adminAxios.post<{ data: Subscription }>(`/api/v1/admin/tenants/${tenantUid}/subscription`, body)
+  const { data } = await adminAxios.post<{ data: Subscription }>(`${API}/admin/tenants/${tenantUid}/subscription`, body)
   return data.data
 }
 
@@ -318,7 +350,7 @@ export async function updateSubscription(tenantUid: string, body: {
   status?: string
   notes?: string
 }): Promise<Subscription> {
-  const { data } = await adminAxios.put<{ data: Subscription }>(`/api/v1/admin/tenants/${tenantUid}/subscription`, body)
+  const { data } = await adminAxios.put<{ data: Subscription }>(`${API}/admin/tenants/${tenantUid}/subscription`, body)
   return data.data
 }
 
@@ -327,12 +359,12 @@ export async function getSubscriptions(params?: { status?: string; plan_id?: num
   meta: { current_page: number; last_page: number; total: number; per_page: number }
   summary: SubscriptionSummary
 }> {
-  const { data } = await adminAxios.get('/api/v1/admin/subscriptions', { params })
+  const { data } = await adminAxios.get(`${API}/admin/subscriptions`, { params })
   return data
 }
 
 export async function getTenantSubscriptionHistory(tenantUid: string): Promise<Subscription[]> {
-  const { data } = await adminAxios.get<{ data: Subscription[] }>(`/api/v1/admin/tenants/${tenantUid}/subscriptions`)
+  const { data } = await adminAxios.get<{ data: Subscription[] }>(`${API}/admin/tenants/${tenantUid}/subscriptions`)
   return data.data
 }
 
@@ -346,7 +378,7 @@ export interface TenantStats {
 }
 
 export async function getTenantStats(tenantUid: string): Promise<TenantStats> {
-  const { data } = await adminAxios.get<{ data: TenantStats }>(`/api/v1/admin/tenants/${tenantUid}/stats`)
+  const { data } = await adminAxios.get<{ data: TenantStats }>(`${API}/admin/tenants/${tenantUid}/stats`)
   return data.data
 }
 
@@ -370,12 +402,12 @@ export interface SiteSettingsData {
 export type SiteSettingsForm = Omit<SiteSettingsData, 'id'>
 
 export async function getAdminSiteSettings(): Promise<SiteSettingsData> {
-  const { data } = await adminAxios.get<{ data: SiteSettingsData }>('/api/v1/admin/site-settings')
+  const { data } = await adminAxios.get<{ data: SiteSettingsData }>(`${API}/admin/site-settings`)
   return data.data
 }
 
 export async function updateAdminSiteSettings(body: SiteSettingsForm): Promise<SiteSettingsData> {
-  const { data } = await adminAxios.put<{ data: SiteSettingsData }>('/api/v1/admin/site-settings', body)
+  const { data } = await adminAxios.put<{ data: SiteSettingsData }>(`${API}/admin/site-settings`, body)
   return data.data
 }
 

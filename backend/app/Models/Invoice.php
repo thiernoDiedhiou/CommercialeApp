@@ -20,10 +20,14 @@ class Invoice extends Model
     const STATUS_OVERDUE   = 'overdue';
     const STATUS_CANCELLED = 'cancelled';
 
+    const TYPE_INVOICE = 'invoice';
+    const TYPE_QUOTE   = 'quote';
+
     protected $fillable = [
         'tenant_id',
         'customer_id',
         'user_id',
+        'type',
         'reference',
         'status',
         'issue_date',
@@ -38,24 +42,30 @@ class Invoice extends Model
         'paid_amount',
         'notes',
         'footer',
+        'pdf_template',
+        'converted_to_id',
+        'credit_note_for_id',
+        'reminder_count',
+        'last_reminder_at',
         'sent_at',
         'paid_at',
         'cancelled_at',
     ];
 
     protected $casts = [
-        'issue_date'      => 'date',
-        'due_date'        => 'date',
-        'subtotal'        => 'decimal:2',
-        'discount_value'  => 'decimal:2',
-        'discount_amount' => 'decimal:2',
-        'tax_rate'        => 'decimal:2',
-        'tax_amount'      => 'decimal:2',
-        'total'           => 'decimal:2',
-        'paid_amount'     => 'decimal:2',
-        'sent_at'         => 'datetime',
-        'paid_at'         => 'datetime',
-        'cancelled_at'    => 'datetime',
+        'issue_date'       => 'date',
+        'due_date'         => 'date',
+        'subtotal'         => 'decimal:2',
+        'discount_value'   => 'decimal:2',
+        'discount_amount'  => 'decimal:2',
+        'tax_rate'         => 'decimal:2',
+        'tax_amount'       => 'decimal:2',
+        'total'            => 'decimal:2',
+        'paid_amount'      => 'decimal:2',
+        'sent_at'          => 'datetime',
+        'paid_at'          => 'datetime',
+        'cancelled_at'     => 'datetime',
+        'last_reminder_at' => 'datetime',
     ];
 
     // ─── Relations ────────────────────────────────────────────────────────────
@@ -73,6 +83,21 @@ class Invoice extends Model
     public function items(): HasMany
     {
         return $this->hasMany(InvoiceItem::class)->orderBy('id');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(InvoicePayment::class)->orderBy('paid_at');
+    }
+
+    public function convertedTo(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'converted_to_id');
+    }
+
+    public function creditNoteFor(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'credit_note_for_id');
     }
 
     // ─── Scopes ───────────────────────────────────────────────────────────────
@@ -123,6 +148,21 @@ class Invoice extends Model
 
     // ─── Helpers statut ───────────────────────────────────────────────────────
 
+    public function isInvoice(): bool
+    {
+        return $this->type === self::TYPE_INVOICE;
+    }
+
+    public function isQuote(): bool
+    {
+        return $this->type === self::TYPE_QUOTE;
+    }
+
+    public function isCreditNote(): bool
+    {
+        return $this->credit_note_for_id !== null;
+    }
+
     public function isDraft(): bool
     {
         return $this->status === self::STATUS_DRAFT;
@@ -135,11 +175,24 @@ class Invoice extends Model
 
     public function isPayable(): bool
     {
-        return in_array($this->status, [self::STATUS_SENT, self::STATUS_OVERDUE]);
+        return $this->isInvoice()
+            && in_array($this->status, [self::STATUS_SENT, self::STATUS_OVERDUE]);
     }
 
     public function isCancellable(): bool
     {
         return in_array($this->status, [self::STATUS_DRAFT, self::STATUS_SENT]);
+    }
+
+    public function isConvertible(): bool
+    {
+        return $this->isQuote()
+            && in_array($this->status, [self::STATUS_DRAFT, self::STATUS_SENT])
+            && $this->converted_to_id === null;
+    }
+
+    public function isCreditNoteEligible(): bool
+    {
+        return $this->isInvoice() && $this->status === self::STATUS_PAID;
     }
 }

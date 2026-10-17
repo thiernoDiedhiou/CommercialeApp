@@ -1,4 +1,5 @@
 import publicAxios from '@/lib/publicAxios'
+import { API } from '@/lib/axios'
 
 // ── Plans publics ─────────────────────────────────────────────────────────────
 
@@ -29,7 +30,7 @@ export interface PublicPlan {
 }
 
 export async function getPublicPlans(): Promise<PublicPlan[]> {
-  const { data } = await publicAxios.get<{ data: PublicPlan[] }>('/api/v1/public/plans')
+  const { data } = await publicAxios.get<{ data: PublicPlan[] }>(`${API}/public/plans`)
   return data.data
 }
 
@@ -52,7 +53,7 @@ export interface RegisterResponse {
 }
 
 export async function registerTenant(body: RegisterData): Promise<RegisterResponse> {
-  const { data } = await publicAxios.post<RegisterResponse>('/api/v1/public/register', body)
+  const { data } = await publicAxios.post<RegisterResponse>(`${API}/public/register`, body)
   return data
 }
 
@@ -71,7 +72,7 @@ export interface PublicSiteSettings {
 }
 
 export async function getPublicSiteSettings(): Promise<PublicSiteSettings> {
-  const { data } = await publicAxios.get<{ data: PublicSiteSettings }>('/api/v1/public/site-settings')
+  const { data } = await publicAxios.get<{ data: PublicSiteSettings }>(`${API}/public/site-settings`)
   return data.data
 }
 
@@ -79,7 +80,7 @@ export async function getPublicSiteSettings(): Promise<PublicSiteSettings> {
 
 export async function resolveTenantSlug(slug: string): Promise<string> {
   const { data } = await publicAxios.get<{ slug: string; api_key: string }>(
-    `/api/v1/public/tenant/${encodeURIComponent(slug)}`
+    `${API}/public/tenant/${encodeURIComponent(slug)}`
   )
   return data.api_key
 }

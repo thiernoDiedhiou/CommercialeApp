@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   PlusIcon, EyeIcon, DocumentArrowDownIcon,
-  PaperAirplaneIcon, XCircleIcon, TrashIcon,
+  PaperAirplaneIcon, XCircleIcon, TrashIcon, ChevronDownIcon,
+  DocumentTextIcon,
 } from '@heroicons/react/24/outline'
 import {
   getInvoices, sendInvoice, cancelInvoice,
@@ -20,8 +21,9 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Select } from '@/components/ui/Input'
 import CanDo from '@/components/ui/CanDo'
+import EmptyState from '@/components/ui/EmptyState'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import type { Invoice, InvoiceStatus } from '@/types'
+import type { Invoice, InvoiceStatus, InvoiceType } from '@/types'
 
 const STATUS_VARIANT: Record<InvoiceStatus, 'default' | 'info' | 'success' | 'danger' | 'warning'> = {
   draft:     'default',
@@ -37,18 +39,24 @@ const STATUS_LABEL: Record<InvoiceStatus, string> = {
   overdue:   'En retard',
   cancelled: 'Annulée',
 }
+const SENT_LABEL: Record<InvoiceType, Record<InvoiceStatus, string>> = {
+  invoice: STATUS_LABEL,
+  quote: { draft: 'Brouillon', sent: 'Envoyé', paid: 'Accepté', overdue: 'Expiré', cancelled: 'Annulé' },
+}
 
 export default function InvoicesPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
 
   // ── Filtres ───────────────────────────────────────────────────────────────
-  const [search, setSearch]   = useState('')
-  const [debSearch, setDeb]   = useState('')
-  const [status, setStatus]   = useState('')
-  const [from, setFrom]       = useState('')
-  const [to, setTo]           = useState('')
-  const [page, setPage]       = useState(1)
+  const [docType, setDocType]   = useState<InvoiceType | ''>('')
+  const [search, setSearch]     = useState('')
+  const [debSearch, setDeb]     = useState('')
+  const [status, setStatus]     = useState('')
+  const [from, setFrom]         = useState('')
+  const [to, setTo]             = useState('')
+  const [page, setPage]         = useState(1)
+  const [newOpen, setNewOpen]   = useState(false)
 
   const debRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
@@ -59,12 +67,13 @@ export default function InvoicesPage() {
 
   // ── Données ───────────────────────────────────────────────────────────────
   const { data, isLoading } = useQuery({
-    queryKey: ['invoices', { search: debSearch, status, from, to, page }],
+    queryKey: ['invoices', { search: debSearch, docType, status, from, to, page }],
     queryFn: () => getInvoices({
       search: debSearch || undefined,
-      status: status || undefined,
-      from: from || undefined,
-      to: to || undefined,
+      type:   docType   || undefined,
+      status: status    || undefined,
+      from:   from      || undefined,
+      to:     to        || undefined,
       page,
     }),
     placeholderData: (prev) => prev,
@@ -146,7 +155,19 @@ export default function InvoicesPage() {
       key: 'status',
       header: 'Statut',
       align: 'center',
-      render: (i) => <Badge variant={STATUS_VARIANT[i.status]}>{STATUS_LABEL[i.status]}</Badge>,
+      render: (i) => (
+        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+          {i.type === 'quote' && (
+            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">Devis</span>
+          )}
+          {i.credit_note_for_id && (
+            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700">Avoir</span>
+          )}
+          <Badge variant={STATUS_VARIANT[i.status]}>
+            {(SENT_LABEL[i.type ?? 'invoice'] ?? STATUS_LABEL)[i.status]}
+          </Badge>
+        </div>
+      ),
     },
     {
       key: 'actions',
@@ -163,7 +184,14 @@ export default function InvoicesPage() {
             <button type="button" onClick={(e) => { e.stopPropagation(); handlePdf(i.uid, i.reference) }}
               disabled={pdfLoading === i.uid}
               className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40" title="PDF">
-              <DocumentArrowDownIcon className="h-4 w-4" />
+              {pdfLoading === i.uid ? (
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <DocumentArrowDownIcon className="h-4 w-4" />
+              )}
             </button>
           </CanDo>
 
@@ -200,27 +228,70 @@ export default function InvoicesPage() {
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
+      {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900">Factures</h1>
+        <h1 className="text-xl font-bold text-slate-900">Factures & Devis</h1>
         <CanDo permission="invoices.create">
-          <Button icon={<PlusIcon className="h-4 w-4" />} onClick={() => navigate('/invoices/new')}>
-            Nouvelle facture
-          </Button>
+          <div className="relative">
+            <div className="flex rounded-lg overflow-hidden ring-1 ring-brand-primary shadow-sm">
+              <button type="button"
+                onClick={() => navigate('/invoices/new')}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-brand-primary hover:opacity-90 transition">
+                <PlusIcon className="h-4 w-4" />
+                Nouvelle facture
+              </button>
+              <button type="button"
+                onClick={() => setNewOpen((v) => !v)}
+                className="px-2 py-2 text-white bg-brand-primary hover:opacity-90 transition border-l border-white/20">
+                <ChevronDownIcon className="h-4 w-4" />
+              </button>
+            </div>
+            {newOpen && (
+              <div className="absolute right-0 top-full mt-1 w-48 rounded-xl bg-white shadow-lg ring-1 ring-gray-200 z-10 py-1"
+                onBlur={() => setNewOpen(false)}>
+                <button type="button"
+                  onClick={() => { navigate('/invoices/new'); setNewOpen(false) }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                  📄 Nouvelle facture
+                </button>
+                <button type="button"
+                  onClick={() => { navigate('/invoices/new?type=quote'); setNewOpen(false) }}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                  📋 Nouveau devis
+                </button>
+              </div>
+            )}
+          </div>
         </CanDo>
+      </div>
+
+      {/* Onglets Tous / Factures / Devis */}
+      <div className="flex border-b border-gray-200">
+        {([['', 'Tous'], ['invoice', 'Factures'], ['quote', 'Devis']] as [InvoiceType | '', string][]).map(([val, label]) => (
+          <button key={val} type="button"
+            onClick={() => { setDocType(val); setPage(1) }}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition ${
+              docType === val
+                ? 'border-brand-primary text-brand-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}>
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="flex flex-wrap gap-3">
         <div className="min-w-48 flex-1">
-          <Input placeholder="Référence…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder="Référence, client…" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="w-40">
           <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
             <option value="">Tous statuts</option>
             <option value="draft">Brouillon</option>
-            <option value="sent">Envoyée</option>
-            <option value="paid">Payée</option>
-            <option value="overdue">En retard</option>
-            <option value="cancelled">Annulée</option>
+            <option value="sent">{docType === 'quote' ? 'Envoyé' : 'Envoyée'}</option>
+            <option value="paid">{docType === 'quote' ? 'Accepté' : 'Payée'}</option>
+            <option value="overdue">{docType === 'quote' ? 'Expiré' : 'En retard'}</option>
+            <option value="cancelled">Annulé(e)</option>
           </Select>
         </div>
         <div className="w-36">
@@ -237,8 +308,58 @@ export default function InvoicesPage() {
         keyExtractor={(i) => i.id}
         loading={isLoading}
         skeletonRows={8}
-        emptyMessage="Aucune facture trouvée."
+        emptyMessage={<EmptyState icon={<DocumentTextIcon className="h-7 w-7" />} title="Aucune facture" description="Créez votre première facture pour un client ou un devis." />}
         onRowClick={(i) => navigate(`/invoices/${i.uid}`)}
+        mobileCard={(inv) => (
+          <div className="px-4 py-4">
+            <div className="flex items-start justify-between gap-2 mb-1.5">
+              <span className="font-mono text-sm font-semibold text-gray-900">{inv.reference}</span>
+              <div className="flex items-center gap-1 flex-wrap justify-end">
+                {inv.type === 'quote' && (
+                  <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">Devis</span>
+                )}
+                {inv.credit_note_for_id && (
+                  <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700">Avoir</span>
+                )}
+                <Badge variant={STATUS_VARIANT[inv.status]}>
+                  {(SENT_LABEL[inv.type ?? 'invoice'] ?? STATUS_LABEL)[inv.status]}
+                </Badge>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 truncate mb-1">{inv.customer?.name ?? '—'}</p>
+            <div className="flex items-center justify-between mb-3 text-xs text-gray-400">
+              <span>{formatDate(inv.issue_date)}</span>
+              <span className="text-sm font-bold text-gray-900">{formatCurrency(inv.total)}</span>
+            </div>
+            <div className="flex items-center gap-1 pt-2 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+              <button type="button" onClick={() => navigate(`/invoices/${inv.uid}`)}
+                className="flex-1 flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs text-gray-500 hover:bg-gray-100">
+                <EyeIcon className="h-3.5 w-3.5" /> Voir
+              </button>
+              <CanDo permission="invoices.pdf">
+                <button type="button" onClick={() => handlePdf(inv.uid, inv.reference)} disabled={pdfLoading === inv.uid}
+                  className="flex-1 flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs text-gray-500 hover:bg-gray-100 disabled:opacity-40">
+                  {pdfLoading === inv.uid ? (
+                    <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : (
+                    <DocumentArrowDownIcon className="h-3.5 w-3.5" />
+                  )} PDF
+                </button>
+              </CanDo>
+              {inv.status === 'draft' && (
+                <CanDo permission="invoices.edit">
+                  <button type="button" onClick={() => setSendTarget(inv)}
+                    className="flex-1 flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs text-blue-500 hover:bg-blue-50">
+                    <PaperAirplaneIcon className="h-3.5 w-3.5" /> Envoyer
+                  </button>
+                </CanDo>
+              )}
+            </div>
+          </div>
+        )}
       />
 
       {data && data.last_page > 1 && (

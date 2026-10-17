@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use App\Services\PermissionService;
 use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
@@ -31,14 +32,14 @@ class AuthController extends Controller
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
                 'message' => 'Email ou mot de passe incorrect.',
-                'code'    => 'INVALID_CREDENTIALS',
+                'code' => 'INVALID_CREDENTIALS',
             ], 401);
         }
 
         if (! $user->tenant?->is_active) {
             return response()->json([
                 'message' => 'Votre espace est suspendu. Contactez le support.',
-                'code'    => 'TENANT_SUSPENDED',
+                'code' => 'TENANT_SUSPENDED',
             ], 403);
         }
 
@@ -52,14 +53,18 @@ class AuthController extends Controller
 
         $token = $user->createToken($request->input('device_name', 'api'))->plainTextToken;
 
+        ActivityLogService::log('login', 'auth', 'Connexion de ' . $user->name);
+
         return response()->json([
             'token' => $token,
-            'data'  => $this->buildMePayload($user),
+            'data' => $this->buildMePayload($user),
         ]);
     }
 
     public function logout(Request $request): JsonResponse
     {
+        ActivityLogService::log('logout', 'auth', 'Déconnexion');
+
         $request->user()?->currentAccessToken()?->delete();
 
         return response()->json(['message' => 'Déconnexion réussie.']);
@@ -70,9 +75,9 @@ class AuthController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'name'                  => ['required', 'string', 'min:2', 'max:255'],
-            'current_password'      => ['nullable', 'string'],
-            'password'              => ['nullable', 'string', 'min:8', 'confirmed'],
+            'name' => ['required', 'string', 'min:2', 'max:255'],
+            'current_password' => ['nullable', 'string'],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
 
         $passwordChange = ! empty($validated['password']);
@@ -81,7 +86,7 @@ class AuthController extends Controller
             if (empty($validated['current_password']) || ! Hash::check($validated['current_password'], $user->password)) {
                 return response()->json([
                     'message' => 'Le mot de passe actuel est incorrect.',
-                    'errors'  => ['current_password' => ['Le mot de passe actuel est incorrect.']],
+                    'errors' => ['current_password' => ['Le mot de passe actuel est incorrect.']],
                 ], 422);
             }
         }
@@ -101,11 +106,43 @@ class AuthController extends Controller
 
         return response()->json([
             'data' => [
-                'id'    => $user->id,
-                'name'  => $user->name,
+                'id' => $user->id,
+                'name' => $user->name,
                 'email' => $user->email,
             ],
         ]);
+    }
+
+    public function uploadAvatar(Request $request): JsonResponse
+    {
+        $request->validate([
+            'avatar' => ['required', 'file', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+        ]);
+
+        $user = $request->user();
+
+        if ($user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+        }
+
+        $path = $request->file('avatar')->store("avatars/{$user->tenant_id}", 'public');
+        $user->update(['avatar_path' => $path]);
+
+        return response()->json([
+            'avatar' => Storage::disk('public')->url($path),
+        ]);
+    }
+
+    public function deleteAvatar(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+            $user->update(['avatar_path' => null]);
+        }
+
+        return response()->json(['message' => 'Avatar supprimé.']);
     }
 
     public function me(Request $request): JsonResponse
@@ -115,7 +152,7 @@ class AuthController extends Controller
         if (! $user->tenant?->is_active) {
             return response()->json([
                 'message' => 'Votre espace est suspendu ou introuvable.',
-                'code'    => 'TENANT_SUSPENDED',
+                'code' => 'TENANT_SUSPENDED',
             ], 403);
         }
 
@@ -128,51 +165,53 @@ class AuthController extends Controller
 
     private function buildMePayload(User $user): array
     {
-        $tenant       = $this->tenantService->current();
+        $tenant = $this->tenantService->current();
         $subscription = $tenant->activeSubscription()->with('plan')->first();
 
         return [
             'user' => [
-                'id'         => $user->id,
-                'name'       => $user->name,
-                'email'      => $user->email,
-                'avatar'     => $user->avatar_path,
-                'is_active'  => $user->is_active,
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'avatar' => $user->avatar_path
+                    ? Storage::disk('public')->url($user->avatar_path)
+                    : null,
+                'is_active' => $user->is_active,
             ],
             'permissions' => $this->permissionService->getPermissions($user),
             'tenant' => [
-                'api_key'         => $tenant->getRawOriginal('api_key'),
-                'name'            => $tenant->name,
-                'slug'            => $tenant->slug,
-                'currency'        => $tenant->currency,
-                'sector'          => $tenant->sector,
-                'rccm'            => $tenant->rccm,
-                'ninea'           => $tenant->ninea,
-                'primary_color'   => $tenant->primary_color,
+                'api_key' => $tenant->getRawOriginal('api_key'),
+                'name' => $tenant->name,
+                'slug' => $tenant->slug,
+                'currency' => $tenant->currency,
+                'sector' => $tenant->sector,
+                'rccm' => $tenant->rccm,
+                'ninea' => $tenant->ninea,
+                'primary_color' => $tenant->primary_color,
                 'secondary_color' => $tenant->secondary_color,
-                'logo_url'        => $tenant->logo_path
+                'logo_url' => $tenant->logo_path
                     ? Storage::disk('public')->url($tenant->logo_path)
                     : null,
             ],
             // Abonnement actif — utilisé par le frontend pour la bannière d'alerte
             'subscription' => $subscription ? [
-                'status'        => $subscription->status,
-                'plan_name'     => $subscription->plan?->name,
-                'plan_slug'     => $subscription->plan?->slug,
+                'status' => $subscription->status,
+                'plan_name' => $subscription->plan?->name,
+                'plan_slug' => $subscription->plan?->slug,
                 'billing_cycle' => $subscription->billing_cycle,
-                'ends_at'       => $subscription->ends_at?->toISOString(),
-                'days_remaining'=> $subscription->daysUntilExpiry(),
+                'ends_at' => $subscription->ends_at?->toISOString(),
+                'days_remaining' => $subscription->daysUntilExpiry(),
             ] : null,
             // Features du plan — utilisé par la sidebar pour masquer les modules non inclus
             'plan_features' => $subscription?->plan ? [
-                'pos'           => (bool) $subscription->plan->feature_pos,
-                'invoicing'     => (bool) $subscription->plan->feature_invoicing,
-                'purchases'     => (bool) $subscription->plan->feature_purchases,
-                'reports'       => (bool) $subscription->plan->feature_reports,
-                'shop'          => (bool) $subscription->plan->feature_shop,
-                'import_csv'    => (bool) $subscription->plan->feature_import_csv,
-                'stock_alerts'  => (bool) $subscription->plan->feature_stock_alerts,
-                'multi_user'    => (bool) $subscription->plan->feature_multi_user,
+                'pos' => (bool) $subscription->plan->feature_pos,
+                'invoicing' => (bool) $subscription->plan->feature_invoicing,
+                'purchases' => (bool) $subscription->plan->feature_purchases,
+                'reports' => (bool) $subscription->plan->feature_reports,
+                'shop' => (bool) $subscription->plan->feature_shop,
+                'import_csv' => (bool) $subscription->plan->feature_import_csv,
+                'stock_alerts' => (bool) $subscription->plan->feature_stock_alerts,
+                'multi_user' => (bool) $subscription->plan->feature_multi_user,
                 'custom_domain' => (bool) $subscription->plan->feature_custom_domain,
             ] : null,
         ];

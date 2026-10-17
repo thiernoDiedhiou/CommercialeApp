@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\InvoiceReminderMail;
 use App\Mail\InvoiceSentMail;
 use App\Mail\StockAlertMail;
 use App\Mail\SubscriptionExpiringMail;
@@ -100,12 +101,12 @@ class MailService
      * Retourne false si le client n'a pas d'email.
      * Appelé depuis SendInvoiceEmailJob.
      */
-    public function sendInvoice(Invoice $invoice): bool
+    public function sendInvoice(Invoice $invoice, ?string $toEmail = null, ?string $subject = null, ?string $customMessage = null): bool
     {
         $invoice->loadMissing(['customer', 'items.product']);
 
-        $email    = $invoice->customer?->email;
-        $tenant   = Tenant::findOrFail($invoice->tenant_id);
+        $email  = $toEmail ?? $invoice->customer?->email;
+        $tenant = Tenant::findOrFail($invoice->tenant_id);
 
         if (empty($email)) {
             return false;
@@ -114,11 +115,38 @@ class MailService
         try {
             $this->resolveMail($tenant)
                 ->to($email, $invoice->customer?->name) // @phpstan-ignore-line
-                ->send(new InvoiceSentMail($invoice, $tenant));
+                ->send(new InvoiceSentMail($invoice, $tenant, $subject, $customMessage));
 
             return true;
         } catch (\Throwable $e) {
             Log::channel('daily')->error('Invoice mail failed', [
+                'invoice_id' => $invoice->id,
+                'error'      => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
+    public function sendInvoiceReminder(Invoice $invoice): bool
+    {
+        $invoice->loadMissing(['customer', 'items.product']);
+
+        $email  = $invoice->customer?->email;
+        $tenant = Tenant::findOrFail($invoice->tenant_id);
+
+        if (empty($email)) {
+            return false;
+        }
+
+        try {
+            $this->resolveMail($tenant)
+                ->to($email, $invoice->customer?->name) // @phpstan-ignore-line
+                ->send(new InvoiceReminderMail($invoice, $tenant));
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::channel('daily')->error('Invoice reminder mail failed', [
                 'invoice_id' => $invoice->id,
                 'error'      => $e->getMessage(),
             ]);

@@ -29,7 +29,10 @@ export default function StockAlertList({ alerts, expiring, loading }: StockAlert
       <div>
         <h3 className="mb-2 text-sm font-semibold text-gray-700">Alertes stock</h3>
         {alerts.length === 0 ? (
-          <p className="text-sm text-gray-400">Aucune alerte</p>
+          <div className="flex items-center gap-2.5 rounded-lg bg-emerald-50 px-3 py-2.5">
+            <span className="text-base" aria-hidden="true">✅</span>
+            <p className="text-sm text-emerald-700 font-medium">Tout va bien — aucune alerte stock</p>
+          </div>
         ) : (
           <ul className="divide-y divide-gray-50">
             {alerts.map((item) => (

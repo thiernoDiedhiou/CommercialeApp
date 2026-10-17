@@ -1,4 +1,4 @@
-import apiClient from '@/lib/axios'
+import apiClient, { API } from '@/lib/axios'
 import type { Category, CreateCategoryData } from '@/types'
 
 const MULTIPART = { headers: { 'Content-Type': undefined } }
@@ -14,13 +14,13 @@ function toFormData(body: CreateCategoryData): FormData {
 }
 
 export async function getCategories(): Promise<Category[]> {
-  const { data } = await apiClient.get<{ data: Category[] }>('/api/v1/categories')
+  const { data } = await apiClient.get<{ data: Category[] }>(`${API}/categories`)
   return data.data
 }
 
 export async function createCategory(body: CreateCategoryData): Promise<Category> {
   const { data } = await apiClient.post<{ data: Category }>(
-    '/api/v1/categories',
+    `${API}/categories`,
     toFormData(body),
     MULTIPART,
   )
@@ -34,7 +34,7 @@ export async function updateCategory(
   const fd = toFormData({ name: body.name ?? '', ...body })
   fd.append('_method', 'PUT')
   const { data } = await apiClient.post<{ data: Category }>(
-    `/api/v1/categories/${uid}`,
+    `${API}/categories/${uid}`,
     fd,
     MULTIPART,
   )
@@ -42,5 +42,5 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(uid: string): Promise<void> {
-  await apiClient.delete(`/api/v1/categories/${uid}`)
+  await apiClient.delete(`${API}/categories/${uid}`)
 }

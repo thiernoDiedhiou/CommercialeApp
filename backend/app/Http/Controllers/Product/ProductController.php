@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Product;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Product\StoreProductRequest;
 use App\Http\Requests\Product\UpdateProductRequest;
+use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Models\SaleItem;
+use App\Services\ActivityLogService;
 use App\Services\ProductService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,6 +33,10 @@ class ProductController extends Controller
             ->orderBy('name')
             ->paginate(20);
 
+        $products->setCollection(
+            $products->getCollection()->map(fn ($p) => (new ProductResource($p))->toArray(request()))
+        );
+
         return response()->json($products);
     }
 
@@ -51,15 +57,16 @@ class ProductController extends Controller
         }
 
         $product = $this->productService->create($data);
+        $product->load(['category:id,name', 'brand:id,name']);
 
-        return response()->json(['data' => $product], 201);
+        return response()->json(['data' => new ProductResource($product)], 201);
     }
 
     public function show(Product $product): JsonResponse
     {
         $product->load(['category:id,name', 'brand:id,name', 'variants.attributeValues.attribute']);
 
-        return response()->json(['data' => $product]);
+        return response()->json(['data' => new ProductResource($product)]);
     }
 
     public function update(UpdateProductRequest $request, Product $product): JsonResponse
@@ -86,14 +93,18 @@ class ProductController extends Controller
         }
 
         $product = $this->productService->update($product, $data);
+        $product->load(['category:id,name', 'brand:id,name']);
 
-        return response()->json(['data' => $product]);
+        return response()->json(['data' => new ProductResource($product)]);
     }
 
     public function destroy(Product $product): JsonResponse
     {
+        $name = $product->name;
+
         if (SaleItem::where('product_id', $product->id)->exists()) {
             $product->delete();
+            ActivityLogService::log('delete', 'products', 'Produit "' . $name . '" archivé');
             return response()->json(['message' => 'Produit archivé (historique de ventes conservé).']);
         }
 
@@ -102,6 +113,8 @@ class ProductController extends Controller
         }
 
         $product->forceDelete();
+        ActivityLogService::log('delete', 'products', 'Produit "' . $name . '" supprimé');
+
         return response()->json(null, 204);
     }
 

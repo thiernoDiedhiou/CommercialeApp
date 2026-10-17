@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { ArrowUturnLeftIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { MagnifyingGlassIcon, ArrowUturnLeftIcon } from '@heroicons/react/24/outline'
 import { getReturns } from '@/services/api/sales'
 import Badge from '@/components/ui/Badge'
 import { SkeletonRow } from '@/components/ui/Skeleton'
 import Pagination from '@/components/ui/Pagination'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import type { RefundMethod } from '@/types'
+import EmptyState from '@/components/ui/EmptyState'
 
 const REFUND_LABELS: Record<RefundMethod, string> = {
   cash:   'Espèces',
@@ -38,10 +39,7 @@ export default function ReturnsPage() {
 
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <ArrowUturnLeftIcon className="h-6 w-6 text-gray-400" />
-          <h1 className="text-xl font-bold text-gray-900">Retours</h1>
-        </div>
+        <h1 className="text-xl font-bold text-slate-900">Retours</h1>
       </div>
 
       {/* Filtres */}
@@ -69,8 +67,50 @@ export default function ReturnsPage() {
         </select>
       </div>
 
-      {/* Tableau */}
-      <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
+      {/* ── Vue carte (mobile) ───────────────────────────────────────────── */}
+      <div className="sm:hidden divide-y divide-gray-100 bg-white rounded-xl border border-slate-200">
+        {isLoading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="px-4 py-3 space-y-2">
+              <div className="h-4 w-1/3 animate-pulse rounded bg-gray-200" />
+              <div className="h-3 w-full animate-pulse rounded bg-gray-200" />
+              <div className="h-3 w-2/3 animate-pulse rounded bg-gray-200" />
+            </div>
+          ))
+        ) : returns.length === 0 ? (
+          <EmptyState icon={<ArrowUturnLeftIcon className="h-7 w-7" />} title="Aucun retour pour l'instant" description="Les retours de ventes et avoirs clients apparaîtront ici." />
+        ) : (
+          returns.map((ret) => (
+            <div key={ret.id} className="px-4 py-3">
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <span className="font-mono text-sm font-semibold text-gray-900">{ret.reference}</span>
+                <Badge variant={REFUND_BADGE[ret.refund_method]}>{REFUND_LABELS[ret.refund_method]}</Badge>
+              </div>
+              <div className="flex items-center justify-between mb-1">
+                {ret.sale ? (
+                  <Link
+                    to={`/sales/${ret.sale.uid}`}
+                    className="font-mono text-sm text-brand-primary hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {ret.sale.reference}
+                  </Link>
+                ) : (
+                  <span className="text-sm text-gray-400">—</span>
+                )}
+                <span className="text-xs text-gray-400">{ret.items_count ?? '—'} article(s)</span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-gray-400">
+                <span>{formatDateTime(ret.created_at)}</span>
+                <span className="text-sm font-bold text-gray-900">{formatCurrency(ret.total)}</span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* ── Vue tableau (desktop) ────────────────────────────────────────── */}
+      <div className="hidden sm:block rounded-xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-100 text-sm">
             <thead className="bg-gray-50">
@@ -91,8 +131,8 @@ export default function ReturnsPage() {
                 : returns.length === 0
                 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-12 text-center text-sm text-gray-400">
-                      Aucun retour enregistré.
+                    <td colSpan={6}>
+                      <EmptyState icon={<ArrowUturnLeftIcon className="h-7 w-7" />} title="Aucun retour pour l'instant" description="Les retours de ventes et avoirs clients apparaîtront ici." />
                     </td>
                   </tr>
                 )
@@ -132,18 +172,17 @@ export default function ReturnsPage() {
           </table>
         </div>
 
-        {data && data.last_page > 1 && (
-          <div className="border-t border-gray-100 px-4 py-3">
-            <Pagination
-              currentPage={data.current_page}
-              lastPage={data.last_page}
-              total={data.total}
-              perPage={data.per_page}
-              onPageChange={setPage}
-            />
-          </div>
-        )}
       </div>
+
+      {data && data.last_page > 1 && (
+        <Pagination
+          currentPage={data.current_page}
+          lastPage={data.last_page}
+          total={data.total}
+          perPage={data.per_page}
+          onPageChange={setPage}
+        />
+      )}
     </div>
   )
 }

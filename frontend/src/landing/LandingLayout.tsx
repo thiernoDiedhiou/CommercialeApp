@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { Bars3Icon, XMarkIcon, SunIcon, MoonIcon } from '@heroicons/react/24/outline'
+import { createPortal } from 'react-dom'
+import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { Menu, X, Sun, Moon } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { getPublicSiteSettings } from '@/services/api/public'
 
@@ -34,11 +35,17 @@ function Navbar({ isDark, onToggle }: { isDark: boolean; onToggle: () => void })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [open])
+
   const headerBase = scrolled
     ? 'bg-white/95 dark:bg-gray-950/95 backdrop-blur shadow-sm dark:shadow-gray-900/50'
     : 'bg-white dark:bg-gray-950'
 
   return (
+    <>
     <header className={`fixed inset-x-0 top-0 z-50 transition-all duration-200 border-b border-transparent dark:border-gray-800 ${headerBase}`}>
       <div className="mx-auto max-w-6xl px-4 h-16 flex items-center justify-between">
         {/* Logo */}
@@ -46,7 +53,7 @@ function Navbar({ isDark, onToggle }: { isDark: boolean; onToggle: () => void })
           <img
             src={isDark ? '/logo_mode_sombre_texte_claire.svg' : '/logo_mode_claire.svg'}
             alt="DiDi Sphere"
-            className="h-10 w-auto"
+            className={`h-14 w-auto${isDark ? ' [mix-blend-mode:screen]' : ''}`}
           />
         </Link>
 
@@ -78,7 +85,7 @@ function Navbar({ isDark, onToggle }: { isDark: boolean; onToggle: () => void })
             onClick={onToggle}
             className="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
-            {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
 
           <button
@@ -94,7 +101,6 @@ function Navbar({ isDark, onToggle }: { isDark: boolean; onToggle: () => void })
             className="flex items-center gap-1.5 rounded-lg bg-ds-blue px-4 py-2 text-sm font-semibold text-white hover:bg-ds-blue-dark transition-colors"
           >
             Essai gratuit
-            <span aria-hidden="true">→</span>
           </button>
         </div>
 
@@ -106,7 +112,7 @@ function Navbar({ isDark, onToggle }: { isDark: boolean; onToggle: () => void })
             onClick={onToggle}
             className="rounded-lg p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
           >
-            {isDark ? <SunIcon className="h-4 w-4" /> : <MoonIcon className="h-4 w-4" />}
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
           <button
             type="button"
@@ -114,73 +120,85 @@ function Navbar({ isDark, onToggle }: { isDark: boolean; onToggle: () => void })
             onClick={() => setOpen(true)}
             className="rounded-lg p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
           >
-            <Bars3Icon className="h-5 w-5" />
+            <Menu className="h-5 w-5" />
           </button>
         </div>
       </div>
 
-      {/* Drawer mobile */}
-      {open && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/50 md:hidden"
-            onClick={() => setOpen(false)}
-            aria-hidden="true"
-          />
-          <div className="fixed inset-y-0 right-0 z-50 w-72 bg-white dark:bg-gray-900 shadow-xl flex flex-col md:hidden border-l border-gray-100 dark:border-gray-800">
-            <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 dark:border-gray-800">
-              <img
-                src={isDark ? '/logo_mode_sombre_texte_claire.svg' : '/logo_mode_claire.svg'}
-                alt="DiDi Sphere"
-                className="h-9 w-auto"
-              />
-              <button
-                type="button"
-                aria-label="Fermer le menu"
-                onClick={() => setOpen(false)}
-                className="rounded-lg p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-              >
-                <XMarkIcon className="h-5 w-5" />
-              </button>
-            </div>
-            <nav className="flex-1 px-5 py-6 space-y-1">
-              {NAV_LINKS.map((l) => (
-                <NavLink
-                  key={l.path}
-                  to={l.path}
-                  onClick={() => setOpen(false)}
-                  className={({ isActive }) =>
-                    `block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-ds-blue-light dark:bg-ds-blue/20 text-ds-blue'
-                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                    }`
-                  }
-                >
-                  {l.label}
-                </NavLink>
-              ))}
-            </nav>
-            <div className="px-5 pb-8 space-y-3">
-              <button
-                type="button"
-                onClick={() => { setOpen(false); navigate('/login') }}
-                className="w-full rounded-lg border border-gray-200 dark:border-gray-700 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-              >
-                Connexion
-              </button>
-              <button
-                type="button"
-                onClick={() => { setOpen(false); navigate('/inscription') }}
-                className="w-full rounded-lg bg-ds-blue py-2.5 text-sm font-semibold text-white hover:bg-ds-blue-dark transition"
-              >
-                Essai gratuit →
-              </button>
-            </div>
-          </div>
-        </>
-      )}
     </header>
+
+    {/* Drawer mobile — rendu via portal dans document.body pour éviter le
+        containing-block créé par backdrop-blur sur le header scrollé */}
+    {createPortal(
+      <>
+        <div
+          aria-hidden={!open}
+          className={`fixed inset-0 z-[200] bg-black/60 transition-opacity duration-300 ${
+            open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+          }`}
+          onClick={() => setOpen(false)}
+        />
+        <div
+          className={`fixed inset-y-0 right-0 z-[201] w-72 bg-white dark:bg-gray-900 shadow-2xl flex flex-col border-l border-gray-100 dark:border-gray-800 transition-transform duration-300 ease-out ${
+            open ? 'translate-x-0' : 'translate-x-full'
+          }`}
+          aria-modal="true"
+          role="dialog"
+        >
+          <div className="flex items-center justify-between px-5 h-16 border-b border-gray-100 dark:border-gray-800">
+            <img
+              src={isDark ? '/logo_mode_sombre_texte_claire.svg' : '/logo_mode_claire.svg'}
+              alt="DiDi Sphere"
+              className={`h-9 w-auto${isDark ? ' [mix-blend-mode:screen]' : ''}`}
+            />
+            <button
+              type="button"
+              aria-label="Fermer le menu"
+              onClick={() => setOpen(false)}
+              className="rounded-lg p-1.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <nav className="flex-1 px-5 py-6 space-y-1">
+            {NAV_LINKS.map((l) => (
+              <NavLink
+                key={l.path}
+                to={l.path}
+                onClick={() => setOpen(false)}
+                className={({ isActive }) =>
+                  `block rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-ds-blue-light dark:bg-ds-blue/20 text-ds-blue'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`
+                }
+              >
+                {l.label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="px-5 pb-8 space-y-3">
+            <button
+              type="button"
+              onClick={() => { setOpen(false); navigate('/login') }}
+              className="w-full rounded-lg border border-gray-200 dark:border-gray-700 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+            >
+              Connexion
+            </button>
+            <button
+              type="button"
+              onClick={() => { setOpen(false); navigate('/inscription') }}
+              className="w-full rounded-lg bg-ds-blue py-2.5 text-sm font-semibold text-white hover:bg-ds-blue-dark transition"
+            >
+              Essai gratuit
+            </button>
+          </div>
+        </div>
+      </>,
+      document.body
+    )}
+    </>
   )
 }
 
@@ -209,7 +227,7 @@ function Footer() {
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="space-y-4">
-            <img src="/logo_mode_sombre_texte_claire.svg" alt="DiDi Sphere" className="h-8 w-auto" />
+            <img src="/logo_mode_sombre_texte_claire.svg" alt="DiDi Sphere" className="h-14 w-auto [mix-blend-mode:screen]" />
             <p className="text-sm leading-relaxed">
               Logiciel de gestion commerciale tout-en-un.
               Multi-devises, adapté à votre secteur.
@@ -295,6 +313,12 @@ function Footer() {
 
 // ── Layout principal ──────────────────────────────────────────────────────────
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
+
 export default function LandingLayout() {
   const [isDark, setIsDark] = useState(getInitialTheme)
 
@@ -311,6 +335,7 @@ export default function LandingLayout() {
   return (
     <div className={isDark ? 'dark' : ''}>
       <div className="min-h-screen flex flex-col bg-white dark:bg-gray-950 transition-colors duration-200">
+        <ScrollToTop />
         <Navbar isDark={isDark} onToggle={toggle} />
         <main className="flex-1 pt-16">
           <Outlet />

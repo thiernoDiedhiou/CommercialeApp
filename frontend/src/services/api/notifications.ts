@@ -1,4 +1,4 @@
-import apiClient from '@/lib/axios'
+import apiClient, { API } from '@/lib/axios'
 import adminAxios from '@/lib/adminAxios'
 
 export interface AppNotification {
@@ -17,37 +17,37 @@ export interface NotificationsResponse {
 // ── Tenant ────────────────────────────────────────────────────────────────────
 
 export async function getTenantNotifications(): Promise<NotificationsResponse> {
-  const { data } = await apiClient.get<NotificationsResponse>('/api/v1/notifications')
+  const { data } = await apiClient.get<NotificationsResponse>(`${API}/notifications`)
   return data
 }
 
 export async function markTenantNotificationRead(id: string): Promise<void> {
-  await apiClient.post(`/api/v1/notifications/${id}/read`)
+  await apiClient.post(`${API}/notifications/${id}/read`)
 }
 
 export async function markAllTenantNotificationsRead(): Promise<void> {
-  await apiClient.post('/api/v1/notifications/read-all')
+  await apiClient.post(`${API}/notifications/read-all`)
 }
 
 export async function deleteTenantNotification(id: string): Promise<void> {
-  await apiClient.delete(`/api/v1/notifications/${id}`)
+  await apiClient.delete(`${API}/notifications/${id}`)
 }
 
 // ── Super Admin ───────────────────────────────────────────────────────────────
 
 export async function getAdminNotifications(): Promise<NotificationsResponse> {
-  const { data } = await adminAxios.get<NotificationsResponse>('/api/v1/admin/notifications')
+  const { data } = await adminAxios.get<NotificationsResponse>(`${API}/admin/notifications`)
   return data
 }
 
 export async function markAdminNotificationRead(id: string): Promise<void> {
-  await adminAxios.post(`/api/v1/admin/notifications/${id}/read`)
+  await adminAxios.post(`${API}/admin/notifications/${id}/read`)
 }
 
 export async function markAllAdminNotificationsRead(): Promise<void> {
-  await adminAxios.post('/api/v1/admin/notifications/read-all')
+  await adminAxios.post(`${API}/admin/notifications/read-all`)
 }
 
 export async function deleteAdminNotification(id: string): Promise<void> {
-  await adminAxios.delete(`/api/v1/admin/notifications/${id}`)
+  await adminAxios.delete(`${API}/admin/notifications/${id}`)
 }

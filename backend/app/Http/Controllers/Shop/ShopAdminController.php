@@ -38,9 +38,7 @@ class ShopAdminController extends Controller
     {
         $tenantId = $this->tenantService->currentId();
 
-        $shop = ShopSetting::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->first();
+        $shop = ShopSetting::where('tenant_id', $tenantId)->first();
 
         if (! $shop) {
             return response()->json([
@@ -94,9 +92,7 @@ class ShopAdminController extends Controller
             'hero_banner'             => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
         ]);
 
-        $shop = ShopSetting::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->first();
+        $shop = ShopSetting::where('tenant_id', $tenantId)->first();
 
         $updateData = collect($validated)
             ->except(['logo', 'favicon', 'hero_banner'])
@@ -129,7 +125,7 @@ class ShopAdminController extends Controller
                 ->store("shops/{$tenantId}", 'public');
         }
 
-        $shop = ShopSetting::withoutGlobalScopes()->updateOrCreate(
+        $shop = ShopSetting::updateOrCreate(
             ['tenant_id' => $tenantId],
             array_merge(['tenant_id' => $tenantId], $updateData),
         );
@@ -143,9 +139,7 @@ class ShopAdminController extends Controller
     {
         $tenantId = $this->tenantService->currentId();
 
-        $shop       = ShopSetting::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->first();
+        $shop       = ShopSetting::where('tenant_id', $tenantId)->first();
         $activating = ! ($shop?->is_active ?? false);
 
         if ($activating && (! $shop || empty($shop->shop_name))) {
@@ -154,7 +148,7 @@ class ShopAdminController extends Controller
             ], 422);
         }
 
-        $shop = ShopSetting::withoutGlobalScopes()->updateOrCreate(
+        $shop = ShopSetting::updateOrCreate(
             ['tenant_id' => $tenantId],
             ['tenant_id' => $tenantId, 'is_active' => $activating],
         );
@@ -205,9 +199,7 @@ class ShopAdminController extends Controller
         ]);
 
         $tenantId    = $this->tenantService->currentId();
-        $whatsappNum = ShopSetting::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->value('whatsapp_number');
+        $whatsappNum = ShopSetting::where('tenant_id', $tenantId)->value('whatsapp_number');
 
         $whatsappUrl = null;
         if ($whatsappNum && $order->payment_method === 'whatsapp') {
@@ -252,7 +244,7 @@ class ShopAdminController extends Controller
                         }
 
                         $lot = $item->lot_id
-                            ? ProductLot::withoutGlobalScopes()->find($item->lot_id)
+                            ? ProductLot::find($item->lot_id)
                             : null;
 
                         $this->stockService->adjust(
@@ -291,7 +283,7 @@ class ShopAdminController extends Controller
                     }
 
                     $lot = $item->lot_id
-                        ? ProductLot::withoutGlobalScopes()->find($item->lot_id)
+                        ? ProductLot::find($item->lot_id)
                         : null;
 
                     $this->stockService->adjust(
@@ -328,6 +320,7 @@ class ShopAdminController extends Controller
     {
         $data = [
             'id'               => $order->id,
+            'uid'              => $order->uid,
             'reference'        => $order->reference,
             'customer_name'    => $order->customer_name,
             'customer_phone'   => $order->customer_phone,

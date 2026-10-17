@@ -15,6 +15,7 @@ class SuperAdmin extends Authenticatable
         'name',
         'email',
         'password',
+        'avatar_path',
         'is_active',
         'last_login_at',
     ];

@@ -1,12 +1,10 @@
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import {
-  BanknotesIcon,
-  ShoppingCartIcon,
-  ArrowTrendingUpIcon,
-  ClockIcon,
-} from '@heroicons/react/24/outline'
+import { Receipt, TrendingUp, Banknote, Wallet } from 'lucide-react'
+import { ChartBarIcon, PresentationChartLineIcon } from '@heroicons/react/24/outline'
 import { getDashboardSummary } from '@/services/api/dashboard'
+import { useAuthStore } from '@/store/authStore'
+import PageHeader from '@/components/ui/PageHeader'
 import { SkeletonCard, Skeleton } from '@/components/ui/Skeleton'
 import KpiCard from '@/components/dashboard/KpiCard'
 import WeekChart from '@/components/dashboard/WeekChart'
@@ -14,26 +12,31 @@ import StockAlertList from '@/components/dashboard/StockAlertList'
 import RecentSalesList from '@/components/dashboard/RecentSalesList'
 import { formatCurrency } from '@/lib/utils'
 
-const STALE_TIME       = 60_000       // 1 min — données considérées fraîches
-const REFETCH_INTERVAL = 60_000       // auto-refresh toutes les 60s (tab active)
+const STALE_TIME       = 60_000
+const REFETCH_INTERVAL = 60_000
 
 export default function DashboardPage() {
+  const subscriptionExpired = useAuthStore((s) => s.subscriptionExpired)
+
   const { data, isLoading } = useQuery({
-    queryKey           : ['dashboard-summary'],
-    queryFn            : getDashboardSummary,
+    queryKey        : ['dashboard-summary'],
+    queryFn         : getDashboardSummary,
     staleTime       : STALE_TIME,
-    refetchInterval : REFETCH_INTERVAL,
+    refetchInterval : subscriptionExpired ? false : REFETCH_INTERVAL,
+    enabled         : !subscriptionExpired,
+    retry           : false,
   })
 
+  const locked         = subscriptionExpired && !data
   const today          = data?.today
   const profit         = today ? Number(today.profit) : 0
   const todayCollected = Object.values(data?.by_payment_method ?? {}).reduce((s, v) => s + v, 0)
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-gray-900">Tableau de bord</h1>
+      <PageHeader title="Tableau de bord" />
 
-      {/* Zone 1 — KPI Cards (tous canaux confondus) */}
+      {/* Zone 1 — KPI Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
@@ -41,11 +44,12 @@ export default function DashboardPage() {
           <>
             <KpiCard
               title="Ventes du jour"
-              value={today?.sales_count ?? 0}
-              subtitle="toutes canaux"
-              icon={<ShoppingCartIcon className="h-5 w-5" />}
+              value={locked ? '—' : (today?.sales_count ?? 0)}
+              subtitle="tous canaux"
+              color="blue"
+              icon={<Receipt className="h-5 w-5" />}
             >
-              {(today?.shop_orders_count ?? 0) > 0 && (
+              {!locked && (today?.shop_orders_count ?? 0) > 0 && (
                 <ul className="space-y-1">
                   <li className="flex justify-between text-xs text-gray-500">
                     <span>POS</span>
@@ -61,12 +65,12 @@ export default function DashboardPage() {
 
             <KpiCard
               title="Chiffre d'affaires"
-              value={formatCurrency(today?.revenue ?? 0)}
-              subtitle="toutes canaux"
-              icon={<BanknotesIcon className="h-5 w-5" />}
-              accent="secondary"
+              value={locked ? '—' : formatCurrency(today?.revenue ?? 0)}
+              subtitle="tous canaux"
+              color="green"
+              icon={<Banknote className="h-5 w-5" />}
             >
-              {(today?.shop_orders_revenue ?? 0) > 0 && (
+              {!locked && (today?.shop_orders_revenue ?? 0) > 0 && (
                 <ul className="space-y-1">
                   <li className="flex justify-between text-xs text-gray-500">
                     <span>POS</span>
@@ -82,20 +86,21 @@ export default function DashboardPage() {
 
             <KpiCard
               title="Bénéfice"
-              value={formatCurrency(Math.abs(profit))}
-              subtitle={profit >= 0 ? '▲ positif' : '▼ négatif'}
-              trend={profit >= 0 ? 'up' : 'down'}
-              icon={<ArrowTrendingUpIcon className="h-5 w-5" />}
+              value={locked ? '—' : formatCurrency(Math.abs(profit))}
+              subtitle={locked ? '' : (profit >= 0 ? '▲ positif' : '▼ négatif')}
+              trend={locked ? undefined : (profit >= 0 ? 'up' : 'down')}
+              color="purple"
+              icon={<TrendingUp className="h-5 w-5" />}
             />
 
             <KpiCard
               title="Encaissements du jour"
-              value={formatCurrency(todayCollected)}
+              value={locked ? '—' : formatCurrency(todayCollected)}
               subtitle="POS"
-              icon={<ClockIcon className="h-5 w-5" />}
-              accent="secondary"
+              color="amber"
+              icon={<Wallet className="h-5 w-5" />}
             >
-              {data?.by_payment_method && Object.keys(data.by_payment_method).length > 0 && (
+              {!locked && data?.by_payment_method && Object.keys(data.by_payment_method).length > 0 && (
                 <ul className="space-y-1">
                   {Object.entries(data.by_payment_method).map(([method, amount]) => (
                     <li key={method} className="flex justify-between text-xs text-gray-500">
@@ -116,8 +121,16 @@ export default function DashboardPage() {
           <h2 className="mb-4 text-sm font-semibold text-gray-700">CA des 7 derniers jours</h2>
           {isLoading ? (
             <div className="h-[220px] animate-pulse rounded-lg bg-gray-100" />
+          ) : (data?.week_chart ?? []).length === 0 ? (
+            <div className="flex h-[160px] flex-col items-center justify-center text-center">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100">
+                <PresentationChartLineIcon className="h-6 w-6 text-slate-400" />
+              </div>
+              <p className="text-sm font-semibold text-slate-700">Aucune vente cette semaine</p>
+              <p className="mt-1 text-xs text-slate-400">Le chiffre d'affaires des 7 derniers jours apparaîtra ici.</p>
+            </div>
           ) : (
-            <WeekChart data={data?.week_chart ?? []} />
+            <WeekChart data={data!.week_chart} />
           )}
         </div>
 
@@ -132,8 +145,14 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-          ) : data?.top_products?.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-6">Aucun produit vendu aujourd'hui</p>
+          ) : (data?.top_products ?? []).length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
+                <ChartBarIcon className="h-7 w-7 text-slate-400" />
+              </div>
+              <p className="text-sm font-semibold text-slate-700">Aucune vente aujourd'hui</p>
+              <p className="mt-1 text-xs text-slate-400">Vos produits les plus vendus apparaîtront ici.</p>
+            </div>
           ) : (
             <ul className="divide-y divide-gray-50">
               {(data?.top_products ?? []).map((p, idx) => (

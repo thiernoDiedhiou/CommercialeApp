@@ -1,13 +1,13 @@
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeftIcon,
-  DocumentArrowDownIcon,
-  XCircleIcon,
-  CheckCircleIcon,
-  BanknotesIcon,
-  ArrowUturnLeftIcon,
-} from '@heroicons/react/24/outline'
+  Download,
+  XCircle,
+  CheckCircle,
+  Banknote,
+  Undo2,
+} from 'lucide-react'
+import Breadcrumb from '@/components/ui/Breadcrumb'
 import { getSale, cancelSale, openSalePdf, addPayment, getReturns } from '@/services/api/sales'
 import { SaleReturnModal } from '@/components/sales/SaleReturnModal'
 import { SkeletonCard } from '@/components/ui/Skeleton'
@@ -137,7 +137,7 @@ export default function SaleDetailPage() {
 
   const handlePdf = async () => {
     setPdfLoading(true)
-    try { await openSalePdf(uid!) } finally { setPdfLoading(false) }
+    try { await openSalePdf(uid!, sale?.reference) } finally { setPdfLoading(false) }
   }
 
   // ── Skeleton ──────────────────────────────────────────────────────────────
@@ -176,23 +176,18 @@ export default function SaleDetailPage() {
   return (
     <div className="space-y-6 p-4 sm:p-6">
 
-      {/* Barre de navigation */}
+      {/* Fil d'Ariane + actions */}
+      <Breadcrumb items={[{ label: 'Ventes', to: '/sales' }, { label: sale.reference }]} />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => navigate('/sales')}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          Ventes
-        </button>
+        <div /> {/* spacer left */}
 
         <div className="flex flex-wrap items-center gap-2">
           <CanDo permission="sales.pdf">
             <Button
               variant="outline"
               size="sm"
-              icon={<DocumentArrowDownIcon className="h-4 w-4" />}
+              icon={<Download className="h-4 w-4" />}
               loading={pdfLoading}
               onClick={handlePdf}
             >
@@ -204,7 +199,7 @@ export default function SaleDetailPage() {
             <CanDo permission="sales.create">
               <Button
                 size="sm"
-                icon={<BanknotesIcon className="h-4 w-4" />}
+                icon={<Banknote className="h-4 w-4" />}
                 onClick={() => { setPayAmount(String(due.toFixed(0))); setPaymentOpen(true) }}
               >
                 Encaisser le reste
@@ -217,7 +212,7 @@ export default function SaleDetailPage() {
               <Button
                 variant="outline"
                 size="sm"
-                icon={<ArrowUturnLeftIcon className="h-4 w-4" />}
+                icon={<Undo2 className="h-4 w-4" />}
                 onClick={() => setReturnOpen(true)}
               >
                 Retour
@@ -230,7 +225,7 @@ export default function SaleDetailPage() {
               <Button
                 variant="danger"
                 size="sm"
-                icon={<XCircleIcon className="h-4 w-4" />}
+                icon={<XCircle className="h-4 w-4" />}
                 onClick={() => setCancelOpen(true)}
               >
                 Annuler la vente
@@ -397,7 +392,7 @@ export default function SaleDetailPage() {
                 </div>
               ) : (
                 <Badge variant="success" dot>
-                  <CheckCircleIcon className="mr-1 h-3.5 w-3.5" />
+                  <CheckCircle className="mr-1 h-3.5 w-3.5" />
                   Soldé
                 </Badge>
               )}
@@ -459,7 +454,7 @@ export default function SaleDetailPage() {
       {saleReturns.length > 0 && (
         <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
-            <ArrowUturnLeftIcon className="h-4 w-4 text-gray-400" />
+            <Undo2 className="h-4 w-4 text-gray-400" />
             <h2 className="text-sm font-semibold text-gray-700">
               Retours associés ({saleReturns.length})
             </h2>

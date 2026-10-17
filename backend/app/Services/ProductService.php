@@ -8,6 +8,7 @@ use App\Models\ProductVariant;
 use App\Models\SaleItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Services\ActivityLogService;
 
 class ProductService
 {
@@ -44,7 +45,11 @@ class ProductService
                 $this->createVariantsFromCombinations($product, $data['attribute_value_ids']);
             }
 
-            return $product->load(self::EAGER_LOAD);
+            $product->load(self::EAGER_LOAD);
+
+            ActivityLogService::log('create', 'products', 'Produit "' . $product->name . '" créé');
+
+            return $product;
         });
     }
 
@@ -57,6 +62,8 @@ class ProductService
             }
 
             $product->update($data);
+
+            ActivityLogService::log('update', 'products', 'Produit "' . $product->name . '" mis à jour');
 
             // Les variantes ne sont jamais écrasées ici — utiliser VariantController
             return $product->fresh(self::EAGER_LOAD);

@@ -2,8 +2,13 @@
 
 namespace App\Services;
 
+use App\Events\InvoiceCancelled;
+use App\Events\InvoiceCreated;
+use App\Events\InvoicePaid;
+use App\Events\InvoiceSent;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\InvoicePayment;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,42 +18,17 @@ class InvoiceService
 {
     public function __construct(private readonly TenantService $tenantService) {}
 
-    // ─── API publique ─────────────────────────────────────────────────────────
+    // ─── Création facture / devis ─────────────────────────────────────────────
 
-    /**
-     * Crée une facture en statut 'draft' avec ses lignes.
-     *
-     * Ordre :
-     *   1. Verrou tenant — sérialise la génération de référence FAC-YYYY-XXXXX
-     *   2. Calculs financiers (bcmath)
-     *   3. Création Invoice + InvoiceItems
-     *
-     * @param array{
-     *   customer_id?: int|null,
-     *   issue_date: string,
-     *   due_date?: string|null,
-     *   discount_type?: 'percent'|'fixed'|null,
-     *   discount_value?: float,
-     *   tax_rate?: float,
-     *   notes?: string|null,
-     *   footer?: string|null,
-     *   items: array<array{
-     *     product_id?: int|null,
-     *     description: string,
-     *     quantity: float,
-     *     unit_price: float,
-     *     discount?: float,
-     *   }>
-     * } $data
-     */
     public function create(array $data): Invoice
     {
         return DB::transaction(function () use ($data) {
             $tenantId = $this->tenantService->currentId();
+            $type     = $data['type'] ?? Invoice::TYPE_INVOICE;
 
             Tenant::lockForUpdate()->findOrFail($tenantId);
 
-            $reference = $this->generateReference($tenantId);
+            $reference = $this->generateReference($tenantId, $type);
 
             [$subtotal, $discountAmount, $taxAmount, $total, $resolvedItems]
                 = $this->computeTotals($data);
@@ -57,6 +37,7 @@ class InvoiceService
                 'tenant_id'       => $tenantId,
                 'customer_id'     => $data['customer_id'] ?? null,
                 'user_id'         => Auth::id(),
+                'type'            => $type,
                 'reference'       => $reference,
                 'status'          => Invoice::STATUS_DRAFT,
                 'issue_date'      => $data['issue_date'],
@@ -71,29 +52,19 @@ class InvoiceService
                 'paid_amount'     => 0,
                 'notes'           => $data['notes'] ?? null,
                 'footer'          => $data['footer'] ?? null,
+                'pdf_template'    => $data['pdf_template'] ?? null,
             ]);
 
-            foreach ($resolvedItems as $item) {
-                InvoiceItem::create([
-                    'invoice_id'  => $invoice->id,
-                    'product_id'  => $item['product_id'] ?? null,
-                    'description' => $item['description'],
-                    'quantity'    => $item['quantity'],
-                    'unit_price'  => $item['unit_price'],
-                    'discount'    => $item['discount'] ?? 0,
-                    'total'       => $item['line_total'],
-                ]);
-            }
+            $this->saveItems($invoice, $resolvedItems);
 
-            return $invoice->load(['customer:id,name', 'user:id,name', 'items.product:id,name']);
+            $invoice->load(['customer:id,name', 'user:id,name', 'items.product:id,name']);
+
+            InvoiceCreated::dispatch($invoice);
+
+            return $invoice;
         });
     }
 
-    /**
-     * Met à jour une facture en statut 'draft' (lignes remplacées intégralement).
-     *
-     * @throws LogicException  Facture non en statut draft
-     */
     public function update(Invoice $invoice, array $data): Invoice
     {
         if (! $invoice->isDraft()) {
@@ -119,37 +90,194 @@ class InvoiceService
                 'total'           => $total,
                 'notes'           => array_key_exists('notes', $data) ? $data['notes'] : $invoice->notes,
                 'footer'          => array_key_exists('footer', $data) ? $data['footer'] : $invoice->footer,
+                'pdf_template'    => array_key_exists('pdf_template', $data) ? $data['pdf_template'] : $invoice->pdf_template,
             ]);
 
             if (isset($data['items'])) {
                 $invoice->items()->delete();
-                foreach ($resolvedItems as $item) {
-                    InvoiceItem::create([
-                        'invoice_id'  => $invoice->id,
-                        'product_id'  => $item['product_id'] ?? null,
-                        'description' => $item['description'],
-                        'quantity'    => $item['quantity'],
-                        'unit_price'  => $item['unit_price'],
-                        'discount'    => $item['discount'] ?? 0,
-                        'total'       => $item['line_total'],
-                    ]);
-                }
+                $this->saveItems($invoice, $resolvedItems);
             }
 
             return $invoice->fresh(['customer:id,name', 'user:id,name', 'items.product:id,name']);
         });
     }
 
-    /**
-     * Envoie la facture (draft → sent).
-     *
-     * @throws LogicException  Facture non en statut draft
-     */
+    // ─── Duplication ──────────────────────────────────────────────────────────
+
+    public function duplicate(Invoice $invoice): Invoice
+    {
+        return DB::transaction(function () use ($invoice) {
+            $tenantId  = $this->tenantService->currentId();
+            $type      = $invoice->type;
+
+            Tenant::lockForUpdate()->findOrFail($tenantId);
+
+            $reference = $this->generateReference($tenantId, $type);
+            $items     = $invoice->items()->get();
+
+            $copy = Invoice::create([
+                'tenant_id'       => $tenantId,
+                'customer_id'     => $invoice->customer_id,
+                'user_id'         => Auth::id(),
+                'type'            => $type,
+                'reference'       => $reference,
+                'status'          => Invoice::STATUS_DRAFT,
+                'issue_date'      => now()->toDateString(),
+                'due_date'        => null,
+                'subtotal'        => $invoice->subtotal,
+                'discount_type'   => $invoice->discount_type,
+                'discount_value'  => $invoice->discount_value,
+                'discount_amount' => $invoice->discount_amount,
+                'tax_rate'        => $invoice->tax_rate,
+                'tax_amount'      => $invoice->tax_amount,
+                'total'           => $invoice->total,
+                'paid_amount'     => 0,
+                'notes'           => $invoice->notes,
+                'footer'          => $invoice->footer,
+                'pdf_template'    => $invoice->pdf_template,
+            ]);
+
+            foreach ($items as $item) {
+                InvoiceItem::create([
+                    'invoice_id'  => $copy->id,
+                    'product_id'  => $item->product_id,
+                    'description' => $item->description,
+                    'quantity'    => $item->quantity,
+                    'unit_price'  => $item->unit_price,
+                    'discount'    => $item->discount,
+                    'total'       => $item->total,
+                ]);
+            }
+
+            return $copy->load(['customer:id,name', 'user:id,name', 'items.product:id,name']);
+        });
+    }
+
+    // ─── Conversion devis → facture ───────────────────────────────────────────
+
+    public function convertToInvoice(Invoice $quote): Invoice
+    {
+        if (! $quote->isConvertible()) {
+            throw new LogicException(
+                "Ce devis ne peut pas être converti en facture (statut : {$quote->status}, déjà converti ou type incorrect)."
+            );
+        }
+
+        return DB::transaction(function () use ($quote) {
+            $tenantId = $this->tenantService->currentId();
+
+            Tenant::lockForUpdate()->findOrFail($tenantId);
+
+            $reference = $this->generateReference($tenantId, Invoice::TYPE_INVOICE);
+            $items     = $quote->items()->get();
+
+            $invoice = Invoice::create([
+                'tenant_id'       => $tenantId,
+                'customer_id'     => $quote->customer_id,
+                'user_id'         => Auth::id(),
+                'type'            => Invoice::TYPE_INVOICE,
+                'reference'       => $reference,
+                'status'          => Invoice::STATUS_DRAFT,
+                'issue_date'      => now()->toDateString(),
+                'due_date'        => $quote->due_date,
+                'subtotal'        => $quote->subtotal,
+                'discount_type'   => $quote->discount_type,
+                'discount_value'  => $quote->discount_value,
+                'discount_amount' => $quote->discount_amount,
+                'tax_rate'        => $quote->tax_rate,
+                'tax_amount'      => $quote->tax_amount,
+                'total'           => $quote->total,
+                'paid_amount'     => 0,
+                'notes'           => $quote->notes,
+                'footer'          => $quote->footer,
+                'pdf_template'    => $quote->pdf_template,
+            ]);
+
+            foreach ($items as $item) {
+                InvoiceItem::create([
+                    'invoice_id'  => $invoice->id,
+                    'product_id'  => $item->product_id,
+                    'description' => $item->description,
+                    'quantity'    => $item->quantity,
+                    'unit_price'  => $item->unit_price,
+                    'discount'    => $item->discount,
+                    'total'       => $item->total,
+                ]);
+            }
+
+            // Marque le devis comme converti
+            $quote->update([
+                'status'          => Invoice::STATUS_CANCELLED,
+                'converted_to_id' => $invoice->id,
+                'cancelled_at'    => now(),
+            ]);
+
+            return $invoice->load(['customer:id,name', 'user:id,name', 'items.product:id,name']);
+        });
+    }
+
+    // ─── Avoir (note de crédit) ───────────────────────────────────────────────
+
+    public function createCreditNote(Invoice $invoice): Invoice
+    {
+        if (! $invoice->isCreditNoteEligible()) {
+            throw new LogicException(
+                "Un avoir ne peut être créé que sur une facture payée. Statut actuel : {$invoice->status}."
+            );
+        }
+
+        return DB::transaction(function () use ($invoice) {
+            $tenantId = $this->tenantService->currentId();
+
+            Tenant::lockForUpdate()->findOrFail($tenantId);
+
+            $reference = $this->generateReference($tenantId, 'credit_note');
+            $items     = $invoice->items()->get();
+
+            $creditNote = Invoice::create([
+                'tenant_id'          => $tenantId,
+                'customer_id'        => $invoice->customer_id,
+                'user_id'            => Auth::id(),
+                'type'               => Invoice::TYPE_INVOICE,
+                'reference'          => $reference,
+                'status'             => Invoice::STATUS_DRAFT,
+                'issue_date'         => now()->toDateString(),
+                'subtotal'           => $invoice->subtotal,
+                'discount_type'      => $invoice->discount_type,
+                'discount_value'     => $invoice->discount_value,
+                'discount_amount'    => $invoice->discount_amount,
+                'tax_rate'           => $invoice->tax_rate,
+                'tax_amount'         => $invoice->tax_amount,
+                'total'              => $invoice->total,
+                'paid_amount'        => 0,
+                'notes'              => "Avoir relatif à la facture {$invoice->reference}",
+                'footer'             => $invoice->footer,
+                'credit_note_for_id' => $invoice->id,
+            ]);
+
+            foreach ($items as $item) {
+                InvoiceItem::create([
+                    'invoice_id'  => $creditNote->id,
+                    'product_id'  => $item->product_id,
+                    'description' => $item->description,
+                    'quantity'    => $item->quantity,
+                    'unit_price'  => $item->unit_price,
+                    'discount'    => $item->discount,
+                    'total'       => $item->total,
+                ]);
+            }
+
+            return $creditNote->load(['customer:id,name', 'user:id,name', 'items.product:id,name']);
+        });
+    }
+
+    // ─── Envoi ────────────────────────────────────────────────────────────────
+
     public function send(Invoice $invoice): Invoice
     {
         if (! $invoice->isSendable()) {
             throw new LogicException(
-                "Seules les factures en statut 'draft' peuvent être envoyées. Statut actuel : {$invoice->status}"
+                "Seuls les documents en statut 'draft' peuvent être envoyés. Statut actuel : {$invoice->status}"
             );
         }
 
@@ -158,17 +286,14 @@ class InvoiceService
             'sent_at' => now(),
         ]);
 
+        InvoiceSent::dispatch($invoice);
+
         return $invoice->fresh();
     }
 
-    /**
-     * Enregistre un paiement partiel ou total sur une facture.
-     * Passe automatiquement à 'paid' si le montant total est atteint.
-     * Tolérance de 1 FCFA pour les arrondis.
-     *
-     * @throws LogicException  Facture non payable, montant invalide
-     */
-    public function recordPayment(Invoice $invoice, float $amount): Invoice
+    // ─── Paiements ────────────────────────────────────────────────────────────
+
+    public function recordPayment(Invoice $invoice, float $amount, array $extra = []): Invoice
     {
         if (! $invoice->isPayable()) {
             throw new LogicException(
@@ -181,7 +306,7 @@ class InvoiceService
         }
 
         $newPaid    = bcadd((string) $invoice->paid_amount, (string) $amount, 2);
-        $maxAllowed = bcadd((string) $invoice->total, '1.00', 2); // tolérance 1 FCFA
+        $maxAllowed = bcadd((string) $invoice->total, '1.00', 2);
 
         if (bccomp($newPaid, $maxAllowed, 2) > 0) {
             throw new LogicException(
@@ -191,34 +316,53 @@ class InvoiceService
 
         $isPaid = bccomp($newPaid, (string) $invoice->total, 2) >= 0;
 
+        DB::transaction(function () use ($invoice, $amount, $extra, $newPaid, $isPaid) {
+            InvoicePayment::create([
+                'invoice_id' => $invoice->id,
+                'tenant_id'  => $invoice->tenant_id,
+                'user_id'    => Auth::id(),
+                'amount'     => $amount,
+                'method'     => $extra['method'] ?? 'cash',
+                'paid_at'    => $extra['paid_at'] ?? now()->toDateString(),
+                'reference'  => $extra['reference'] ?? null,
+                'note'       => $extra['note'] ?? null,
+            ]);
+
+            $invoice->update([
+                'paid_amount' => $newPaid,
+                'status'      => $isPaid ? Invoice::STATUS_PAID : $invoice->status,
+                'paid_at'     => $isPaid ? now() : null,
+            ]);
+        });
+
+        InvoicePaid::dispatch($invoice->fresh());
+
+        return $invoice->fresh();
+    }
+
+    // ─── Relance ──────────────────────────────────────────────────────────────
+
+    public function incrementReminder(Invoice $invoice): Invoice
+    {
         $invoice->update([
-            'paid_amount' => $newPaid,
-            'status'      => $isPaid ? Invoice::STATUS_PAID : $invoice->status,
-            'paid_at'     => $isPaid ? now() : null,
+            'reminder_count'   => $invoice->reminder_count + 1,
+            'last_reminder_at' => now(),
         ]);
 
         return $invoice->fresh();
     }
 
-    /**
-     * Passe les factures envoyées dont la date d'échéance est dépassée à 'overdue'.
-     * Appelé par un job planifié ou `php artisan invoices:check-overdue`.
-     *
-     * @return int  Nombre de factures passées à 'overdue'
-     */
+    // ─── Overdue / Annulation ─────────────────────────────────────────────────
+
     public function markOverdue(): int
     {
-        return Invoice::where('status', Invoice::STATUS_SENT)
+        return Invoice::where('type', Invoice::TYPE_INVOICE)
+            ->where('status', Invoice::STATUS_SENT)
             ->whereNotNull('due_date')
             ->whereDate('due_date', '<', now()->toDateString())
             ->update(['status' => Invoice::STATUS_OVERDUE]);
     }
 
-    /**
-     * Annule une facture (draft ou sent uniquement).
-     *
-     * @throws LogicException  Facture non annulable
-     */
     public function cancel(Invoice $invoice): Invoice
     {
         if (! $invoice->isCancellable()) {
@@ -232,22 +376,17 @@ class InvoiceService
             'cancelled_at' => now(),
         ]);
 
+        InvoiceCancelled::dispatch($invoice);
+
         return $invoice->fresh();
     }
 
     // ─── Calculs financiers ───────────────────────────────────────────────────
 
-    /**
-     * Calcule subtotal, discount, tax et total en bcmath.
-     * Retourne aussi les items résolus avec leur line_total calculé.
-     *
-     * @return array{0: string, 1: string, 2: string, 3: string, 4: array}
-     */
     private function computeTotals(array $data): array
     {
         $items = $data['items'] ?? [];
 
-        // ── 1. Total par ligne ────────────────────────────────────────────────
         $resolvedItems = [];
         $subtotal = '0.00';
 
@@ -259,33 +398,53 @@ class InvoiceService
             $subtotal        = bcadd($subtotal, $lineTotal, 2);
         }
 
-        // ── 2. Remise globale ─────────────────────────────────────────────────
         $discountAmount = match ($data['discount_type'] ?? null) {
             'percent' => bcmul($subtotal, bcdiv((string) ($data['discount_value'] ?? '0'), '100', 6), 2),
             'fixed'   => (string) ($data['discount_value'] ?? '0'),
             default   => '0.00',
         };
 
-        // ── 3. TVA ────────────────────────────────────────────────────────────
         $taxable   = bcsub($subtotal, $discountAmount, 2);
         $taxAmount = bcmul($taxable, bcdiv((string) ($data['tax_rate'] ?? '0'), '100', 6), 2);
-
-        // ── 4. Total ──────────────────────────────────────────────────────────
-        $total = bcadd($taxable, $taxAmount, 2);
+        $total     = bcadd($taxable, $taxAmount, 2);
 
         return [$subtotal, $discountAmount, $taxAmount, $total, $resolvedItems];
     }
 
+    private function saveItems(Invoice $invoice, array $resolvedItems): void
+    {
+        foreach ($resolvedItems as $item) {
+            InvoiceItem::create([
+                'invoice_id'  => $invoice->id,
+                'product_id'  => $item['product_id'] ?? null,
+                'description' => $item['description'],
+                'quantity'    => $item['quantity'],
+                'unit_price'  => $item['unit_price'],
+                'discount'    => $item['discount'] ?? 0,
+                'total'       => $item['line_total'],
+            ]);
+        }
+    }
+
     // ─── Référence ────────────────────────────────────────────────────────────
 
-    /**
-     * Génère la prochaine référence FAC-YYYY-XXXXX.
-     * Appelée après lockForUpdate() sur Tenant → unicité garantie.
-     */
-    private function generateReference(int $tenantId): string
+    private function generateReference(int $tenantId, string $type): string
     {
-        $year   = now()->format('Y');
-        $prefix = "FAC-{$year}-";
+        $year = now()->format('Y');
+
+        if ($type === Invoice::TYPE_QUOTE) {
+            $base = 'DEV';
+        } elseif ($type === 'credit_note') {
+            $base = 'AVO';
+        } else {
+            $base = strtoupper(
+                preg_replace('/[^A-Z0-9]/', '', mb_strtoupper(
+                    $this->tenantService->setting('invoice_prefix') ?? 'FAC'
+                ))
+            ) ?: 'FAC';
+        }
+
+        $prefix = "{$base}-{$year}-";
 
         $last = Invoice::where('tenant_id', $tenantId)
             ->where('reference', 'like', "{$prefix}%")

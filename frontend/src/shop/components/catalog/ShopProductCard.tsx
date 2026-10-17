@@ -64,14 +64,14 @@ export default function ShopProductCard({ product, slug }: Props) {
   const lowStock    = isLowStock(product)
 
   const handleCardClick = () => {
-    navigate(`/shop/${slug}/products/${product.id}`)
+    navigate(`/shop/${slug}/products/${product.uid}`)
   }
 
   const handleButton = (e: React.MouseEvent) => {
     e.stopPropagation()
 
     if (outOfStock)           return
-    if (product.has_variants) { navigate(`/shop/${slug}/products/${product.id}`); return }
+    if (product.has_variants) { navigate(`/shop/${slug}/products/${product.uid}`); return }
     if (product.is_weight_based) { setWeightOpen(true); return }
 
     addItem({

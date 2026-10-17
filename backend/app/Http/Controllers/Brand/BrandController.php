@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Brand;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\BrandResource;
 use App\Models\Brand;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,7 @@ class BrandController extends Controller
     {
         $brands = Brand::orderBy('name')->get();
 
-        return response()->json(['data' => $brands]);
+        return response()->json(['data' => BrandResource::collection($brands)]);
     }
 
     public function store(Request $request): JsonResponse
@@ -25,7 +26,7 @@ class BrandController extends Controller
 
         $brand = Brand::create($data);
 
-        return response()->json(['data' => $brand], 201);
+        return response()->json(['data' => new BrandResource($brand)], 201);
     }
 
     public function update(Request $request, Brand $brand): JsonResponse
@@ -36,7 +37,7 @@ class BrandController extends Controller
 
         $brand->update($data);
 
-        return response()->json(['data' => $brand->fresh()]);
+        return response()->json(['data' => new BrandResource($brand->fresh())]);
     }
 
     public function destroy(Brand $brand): JsonResponse

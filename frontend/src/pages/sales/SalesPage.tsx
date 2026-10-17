@@ -6,6 +6,7 @@ import {
   EyeIcon,
   DocumentArrowDownIcon,
   XCircleIcon,
+  ReceiptRefundIcon,
 } from '@heroicons/react/24/outline'
 import { getSales, cancelSale, openSalePdf } from '@/services/api/sales'
 import { toast } from '@/store/toastStore'
@@ -19,6 +20,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Select } from '@/components/ui/Input'
 import CanDo from '@/components/ui/CanDo'
+import EmptyState from '@/components/ui/EmptyState'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import type { Sale } from '@/types'
 
@@ -75,9 +77,9 @@ export default function SalesPage() {
 
   // ── PDF ───────────────────────────────────────────────────────────────────
   const [pdfLoading, setPdfLoading] = useState<string | null>(null)
-  const handlePdf = async (uid: string) => {
+  const handlePdf = async (uid: string, reference: string) => {
     setPdfLoading(uid)
-    try { await openSalePdf(uid) } finally { setPdfLoading(null) }
+    try { await openSalePdf(uid, reference) } finally { setPdfLoading(null) }
   }
 
   // ── Colonnes ──────────────────────────────────────────────────────────────
@@ -165,12 +167,19 @@ export default function SalesPage() {
           <CanDo permission="sales.pdf">
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); handlePdf(s.uid) }}
+              onClick={(e) => { e.stopPropagation(); handlePdf(s.uid, s.reference) }}
               disabled={pdfLoading === s.uid}
               className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40"
               title="Télécharger PDF"
             >
-              <DocumentArrowDownIcon className="h-4 w-4" />
+              {pdfLoading === s.uid ? (
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <DocumentArrowDownIcon className="h-4 w-4" />
+              )}
             </button>
           </CanDo>
 
@@ -196,7 +205,7 @@ export default function SalesPage() {
     <div className="space-y-4 p-4 sm:p-6">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-gray-900">Ventes</h1>
+        <h1 className="text-xl font-bold text-slate-900">Ventes</h1>
         <CanDo permission="sales.create">
           <Button
             icon={<PlusIcon className="h-4 w-4" />}
@@ -249,8 +258,65 @@ export default function SalesPage() {
         keyExtractor={(s) => s.id}
         loading={isLoading}
         skeletonRows={8}
-        emptyMessage="Aucune vente trouvée."
+        emptyMessage={<EmptyState icon={<ReceiptRefundIcon className="h-7 w-7" />} title="Aucune vente" description="Les ventes passées en caisse ou via la boutique en ligne apparaîtront ici." />}
         onRowClick={(s) => navigate(`/sales/${s.uid}`)}
+        mobileCard={(s) => {
+          const due = parseFloat(s.total) - parseFloat(s.paid_amount)
+          return (
+            <div className="px-4 py-3">
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <span className="font-mono text-sm font-semibold text-gray-900">{s.reference}</span>
+                <Badge variant={STATUS_VARIANT[s.status]}>{STATUS_LABEL[s.status]}</Badge>
+              </div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-600">
+                  {s.customer ? s.customer.name : <span className="text-gray-300">Anonyme</span>}
+                </span>
+                <span className="text-xs text-gray-400">{formatDateTime(s.confirmed_at ?? s.created_at)}</span>
+              </div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-bold text-gray-900">{formatCurrency(s.total)}</span>
+                {due > 0 ? (
+                  <span className="text-sm font-semibold text-red-600">{formatCurrency(due)}</span>
+                ) : (
+                  <span className="text-sm text-gray-300">—</span>
+                )}
+              </div>
+              <div className="flex gap-2 pt-2 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                <CanDo permission="sales.pdf">
+                  <button
+                    type="button"
+                    onClick={() => handlePdf(s.uid, s.reference)}
+                    disabled={pdfLoading === s.uid}
+                    className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100 disabled:opacity-40"
+                  >
+                    {pdfLoading === s.uid ? (
+                      <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                    ) : (
+                      <DocumentArrowDownIcon className="h-3.5 w-3.5" />
+                    )}
+                    PDF
+                  </button>
+                </CanDo>
+                {s.status === 'confirmed' && (
+                  <CanDo permission="sales.delete">
+                    <button
+                      type="button"
+                      onClick={() => setCancelTarget(s)}
+                      className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-red-500 hover:bg-red-50"
+                    >
+                      <XCircleIcon className="h-3.5 w-3.5" />
+                      Annuler
+                    </button>
+                  </CanDo>
+                )}
+              </div>
+            </div>
+          )
+        }}
       />
 
       {/* Pagination */}

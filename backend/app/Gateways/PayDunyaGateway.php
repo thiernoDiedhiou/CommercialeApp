@@ -27,7 +27,8 @@ use RuntimeException;
 class PayDunyaGateway implements PaymentGatewayInterface
 {
     private string $baseUrl;
-    private array  $headers;
+
+    private array $headers;
 
     public function __construct()
     {
@@ -38,10 +39,10 @@ class PayDunyaGateway implements PaymentGatewayInterface
             : 'https://app.paydunya.com/sandbox-api/v1';
 
         $this->headers = [
-            'PAYDUNYA-MASTER-KEY'  => config('payment.paydunya.master_key'),
+            'PAYDUNYA-MASTER-KEY' => config('payment.paydunya.master_key'),
             'PAYDUNYA-PRIVATE-KEY' => config('payment.paydunya.private_key'),
-            'PAYDUNYA-TOKEN'       => config('payment.paydunya.token'),
-            'Content-Type'         => 'application/json',
+            'PAYDUNYA-TOKEN' => config('payment.paydunya.token'),
+            'Content-Type' => 'application/json',
         ];
     }
 
@@ -49,11 +50,11 @@ class PayDunyaGateway implements PaymentGatewayInterface
     {
         $payload = [
             'invoice' => [
-                'total_amount'    => $request->amount,
-                'description'     => $request->description,
+                'total_amount' => $request->amount,
+                'description' => $request->description,
             ],
             'store' => [
-                'name'    => config('app.name', 'DiDi Sphere'),
+                'name' => config('app.name', 'DiDi Sphere'),
                 'website' => config('app.frontend_url', 'https://didisphere.shop'),
             ],
             'actions' => [
@@ -69,7 +70,7 @@ class PayDunyaGateway implements PaymentGatewayInterface
 
         if ($request->customerName || $request->customerEmail || $request->customerPhone) {
             $payload['customer'] = array_filter([
-                'name'  => $request->customerName,
+                'name' => $request->customerName,
                 'email' => $request->customerEmail,
                 'phone' => $request->customerPhone,
             ]);
@@ -81,7 +82,7 @@ class PayDunyaGateway implements PaymentGatewayInterface
 
         if (! $response->successful()) {
             throw new RuntimeException(
-                "PayDunya createInvoice failed [{$response->status()}] : " . $response->body()
+                "PayDunya createInvoice failed [{$response->status()}] : ".$response->body()
             );
         }
 
@@ -89,7 +90,7 @@ class PayDunyaGateway implements PaymentGatewayInterface
 
         if (($data['response_code'] ?? null) !== '00') {
             throw new RuntimeException(
-                "PayDunya invoice error : " . ($data['response_text'] ?? 'Unknown error')
+                'PayDunya invoice error : '.($data['response_text'] ?? 'Unknown error')
             );
         }
 
@@ -113,10 +114,10 @@ class PayDunyaGateway implements PaymentGatewayInterface
         $data = $response->json();
 
         return match ($data['invoice']['status'] ?? 'pending') {
-            'completed'           => PaymentStatus::Completed,
+            'completed' => PaymentStatus::Completed,
             'cancelled', 'cancel' => PaymentStatus::Cancelled,
-            'failed'              => PaymentStatus::Failed,
-            default               => PaymentStatus::Pending,
+            'failed' => PaymentStatus::Failed,
+            default => PaymentStatus::Pending,
         };
     }
 
@@ -133,7 +134,7 @@ class PayDunyaGateway implements PaymentGatewayInterface
         $masterKey = $request->header('PAYDUNYA-MASTER-KEY')
             ?? $request->input('PAYDUNYA-MASTER-KEY');
 
-        return ! empty($masterKey) && $masterKey === $configKey;
+        return ! empty($masterKey) && hash_equals($configKey, $masterKey);
     }
 
     public function parseWebhook(Request $request): WebhookEvent
@@ -141,23 +142,23 @@ class PayDunyaGateway implements PaymentGatewayInterface
         $payload = $request->all();
         $invoice = $payload['invoice'] ?? $payload['data']['invoice'] ?? [];
 
-        $token  = $invoice['token']  ?? '';
+        $token = $invoice['token'] ?? '';
         $status = $invoice['status'] ?? 'pending';
 
         // Canal de paiement réel — PayDunya renvoie un code dans payment_method
         $paymentMethodLabel = $this->resolvePaymentMethodLabel(
             $invoice['payment_method'] ?? null,
-            $invoice['card_last4']     ?? null,
-            $invoice['card_brand']     ?? null,
+            $invoice['card_last4'] ?? null,
+            $invoice['card_brand'] ?? null,
         );
 
         return new WebhookEvent(
             providerToken      : $token,
             status             : match ($status) {
-                'completed'           => PaymentStatus::Completed,
+                'completed' => PaymentStatus::Completed,
                 'cancelled', 'cancel' => PaymentStatus::Cancelled,
-                'failed'              => PaymentStatus::Failed,
-                default               => PaymentStatus::Pending,
+                'failed' => PaymentStatus::Failed,
+                default => PaymentStatus::Pending,
             },
             rawPayload         : $payload,
             paymentMethodLabel : $paymentMethodLabel,
@@ -175,14 +176,14 @@ class PayDunyaGateway implements PaymentGatewayInterface
         }
 
         $map = [
-            'ORANGE_MONEY_SN'  => 'Orange Money',
-            'ORANGE_MONEY_CI'  => 'Orange Money',
-            'WAVE_SN'          => 'Wave',
-            'WAVE_CI'          => 'Wave',
-            'FREE_MONEY'       => 'Free Money',
-            'CARD'             => 'Carte bancaire',
-            'VISA'             => 'Visa',
-            'MASTERCARD'       => 'Mastercard',
+            'ORANGE_MONEY_SN' => 'Orange Money',
+            'ORANGE_MONEY_CI' => 'Orange Money',
+            'WAVE_SN' => 'Wave',
+            'WAVE_CI' => 'Wave',
+            'FREE_MONEY' => 'Free Money',
+            'CARD' => 'Carte bancaire',
+            'VISA' => 'Visa',
+            'MASTERCARD' => 'Mastercard',
         ];
 
         $label = $map[strtoupper($method)] ?? ucfirst(strtolower(str_replace('_', ' ', $method)));
@@ -190,6 +191,7 @@ class PayDunyaGateway implements PaymentGatewayInterface
         // Pour les cartes : ajouter les 4 derniers chiffres si disponibles
         if ($last4 && in_array(strtoupper($method), ['CARD', 'VISA', 'MASTERCARD'], true)) {
             $cardBrand = $brand ? ucfirst(strtolower($brand)) : $label;
+
             return "{$cardBrand} **** {$last4}";
         }
 

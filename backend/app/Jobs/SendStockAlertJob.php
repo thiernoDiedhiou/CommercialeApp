@@ -13,6 +13,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Queue\SerializesModels;
 
 class SendStockAlertJob implements ShouldQueue
@@ -44,6 +45,11 @@ class SendStockAlertJob implements ShouldQueue
             ->each(fn (User $user) => $user->notify(
                 new StockAlertInAppNotification($this->tenant, $this->product, $this->variant)
             ));
+    }
+
+    public function middleware(): array
+    {
+        return [new RateLimited('tenant-notifications')];
     }
 
     public function queue(): string

@@ -109,7 +109,7 @@ export default function BrandSelect({
           error={error}
           disabled={isLoading}
         >
-          <option value="">— Aucune marque —</option>
+          <option value="">Aucune marque</option>
           {brands.map((b) => (
             <option key={b.id} value={b.id}>
               {b.name}

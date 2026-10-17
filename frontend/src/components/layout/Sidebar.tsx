@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { XMarkIcon, ChevronDownIcon } from '@heroicons/react/24/outline'
+import { X, ChevronDown } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useHomePath } from '@/hooks/useHomePath'
 import { NAV_ITEMS } from '@/lib/navItems'
@@ -58,7 +58,7 @@ function SidebarContent({ onClose }: SidebarContentProps) {
           <img
             src={tenant.logo_url}
             alt={tenant.name}
-            className="h-9 w-9 shrink-0 rounded-lg object-contain"
+            className="h-12 w-12 shrink-0 rounded-lg object-contain"
           />
         ) : null}
         <span className="truncate text-lg font-bold text-brand-primary">
@@ -108,7 +108,7 @@ function SidebarContent({ onClose }: SidebarContentProps) {
                   cn(
                     'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                     (!hasChildren && isActive) || (hasChildren && isExpanded)
-                      ? 'bg-brand-primary text-white'
+                      ? 'bg-brand-primary/10 text-brand-primary'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
                   )
                 }
@@ -116,7 +116,7 @@ function SidebarContent({ onClose }: SidebarContentProps) {
                 <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
                 <span className="flex-1">{item.label}</span>
                 {hasChildren && (
-                  <ChevronDownIcon
+                  <ChevronDown
                     className={cn(
                       'h-4 w-4 shrink-0 transition-transform duration-200',
                       isExpanded && 'rotate-180',
@@ -126,7 +126,7 @@ function SidebarContent({ onClose }: SidebarContentProps) {
               </NavLink>
 
               {hasChildren && isExpanded && (
-                <div className="mt-0.5 ml-4 space-y-0.5 border-l-2 border-gray-100 pl-3">
+                <div className="mt-0.5 ml-4 space-y-0.5 border-l-2 border-brand-primary/20 pl-3">
                   {visibleChildren.map((child) => {
                     if (!hasFeature(child.feature)) {
                       return (
@@ -149,7 +149,7 @@ function SidebarContent({ onClose }: SidebarContentProps) {
                           cn(
                             'flex items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
                             isActive
-                              ? 'text-brand-primary font-semibold'
+                              ? 'bg-brand-primary/10 text-brand-primary font-semibold'
                               : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900',
                           )
                         }
@@ -204,7 +204,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow text-gray-600"
               aria-label="Fermer le menu"
             >
-              <XMarkIcon className="h-5 w-5" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 

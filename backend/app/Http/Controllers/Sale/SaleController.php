@@ -7,6 +7,7 @@ use App\Exceptions\StockInsufficientException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sale\StorePaymentRequest;
 use App\Http\Requests\Sale\StoreSaleRequest;
+use App\Http\Resources\SaleResource;
 use App\Models\Sale;
 use App\Services\SaleService;
 use App\Services\TenantService;
@@ -29,16 +30,20 @@ class SaleController extends Controller
         $sales = Sale::with(['customer:id,name', 'user:id,name'])
             ->withCount('items')
             ->withSum('payments', 'amount')
-            ->when($request->search, fn($q) => $q->where(function ($inner) use ($request) {
+            ->when($request->search, fn ($q) => $q->where(function ($inner) use ($request) {
                 $inner->where('reference', 'like', "%{$request->search}%")
-                      ->orWhereHas('customer', fn($c) => $c->where('name', 'like', "%{$request->search}%"));
+                    ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$request->search}%"));
             }))
-            ->when($request->status, fn($q) => $q->where('status', $request->status))
-            ->when($request->customer_id, fn($q) => $q->where('customer_id', $request->customer_id))
-            ->when($request->user_id, fn($q) => $q->where('user_id', $request->user_id))
-            ->when($request->from && $request->to, fn($q) => $q->forPeriod($request->from, $request->to))
+            ->when($request->status, fn ($q) => $q->where('status', $request->status))
+            ->when($request->customer_id, fn ($q) => $q->where('customer_id', $request->customer_id))
+            ->when($request->user_id, fn ($q) => $q->where('user_id', $request->user_id))
+            ->when($request->from && $request->to, fn ($q) => $q->forPeriod($request->from, $request->to))
             ->latest('id')
             ->paginate(20);
+
+        $sales->setCollection(
+            $sales->getCollection()->map(fn ($s) => (new SaleResource($s))->toArray(request()))
+        );
 
         return response()->json($sales);
     }
@@ -48,7 +53,7 @@ class SaleController extends Controller
         try {
             $sale = $this->saleService->create($request->validated(), $request->user());
 
-            return response()->json(['data' => $sale], 201);
+            return response()->json(['data' => new SaleResource($sale)], 201);
         } catch (StockInsufficientException $e) {
             return response()->json(['message' => $e->getMessage(), 'code' => 'STOCK_INSUFFICIENT'], 422);
         } catch (SaleException $e) {
@@ -60,16 +65,16 @@ class SaleController extends Controller
     {
         $sale->load(self::EAGER_LOAD);
 
-        return response()->json(['data' => $sale]);
+        return response()->json(['data' => new SaleResource($sale)]);
     }
 
     public function addPayment(StorePaymentRequest $request, Sale $sale): JsonResponse
     {
         try {
             $payment = $this->saleService->addPayment(
-                sale:      $sale,
-                method:    $request->input('method'),
-                amount:    (float) $request->input('amount'),
+                sale: $sale,
+                method: $request->input('method'),
+                amount: (float) $request->input('amount'),
                 reference: $request->input('reference'),
             );
 
@@ -84,7 +89,7 @@ class SaleController extends Controller
         try {
             $sale = $this->saleService->cancel($sale);
 
-            return response()->json(['data' => $sale]);
+            return response()->json(['data' => new SaleResource($sale)]);
         } catch (SaleException $e) {
             return response()->json($e->toArray(), 422);
         }
@@ -96,8 +101,9 @@ class SaleController extends Controller
 
         $tenant = $this->tenantService->current();
         $footer = $this->tenantService->setting('receipt_footer') ?? 'Merci de votre confiance';
+        $template = $this->tenantService->setting('pdf_template') ?? 'classique';
 
-        $pdf = Pdf::loadView('pdf.invoice', compact('sale', 'tenant', 'footer'));
+        $pdf = Pdf::loadView('pdf.invoice', compact('sale', 'tenant', 'footer', 'template'));
 
         return $pdf->stream("facture-{$sale->reference}.pdf");
     }

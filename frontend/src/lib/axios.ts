@@ -3,6 +3,8 @@ import { useAuthStore } from '@/store/authStore'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
 
+export const API = '/api/v1'
+
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '',
   headers: {

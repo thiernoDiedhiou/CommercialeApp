@@ -1,4 +1,4 @@
-import apiClient from '@/lib/axios'
+import apiClient, { API } from '@/lib/axios'
 import type { SalesReport, ProductsReport, StockReport } from '@/types'
 
 export interface ReportParams {
@@ -11,12 +11,12 @@ export interface ReportParams {
 export async function getSalesReport(params: ReportParams & {
   group_by?: 'day' | 'month'
 }): Promise<SalesReport> {
-  const { data } = await apiClient.get<SalesReport>('/api/v1/reports/sales', { params })
+  const { data } = await apiClient.get<SalesReport>(`${API}/reports/sales`, { params })
   return data
 }
 
 export async function exportSalesCsv(params: ReportParams & { group_by?: 'day' | 'month' }): Promise<void> {
-  const response = await apiClient.get('/api/v1/reports/sales', {
+  const response = await apiClient.get(`${API}/reports/sales`, {
     params: { ...params, format: 'csv' },
     responseType: 'blob',
   })
@@ -28,12 +28,12 @@ export async function exportSalesCsv(params: ReportParams & { group_by?: 'day' |
 export async function getProductsReport(params: ReportParams & {
   limit?: number
 }): Promise<ProductsReport> {
-  const { data } = await apiClient.get<ProductsReport>('/api/v1/reports/products', { params })
+  const { data } = await apiClient.get<ProductsReport>(`${API}/reports/products`, { params })
   return data
 }
 
 export async function exportProductsCsv(params: ReportParams & { limit?: number }): Promise<void> {
-  const response = await apiClient.get('/api/v1/reports/products', {
+  const response = await apiClient.get(`${API}/reports/products`, {
     params: { ...params, format: 'csv' },
     responseType: 'blob',
   })
@@ -43,12 +43,12 @@ export async function exportProductsCsv(params: ReportParams & { limit?: number 
 // ── Résumé stock ──────────────────────────────────────────────────────────
 
 export async function getStockReport(params: ReportParams): Promise<StockReport> {
-  const { data } = await apiClient.get<StockReport>('/api/v1/reports/stock', { params })
+  const { data } = await apiClient.get<StockReport>(`${API}/reports/stock`, { params })
   return data
 }
 
 export async function exportStockCsv(params: ReportParams): Promise<void> {
-  const response = await apiClient.get('/api/v1/reports/stock', {
+  const response = await apiClient.get(`${API}/reports/stock`, {
     params: { ...params, format: 'csv' },
     responseType: 'blob',
   })

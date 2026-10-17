@@ -127,7 +127,7 @@ export default function ShopFooter({ slug }: Props) {
             <Link to={`/shop/${slug}`} className="inline-block">
               {shopConfig?.logo_url ? (
                 <div className="inline-flex items-center bg-white/10 rounded-xl px-3 py-2">
-                  <img src={shopConfig.logo_url} alt={shopConfig.name} className="max-h-8 object-contain" />
+                  <img src={shopConfig.logo_url} alt={shopConfig.name} className="max-h-12 w-auto object-contain" />
                 </div>
               ) : (
                 <span className="text-lg font-bold text-white">{shopConfig?.name ?? ''}</span>
