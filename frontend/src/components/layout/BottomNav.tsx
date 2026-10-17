@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -10,21 +11,22 @@ import {
 import { useAuthStore } from '@/store/authStore'
 import { cn } from '@/lib/utils'
 
-const QUICK_ITEMS = [
-  { label: 'Accueil',  path: '/dashboard', icon: LayoutDashboard, permission: 'dashboard.view' },
-  { label: 'Caisse',   path: '/pos',        icon: ShoppingCart,    permission: 'pos.access'     },
-  { label: 'Ventes',   path: '/sales',      icon: Receipt,         permission: 'sales.view'     },
-  { label: 'Produits', path: '/products',   icon: Package,         permission: 'products.view'  },
-  { label: 'Clients',  path: '/customers',  icon: Users,           permission: 'customers.view' },
-]
-
 interface BottomNavProps {
   onMenuOpen: () => void
 }
 
 export default function BottomNav({ onMenuOpen }: BottomNavProps) {
+  const { t }       = useTranslation()
   const permissions = useAuthStore((s) => s.permissions)
   const location    = useLocation()
+
+  const QUICK_ITEMS = [
+    { labelKey: 'nav.home',      path: '/dashboard', icon: LayoutDashboard, permission: 'dashboard.view' },
+    { labelKey: 'nav.caisse',    path: '/pos',        icon: ShoppingCart,    permission: 'pos.access'     },
+    { labelKey: 'nav.sales',     path: '/sales',      icon: Receipt,         permission: 'sales.view'     },
+    { labelKey: 'nav.products',  path: '/products',   icon: Package,         permission: 'products.view'  },
+    { labelKey: 'nav.customers', path: '/customers',  icon: Users,           permission: 'customers.view' },
+  ]
 
   // Prend les 4 premiers items pour lesquels l'utilisateur a la permission
   const visible = QUICK_ITEMS.filter((item) => permissions.includes(item.permission)).slice(0, 4)
@@ -50,7 +52,7 @@ export default function BottomNav({ onMenuOpen }: BottomNavProps) {
               )}
             >
               <item.icon className={cn('h-5 w-5 shrink-0', isActive && 'stroke-[2.5px]')} />
-              {item.label}
+              {t(item.labelKey)}
             </NavLink>
           )
         })}
@@ -62,7 +64,7 @@ export default function BottomNav({ onMenuOpen }: BottomNavProps) {
           className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium leading-tight text-gray-400 hover:text-gray-600 transition-colors"
         >
           <Menu className="h-5 w-5 shrink-0" />
-          Menu
+          {t('nav.menu')}
         </button>
       </div>
     </nav>

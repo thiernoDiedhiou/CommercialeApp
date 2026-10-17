@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import axios from 'axios'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline'
 import apiClient from '@/lib/axios'
@@ -12,12 +13,7 @@ import { useTenantStore } from '@/store/tenantStore'
 import type { LoginResponse } from '@/types'
 import { cn } from '@/lib/utils'
 
-const loginSchema = z.object({
-  email:    z.string().email('Adresse email invalide'),
-  password: z.string().min(1, 'Mot de passe requis'),
-})
-
-type LoginFormData = z.infer<typeof loginSchema>
+type LoginFormData = { email: string; password: string }
 
 function getInitialDark(): boolean {
   const stored = localStorage.getItem('landing-theme')
@@ -26,12 +22,18 @@ function getInitialDark(): boolean {
 }
 
 export default function LoginPage() {
+  const { t }            = useTranslation()
   const navigate         = useNavigate()
   const setAuth          = useAuthStore((s) => s.setAuth)
   const applyBrandColors = useTenantStore((s) => s.applyBrandColors)
 
   const [showPassword, setShowPassword] = useState(false)
   const [isDark]                        = useState(getInitialDark)
+
+  const loginSchema = z.object({
+    email:    z.string().email(t('auth.email_invalid')),
+    password: z.string().min(1, t('auth.password_required')),
+  })
 
   const {
     register,
@@ -52,8 +54,8 @@ export default function LoginPage() {
     },
     onError: (error) => {
       const message = axios.isAxiosError(error)
-        ? (error.response?.data as { message?: string })?.message ?? 'Identifiants incorrects. Réessayez.'
-        : 'Une erreur est survenue. Réessayez.'
+        ? (error.response?.data as { message?: string })?.message ?? t('auth.invalid_credentials')
+        : t('auth.error_occurred')
       setError('root', { message })
     },
   })
@@ -95,10 +97,10 @@ export default function LoginPage() {
               />
             </div>
             <h1 className="text-[1.6rem] font-bold tracking-tight text-gray-900 dark:text-white leading-tight">
-              Bienvenue
+              {t('auth.welcome')}
             </h1>
             <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
-              Connectez-vous à votre espace de gestion
+              {t('auth.subtitle')}
             </p>
           </div>
 
@@ -124,13 +126,13 @@ export default function LoginPage() {
               {/* Email */}
               <div>
                 <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Adresse email
+                  {t('auth.email_label')}
                 </label>
                 <input
                   id="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="vous@exemple.com"
+                  placeholder={t('auth.email_placeholder')}
                   {...register('email')}
                   className={errors.email ? inputError : input}
                 />
@@ -143,13 +145,13 @@ export default function LoginPage() {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label htmlFor="password" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Mot de passe
+                    {t('auth.password_label')}
                   </label>
                   <Link
                     to="/mot-de-passe-oublie"
                     className="text-xs text-[#2465ed] hover:text-[#1a4fc4] transition-colors"
                   >
-                    Mot de passe oublié ?
+                    {t('auth.forgot_password')}
                   </Link>
                 </div>
                 <div className="relative">
@@ -163,7 +165,7 @@ export default function LoginPage() {
                   />
                   <button
                     type="button"
-                    aria-label={showPassword ? 'Masquer' : 'Afficher'}
+                    aria-label={showPassword ? t('auth.hide_password') : t('auth.show_password')}
                     onClick={() => setShowPassword((v) => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                   >
@@ -196,11 +198,11 @@ export default function LoginPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Connexion en cours…
+                    {t('auth.logging_in')}
                   </>
                 ) : (
                   <span className="flex items-center gap-1.5">
-                    Se connecter
+                    {t('auth.login_btn')}
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                     </svg>
@@ -213,9 +215,9 @@ export default function LoginPage() {
 
           {/* CTA inscription */}
           <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
-            Pas encore de compte ?{' '}
+            {t('auth.no_account')}{' '}
             <Link to="/inscription" className="font-semibold text-[#2465ed] hover:text-[#1a4fc4] transition-colors">
-              Essai gratuit de 21 jours
+              {t('auth.free_trial')}
             </Link>
           </p>
 

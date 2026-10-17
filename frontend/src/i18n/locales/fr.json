@@ -1,5 +1,8 @@
 {
   "nav": {
+    "home": "Accueil",
+    "caisse": "Caisse",
+    "menu": "Menu",
     "dashboard": "Tableau de bord",
     "pos": "Caisse POS",
     "sales": "Ventes",
@@ -99,6 +102,22 @@
     "validate": "Valider"
   },
   "auth": {
+    "welcome": "Bienvenue",
+    "subtitle": "Connectez-vous à votre espace de gestion",
+    "email_label": "Adresse email",
+    "email_placeholder": "vous@exemple.com",
+    "email_invalid": "Adresse email invalide",
+    "password_label": "Mot de passe",
+    "password_required": "Mot de passe requis",
+    "forgot_password": "Mot de passe oublié ?",
+    "show_password": "Afficher le mot de passe",
+    "hide_password": "Masquer le mot de passe",
+    "logging_in": "Connexion en cours…",
+    "login_btn": "Se connecter",
+    "no_account": "Pas encore de compte ?",
+    "free_trial": "Essai gratuit de 21 jours",
+    "invalid_credentials": "Identifiants incorrects. Réessayez.",
+    "error_occurred": "Une erreur est survenue. Réessayez.",
     "profile": "Mon profil",
     "logout": "Se déconnecter",
     "logging_out": "Déconnexion…"
