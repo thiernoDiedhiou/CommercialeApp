@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\HasUuid;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,6 +31,7 @@ class Tenant extends Model
         'country',
         'rccm',
         'ninea',
+        'admin_notes',
         'logo_path',
         'primary_color',
         'secondary_color',
@@ -42,11 +44,11 @@ class Tenant extends Model
     ];
 
     protected $casts = [
-        'is_active'              => 'boolean',
-        'trial_ends_at'          => 'datetime',
-        'subscription_ends_at'   => 'datetime',
-        'scheduled_deletion_at'  => 'datetime',
-        'deletion_requested_at'  => 'datetime',
+        'is_active' => 'boolean',
+        'trial_ends_at' => 'datetime',
+        'subscription_ends_at' => 'datetime',
+        'scheduled_deletion_at' => 'datetime',
+        'deletion_requested_at' => 'datetime',
     ];
 
     protected $hidden = [
@@ -86,7 +88,7 @@ class Tenant extends Model
 
     // ─── Scopes ───────────────────────────────────────────────────────────────
 
-    public function scopeActive(\Illuminate\Database\Eloquent\Builder $query): \Illuminate\Database\Eloquent\Builder
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
@@ -135,7 +137,7 @@ class Tenant extends Model
      */
     public static function uniqueSlug(string $base): string
     {
-        $slug   = $base;
+        $slug = $base;
         $suffix = 2;
 
         while (static::withTrashed()->where('slug', $slug)->exists()) {

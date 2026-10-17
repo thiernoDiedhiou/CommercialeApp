@@ -15,6 +15,10 @@ import {
   XMarkIcon,
   EyeIcon,
   EyeSlashIcon,
+  EnvelopeIcon as EnvelopeSmtpIcon,
+  CurrencyDollarIcon,
+  ReceiptPercentIcon,
+  DevicePhoneMobileIcon,
 } from '@heroicons/react/24/outline'
 import { CreditCardIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/authStore'
@@ -52,13 +56,15 @@ import type { UserWithGroups, Group, Permission, CreateGroupData } from '@/types
 
 // ─── Tab IDs ──────────────────────────────────────────────────────────────────
 
-type Tab = 'boutique' | 'facturation' | 'users' | 'groups'
+type Tab = 'boutique' | 'vente' | 'facturation' | 'email' | 'users' | 'groups'
 
 const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-  { id: 'boutique',    label: 'Boutique',     icon: <BuildingStorefrontIcon className="h-4 w-4" /> },
-  { id: 'facturation', label: 'Facturation',  icon: <DocumentTextIcon className="h-4 w-4" /> },
-  { id: 'users',       label: 'Utilisateurs', icon: <UsersIcon className="h-4 w-4" /> },
-  { id: 'groups',      label: 'Groupes',      icon: <ShieldCheckIcon className="h-4 w-4" /> },
+  { id: 'boutique',    label: 'Boutique',       icon: <BuildingStorefrontIcon className="h-4 w-4" /> },
+  { id: 'vente',       label: 'Vente & Caisse', icon: <CreditCardIcon className="h-4 w-4" /> },
+  { id: 'facturation', label: 'Facturation',    icon: <DocumentTextIcon className="h-4 w-4" /> },
+  { id: 'email',       label: 'Email',          icon: <EnvelopeSmtpIcon className="h-4 w-4" /> },
+  { id: 'users',       label: 'Utilisateurs',   icon: <UsersIcon className="h-4 w-4" /> },
+  { id: 'groups',      label: 'Groupes',        icon: <ShieldCheckIcon className="h-4 w-4" /> },
 ]
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
@@ -225,16 +231,19 @@ function SmtpSection() {
 // ─── BoutiqueTab ─────────────────────────────────────────────────────────────
 
 const boutiqueSchema = z.object({
-  name:          z.string().min(2, 'Nom requis'),
-  sector:        z.enum(['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services']),
-  currency:      z.string().min(3).max(3),
-  phone_country: z.string().length(2).default('SN'),
-  phone:         z.string().optional(),
-  email:         z.string().email('Email invalide').or(z.literal('')).optional(),
-  address:       z.string().optional(),
-  city:          z.string().optional(),
-  rccm:          z.string().optional(),
-  ninea:         z.string().optional(),
+  name:                 z.string().min(2, 'Nom requis'),
+  sector:               z.enum(['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services', 'ecommerce']),
+  locale:               z.enum(['fr', 'en']).default('fr'),
+  timezone:             z.string().default('Africa/Dakar'),
+  country:              z.string().length(2).default('SN'),
+  phone_country:        z.string().length(2).default('SN'),
+  phone:                z.string().optional(),
+  email:                z.string().email('Email invalide').or(z.literal('')).optional(),
+  address:              z.string().optional(),
+  city:                 z.string().optional(),
+  rccm:                 z.string().optional(),
+  ninea:                z.string().optional(),
+  business_description: z.string().max(500).optional(),
 })
 type BoutiqueValues = z.infer<typeof boutiqueSchema>
 
@@ -246,7 +255,34 @@ const SECTOR_LABELS: Record<string, string> = {
   pharmacy:    'Pharmacie / Parapharmacie',
   electronics: 'High-tech / Électronique',
   services:    'Prestations de services',
+  ecommerce:   'E-commerce',
 }
+
+const LOCALE_LABELS: Record<string, string> = {
+  fr: 'Français',
+  en: 'English',
+}
+
+const TIMEZONE_OPTIONS = [
+  'Africa/Dakar', 'Africa/Abidjan', 'Africa/Bamako', 'Africa/Conakry',
+  'Africa/Lagos', 'Africa/Accra', 'Africa/Casablanca', 'Africa/Tunis',
+  'Europe/Paris', 'Europe/London',
+]
+
+const COUNTRY_OPTIONS = [
+  { code: 'SN', label: 'Sénégal' },
+  { code: 'CI', label: "Côte d'Ivoire" },
+  { code: 'ML', label: 'Mali' },
+  { code: 'GN', label: 'Guinée' },
+  { code: 'BF', label: 'Burkina Faso' },
+  { code: 'TG', label: 'Togo' },
+  { code: 'BJ', label: 'Bénin' },
+  { code: 'GH', label: 'Ghana' },
+  { code: 'NG', label: 'Nigeria' },
+  { code: 'CM', label: 'Cameroun' },
+  { code: 'MA', label: 'Maroc' },
+  { code: 'FR', label: 'France' },
+]
 
 function BoutiqueTab() {
   const setAuth             = useAuthStore((s) => s.setAuth)
@@ -280,16 +316,19 @@ function BoutiqueTab() {
   useEffect(() => {
     if (data) {
       reset({
-        name:          data.name,
-        sector:        data.sector as BoutiqueValues['sector'],
-        currency:      data.currency,
-        phone_country: 'SN',
-        phone:         data.phone ?? '',
-        email:         data.email ?? '',
-        address:       data.address ?? '',
-        city:          data.city ?? '',
-        rccm:          data.rccm ?? '',
-        ninea:         data.ninea ?? '',
+        name:                 data.name,
+        sector:               data.sector as BoutiqueValues['sector'],
+        locale:               (data.locale ?? 'fr') as BoutiqueValues['locale'],
+        timezone:             data.timezone ?? 'Africa/Dakar',
+        country:              data.country  ?? 'SN',
+        phone_country:        'SN',
+        phone:                data.phone ?? '',
+        email:                data.email ?? '',
+        address:              data.address ?? '',
+        city:                 data.city ?? '',
+        rccm:                 data.rccm ?? '',
+        ninea:                data.ninea ?? '',
+        business_description: data.business_description ?? '',
       })
       setLogoPreview(data.logo_url ?? null)
     }
@@ -323,15 +362,18 @@ function BoutiqueTab() {
   const mutation = useMutation({
     mutationFn: (vals: BoutiqueValues) => updateTenantSettings(
       {
-        name:          vals.name,
-        sector:        vals.sector,
-        currency:      vals.currency,
-        phone:         normalizePhone(vals.phone),
-        email:         vals.email || null,
-        address:       vals.address || null,
-        city:          vals.city || null,
-        rccm:          vals.rccm || null,
-        ninea:         vals.ninea || null,
+        name:                 vals.name,
+        sector:               vals.sector,
+        locale:               vals.locale,
+        timezone:             vals.timezone,
+        country:              vals.country,
+        phone:                normalizePhone(vals.phone),
+        email:                vals.email || null,
+        address:              vals.address || null,
+        city:                 vals.city || null,
+        rccm:                 vals.rccm || null,
+        ninea:                vals.ninea || null,
+        business_description: vals.business_description || null,
       },
       logoFile,
       removeLogo,
@@ -431,16 +473,28 @@ function BoutiqueTab() {
           </Select>
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">Devise</label>
-          <Select {...register('currency')}>
-            {SUPPORTED_CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.code} — {c.symbol}
-                {c.decimals === 0 ? ' (sans centimes)' : ' (avec centimes)'}
-              </option>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">Langue de l'interface</label>
+          <Select {...register('locale')}>
+            {Object.entries(LOCALE_LABELS).map(([val, label]) => (
+              <option key={val} value={val}>{label}</option>
             ))}
           </Select>
-          <p className="mt-1 text-xs text-gray-400">Affecte tous les montants affichés dans l'application.</p>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">Fuseau horaire</label>
+          <Select {...register('timezone')}>
+            {TIMEZONE_OPTIONS.map((tz) => (
+              <option key={tz} value={tz}>{tz}</option>
+            ))}
+          </Select>
+        </div>
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">Pays</label>
+          <Select {...register('country')}>
+            {COUNTRY_OPTIONS.map((c) => (
+              <option key={c.code} value={c.code}>{c.label} ({c.code})</option>
+            ))}
+          </Select>
         </div>
       </div>
 
@@ -493,6 +547,21 @@ function BoutiqueTab() {
         </div>
       </div>
 
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+          Description de l'activité
+          <span className="ml-1 text-xs font-normal text-gray-400">(optionnel)</span>
+        </label>
+        <textarea
+          rows={3}
+          maxLength={500}
+          placeholder="Ex : Boutique de mode pour femmes, spécialisée dans les tenues traditionnelles et modernes…"
+          className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+          {...register('business_description')}
+        />
+        <p className="mt-1 text-xs text-gray-400">Courte description de votre activité. Peut apparaître sur la vitrine publique.</p>
+      </div>
+
       <div className="flex items-center gap-3">
         <Button type="submit" loading={mutation.isPending} disabled={!isDirty}>
           Enregistrer
@@ -500,9 +569,6 @@ function BoutiqueTab() {
         {saved && <span className="text-sm text-emerald-600 font-medium">Paramètres enregistrés ✓</span>}
       </div>
     </form>
-
-    <hr className="border-gray-100" />
-    <SmtpSection />
     </div>
   )
 }
@@ -1626,6 +1692,232 @@ function FacturationTab() {
   )
 }
 
+// ─── VenteTab ─────────────────────────────────────────────────────────────────
+
+const venteSchema = z.object({
+  currency:                z.string().min(3).max(3),
+  default_vat_rate:        z.number().min(0).max(100).default(0),
+  vat_label:               z.string().max(20).default('TVA'),
+  pos_payment_methods:     z.array(z.string()).default(['cash']),
+  pos_receipt_auto_print:  z.boolean().default(false),
+})
+type VenteValues = z.infer<typeof venteSchema>
+
+const POS_PAYMENT_OPTIONS = [
+  { value: 'cash',         label: 'Espèces' },
+  { value: 'wave',         label: 'Wave' },
+  { value: 'orange_money', label: 'Orange Money' },
+  { value: 'free_money',   label: 'Free Money' },
+  { value: 'card',         label: 'Carte bancaire' },
+  { value: 'cheque',       label: 'Chèque' },
+  { value: 'transfer',     label: 'Virement' },
+]
+
+function VenteTab() {
+  const qc                  = useQueryClient()
+  const subscriptionExpired = useAuthStore((s) => s.subscriptionExpired)
+  const setAuth             = useAuthStore((s) => s.setAuth)
+  const token               = useAuthStore((s) => s.token)
+  const user                = useAuthStore((s) => s.user)
+  const perms               = useAuthStore((s) => s.permissions)
+  const tenant              = useAuthStore((s) => s.tenant)
+  const subscription        = useAuthStore((s) => s.subscription)
+  const planFeatures        = useAuthStore((s) => s.planFeatures)
+  const [saved, setSaved]   = useState(false)
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['tenant-settings'],
+    queryFn:  getTenantSettings,
+    enabled:  !subscriptionExpired,
+    retry:    false,
+  })
+
+  const { register, handleSubmit, reset, watch, setValue, formState: { isDirty } } = useForm<VenteValues>({
+    resolver: zodResolver(venteSchema),
+    defaultValues: { currency: 'XOF', default_vat_rate: 0, vat_label: 'TVA', pos_payment_methods: ['cash'], pos_receipt_auto_print: false },
+  })
+
+  const posMethods = watch('pos_payment_methods')
+
+  useEffect(() => {
+    if (data) {
+      reset({
+        currency:               data.currency,
+        default_vat_rate:       data.default_vat_rate ?? 0,
+        vat_label:              data.vat_label ?? 'TVA',
+        pos_payment_methods:    data.pos_payment_methods ?? ['cash'],
+        pos_receipt_auto_print: data.pos_receipt_auto_print ?? false,
+      })
+    }
+  }, [data, reset])
+
+  const toggleMethod = (val: string) => {
+    const current = posMethods ?? []
+    if (current.includes(val)) {
+      if (current.length <= 1) return // au moins un mode requis
+      setValue('pos_payment_methods', current.filter((m) => m !== val), { shouldDirty: true })
+    } else {
+      setValue('pos_payment_methods', [...current, val], { shouldDirty: true })
+    }
+  }
+
+  const mutation = useMutation({
+    mutationFn: (vals: VenteValues) => updateTenantSettings({
+      currency:               vals.currency,
+      default_vat_rate:       vals.default_vat_rate,
+      vat_label:              vals.vat_label || 'TVA',
+      pos_payment_methods:    vals.pos_payment_methods,
+      pos_receipt_auto_print: vals.pos_receipt_auto_print,
+    }),
+    onSuccess: (updated) => {
+      qc.invalidateQueries({ queryKey: ['tenant-settings'] })
+      if (token && user) {
+        setAuth(token, user, perms, {
+          api_key:         tenant?.api_key ?? '',
+          name:            updated.name,
+          currency:        updated.currency,
+          sector:          updated.sector,
+          rccm:            updated.rccm ?? null,
+          ninea:           updated.ninea ?? null,
+          primary_color:   updated.primary_color,
+          secondary_color: updated.secondary_color,
+          logo_url:        updated.logo_url ?? null,
+          slug:            tenant?.slug ?? '',
+        }, subscription, planFeatures)
+      }
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+      toast.success('Paramètres de vente enregistrés.')
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
+  })
+
+  if (subscriptionExpired) return <SubscriptionLockedNotice />
+  if (isLoading) return <div className="text-sm text-gray-400">Chargement…</div>
+  if (isError) return <div className="rounded-xl bg-red-50 px-4 py-6 text-center text-sm text-red-600">Erreur lors du chargement des paramètres.</div>
+
+  return (
+    <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-8">
+
+      {/* Devise */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <CurrencyDollarIcon className="h-4 w-4 text-gray-400" />
+          <h2 className="text-sm font-semibold text-gray-800">Devise</h2>
+        </div>
+        <div className="max-w-xs">
+          <Select {...register('currency')}>
+            {SUPPORTED_CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.code} — {c.symbol}{c.decimals === 0 ? ' (sans centimes)' : ''}
+              </option>
+            ))}
+          </Select>
+          <p className="mt-1 text-xs text-gray-400">Affecte tous les montants affichés dans l'application.</p>
+        </div>
+      </div>
+
+      <hr className="border-gray-100" />
+
+      {/* TVA */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <ReceiptPercentIcon className="h-4 w-4 text-gray-400" />
+          <h2 className="text-sm font-semibold text-gray-800">TVA</h2>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-md">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">Taux par défaut (%)</label>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={0.1}
+              {...register('default_vat_rate', { valueAsNumber: true })}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+            />
+            <p className="mt-1 text-xs text-gray-400">0 = exonéré de TVA. Utilisé par défaut sur les factures.</p>
+          </div>
+          <Input
+            label="Libellé TVA"
+            placeholder="TVA"
+            hint="Affiché sur les factures (ex : TVA, TPS, VAT)"
+            {...register('vat_label')}
+          />
+        </div>
+      </div>
+
+      <hr className="border-gray-100" />
+
+      {/* Modes de paiement POS */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <DevicePhoneMobileIcon className="h-4 w-4 text-gray-400" />
+          <h2 className="text-sm font-semibold text-gray-800">Modes de paiement (caisse)</h2>
+        </div>
+        <p className="mb-3 text-xs text-gray-500">Cochez les modes de paiement acceptés au point de vente. Au moins un mode est requis.</p>
+        <div className="flex flex-wrap gap-2">
+          {POS_PAYMENT_OPTIONS.map(({ value, label }) => {
+            const active = (posMethods ?? []).includes(value)
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => toggleMethod(value)}
+                className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                  active
+                    ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <hr className="border-gray-100" />
+
+      {/* Impression automatique */}
+      <div>
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <input
+            type="checkbox"
+            role="switch"
+            aria-checked={watch('pos_receipt_auto_print')}
+            {...register('pos_receipt_auto_print')}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-primary"
+          />
+          <div>
+            <span className="text-sm font-medium text-gray-700">Impression automatique du reçu</span>
+            <p className="text-xs text-gray-400 mt-0.5">Le dialogue d'impression s'ouvre automatiquement après chaque vente.</p>
+          </div>
+        </label>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Button type="submit" loading={mutation.isPending} disabled={!isDirty}>
+          Enregistrer
+        </Button>
+        {saved && <span className="text-sm text-emerald-600 font-medium">Paramètres enregistrés ✓</span>}
+      </div>
+    </form>
+  )
+}
+
+// ─── EmailTab ─────────────────────────────────────────────────────────────────
+
+function EmailTab() {
+  const subscriptionExpired = useAuthStore((s) => s.subscriptionExpired)
+  if (subscriptionExpired) return <SubscriptionLockedNotice />
+  return (
+    <div className="space-y-6">
+      <SmtpSection />
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('boutique')
 
@@ -1658,7 +1950,9 @@ export default function SettingsPage() {
 
       <div className="rounded-xl bg-white p-4 sm:p-5 shadow-sm ring-1 ring-gray-100">
         {activeTab === 'boutique'    && <BoutiqueTab />}
+        {activeTab === 'vente'       && <VenteTab />}
         {activeTab === 'facturation' && <FacturationTab />}
+        {activeTab === 'email'       && <EmailTab />}
         {activeTab === 'users'       && <UsersTab />}
         {activeTab === 'groups'      && <GroupsTab />}
       </div>

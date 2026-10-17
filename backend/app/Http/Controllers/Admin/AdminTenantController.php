@@ -3,15 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Customer;
+use App\Models\Group;
 use App\Models\Plan;
 use App\Models\Product;
-use App\Models\SiteSettings;
 use App\Models\Sale;
-use App\Models\Customer;
+use App\Models\SiteSettings;
+use App\Models\SuperAdmin;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
 use App\Models\User;
-use App\Models\Group;
 use App\Notifications\NewTenantRegisteredNotification;
 use App\Services\MailService;
 use App\Services\TenantService;
@@ -19,12 +20,15 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class AdminTenantController extends Controller
 {
-    private const SECTORS    = ['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services', 'ecommerce'];
+    private const SECTORS = ['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services', 'ecommerce'];
+
     private const CURRENCIES = ['XOF', 'XAF', 'GNF', 'EUR', 'USD', 'GBP', 'MAD', 'MRU'];
 
     public function __construct(
@@ -39,17 +43,13 @@ class AdminTenantController extends Controller
         $tenants = Tenant::withCount('users')
             ->with(['activeSubscription.plan:id,name,slug'])
             ->when($onlyTrashed, fn ($q) => $q->onlyTrashed(), fn ($q) => $q->withoutTrashed())
-            ->when($request->search, fn ($q) =>
-                $q->where('name', 'like', "%{$request->search}%")
-                  ->orWhere('email', 'like', "%{$request->search}%")
+            ->when($request->search, fn ($q) => $q->where('name', 'like', "%{$request->search}%")
+                ->orWhere('email', 'like', "%{$request->search}%")
             )
-            ->when(!$onlyTrashed && $request->filled('is_active'), fn ($q) =>
-                $q->where('is_active', $request->boolean('is_active'))
+            ->when(! $onlyTrashed && $request->filled('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active'))
             )
-            ->when(!$onlyTrashed && $request->filled('plan_id'), fn ($q) =>
-                $q->whereHas('activeSubscription', fn ($s) =>
-                    $s->where('plan_id', $request->integer('plan_id'))
-                )
+            ->when(! $onlyTrashed && $request->filled('plan_id'), fn ($q) => $q->whereHas('activeSubscription', fn ($s) => $s->where('plan_id', $request->integer('plan_id'))
+            )
             )
             ->orderByDesc('created_at')
             ->paginate(20);
@@ -59,13 +59,14 @@ class AdminTenantController extends Controller
             $sub = $tenant->activeSubscription;
             $data = $this->formatTenant($tenant);
             $data['subscription'] = $sub ? [
-                'status'        => $sub->status,
-                'plan_name'     => $sub->plan?->name,
-                'plan_slug'     => $sub->plan?->slug,
+                'status' => $sub->status,
+                'plan_name' => $sub->plan?->name,
+                'plan_slug' => $sub->plan?->slug,
                 'billing_cycle' => $sub->billing_cycle,
-                'ends_at'       => $sub->ends_at?->toISOString(),
-                'days_remaining'=> $sub->daysUntilExpiry(),
+                'ends_at' => $sub->ends_at?->toISOString(),
+                'days_remaining' => $sub->daysUntilExpiry(),
             ] : null;
+
             return $data;
         });
 
@@ -76,48 +77,48 @@ class AdminTenantController extends Controller
     {
         $validated = $request->validate(
             [
-                'name'            => ['required', 'string', 'max:150'],
-                'sector'          => ['required', Rule::in(self::SECTORS)],
-                'currency'        => ['required', Rule::in(self::CURRENCIES)],
-                'phone'           => ['nullable', 'string', 'max:30'],
-                'email'           => ['nullable', 'email', 'max:150'],
-                'address'         => ['nullable', 'string', 'max:255'],
-                'city'            => ['nullable', 'string', 'max:100'],
-                'custom_domain'   => ['nullable', 'string', 'max:253', Rule::unique('tenants', 'custom_domain')],
-                'primary_color'   => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+                'name' => ['required', 'string', 'max:150'],
+                'sector' => ['required', Rule::in(self::SECTORS)],
+                'currency' => ['required', Rule::in(self::CURRENCIES)],
+                'phone' => ['nullable', 'string', 'max:30'],
+                'email' => ['nullable', 'email', 'max:150'],
+                'address' => ['nullable', 'string', 'max:255'],
+                'city' => ['nullable', 'string', 'max:100'],
+                'custom_domain' => ['nullable', 'string', 'max:253', Rule::unique('tenants', 'custom_domain')],
+                'primary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
                 'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-                'admin_name'      => ['required', 'string', 'max:150'],
-                'admin_email'     => ['required', 'email', 'max:150', Rule::unique('users', 'email')],
-                'admin_password'  => ['required', 'string', 'min:8'],
+                'admin_name' => ['required', 'string', 'max:150'],
+                'admin_email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')],
+                'admin_password' => ['required', 'string', 'min:8'],
             ],
             [
-                'name.required'           => 'Le nom du tenant est obligatoire.',
-                'sector.required'         => 'Le secteur d\'activité est obligatoire.',
-                'sector.in'               => 'Secteur invalide.',
-                'currency.required'       => 'La devise est obligatoire.',
-                'custom_domain.unique'    => 'Ce domaine est déjà utilisé par un autre tenant.',
-                'admin_name.required'     => 'Le nom de l\'administrateur est obligatoire.',
-                'admin_email.required'    => 'L\'email de l\'administrateur est obligatoire.',
-                'admin_email.email'       => 'L\'email de l\'administrateur est invalide.',
-                'admin_email.unique'      => 'Cette adresse email est déjà associée à un compte existant.',
+                'name.required' => 'Le nom du tenant est obligatoire.',
+                'sector.required' => 'Le secteur d\'activité est obligatoire.',
+                'sector.in' => 'Secteur invalide.',
+                'currency.required' => 'La devise est obligatoire.',
+                'custom_domain.unique' => 'Ce domaine est déjà utilisé par un autre tenant.',
+                'admin_name.required' => 'Le nom de l\'administrateur est obligatoire.',
+                'admin_email.required' => 'L\'email de l\'administrateur est obligatoire.',
+                'admin_email.email' => 'L\'email de l\'administrateur est invalide.',
+                'admin_email.unique' => 'Cette adresse email est déjà associée à un compte existant.',
                 'admin_password.required' => 'Le mot de passe est obligatoire.',
-                'admin_password.min'      => 'Le mot de passe doit contenir au moins 8 caractères.',
+                'admin_password.min' => 'Le mot de passe doit contenir au moins 8 caractères.',
             ]
         );
 
         [$tenant, $admin] = DB::transaction(function () use ($validated) {
             $tenant = Tenant::create([
-                'name'          => $validated['name'],
-                'sector'        => $validated['sector'],
-                'currency'      => $validated['currency'],
-                'phone'         => $validated['phone'] ?? null,
-                'email'         => $validated['email'] ?? null,
-                'address'       => $validated['address'] ?? null,
-                'city'          => $validated['city'] ?? null,
-                'custom_domain'   => $validated['custom_domain'] ?? null,
-                'primary_color'   => $validated['primary_color'] ?? null,
+                'name' => $validated['name'],
+                'sector' => $validated['sector'],
+                'currency' => $validated['currency'],
+                'phone' => $validated['phone'] ?? null,
+                'email' => $validated['email'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'city' => $validated['city'] ?? null,
+                'custom_domain' => $validated['custom_domain'] ?? null,
+                'primary_color' => $validated['primary_color'] ?? null,
                 'secondary_color' => $validated['secondary_color'] ?? null,
-                'is_active'       => true,
+                'is_active' => true,
             ]);
 
             // Initialise le contexte tenant pour TenantObserver (groupes par défaut)
@@ -126,9 +127,9 @@ class AdminTenantController extends Controller
             // Crée l'utilisateur administrateur
             $user = User::create([
                 'tenant_id' => $tenant->id,
-                'name'      => $validated['admin_name'],
-                'email'     => $validated['admin_email'],
-                'password'  => Hash::make($validated['admin_password']),
+                'name' => $validated['admin_name'],
+                'email' => $validated['admin_email'],
+                'password' => Hash::make($validated['admin_password']),
                 'is_active' => true,
             ]);
 
@@ -148,12 +149,12 @@ class AdminTenantController extends Controller
         $businessPlan = Plan::where('slug', 'business')->where('is_active', true)->first();
         if ($businessPlan) {
             TenantSubscription::create([
-                'tenant_id'     => $tenant->id,
-                'plan_id'       => $businessPlan->id,
+                'tenant_id' => $tenant->id,
+                'plan_id' => $businessPlan->id,
                 'billing_cycle' => 'trial',
-                'status'        => 'trial',
-                'starts_at'     => now(),
-                'ends_at'       => now()->addDays($businessPlan->trial_days),
+                'status' => 'trial',
+                'starts_at' => now(),
+                'ends_at' => now()->addDays($businessPlan->trial_days),
             ]);
         }
 
@@ -161,7 +162,7 @@ class AdminTenantController extends Controller
         $this->mailService->sendTenantWelcome($tenant, $admin, $validated['admin_password']);
 
         // Notifie tous les Super Admins (email + in-app)
-        \App\Models\SuperAdmin::all()->each(
+        SuperAdmin::all()->each(
             fn ($sa) => $sa->notify(new NewTenantRegisteredNotification($tenant, $admin, 'admin'))
         );
 
@@ -174,7 +175,7 @@ class AdminTenantController extends Controller
         $users = $tenant->users()->select('id', 'name', 'email', 'is_active', 'created_at')->get();
 
         return response()->json([
-            'data'  => $this->formatTenant($tenant),
+            'data' => $this->formatTenant($tenant),
             'users' => $users,
         ]);
     }
@@ -182,17 +183,18 @@ class AdminTenantController extends Controller
     public function update(Request $request, Tenant $tenant): JsonResponse
     {
         $validated = $request->validate([
-            'name'          => ['sometimes', 'string', 'max:150'],
-            'slug'          => ['sometimes', 'string', 'max:80', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('tenants', 'slug')->ignore($tenant->id)],
-            'sector'        => ['sometimes', Rule::in(self::SECTORS)],
-            'currency'      => ['sometimes', Rule::in(self::CURRENCIES)],
-            'phone'         => ['nullable', 'string', 'max:30'],
-            'email'         => ['nullable', 'email', 'max:150'],
-            'address'       => ['nullable', 'string', 'max:255'],
-            'city'          => ['nullable', 'string', 'max:100'],
-            'custom_domain'   => ['nullable', 'string', 'max:253', Rule::unique('tenants', 'custom_domain')->ignore($tenant->id)],
-            'primary_color'   => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'name' => ['sometimes', 'string', 'max:150'],
+            'slug' => ['sometimes', 'string', 'max:80', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('tenants', 'slug')->ignore($tenant->id)],
+            'sector' => ['sometimes', Rule::in(self::SECTORS)],
+            'currency' => ['sometimes', Rule::in(self::CURRENCIES)],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'email' => ['nullable', 'email', 'max:150'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'custom_domain' => ['nullable', 'string', 'max:253', Rule::unique('tenants', 'custom_domain')->ignore($tenant->id)],
+            'primary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'admin_notes' => ['nullable', 'string', 'max:5000'],
         ]);
 
         $tenant->update($validated);
@@ -206,18 +208,18 @@ class AdminTenantController extends Controller
     {
         $tenant->restore();
         $tenant->update([
-            'scheduled_deletion_at'  => null,
-            'deletion_requested_at'  => null,
-            'deletion_requested_by'  => null,
+            'scheduled_deletion_at' => null,
+            'deletion_requested_at' => null,
+            'deletion_requested_by' => null,
         ]);
         $this->tenantService->flushCache($tenant->api_key);
 
         $admin = $request->attributes->get('super_admin');
-        \Illuminate\Support\Facades\Log::info('Tenant restauré depuis la corbeille', [
-            'tenant_id'    => $tenant->id,
-            'tenant_name'  => $tenant->name,
-            'restored_by'  => $admin?->name . ' <' . $admin?->email . '>',
-            'restored_at'  => now()->toISOString(),
+        Log::info('Tenant restauré depuis la corbeille', [
+            'tenant_id' => $tenant->id,
+            'tenant_name' => $tenant->name,
+            'restored_by' => $admin?->name.' <'.$admin?->email.'>',
+            'restored_at' => now()->toISOString(),
         ]);
 
         return response()->json(['data' => $this->formatTenant($tenant)]);
@@ -227,10 +229,10 @@ class AdminTenantController extends Controller
     public function scheduleDeletion(Request $request, Tenant $tenant): JsonResponse
     {
         $graceDays = SiteSettings::instance()->tenant_deletion_grace_days ?? 30;
-        $deleteAt  = now()->addDays($graceDays);
+        $deleteAt = now()->addDays($graceDays);
 
-        $admin     = $request->attributes->get('super_admin');
-        $requestedBy = $admin?->name . ' <' . $admin?->email . '>';
+        $admin = $request->attributes->get('super_admin');
+        $requestedBy = $admin?->name.' <'.$admin?->email.'>';
 
         $tenant->update([
             'scheduled_deletion_at' => $deleteAt,
@@ -238,13 +240,13 @@ class AdminTenantController extends Controller
             'deletion_requested_by' => $requestedBy,
         ]);
 
-        \Illuminate\Support\Facades\Log::info('Suppression définitive programmée (RGPD)', [
-            'tenant_id'      => $tenant->id,
-            'tenant_name'    => $tenant->name,
-            'requested_by'   => $requestedBy,
-            'requested_at'   => now()->toISOString(),
-            'scheduled_at'   => $deleteAt->toISOString(),
-            'grace_days'     => $graceDays,
+        Log::info('Suppression définitive programmée (RGPD)', [
+            'tenant_id' => $tenant->id,
+            'tenant_name' => $tenant->name,
+            'requested_by' => $requestedBy,
+            'requested_at' => now()->toISOString(),
+            'scheduled_at' => $deleteAt->toISOString(),
+            'grace_days' => $graceDays,
         ]);
 
         return response()->json(['data' => $this->formatTenant($tenant)]);
@@ -255,10 +257,10 @@ class AdminTenantController extends Controller
     {
         $admin = $request->attributes->get('super_admin');
 
-        \Illuminate\Support\Facades\Log::info('Suppression définitive annulée (RGPD)', [
-            'tenant_id'    => $tenant->id,
-            'tenant_name'  => $tenant->name,
-            'cancelled_by' => $admin?->name . ' <' . $admin?->email . '>',
+        Log::info('Suppression définitive annulée (RGPD)', [
+            'tenant_id' => $tenant->id,
+            'tenant_name' => $tenant->name,
+            'cancelled_by' => $admin?->name.' <'.$admin?->email.'>',
             'cancelled_at' => now()->toISOString(),
             'was_scheduled_for' => $tenant->scheduled_deletion_at?->toISOString(),
         ]);
@@ -276,7 +278,7 @@ class AdminTenantController extends Controller
     public function rotateApiKey(Tenant $tenant): JsonResponse
     {
         $oldApiKey = $tenant->api_key;
-        $newApiKey = \Illuminate\Support\Str::random(64);
+        $newApiKey = Str::random(64);
 
         $tenant->update(['api_key' => $newApiKey]);
 
@@ -313,10 +315,10 @@ class AdminTenantController extends Controller
     {
         $tid = $tenant->id;
 
-        $productsCount  = Product::withTrashed()->where('tenant_id', $tid)->count();
-        $salesCount     = Sale::where('tenant_id', $tid)->count();
+        $productsCount = Product::withTrashed()->where('tenant_id', $tid)->count();
+        $salesCount = Sale::where('tenant_id', $tid)->count();
         $customersCount = Customer::where('tenant_id', $tid)->count();
-        $usersCount     = User::where('tenant_id', $tid)->count();
+        $usersCount = User::where('tenant_id', $tid)->count();
 
         $salesRevenue = Sale::where('tenant_id', $tid)
             ->where('status', 'confirmed')
@@ -327,12 +329,12 @@ class AdminTenantController extends Controller
 
         return response()->json([
             'data' => [
-                'products_count'  => $productsCount,
-                'sales_count'     => $salesCount,
+                'products_count' => $productsCount,
+                'sales_count' => $salesCount,
                 'customers_count' => $customersCount,
-                'users_count'     => $usersCount,
-                'sales_revenue'   => (float) $salesRevenue,
-                'last_sale_at'    => $lastSale?->created_at?->toISOString(),
+                'users_count' => $usersCount,
+                'sales_revenue' => (float) $salesRevenue,
+                'last_sale_at' => $lastSale?->created_at?->toISOString(),
             ],
         ]);
     }
@@ -352,34 +354,40 @@ class AdminTenantController extends Controller
 
     private function formatTenant(Tenant $tenant): array
     {
+        $smtpHost = $tenant->settings()->where('key', 'smtp_host')->value('value');
+
         return [
-            'id'              => $tenant->id,
-            'uid'             => $tenant->uid,
-            'name'            => $tenant->name,
-            'slug'            => $tenant->slug,
-            'custom_domain'   => $tenant->custom_domain,
-            'api_key'         => $tenant->api_key, // exposé au Super Admin uniquement
-            'sector'          => $tenant->sector,
-            'currency'        => $tenant->currency,
-            'phone'           => $tenant->phone,
-            'email'           => $tenant->email,
-            'address'         => $tenant->address,
-            'city'            => $tenant->city,
-            'primary_color'   => $tenant->primary_color,
+            'id' => $tenant->id,
+            'uid' => $tenant->uid,
+            'name' => $tenant->name,
+            'slug' => $tenant->slug,
+            'custom_domain' => $tenant->custom_domain,
+            'api_key' => $tenant->api_key, // exposé au Super Admin uniquement
+            'sector' => $tenant->sector,
+            'currency' => $tenant->currency,
+            'phone' => $tenant->phone,
+            'email' => $tenant->email,
+            'address' => $tenant->address,
+            'city' => $tenant->city,
+            'rccm' => $tenant->rccm,
+            'ninea' => $tenant->ninea,
+            'admin_notes' => $tenant->admin_notes,
+            'smtp_configured' => ! empty($smtpHost),
+            'primary_color' => $tenant->primary_color,
             'secondary_color' => $tenant->secondary_color,
-            'logo_url'        => $tenant->logo_path
+            'logo_url' => $tenant->logo_path
                 ? Storage::disk('public')->url($tenant->logo_path)
                 : null,
-            'is_active'              => $tenant->is_active,
-            'users_count'            => $tenant->users_count ?? 0,
-            'created_at'             => $tenant->created_at?->toISOString(),
-            'deleted_at'             => $tenant->deleted_at?->toISOString(),
-            'scheduled_deletion_at'  => $tenant->scheduled_deletion_at?->toISOString(),
-            'days_until_deletion'    => $tenant->scheduled_deletion_at
+            'is_active' => $tenant->is_active,
+            'users_count' => $tenant->users_count ?? 0,
+            'created_at' => $tenant->created_at?->toISOString(),
+            'deleted_at' => $tenant->deleted_at?->toISOString(),
+            'scheduled_deletion_at' => $tenant->scheduled_deletion_at?->toISOString(),
+            'days_until_deletion' => $tenant->scheduled_deletion_at
                 ? max(0, (int) now()->diffInDays($tenant->scheduled_deletion_at, false))
                 : null,
-            'deletion_requested_at'  => $tenant->deletion_requested_at?->toISOString(),
-            'deletion_requested_by'  => $tenant->deletion_requested_by,
+            'deletion_requested_at' => $tenant->deletion_requested_at?->toISOString(),
+            'deletion_requested_by' => $tenant->deletion_requested_by,
         ];
     }
 }

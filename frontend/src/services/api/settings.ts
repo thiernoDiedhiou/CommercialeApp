@@ -1,15 +1,23 @@
 import apiClient, { API } from '@/lib/axios'
 
 export interface TenantSettings {
-  name:            string
-  sector:          string
-  currency:        string
-  phone:           string | null
-  email:           string | null
-  address:         string | null
-  city:            string | null
-  rccm:            string | null
-  ninea:           string | null
+  // Informations générales
+  name:    string
+  sector:  string
+  locale:  string
+  timezone: string
+  country: string
+  // Finances & devise
+  currency: string
+  // Contact
+  phone:   string | null
+  email:   string | null
+  address: string | null
+  city:    string | null
+  // Infos légales
+  rccm:  string | null
+  ninea: string | null
+  // Identité visuelle
   primary_color:   string | null
   secondary_color: string | null
   logo_url:        string | null
@@ -21,10 +29,17 @@ export interface TenantSettings {
   smtp_password:     string | null
   smtp_from_address: string | null
   smtp_from_name:    string | null
-  // Documents
-  pdf_template:      string | null
-  invoice_footer:    string | null
-  invoice_prefix:    string | null
+  // Documents / facturation
+  pdf_template:    string | null
+  invoice_footer:  string | null
+  invoice_prefix:  string | null
+  // Fiscal
+  default_vat_rate:     number
+  vat_label:            string
+  business_description: string | null
+  // POS
+  pos_payment_methods:    string[]
+  pos_receipt_auto_print: boolean
 }
 
 export async function getTenantSettings(): Promise<TenantSettings> {
@@ -42,7 +57,11 @@ export async function updateTenantSettings(
     form.append('_method', 'PUT')
     Object.entries(body).forEach(([k, v]) => {
       if (v === undefined || v === null) return
-      form.append(k, String(v))
+      if (Array.isArray(v)) {
+        v.forEach((item) => form.append(`${k}[]`, String(item)))
+      } else {
+        form.append(k, String(v))
+      }
     })
     if (logo) form.append('logo', logo)
     if (removeLogo) form.append('remove_logo', '1')

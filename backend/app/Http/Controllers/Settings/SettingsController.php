@@ -16,7 +16,7 @@ class SettingsController extends Controller
 {
     private const CURRENCIES = ['XOF', 'XAF', 'GNF', 'EUR', 'USD', 'GBP', 'MAD', 'MRU'];
 
-    private const SECTORS = ['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services'];
+    private const SECTORS = ['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services', 'ecommerce'];
 
     // Clés des settings SMTP stockés dans tenant_settings (group='smtp').
     // Note : smtp_password est stocké en clair — envisager un chiffrement applicatif en production.
@@ -24,6 +24,12 @@ class SettingsController extends Controller
 
     // Clés des settings documents stockés dans tenant_settings (group='documents').
     private const DOCUMENT_KEYS = ['pdf_template', 'invoice_footer', 'invoice_prefix'];
+
+    // Clés des settings fiscaux stockés dans tenant_settings (group='fiscal').
+    private const FISCAL_KEYS = ['default_vat_rate', 'vat_label', 'business_description'];
+
+    // Clés des settings POS stockés dans tenant_settings (group='pos').
+    private const POS_KEYS = ['pos_payment_methods', 'pos_receipt_auto_print'];
 
     public function __construct(private readonly TenantService $tenantService) {}
 
@@ -46,6 +52,9 @@ class SettingsController extends Controller
             'name' => ['sometimes', 'string', 'max:150'],
             'sector' => ['sometimes', Rule::in(self::SECTORS)],
             'currency' => ['sometimes', Rule::in(self::CURRENCIES)],
+            'locale' => ['sometimes', 'nullable', Rule::in(['fr', 'en'])],
+            'timezone' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'country' => ['sometimes', 'nullable', 'string', 'size:2'],
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:150'],
             'address' => ['nullable', 'string', 'max:255'],
@@ -64,9 +73,17 @@ class SettingsController extends Controller
             'smtp_from_address' => ['nullable', 'email', 'max:255'],
             'smtp_from_name' => ['nullable', 'string', 'max:255'],
             // Documents
-            'pdf_template'   => ['sometimes', 'nullable', Rule::in(['classic', 'moderne'])],
+            'pdf_template' => ['sometimes', 'nullable', Rule::in(['classic', 'moderne'])],
             'invoice_footer' => ['sometimes', 'nullable', 'string', 'max:1000'],
             'invoice_prefix' => ['sometimes', 'nullable', 'string', 'max:10'],
+            // Fiscal
+            'default_vat_rate' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100'],
+            'vat_label' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'business_description' => ['sometimes', 'nullable', 'string', 'max:500'],
+            // POS
+            'pos_payment_methods' => ['sometimes', 'nullable', 'array'],
+            'pos_payment_methods.*' => ['string', 'max:50'],
+            'pos_receipt_auto_print' => ['sometimes', 'boolean'],
         ]);
 
         $tenant = $this->tenantService->current();
@@ -84,13 +101,16 @@ class SettingsController extends Controller
             $validated['logo_path'] = null;
         }
 
-        // ── Séparer champs tenant, SMTP et documents ───────────────────────
+        // ── Séparer champs tenant, SMTP, documents, fiscal, POS ───────────
+        $settingsKeys = array_merge(self::SMTP_KEYS, self::DOCUMENT_KEYS, self::FISCAL_KEYS, self::POS_KEYS);
         $smtpData = array_intersect_key($validated, array_flip(self::SMTP_KEYS));
         $documentData = array_intersect_key($validated, array_flip(self::DOCUMENT_KEYS));
-        $tenantData = array_diff_key($validated, array_flip(array_merge(self::SMTP_KEYS, self::DOCUMENT_KEYS)));
+        $fiscalData = array_intersect_key($validated, array_flip(self::FISCAL_KEYS));
+        $posData = array_intersect_key($validated, array_flip(self::POS_KEYS));
+        $tenantData = array_diff_key($validated, array_flip($settingsKeys));
         unset($tenantData['logo'], $tenantData['remove_logo']);
 
-        DB::transaction(function () use ($tenant, $tenantData, $smtpData, $documentData) {
+        DB::transaction(function () use ($tenant, $tenantData, $smtpData, $documentData, $fiscalData, $posData) {
             $tenant->update($tenantData);
 
             // ── Upsert SMTP dans tenant_settings ────────────────────────────
@@ -116,6 +136,36 @@ class SettingsController extends Controller
                     );
                 }
             }
+
+            // ── Upsert fiscal dans tenant_settings ───────────────────────────
+            foreach ($fiscalData as $key => $val) {
+                if ($val === null || $val === '') {
+                    $tenant->settings()->where('key', $key)->delete();
+                } else {
+                    $serialized = is_array($val) ? json_encode($val) : (string) $val;
+                    $tenant->settings()->updateOrCreate(
+                        ['key' => $key],
+                        ['value' => $serialized, 'type' => 'string', 'group' => 'fiscal'],
+                    );
+                }
+            }
+
+            // ── Upsert POS dans tenant_settings ─────────────────────────────
+            foreach ($posData as $key => $val) {
+                if ($val === null) {
+                    $tenant->settings()->where('key', $key)->delete();
+                } elseif ($key === 'pos_payment_methods') {
+                    $tenant->settings()->updateOrCreate(
+                        ['key' => $key],
+                        ['value' => json_encode($val), 'type' => 'json', 'group' => 'pos'],
+                    );
+                } elseif ($key === 'pos_receipt_auto_print') {
+                    $tenant->settings()->updateOrCreate(
+                        ['key' => $key],
+                        ['value' => $val ? '1' : '0', 'type' => 'boolean', 'group' => 'pos'],
+                    );
+                }
+            }
         });
 
         $tenant->refresh();
@@ -128,15 +178,22 @@ class SettingsController extends Controller
 
     private function formatTenant(Tenant $tenant): array
     {
-        $allKeys = array_merge(self::SMTP_KEYS, self::DOCUMENT_KEYS); // DOCUMENT_KEYS inclut maintenant invoice_footer et invoice_prefix
+        $allKeys = array_merge(self::SMTP_KEYS, self::DOCUMENT_KEYS, self::FISCAL_KEYS, self::POS_KEYS);
         $settings = $tenant->settings()
             ->whereIn('key', $allKeys)
             ->pluck('value', 'key');
 
+        $posMethodsRaw = $settings['pos_payment_methods'] ?? null;
+        $posMethods = $posMethodsRaw ? json_decode($posMethodsRaw, true) : ['cash'];
+
         return [
+            // Infos générales
             'name' => $tenant->name,
             'sector' => $tenant->sector,
             'currency' => $tenant->currency,
+            'locale' => $tenant->locale ?? 'fr',
+            'timezone' => $tenant->timezone ?? 'Africa/Dakar',
+            'country' => $tenant->country ?? 'SN',
             'phone' => $tenant->phone,
             'email' => $tenant->email,
             'address' => $tenant->address,
@@ -157,9 +214,16 @@ class SettingsController extends Controller
             'smtp_from_address' => $settings['smtp_from_address'] ?? null,
             'smtp_from_name' => $settings['smtp_from_name'] ?? null,
             // Documents
-            'pdf_template'   => $settings['pdf_template']   ?? 'classic',
+            'pdf_template' => $settings['pdf_template'] ?? 'classic',
             'invoice_footer' => $settings['invoice_footer'] ?? null,
             'invoice_prefix' => $settings['invoice_prefix'] ?? null,
+            // Fiscal
+            'default_vat_rate' => isset($settings['default_vat_rate']) ? (float) $settings['default_vat_rate'] : 0,
+            'vat_label' => $settings['vat_label'] ?? 'TVA',
+            'business_description' => $settings['business_description'] ?? null,
+            // POS
+            'pos_payment_methods' => is_array($posMethods) ? $posMethods : ['cash'],
+            'pos_receipt_auto_print' => isset($settings['pos_receipt_auto_print']) && $settings['pos_receipt_auto_print'] === '1',
         ];
     }
 }

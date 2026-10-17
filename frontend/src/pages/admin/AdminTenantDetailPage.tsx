@@ -43,8 +43,14 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>
 
 const SECTOR_LABELS: Record<string, string> = {
-  general: 'Commerce général', food: 'Alimentation',
-  fashion: 'Mode', cosmetic: 'Cosmétique',
+  general:     'Commerce général',
+  food:        'Alimentation / Restauration',
+  fashion:     'Mode / Vêtements',
+  cosmetic:    'Beauté / Cosmétique',
+  pharmacy:    'Pharmacie',
+  electronics: 'High-tech / Électronique',
+  services:    'Prestations de services',
+  ecommerce:   'E-commerce',
 }
 
 // ── Composants partagés ───────────────────────────────────────────────────
@@ -279,13 +285,9 @@ export default function AdminTenantDetailPage() {
             <div className="grid grid-cols-2 gap-3">
               <Field label="Secteur">
                 <select {...register('sector')} className={inputCls}>
-                  {tenant.sector && !['general', 'food', 'fashion', 'cosmetic'].includes(tenant.sector) && (
-                    <option value={tenant.sector}>{tenant.sector}</option>
-                  )}
-                  <option value="general">Commerce général</option>
-                  <option value="food">Alimentation</option>
-                  <option value="fashion">Mode</option>
-                  <option value="cosmetic">Cosmétique</option>
+                  {Object.entries(SECTOR_LABELS).map(([val, label]) => (
+                    <option key={val} value={val}>{label}</option>
+                  ))}
                 </select>
               </Field>
               <Field label="Devise">
@@ -400,6 +402,46 @@ export default function AdminTenantDetailPage() {
         </div>
       </div>
 
+      {/* Infos légales (lecture seule pour Super Admin) */}
+      {(tenant.rccm || tenant.ninea || tenant.smtp_configured !== undefined) && (
+        <div className="rounded-xl bg-gray-900 border border-gray-800 p-4 sm:p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-white">Infos légales & email</h2>
+            {tenant.smtp_configured ? (
+              <span className="flex items-center gap-1.5 rounded-full bg-emerald-900/40 border border-emerald-800 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 inline-block" />
+                Email SMTP configuré
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 rounded-full bg-gray-800 border border-gray-700 px-2.5 py-0.5 text-xs font-medium text-gray-500">
+                <span className="h-1.5 w-1.5 rounded-full bg-gray-500 inline-block" />
+                Email non configuré
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {tenant.rccm && (
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">RCCM</p>
+                <p className="text-sm font-mono text-gray-200">{tenant.rccm}</p>
+              </div>
+            )}
+            {tenant.ninea && (
+              <div>
+                <p className="text-xs text-gray-500 mb-0.5">NINEA</p>
+                <p className="text-sm font-mono text-gray-200">{tenant.ninea}</p>
+              </div>
+            )}
+            {!tenant.rccm && !tenant.ninea && (
+              <p className="text-sm text-gray-500 col-span-2">Aucune information légale renseignée par le tenant.</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Note interne Super Admin */}
+      <AdminNotesCard tenantUid={tenant.uid} initialNotes={tenant.admin_notes ?? ''} onSaved={invalidate} />
+
       {/* Stats tenant */}
       <TenantStatsCard tenantId={tenant.uid} />
 
@@ -495,6 +537,55 @@ export default function AdminTenantDetailPage() {
         )}
       </div>
     </div>
+    </div>
+  )
+}
+
+// ── Note interne Admin ────────────────────────────────────────────────────
+
+function AdminNotesCard({ tenantUid, initialNotes, onSaved }: {
+  tenantUid: string
+  initialNotes: string
+  onSaved: () => void
+}) {
+  const [notes, setNotes] = useState(initialNotes)
+  const [saved, setSaved] = useState(false)
+  const isDirty = notes !== initialNotes
+
+  const mutation = useMutation({
+    mutationFn: () => updateAdminTenant(tenantUid, { admin_notes: notes || null } as Parameters<typeof updateAdminTenant>[1]),
+    onSuccess: () => {
+      onSaved()
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+      toast.success('Note interne enregistrée.')
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
+  })
+
+  return (
+    <div className="rounded-xl bg-gray-900 border border-gray-800 p-4 sm:p-5 space-y-3">
+      <h2 className="text-sm font-semibold text-white">Note interne</h2>
+      <p className="text-xs text-gray-500">Visible uniquement par les Super Admins. Non communiquée au tenant.</p>
+      <textarea
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        rows={4}
+        maxLength={5000}
+        placeholder="Ex : Tenant VIP, contacté le 01/10/2026. Problème de facturation résolu…"
+        className="w-full resize-none rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-sm text-gray-200 placeholder-gray-500 outline-none focus:border-indigo-500 transition"
+      />
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          disabled={!isDirty || mutation.isPending}
+          onClick={() => mutation.mutate()}
+          className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-40 transition"
+        >
+          {mutation.isPending ? 'Enregistrement…' : 'Enregistrer la note'}
+        </button>
+        {saved && <span className="text-xs text-emerald-400">Note enregistrée ✓</span>}
+      </div>
     </div>
   )
 }
