@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Sale;
 use App\Models\ShopOrder;
 use App\Services\TenantService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -29,6 +30,14 @@ class DashboardController extends Controller
     {
         $tenantId = $this->tenantService->currentId();
 
+        // Bornes UTC du jour local du tenant.
+        // date_default_timezone_set() est appliqué par ResolveTenant — Carbon::today()
+        // retourne donc minuit dans le fuseau du tenant, converti en UTC pour MySQL.
+        $todayUtcStart = Carbon::today()->utc()->toDateTimeString();
+        $todayUtcEnd   = Carbon::tomorrow()->utc()->toDateTimeString();
+        // Décalage en secondes pour les GROUP BY DATE dans les graphiques (ex: +3600 pour UTC+1)
+        $tzOffsetSec   = Carbon::now()->getOffset();
+
         // ── 1a. Stats POS du jour ────────────────────────────────────────────
         $posTodayRow = DB::selectOne("
             SELECT
@@ -39,8 +48,8 @@ class DashboardController extends Controller
             LEFT JOIN sale_items si ON si.sale_id = s.id
             WHERE s.tenant_id = ?
               AND s.status    = 'confirmed'
-              AND DATE(s.confirmed_at) = CURDATE()
-        ", [$tenantId]);
+              AND s.confirmed_at >= ? AND s.confirmed_at < ?
+        ", [$tenantId, $todayUtcStart, $todayUtcEnd]);
 
         // ── 1b. Stats boutique en ligne du jour ──────────────────────────────
         $shopTodayRow = DB::selectOne("
@@ -54,8 +63,8 @@ class DashboardController extends Controller
             LEFT JOIN product_variants pv  ON pv.id = soi.variant_id
             WHERE so.tenant_id = ?
               AND so.status NOT IN ('cancelled', 'pending')
-              AND DATE(so.confirmed_at) = CURDATE()
-        ", [$tenantId]);
+              AND so.confirmed_at >= ? AND so.confirmed_at < ?
+        ", [$tenantId, $todayUtcStart, $todayUtcEnd]);
 
         // ── 2. Encaissements du jour par méthode ────────────────────────────
         $paymentRows = DB::select("
@@ -64,15 +73,20 @@ class DashboardController extends Controller
             JOIN sales s ON s.id = p.sale_id
             WHERE s.tenant_id = ?
               AND s.status    = 'confirmed'
-              AND DATE(s.confirmed_at) = CURDATE()
+              AND s.confirmed_at >= ? AND s.confirmed_at < ?
             GROUP BY p.method
-        ", [$tenantId]);
+        ", [$tenantId, $todayUtcStart, $todayUtcEnd]);
 
         $paymentsByMethod = collect($paymentRows)->pluck('total', 'method')
             ->map(fn($v) => (float) $v)
             ->toArray();
 
         // ── 3. Graphique 7 jours glissants — POS + boutique ─────────────────
+        // Borne de début : minuit local il y a 6 jours → converti en UTC pour MySQL.
+        // GROUP BY : DATE(DATE_ADD(confirmed_at, INTERVAL {offset} SECOND))
+        //   → regroupe par date locale du tenant sans dépendre des timezone tables MySQL.
+        $weekUtcStart = Carbon::today()->subDays(6)->utc()->toDateTimeString();
+
         $weekRows = DB::select("
             SELECT
                 date,
@@ -80,30 +94,30 @@ class DashboardController extends Controller
                 SUM(revenue)     AS revenue
             FROM (
                 SELECT
-                    DATE(s.confirmed_at)      AS date,
+                    DATE(DATE_ADD(s.confirmed_at, INTERVAL {$tzOffsetSec} SECOND)) AS date,
                     COUNT(*)                  AS sales_count,
                     COALESCE(SUM(s.total), 0) AS revenue
                 FROM sales s
                 WHERE s.tenant_id = ?
                   AND s.status    = 'confirmed'
-                  AND s.confirmed_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-                GROUP BY DATE(s.confirmed_at)
+                  AND s.confirmed_at >= ?
+                GROUP BY DATE(DATE_ADD(s.confirmed_at, INTERVAL {$tzOffsetSec} SECOND))
 
                 UNION ALL
 
                 SELECT
-                    DATE(so.confirmed_at)      AS date,
+                    DATE(DATE_ADD(so.confirmed_at, INTERVAL {$tzOffsetSec} SECOND)) AS date,
                     COUNT(*)                   AS sales_count,
                     COALESCE(SUM(so.total), 0) AS revenue
                 FROM shop_orders so
                 WHERE so.tenant_id = ?
                   AND so.status NOT IN ('cancelled', 'pending')
-                  AND so.confirmed_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-                GROUP BY DATE(so.confirmed_at)
+                  AND so.confirmed_at >= ?
+                GROUP BY DATE(DATE_ADD(so.confirmed_at, INTERVAL {$tzOffsetSec} SECOND))
             ) combined
             GROUP BY date
             ORDER BY date ASC
-        ", [$tenantId, $tenantId]);
+        ", [$tenantId, $weekUtcStart, $tenantId, $weekUtcStart]);
 
         // Remplissage des jours sans ventes avec 0 (7 jours garantis)
         $weekByDate = collect($weekRows)->keyBy('date');
@@ -145,7 +159,7 @@ class DashboardController extends Controller
                 JOIN sales    s ON s.id = si.sale_id
                 WHERE s.tenant_id = ?
                   AND s.status    = 'confirmed'
-                  AND s.confirmed_at >= DATE_FORMAT(NOW(), '%Y-%m-01')
+                  AND s.confirmed_at >= ?
                 GROUP BY si.product_id, p.uid, p.name
 
                 UNION ALL
@@ -161,13 +175,14 @@ class DashboardController extends Controller
                 JOIN shop_orders so ON so.id = soi.shop_order_id
                 WHERE so.tenant_id = ?
                   AND so.status NOT IN ('cancelled', 'pending')
-                  AND so.confirmed_at >= DATE_FORMAT(NOW(), '%Y-%m-01')
+                  AND so.confirmed_at >= ?
                 GROUP BY soi.product_id, p.uid, p.name
             ) combined
             GROUP BY product_id, product_uid, name
             ORDER BY revenue DESC
             LIMIT 5
-        ", [$tenantId, $tenantId]);
+        ", [$tenantId, Carbon::now()->startOfMonth()->utc()->toDateTimeString(),
+            $tenantId, Carbon::now()->startOfMonth()->utc()->toDateTimeString()]);
 
         // ── 5. Alertes de stock (UNION produits simples + variantes) ────────
         $stockAlertRows = DB::select("

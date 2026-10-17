@@ -56,6 +56,11 @@ class ResolveTenant
         $this->tenantService->setCurrentTenant($tenant);
         $request->attributes->set('tenant', $tenant);
 
+        // Applique le fuseau horaire du tenant au process PHP.
+        // Cela rend Carbon::today(), now() et parseDateRange() corrects localement.
+        // MySQL garde son propre timezone — les requêtes passent des bornes UTC calculées par Carbon.
+        date_default_timezone_set($tenant->timezone ?? 'Africa/Dakar');
+
         return $next($request);
     }
 

@@ -36,22 +36,34 @@ export function formatXOF(amount: number | string): string {
   return formatCurrency(amount, 'XOF')
 }
 
+function tenantLocaleAndTz(): { locale: string; timeZone: string } {
+  const tenant = useAuthStore.getState().tenant
+  return {
+    locale:   tenant?.locale === 'en' ? 'en-GB' : 'fr-SN',
+    timeZone: tenant?.timezone ?? 'Africa/Dakar',
+  }
+}
+
 export function formatDate(date: string | null | undefined): string {
   if (!date) return '—'
-  return new Intl.DateTimeFormat('fr-SN', {
+  const { locale, timeZone } = tenantLocaleAndTz()
+  return new Intl.DateTimeFormat(locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
+    timeZone,
   }).format(new Date(date))
 }
 
 export function formatDateTime(date: string | null | undefined): string {
   if (!date) return '—'
-  return new Intl.DateTimeFormat('fr-SN', {
+  const { locale, timeZone } = tenantLocaleAndTz()
+  return new Intl.DateTimeFormat(locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone,
   }).format(new Date(date))
 }

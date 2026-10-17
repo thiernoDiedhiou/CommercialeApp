@@ -180,16 +180,18 @@ class AuthController extends Controller
             ],
             'permissions' => $this->permissionService->getPermissions($user),
             'tenant' => [
-                'api_key' => $tenant->getRawOriginal('api_key'),
-                'name' => $tenant->name,
-                'slug' => $tenant->slug,
-                'currency' => $tenant->currency,
-                'sector' => $tenant->sector,
-                'rccm' => $tenant->rccm,
-                'ninea' => $tenant->ninea,
-                'primary_color' => $tenant->primary_color,
+                'api_key'         => $tenant->getRawOriginal('api_key'),
+                'name'            => $tenant->name,
+                'slug'            => $tenant->slug,
+                'currency'        => $tenant->currency,
+                'sector'          => $tenant->sector,
+                'locale'          => $tenant->locale   ?? 'fr',
+                'timezone'        => $tenant->timezone ?? 'Africa/Dakar',
+                'rccm'            => $tenant->rccm,
+                'ninea'           => $tenant->ninea,
+                'primary_color'   => $tenant->primary_color,
                 'secondary_color' => $tenant->secondary_color,
-                'logo_url' => $tenant->logo_path
+                'logo_url'        => $tenant->logo_path
                     ? Storage::disk('public')->url($tenant->logo_path)
                     : null,
             ],

@@ -37,6 +37,7 @@ export interface TenantInfo {
   currency: string
   sector: string
   locale: string
+  timezone: string
   rccm: string | null
   ninea: string | null
   primary_color: string | null

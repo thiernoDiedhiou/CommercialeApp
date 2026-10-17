@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Report;
 
 use App\Http\Controllers\Controller;
 use App\Services\TenantService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,22 +24,24 @@ class ReportController extends Controller
     public function sales(Request $request): JsonResponse|StreamedResponse
     {
         $tenantId = $this->tenantService->currentId();
-        [$from, $to] = $this->parseDateRange($request);
+        [$fromUtc, $toUtc]     = $this->parseDateRange($request);
+        [$fromDisplay, $toDisplay] = $this->parseDateRangeDisplay($request);
 
-        $groupBy    = in_array($request->input('group_by'), ['day', 'month'], true)
+        $groupBy      = in_array($request->input('group_by'), ['day', 'month'], true)
             ? $request->input('group_by')
             : 'day';
-        $dateFormat = $groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d';
-        $dateFmt    = $this->dateFormatExpr('confirmed_at', $dateFormat);
-        $dateFmtS   = $this->dateFormatExpr('s.confirmed_at', $dateFormat);
+        $dateFormat   = $groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d';
+        $tzOffsetSec  = Carbon::now()->getOffset();
+        $dateFmt      = $this->dateFormatExpr('confirmed_at',   $dateFormat, $tzOffsetSec);
+        $dateFmtS     = $this->dateFormatExpr('s.confirmed_at', $dateFormat, $tzOffsetSec);
 
         // ── Revenue + sales_count depuis sales (sans JOIN — évite la multiplication des lignes)
         $summaryRow = DB::selectOne("
             SELECT COUNT(*) AS sales_count, COALESCE(SUM(total), 0) AS revenue
             FROM sales
             WHERE tenant_id = ? AND status = 'confirmed'
-              AND DATE(confirmed_at) BETWEEN ? AND ?
-        ", [$tenantId, $from, $to]);
+              AND confirmed_at BETWEEN ? AND ?
+        ", [$tenantId, $fromUtc, $toUtc]);
 
         // ── Profit depuis sale_items (JOIN nécessaire pour filtrer par tenant/statut)
         $profitRow = DB::selectOne("
@@ -46,8 +49,8 @@ class ReportController extends Controller
             FROM sale_items si
             JOIN sales s ON s.id = si.sale_id
             WHERE s.tenant_id = ? AND s.status = 'confirmed'
-              AND DATE(s.confirmed_at) BETWEEN ? AND ?
-        ", [$tenantId, $from, $to]);
+              AND s.confirmed_at BETWEEN ? AND ?
+        ", [$tenantId, $fromUtc, $toUtc]);
 
         // ── Graphique revenue par période (depuis sales uniquement, expression driver-aware)
         $revenueRows = DB::select("
@@ -57,10 +60,10 @@ class ReportController extends Controller
                 COALESCE(SUM(total), 0)      AS revenue
             FROM sales
             WHERE tenant_id = ? AND status = 'confirmed'
-              AND DATE(confirmed_at) BETWEEN ? AND ?
+              AND confirmed_at BETWEEN ? AND ?
             GROUP BY {$dateFmt}
             ORDER BY period ASC
-        ", [$tenantId, $from, $to]);
+        ", [$tenantId, $fromUtc, $toUtc]);
 
         // ── Profit par période (depuis sale_items)
         $profitRows = DB::select("
@@ -70,9 +73,9 @@ class ReportController extends Controller
             FROM sale_items si
             JOIN sales s ON s.id = si.sale_id
             WHERE s.tenant_id = ? AND s.status = 'confirmed'
-              AND DATE(s.confirmed_at) BETWEEN ? AND ?
+              AND s.confirmed_at BETWEEN ? AND ?
             GROUP BY {$dateFmtS}
-        ", [$tenantId, $from, $to]);
+        ", [$tenantId, $fromUtc, $toUtc]);
 
         $profitByPeriod = collect($profitRows)->pluck('profit', 'period');
 
@@ -89,7 +92,7 @@ class ReportController extends Controller
 
         if ($request->input('format') === 'csv') {
             return $this->csvResponse(
-                filename: "ventes_{$from}_{$to}.csv",
+                filename: "ventes_{$fromDisplay}_{$toDisplay}.csv",
                 headers:  ['Période', 'Nb ventes', 'CA (FCFA)', 'Bénéfice (FCFA)'],
                 rows:     array_map(
                     fn ($r) => [$r['period'], $r['sales_count'], $r['revenue'], $r['profit']],
@@ -99,7 +102,7 @@ class ReportController extends Controller
         }
 
         return response()->json([
-            'period'  => ['from' => $from, 'to' => $to],
+            'period'  => ['from' => $fromDisplay, 'to' => $toDisplay],
             'summary' => [
                 'sales_count'    => $salesCount,
                 'revenue'        => $totalRevenue,
@@ -120,7 +123,8 @@ class ReportController extends Controller
     public function products(Request $request): JsonResponse|StreamedResponse
     {
         $tenantId = $this->tenantService->currentId();
-        [$from, $to] = $this->parseDateRange($request);
+        [$fromUtc, $toUtc]         = $this->parseDateRange($request);
+        [$fromDisplay, $toDisplay] = $this->parseDateRangeDisplay($request);
         $limit = min((int) $request->input('limit', 50), 200);
 
         $rows = DB::select("
@@ -147,13 +151,13 @@ class ReportController extends Controller
                 JOIN sales s ON s.id = si.sale_id
                 WHERE s.tenant_id = ?
                   AND s.status    = 'confirmed'
-                  AND DATE(s.confirmed_at) BETWEEN ? AND ?
+                  AND s.confirmed_at BETWEEN ? AND ?
                 GROUP BY si.product_id
             ) agg ON agg.product_id = p.id
             WHERE p.tenant_id = ? AND p.deleted_at IS NULL
             ORDER BY revenue DESC, p.name ASC
             LIMIT ?
-        ", [$tenantId, $from, $to, $tenantId, $limit]);
+        ", [$tenantId, $fromUtc, $toUtc, $tenantId, $limit]);
 
         $data = collect($rows)->map(fn ($r) => [
             'product_id'  => (int)   $r->product_id,
@@ -167,7 +171,7 @@ class ReportController extends Controller
 
         if ($request->input('format') === 'csv') {
             return $this->csvResponse(
-                filename: "top_produits_{$from}_{$to}.csv",
+                filename: "top_produits_{$fromDisplay}_{$toDisplay}.csv",
                 headers:  ['Produit', 'Catégorie', 'Qté vendue', 'CA (FCFA)', 'Bénéfice (FCFA)', 'Marge (%)'],
                 rows:     array_map(
                     fn ($r) => [$r['name'], $r['category'] ?? '', $r['qty_sold'], $r['revenue'], $r['profit'], $r['margin_rate']],
@@ -177,7 +181,7 @@ class ReportController extends Controller
         }
 
         return response()->json([
-            'period' => ['from' => $from, 'to' => $to],
+            'period' => ['from' => $fromDisplay, 'to' => $toDisplay],
             'data'   => $data,
         ]);
     }
@@ -192,16 +196,17 @@ class ReportController extends Controller
     public function stock(Request $request): JsonResponse|StreamedResponse
     {
         $tenantId = $this->tenantService->currentId();
-        [$from, $to] = $this->parseDateRange($request);
+        [$fromUtc, $toUtc]         = $this->parseDateRange($request);
+        [$fromDisplay, $toDisplay] = $this->parseDateRangeDisplay($request);
 
         // Totaux par type
         $summaryRows = DB::select("
             SELECT type, COALESCE(SUM(quantity), 0) AS total
             FROM stock_movements
             WHERE tenant_id = ?
-              AND DATE(created_at) BETWEEN ? AND ?
+              AND created_at BETWEEN ? AND ?
             GROUP BY type
-        ", [$tenantId, $from, $to]);
+        ", [$tenantId, $fromUtc, $toUtc]);
 
         $summary = collect($summaryRows)->pluck('total', 'type')
             ->map(fn ($v) => (float) $v)
@@ -235,13 +240,13 @@ class ReportController extends Controller
                     SUM(CASE WHEN sm.type = 'adjustment' THEN sm.quantity ELSE 0 END) AS total_adjustment
                 FROM stock_movements sm
                 WHERE sm.tenant_id = ?
-                  AND DATE(sm.created_at) BETWEEN ? AND ?
+                  AND sm.created_at BETWEEN ? AND ?
                 GROUP BY sm.product_id
             ) agg ON agg.product_id = p.id
             WHERE p.tenant_id = ? AND p.deleted_at IS NULL
             ORDER BY (COALESCE(agg.total_in, 0) + COALESCE(agg.total_out, 0)) DESC, p.name ASC
             LIMIT 1000
-        ", [$tenantId, $from, $to, $tenantId]);
+        ", [$tenantId, $fromUtc, $toUtc, $tenantId]);
 
         $data = collect($rows)->map(fn ($r) => [
             'product_id'       => (int)   $r->product_id,
@@ -256,7 +261,7 @@ class ReportController extends Controller
 
         if ($request->input('format') === 'csv') {
             return $this->csvResponse(
-                filename: "stock_{$from}_{$to}.csv",
+                filename: "stock_{$fromDisplay}_{$toDisplay}.csv",
                 headers:  ['Produit', 'Entrées', 'Sorties', 'Retours', 'Ajustements', 'Stock actuel', 'Valeur (FCFA)'],
                 rows:     array_map(
                     fn ($r) => [$r['name'], $r['total_in'], $r['total_out'], $r['total_return'], $r['total_adjustment'], $r['current_stock'], $r['stock_value']],
@@ -266,7 +271,7 @@ class ReportController extends Controller
         }
 
         return response()->json([
-            'period'  => ['from' => $from, 'to' => $to],
+            'period'  => ['from' => $fromDisplay, 'to' => $toDisplay],
             'summary' => [
                 'total_in'          => $summary['in']         ?? 0,
                 'total_out'         => $summary['out']        ?? 0,
@@ -281,16 +286,36 @@ class ReportController extends Controller
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /**
-     * Génère une expression SQL de formatage de date compatible MySQL et SQLite.
-     * MySQL : DATE_FORMAT(col, '%Y-%m-%d') — SQLite : strftime('%Y-%m-%d', col)
+     * Génère une expression SQL de formatage de date compatible MySQL et SQLite,
+     * avec support optionnel du décalage UTC (en secondes) pour le fuseau du tenant.
+     *
+     * MySQL  : DATE_FORMAT(DATE_ADD(col, INTERVAL N SECOND), '%Y-%m-%d')
+     * SQLite : strftime('%Y-%m-%d', col, '+N seconds')  (tests uniquement, UTC+0)
      */
-    private function dateFormatExpr(string $column, string $format): string
+    private function dateFormatExpr(string $column, string $format, int $tzOffsetSec = 0): string
     {
-        return DB::getDriverName() === 'sqlite'
-            ? "strftime('{$format}', {$column})"
-            : "DATE_FORMAT({$column}, '{$format}')";
+        if (DB::getDriverName() === 'sqlite') {
+            if ($tzOffsetSec !== 0) {
+                $sign = $tzOffsetSec >= 0 ? '+' : '-';
+                $abs  = abs($tzOffsetSec);
+                return "strftime('{$format}', {$column}, '{$sign}{$abs} seconds')";
+            }
+            return "strftime('{$format}', {$column})";
+        }
+
+        if ($tzOffsetSec !== 0) {
+            return "DATE_FORMAT(DATE_ADD({$column}, INTERVAL {$tzOffsetSec} SECOND), '{$format}')";
+        }
+        return "DATE_FORMAT({$column}, '{$format}')";
     }
 
+    /**
+     * Parse la plage de dates saisie par l'utilisateur (dates locales du tenant)
+     * et retourne les bornes UTC correspondantes pour les requêtes MySQL.
+     *
+     * Retourne [$fromUtc, $toUtc] en format datetime ISO (2024-01-15 00:00:00 UTC).
+     * Utilise Carbon::parse() qui respecte le timezone PHP appliqué par ResolveTenant.
+     */
     private function parseDateRange(Request $request): array
     {
         $from = $request->input('from', now()->startOfMonth()->toDateString());
@@ -305,6 +330,24 @@ class ReportController extends Controller
             [$from, $to] = [$to, $from];
         }
 
+        // Convertit les dates locales en bornes UTC pour les comparaisons MySQL.
+        // Carbon::parse($from) interprète la date dans le timezone PHP courant (tenant).
+        $fromUtc = Carbon::parse($from)->startOfDay()->utc()->toDateTimeString();
+        $toUtc   = Carbon::parse($to)->endOfDay()->utc()->toDateTimeString();
+
+        return [$fromUtc, $toUtc];
+    }
+
+    /**
+     * Retourne les dates locales (YYYY-MM-DD) pour l'affichage et les noms de fichiers CSV.
+     */
+    private function parseDateRangeDisplay(Request $request): array
+    {
+        $from = $request->input('from', now()->startOfMonth()->toDateString());
+        $to   = $request->input('to',   now()->toDateString());
+        $from = preg_match('/^\d{4}-\d{2}-\d{2}$/', $from) ? $from : now()->startOfMonth()->toDateString();
+        $to   = preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)   ? $to   : now()->toDateString();
+        if ($from > $to) { [$from, $to] = [$to, $from]; }
         return [$from, $to];
     }
 
