@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import {
   CheckIcon, ArrowDownTrayIcon, DocumentArrowDownIcon,
   MagnifyingGlassIcon, XMarkIcon, ArrowLeftIcon,
@@ -33,6 +34,7 @@ function InventoryLineRow({
   isDraft: boolean
   onSaved: () => void
 }) {
+  const { t } = useTranslation()
   const [value, setValue] = useState<string>(line.counted_qty !== null ? String(line.counted_qty) : '')
   const [saving, setSaving] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -62,7 +64,7 @@ function InventoryLineRow({
       })
       onSaved()
     } catch {
-      toast.error('Erreur lors de la sauvegarde.')
+      toast.error(t('stock.save_error'))
     } finally {
       setSaving(false)
     }
@@ -133,6 +135,7 @@ function InventoryLineCard({
   isDraft: boolean
   onSaved: () => void
 }) {
+  const { t } = useTranslation()
   const [value, setValue] = useState<string>(line.counted_qty !== null ? String(line.counted_qty) : '')
   const [saving, setSaving] = useState(false)
 
@@ -156,7 +159,7 @@ function InventoryLineCard({
       })
       onSaved()
     } catch {
-      toast.error('Erreur lors de la sauvegarde.')
+      toast.error(t('stock.save_error'))
     } finally {
       setSaving(false)
     }
@@ -178,11 +181,11 @@ function InventoryLineCard({
       </div>
       <div className="flex items-center gap-3">
         <div className="text-xs text-gray-400">
-          Attendu : <span className="font-semibold text-gray-700">{line.expected_qty}</span>
+          {t('stock.inventory_expected')} <span className="font-semibold text-gray-700">{line.expected_qty}</span>
         </div>
         {isDraft ? (
           <div className="ml-auto flex items-center gap-1">
-            <span className="text-xs text-gray-400">Compté :</span>
+            <span className="text-xs text-gray-400">{t('stock.inventory_counted_label')}</span>
             <input
               data-inv-input
               type="number"
@@ -209,6 +212,7 @@ function InventoryLineCard({
 // ── Page principale ──────────────────────────────────────────────────────────
 
 export default function InventorySessionPage() {
+  const { t } = useTranslation()
   const { uid } = useParams<{ uid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
@@ -252,7 +256,7 @@ export default function InventorySessionPage() {
       qc.invalidateQueries({ queryKey: ['inventory-session', uid] })
       qc.invalidateQueries({ queryKey: ['inventory-sessions'] })
       qc.invalidateQueries({ queryKey: ['inventory-lines', uid] })
-      toast.success('Inventaire confirmé — les ajustements ont été appliqués.')
+      toast.success(t('stock.inventory_confirmed_ok'))
       setConfirmOpen(false)
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -262,7 +266,7 @@ export default function InventorySessionPage() {
     mutationFn: () => deleteInventorySession(uid!),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['inventory-sessions'] })
-      toast.success('Inventaire supprimé.')
+      toast.success(t('stock.inventory_deleted_ok'))
       navigate('/stock', { state: { tab: 'inventaire' } })
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -307,13 +311,13 @@ export default function InventorySessionPage() {
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-slate-900">{session.reference}</h1>
               <Badge variant={session.status === 'confirmed' ? 'success' : 'warning'}>
-                {session.status === 'confirmed' ? 'Confirmé' : 'Brouillon'}
+                {session.status === 'confirmed' ? t('stock.confirmed') : t('stock.inventory_status_draft')}
               </Badge>
             </div>
             <p className="text-xs text-gray-400 mt-0.5">
-              Créé le {formatDate(session.created_at)}
-              {session.creator && ` par ${session.creator.name}`}
-              {session.confirmed_at && ` · Confirmé le ${formatDate(session.confirmed_at)}`}
+              {t('stock.created_on')} {formatDate(session.created_at)}
+              {session.creator && ` ${t('stock.created_by')} ${session.creator.name}`}
+              {session.confirmed_at && ` · ${t('stock.confirmed_on')} ${formatDate(session.confirmed_at)}`}
             </p>
           </div>
         </div>
@@ -344,7 +348,7 @@ export default function InventorySessionPage() {
                 variant="danger"
                 onClick={() => setDeleteOpen(true)}
               >
-                Supprimer
+                {t('common.delete')}
               </Button>
               <Button
                 type="button"
@@ -352,7 +356,7 @@ export default function InventorySessionPage() {
                 onClick={() => setConfirmOpen(true)}
                 disabled={countedCount === 0}
               >
-                Valider l'inventaire
+                {t('stock.validate_inventory')}
               </Button>
             </>
           )}
@@ -363,17 +367,17 @@ export default function InventorySessionPage() {
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-gray-200 bg-white p-3 text-center">
           <p className="text-xl font-bold text-gray-900">{countedCount}/{totalCount}</p>
-          <p className="text-xs text-gray-400">Produits comptés</p>
+          <p className="text-xs text-gray-400">{t('stock.products_counted')}</p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-3 text-center">
           <p className={`text-xl font-bold ${diffCount > 0 ? 'text-orange-500' : 'text-green-600'}`}>{diffCount}</p>
-          <p className="text-xs text-gray-400">Avec écart</p>
+          <p className="text-xs text-gray-400">{t('stock.with_gap')}</p>
         </div>
         <div className="rounded-xl border border-gray-200 bg-white p-3 text-center">
           <p className="text-xl font-bold text-gray-900">
             {lines ? Math.round((countedCount / Math.max(totalCount, 1)) * 100) : 0}%
           </p>
-          <p className="text-xs text-gray-400">Progression</p>
+          <p className="text-xs text-gray-400">{t('stock.progress')}</p>
         </div>
       </div>
 
@@ -383,7 +387,7 @@ export default function InventorySessionPage() {
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="search"
-            placeholder="Rechercher un produit…"
+            placeholder={t('stock.search')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-lg border border-gray-200 pl-9 pr-3 py-2 text-sm outline-none focus:border-brand-primary transition"
@@ -395,7 +399,7 @@ export default function InventorySessionPage() {
           onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : undefined)}
           className="rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white"
         >
-          <option value="">Toutes catégories</option>
+          <option value="">{t('stock.all_categories')}</option>
           {categoriesData?.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
@@ -406,7 +410,7 @@ export default function InventorySessionPage() {
             onClick={() => { setSearch(''); setCategoryId(undefined) }}
             className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 px-2"
           >
-            <XMarkIcon className="h-3.5 w-3.5" /> Réinitialiser
+            <XMarkIcon className="h-3.5 w-3.5" /> {t('stock.reset_filters')}
           </button>
         )}
       </div>
@@ -416,12 +420,12 @@ export default function InventorySessionPage() {
         <table className="min-w-full divide-y divide-gray-100 text-sm">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Produit</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden sm:table-cell">SKU</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">Catégorie</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Attendu</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Compté</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Écart</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('stock.col_product')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden sm:table-cell">{t('stock.col_sku')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide hidden md:table-cell">{t('stock.col_category')}</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">{t('stock.col_expected')}</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{t('stock.col_counted')}</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">{t('stock.col_gap')}</th>
             </tr>
           </thead>
           <tbody>
@@ -436,7 +440,7 @@ export default function InventorySessionPage() {
             ) : lines?.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-400">
-                  Aucun produit trouvé
+                  {t('stock.no_product_found')}
                 </td>
               </tr>
             ) : (
@@ -464,7 +468,7 @@ export default function InventorySessionPage() {
             </div>
           ))
         ) : lines?.length === 0 ? (
-          <p className="py-8 text-center text-sm text-gray-400">Aucun produit trouvé</p>
+          <p className="py-8 text-center text-sm text-gray-400">{t('stock.no_product_found')}</p>
         ) : (
           lines?.map((line) => (
             <InventoryLineCard
@@ -482,32 +486,31 @@ export default function InventorySessionPage() {
       <Modal
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
-        title="Valider l'inventaire"
+        title={t('stock.confirm_inventory_title')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setConfirmOpen(false)}>{t('common.cancel')}</Button>
             <Button
               icon={<CheckIcon className="h-4 w-4" />}
               loading={confirmMutation.isPending}
               onClick={() => confirmMutation.mutate()}
             >
-              Confirmer et appliquer
+              {t('stock.apply_confirm')}
             </Button>
           </>
         }
       >
         <div className="space-y-3">
           <p className="text-sm text-gray-600">
-            Valider l'inventaire <strong>{session.reference}</strong> ?
-            Les ajustements de stock seront appliqués immédiatement et ne pourront pas être annulés.
+            {t('stock.confirm_inventory_text', { ref: session.reference })}
           </p>
           <div className="rounded-lg bg-gray-50 p-3 text-sm space-y-1">
-            <p><span className="text-gray-500">Produits comptés :</span> <strong>{countedCount}</strong></p>
-            <p><span className="text-gray-500">Avec écart :</span> <strong className={diffCount > 0 ? 'text-orange-500' : 'text-green-600'}>{diffCount}</strong></p>
+            <p><span className="text-gray-500">{t('stock.counted_products_label')} :</span> <strong>{countedCount}</strong></p>
+            <p><span className="text-gray-500">{t('stock.with_gap_label')} :</span> <strong className={diffCount > 0 ? 'text-orange-500' : 'text-green-600'}>{diffCount}</strong></p>
           </div>
           {diffCount === 0 && (
-            <p className="text-xs text-gray-400">Aucun ajustement ne sera créé — tous les stocks correspondent.</p>
+            <p className="text-xs text-gray-400">{t('stock.no_adjustments')}</p>
           )}
         </div>
       </Modal>
@@ -516,23 +519,24 @@ export default function InventorySessionPage() {
       <Modal
         isOpen={deleteOpen}
         onClose={() => setDeleteOpen(false)}
-        title="Supprimer l'inventaire"
+        title={t('stock.delete_inventory_title')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={() => setDeleteOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setDeleteOpen(false)}>{t('common.cancel')}</Button>
             <Button
               variant="danger"
               loading={deleteMutation.isPending}
               onClick={() => deleteMutation.mutate()}
             >
-              Supprimer
+              {t('common.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-gray-600">
-          Supprimer définitivement <strong>{session.reference}</strong> ? Aucun ajustement ne sera appliqué.
+          {t('stock.delete_inventory_confirm', { ref: session.reference })}
+          {' '}{t('stock.delete_inventory_no_adjust')}
         </p>
       </Modal>
     </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Clock, TrendingUp, ShoppingCart, Wallet } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { getSessions } from '@/services/api/pos'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import Badge from '@/components/ui/Badge'
@@ -18,6 +19,7 @@ function duration(openedAt: string, closedAt: string | null): string {
 }
 
 export default function PosSessionsPage() {
+  const { t } = useTranslation()
   const [page, setPage] = useState(1)
 
   const { data, isLoading } = useQuery({
@@ -37,8 +39,8 @@ export default function PosSessionsPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-5 p-4 sm:p-6">
       <div>
-        <h1 className="text-xl font-bold text-slate-900">Sessions de caisse</h1>
-        <p className="mt-0.5 text-sm text-gray-500">Suivi des sessions par caissier</p>
+        <h1 className="text-xl font-bold text-slate-900">{t('pos.sessions_title')}</h1>
+        <p className="mt-0.5 text-sm text-gray-500">{t('pos.sessions_subtitle')}</p>
       </div>
 
       {/* KPI cards */}
@@ -46,21 +48,21 @@ export default function PosSessionsPage() {
         <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
           <div className="flex items-center gap-2 text-gray-500 mb-1">
             <Clock className="h-4 w-4" />
-            <span className="text-xs font-medium">Sessions actives</span>
+            <span className="text-xs font-medium">{t('pos.active_sessions')}</span>
           </div>
           <p className="text-2xl font-bold text-brand-primary">{openSessions}</p>
         </div>
         <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
           <div className="flex items-center gap-2 text-gray-500 mb-1">
             <ShoppingCart className="h-4 w-4" />
-            <span className="text-xs font-medium">Ventes (page)</span>
+            <span className="text-xs font-medium">{t('pos.sales_page')}</span>
           </div>
           <p className="text-2xl font-bold text-slate-800">{totalSales}</p>
         </div>
         <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100 col-span-2">
           <div className="flex items-center gap-2 text-gray-500 mb-1">
             <TrendingUp className="h-4 w-4" />
-            <span className="text-xs font-medium">Total encaissé (page)</span>
+            <span className="text-xs font-medium">{t('pos.total_collected_page')}</span>
           </div>
           <p className="text-2xl font-bold text-emerald-600">{formatCurrency(totalRevenue)}</p>
         </div>
@@ -81,23 +83,23 @@ export default function PosSessionsPage() {
         ) : sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-gray-400">
             <Wallet className="h-10 w-10 mb-3 opacity-40" />
-            <p className="text-sm font-medium">Aucune session de caisse</p>
-            <p className="text-xs mt-1">Les sessions s'affichent ici dès qu'un caissier en ouvre une.</p>
+            <p className="text-sm font-medium">{t('pos.no_sessions')}</p>
+            <p className="text-xs mt-1">{t('pos.no_sessions_desc')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                  <th className="px-5 py-3 font-medium">Caissier</th>
-                  <th className="px-4 py-3 font-medium">Ouverture</th>
-                  <th className="px-4 py-3 font-medium">Fermeture</th>
-                  <th className="px-4 py-3 font-medium">Durée</th>
-                  <th className="px-4 py-3 text-right font-medium">Ventes</th>
-                  <th className="px-4 py-3 text-right font-medium">Total encaissé</th>
-                  <th className="px-4 py-3 font-medium">Mise / Clôture</th>
-                  <th className="px-4 py-3 text-right font-medium">Écart caisse</th>
-                  <th className="px-4 py-3 font-medium">Statut</th>
+                  <th className="px-5 py-3 font-medium">{t('pos.col_cashier')}</th>
+                  <th className="px-4 py-3 font-medium">{t('pos.col_opened')}</th>
+                  <th className="px-4 py-3 font-medium">{t('pos.col_closed')}</th>
+                  <th className="px-4 py-3 font-medium">{t('pos.col_duration')}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('pos.col_sales')}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('pos.col_total')}</th>
+                  <th className="px-4 py-3 font-medium">{t('pos.col_cash')}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('pos.col_diff')}</th>
+                  <th className="px-4 py-3 font-medium">{t('common.status')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -126,6 +128,7 @@ export default function PosSessionsPage() {
 }
 
 function SessionRow({ session: s }: { session: PosSessionWithStats }) {
+  const { t } = useTranslation()
   const isOpen = s.status === 'open'
 
   return (
@@ -147,7 +150,7 @@ function SessionRow({ session: s }: { session: PosSessionWithStats }) {
 
       {/* Fermeture */}
       <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
-        {s.closed_at ? formatDateTime(s.closed_at) : <span className="text-amber-500 font-medium">En cours</span>}
+        {s.closed_at ? formatDateTime(s.closed_at) : <span className="text-amber-500 font-medium">{t('pos.in_progress')}</span>}
       </td>
 
       {/* Durée */}
@@ -169,12 +172,12 @@ function SessionRow({ session: s }: { session: PosSessionWithStats }) {
       <td className="px-4 py-3 whitespace-nowrap">
         <div className="flex flex-col gap-0.5 text-xs">
           <span className="text-gray-500">
-            <span className="text-gray-400">Mise </span>
+            <span className="text-gray-400">{t('pos.opening_cash_label')} </span>
             {formatCurrency(Number(s.opening_cash))}
           </span>
           {s.closing_cash != null && (
             <span className="text-gray-500">
-              <span className="text-gray-400">Clôture </span>
+              <span className="text-gray-400">{t('pos.closing_cash_label')} </span>
               {formatCurrency(Number(s.closing_cash))}
             </span>
           )}
@@ -202,8 +205,8 @@ function SessionRow({ session: s }: { session: PosSessionWithStats }) {
       {/* Statut */}
       <td className="px-4 py-3">
         {isOpen
-          ? <Badge variant="success">Active</Badge>
-          : <Badge variant="default">Fermée</Badge>
+          ? <Badge variant="success">{t('pos.session_active')}</Badge>
+          : <Badge variant="default">{t('pos.session_closed')}</Badge>
         }
       </td>
     </tr>

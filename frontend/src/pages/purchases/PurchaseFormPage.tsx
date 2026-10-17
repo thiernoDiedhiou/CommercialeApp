@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getProducts } from '@/services/api/products'
 import { getSuppliers } from '@/services/api/suppliers'
 import { getPurchaseOrder, createPurchaseOrder, updatePurchaseOrder } from '@/services/api/purchases'
@@ -62,6 +63,7 @@ function ProductPicker({
   value: PickedProduct | null
   onSelect: (p: Product) => void
 }) {
+  const { t } = useTranslation()
   const [text, setText] = useState(value?.name ?? '')
   const [open, setOpen] = useState(false)
   const [deb, setDeb]   = useState('')
@@ -97,7 +99,7 @@ function ProductPicker({
         value={text}
         onChange={(e) => { setText(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
-        placeholder="Rechercher un produit…"
+        placeholder={t('purchases.search_product')}
         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
       />
       {open && deb.length >= 1 && (data?.data.length ?? 0) > 0 && (
@@ -123,6 +125,7 @@ function ProductPicker({
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export default function PurchaseFormPage() {
+  const { t } = useTranslation()
   const { uid } = useParams<{ uid: string }>()
   const isEdit = !!uid
   const navigate = useNavigate()
@@ -177,7 +180,7 @@ export default function PurchaseFormPage() {
   // Mutations
   const buildPayload = (v: FormValues) => {
     const validItems = items.filter((i) => i.product_id !== null)
-    if (validItems.length === 0) throw new Error('Ajoutez au moins un article.')
+    if (validItems.length === 0) throw new Error(t('purchases.min_item_error'))
     return {
       supplier_id: v.supplier_id ?? null,
       expected_at: v.expected_at || null,
@@ -193,7 +196,7 @@ export default function PurchaseFormPage() {
 
   const createMutation = useMutation({
     mutationFn: (v: FormValues) => createPurchaseOrder(buildPayload(v)),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['purchases'] }); toast.success('Bon de commande créé.'); navigate('/purchases') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['purchases'] }); toast.success(t('purchases.purchase_created_ok')); navigate('/purchases') },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
@@ -202,7 +205,7 @@ export default function PurchaseFormPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['purchases'] })
       qc.invalidateQueries({ queryKey: ['purchase', uid] })
-      toast.success('Bon de commande mis à jour.')
+      toast.success(t('purchases.purchase_updated_ok'))
       navigate('/purchases')
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -225,37 +228,37 @@ export default function PurchaseFormPage() {
   }, [])
 
   if (isEdit && orderLoading) {
-    return <div className="p-6 text-sm text-gray-400">Chargement du bon de commande…</div>
+    return <div className="p-6 text-sm text-gray-400">{t('purchases.loading')}</div>
   }
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
       <h1 className="text-xl font-bold text-slate-900">
-        {isEdit ? 'Modifier le bon de commande' : 'Nouveau bon de commande'}
+        {isEdit ? t('purchases.form_edit_title') : t('purchases.form_new_title')}
       </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Informations */}
         <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">Informations</h2>
+          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('purchases.section_info')}</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Fournisseur</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('purchases.supplier_label')}</label>
               <Select {...register('supplier_id', { setValueAs: (v) => v === '' ? null : Number(v) })}>
-                <option value="">Aucun fournisseur</option>
+                <option value="">{t('purchases.no_supplier_option')}</option>
                 {suppliersData?.data.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </Select>
             </div>
-            <Input label="Livraison prévue" type="date" {...register('expected_at')} />
+            <Input label={t('purchases.delivery_planned')} type="date" {...register('expected_at')} />
             <Textarea label="Notes" {...register('notes')} />
           </div>
         </div>
 
         {/* Articles */}
         <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">Articles</h2>
+          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('purchases.section_articles')}</h2>
           {/* ── Mobile : cartes empilées ──────────────────────────────────── */}
           <div className="md:hidden space-y-3">
             {items.map((item) => (
@@ -271,7 +274,7 @@ export default function PurchaseFormPage() {
                 />
                 <div className="flex gap-2">
                   <div className="w-24 shrink-0">
-                    <p className="mb-1 text-[11px] text-gray-400">Quantité</p>
+                    <p className="mb-1 text-[11px] text-gray-400">{t('purchases.col_quantity')}</p>
                     <input
                       type="number" min="0.001" step="0.001"
                       value={item.quantity_ordered}
@@ -281,7 +284,7 @@ export default function PurchaseFormPage() {
                     />
                   </div>
                   <div className="flex-1">
-                    <p className="mb-1 text-[11px] text-gray-400">Prix d'achat</p>
+                    <p className="mb-1 text-[11px] text-gray-400">{t('products.purchase_price')}</p>
                     <PriceInput
                       value={item.unit_cost || null}
                       onChange={(v) => updateItem(item.uid, { unit_cost: v ?? 0 })}
@@ -292,7 +295,7 @@ export default function PurchaseFormPage() {
                 </div>
                 <div className="flex items-center justify-between border-t border-gray-200 pt-2">
                   <span className="text-sm font-semibold text-gray-900">
-                    Sous-total : {formatCurrency(item.quantity_ordered * item.unit_cost)}
+                    {t('common.subtotal')} : {formatCurrency(item.quantity_ordered * item.unit_cost)}
                   </span>
                   <button
                     type="button"
@@ -308,7 +311,7 @@ export default function PurchaseFormPage() {
             ))}
             <div className="rounded-lg border border-gray-100 p-3 text-sm">
               <div className="flex justify-between font-bold text-gray-900">
-                <span>Total estimé</span><span>{formatCurrency(total)}</span>
+                <span>{t('purchases.estimated_total')}</span><span>{formatCurrency(total)}</span>
               </div>
             </div>
           </div>
@@ -318,10 +321,10 @@ export default function PurchaseFormPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                  <th className="pb-2 pr-3 font-medium">Produit</th>
-                  <th className="pb-2 pr-3 w-24 font-medium">Quantité</th>
-                  <th className="pb-2 pr-3 w-32 font-medium">Prix d'achat ({currency})</th>
-                  <th className="pb-2 w-28 text-right font-medium">Sous-total</th>
+                  <th className="pb-2 pr-3 font-medium">{t('common.product')}</th>
+                  <th className="pb-2 pr-3 w-24 font-medium">{t('purchases.col_quantity')}</th>
+                  <th className="pb-2 pr-3 w-32 font-medium">{t('purchases.col_unit_cost_currency', { currency })}</th>
+                  <th className="pb-2 w-28 text-right font-medium">{t('common.subtotal')}</th>
                   <th className="pb-2 w-10" aria-label="Actions" />
                 </tr>
               </thead>
@@ -377,7 +380,7 @@ export default function PurchaseFormPage() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={3} className="pt-4 text-right text-sm font-semibold text-gray-700">Total estimé</td>
+                  <td colSpan={3} className="pt-4 text-right text-sm font-semibold text-gray-700">{t('purchases.estimated_total')}</td>
                   <td className="pt-4 text-right text-base font-bold text-gray-900">{formatCurrency(total)}</td>
                   <td />
                 </tr>
@@ -390,20 +393,20 @@ export default function PurchaseFormPage() {
             className="mt-4 flex items-center gap-1.5 text-sm text-brand-primary hover:underline"
           >
             <PlusIcon className="h-4 w-4" />
-            Ajouter un article
+            {t('purchases.add_article')}
           </button>
         </div>
 
         {mutationError && (
           <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-            {mutationError instanceof Error ? mutationError.message : 'Une erreur est survenue. Veuillez réessayer.'}
+            {getApiErrorMessage(mutationError)}
           </p>
         )}
 
         <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate('/purchases')}>Annuler</Button>
+          <Button type="button" variant="outline" onClick={() => navigate('/purchases')}>{t('common.cancel')}</Button>
           <Button type="submit" loading={isPending}>
-            {isEdit ? 'Enregistrer' : 'Créer le bon'}
+            {isEdit ? t('common.save') : t('purchases.create_action')}
           </Button>
         </div>
       </form>

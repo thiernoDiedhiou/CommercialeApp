@@ -5,6 +5,7 @@ import {
   Pencil, Download, SendHorizonal, XCircle, Banknote,
   Copy, RefreshCw, FileText, Bell, ChevronDown, ChevronUp,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import {
   getInvoice, sendInvoice, cancelInvoice, recordInvoicePayment,
@@ -20,7 +21,6 @@ import Input from '@/components/ui/Input'
 import CanDo from '@/components/ui/CanDo'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { InvoiceStatus, PaymentMethod } from '@/types'
-import { PAYMENT_METHOD_LABELS } from '@/types'
 
 // ── Icône WhatsApp ────────────────────────────────────────────────────────────
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -31,7 +31,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
   )
 }
 
-// ── Statuts ───────────────────────────────────────────────────────────────────
+// ── Statuts (CSS uniquement — sans traduction) ────────────────────────────────
 const STATUS_VARIANT: Record<InvoiceStatus, 'default' | 'info' | 'success' | 'danger'> = {
   draft:     'default',
   sent:      'info',
@@ -39,18 +39,32 @@ const STATUS_VARIANT: Record<InvoiceStatus, 'default' | 'info' | 'success' | 'da
   overdue:   'danger',
   cancelled: 'default',
 }
-const STATUS_LABEL: Record<InvoiceStatus, string> = {
-  draft:     'Brouillon',
-  sent:      'Envoyée',
-  paid:      'Payée',
-  overdue:   'En retard',
-  cancelled: 'Annulée',
-}
 
 export default function InvoiceDetailPage() {
+  const { t } = useTranslation()
   const { uid } = useParams<{ uid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
+
+  const STATUS_LABEL: Record<InvoiceStatus, string> = {
+    draft:     t('invoices.draft'),
+    sent:      t('invoices.sent'),
+    paid:      t('invoices.paid'),
+    overdue:   t('invoices.overdue'),
+    cancelled: t('invoices.cancelled'),
+  }
+
+  const PAYMENT_METHOD_LABELS_I18N: Record<string, string> = {
+    cash:          t('sales.method_cash'),
+    wave:          'Wave',
+    orange_money:  'Orange Money',
+    free_money:    'Free Money',
+    mobile_money:  t('sales.method_mobile_money'),
+    card:          t('sales.method_card'),
+    bank_transfer: t('sales.method_bank_transfer'),
+    cheque:        t('sales.method_cheque'),
+    credit:        t('sales.method_credit'),
+  }
 
   const { data: invoice, isLoading } = useQuery({
     queryKey: ['invoice', uid],
@@ -93,14 +107,14 @@ export default function InvoiceDetailPage() {
       invalidate()
       setShowSendModal(false)
       setSendEmail(''); setSendSubject(''); setSendMessage('')
-      toast.success('Document envoyé et marqué comme envoyé.')
+      toast.success(t('invoices.sent_doc_ok'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const cancelMutation = useMutation({
     mutationFn: () => cancelInvoice(uid!),
-    onSuccess: () => { invalidate(); setShowCancel(false); toast.success('Facture annulée.') },
+    onSuccess: () => { invalidate(); setShowCancel(false); toast.success(t('invoices.cancelled_ok')) },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
@@ -116,7 +130,7 @@ export default function InvoiceDetailPage() {
       invalidate()
       setShowPaymentModal(false)
       setPayAmount(''); setPayMethod('cash'); setPayDate(''); setPayRef(''); setPayNote('')
-      toast.success('Paiement enregistré.')
+      toast.success(t('invoices.paid_ok'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -125,7 +139,7 @@ export default function InvoiceDetailPage() {
     mutationFn: () => duplicateInvoice(uid!),
     onSuccess: (copy) => {
       qc.invalidateQueries({ queryKey: ['invoices'] })
-      toast.success(`Copie créée : ${copy.reference}`)
+      toast.success(t('invoices.copy_created', { ref: copy.reference }))
       navigate(`/invoices/${copy.uid}`)
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -136,7 +150,7 @@ export default function InvoiceDetailPage() {
     onSuccess: (inv) => {
       qc.invalidateQueries({ queryKey: ['invoices'] })
       setShowConvertModal(false)
-      toast.success(`Facture ${inv.reference} créée.`)
+      toast.success(t('invoices.invoice_from_quote', { ref: inv.reference }))
       navigate(`/invoices/${inv.uid}`)
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -147,7 +161,7 @@ export default function InvoiceDetailPage() {
     onSuccess: (cn) => {
       qc.invalidateQueries({ queryKey: ['invoices'] })
       setShowCreditModal(false)
-      toast.success(`Avoir ${cn.reference} créé.`)
+      toast.success(t('invoices.credit_created', { ref: cn.reference }))
       navigate(`/invoices/${cn.uid}`)
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -157,7 +171,7 @@ export default function InvoiceDetailPage() {
     mutationFn: () => sendInvoiceReminder(uid!),
     onSuccess: (updated) => {
       invalidate()
-      toast.success(`Relance n°${updated.reminder_count} envoyée par email.`)
+      toast.success(t('invoices.reminder_sent', { count: updated.reminder_count }))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -186,18 +200,18 @@ export default function InvoiceDetailPage() {
     return `${base}?text=${encodeURIComponent(lines)}`
   }
 
-  if (isLoading) return <div className="p-6 text-sm text-gray-400">Chargement…</div>
-  if (!invoice)  return <div className="p-6 text-sm text-gray-400">Document introuvable.</div>
+  if (isLoading) return <div className="p-6 text-sm text-gray-400">{t('common.loading')}</div>
+  if (!invoice)  return <div className="p-6 text-sm text-gray-400">{t('invoices.not_found')}</div>
 
   const amountDue    = Math.max(0, parseFloat(invoice.total) - parseFloat(invoice.paid_amount))
   const isQuote      = invoice.type === 'quote'
   const isCreditNote = !!invoice.credit_note_for_id
-  const docLabel     = isQuote ? 'Devis' : isCreditNote ? 'Avoir' : 'Facture'
+  const docLabel     = isQuote ? t('invoices.type_quote') : isCreditNote ? t('invoices.type_credit_note') : t('invoices.type_invoice')
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
       {/* Fil d'Ariane */}
-      <Breadcrumb items={[{ label: 'Factures', to: '/invoices' }, { label: invoice.reference }]} />
+      <Breadcrumb items={[{ label: t('nav.invoices'), to: '/invoices' }, { label: invoice.reference }]} />
 
       {/* ── En-tête ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -206,25 +220,24 @@ export default function InvoiceDetailPage() {
             <h1 className="font-mono text-xl font-bold text-slate-900">{invoice.reference}</h1>
             {isQuote && (
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">
-                Devis
+                {t('invoices.type_quote_badge')}
               </span>
             )}
             {invoice.credit_note_for && (
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
-                Avoir
+                {t('invoices.type_credit_badge')}
               </span>
             )}
             <Badge variant={STATUS_VARIANT[invoice.status]}>{STATUS_LABEL[invoice.status]}</Badge>
           </div>
           <p className="mt-0.5 text-sm text-gray-500">
-            {invoice.customer ? invoice.customer.name : 'Sans client'}
-            {' · '}Émise le {formatDate(invoice.issue_date)}
-            {invoice.due_date && ` · Échéance le ${formatDate(invoice.due_date)}`}
+            {invoice.customer ? invoice.customer.name : t('invoices.no_customer')}
+            {' · '}{t('invoices.issued_on')} {formatDate(invoice.issue_date)}
+            {invoice.due_date && ` · ${t('invoices.due_date_label')} ${formatDate(invoice.due_date)}`}
           </p>
-          {/* Lien vers document lié */}
           {invoice.credit_note_for && (
             <p className="mt-0.5 text-xs text-gray-400">
-              Avoir relatif à{' '}
+              {t('invoices.credit_note_for')}{' '}
               <button type="button" className="text-indigo-600 hover:underline"
                 onClick={() => navigate(`/invoices/${invoice.credit_note_for!.uid}`)}>
                 {invoice.credit_note_for.reference}
@@ -233,7 +246,7 @@ export default function InvoiceDetailPage() {
           )}
           {invoice.converted_to && (
             <p className="mt-0.5 text-xs text-gray-400">
-              Converti en{' '}
+              {t('invoices.converted_to')}{' '}
               <button type="button" className="text-indigo-600 hover:underline"
                 onClick={() => navigate(`/invoices/${invoice.converted_to!.uid}`)}>
                 {invoice.converted_to.reference}
@@ -242,8 +255,8 @@ export default function InvoiceDetailPage() {
           )}
           {invoice.reminder_count > 0 && (
             <p className="mt-0.5 text-xs text-amber-600">
-              {invoice.reminder_count} relance{invoice.reminder_count > 1 ? 's' : ''} envoyée{invoice.reminder_count > 1 ? 's' : ''}
-              {invoice.last_reminder_at ? ` · dernière le ${formatDate(invoice.last_reminder_at)}` : ''}
+              {t('invoices.reminder_sent_count', { count: invoice.reminder_count })}
+              {invoice.last_reminder_at ? ` ${t('invoices.last_reminder', { date: formatDate(invoice.last_reminder_at) })}` : ''}
             </p>
           )}
         </div>
@@ -254,7 +267,7 @@ export default function InvoiceDetailPage() {
             <CanDo permission="invoices.edit">
               <Button variant="outline" icon={<Pencil className="h-4 w-4" />}
                 onClick={() => navigate(`/invoices/${uid}/edit`)}>
-                Modifier
+                {t('common.edit')}
               </Button>
             </CanDo>
           )}
@@ -268,23 +281,21 @@ export default function InvoiceDetailPage() {
 
           {invoice.status !== 'cancelled' && (
             <a href={buildWhatsAppUrl()} target="_blank" rel="noopener noreferrer"
-              title={invoice.customer?.phone ? `WhatsApp (${invoice.customer.phone})` : 'Partager via WhatsApp'}
+              title={invoice.customer?.phone ? `WhatsApp (${invoice.customer.phone})` : 'WhatsApp'}
               className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition">
               <WhatsAppIcon className="h-4 w-4" />
               WhatsApp
             </a>
           )}
 
-          {/* Dupliquer */}
           <CanDo permission="invoices.create">
             <Button variant="outline" icon={<Copy className="h-4 w-4" />}
               loading={duplicateMutation.isPending}
               onClick={() => duplicateMutation.mutate()}>
-              Dupliquer
+              {t('common.duplicate')}
             </Button>
           </CanDo>
 
-          {/* Envoyer (draft) */}
           {invoice.status === 'draft' && (
             <CanDo permission="invoices.edit">
               <Button icon={<SendHorizonal className="h-4 w-4" />}
@@ -292,58 +303,53 @@ export default function InvoiceDetailPage() {
                   setSendEmail(invoice.customer?.email ?? '')
                   setShowSendModal(true)
                 }}>
-                Envoyer
+                {t('common.send')}
               </Button>
             </CanDo>
           )}
 
-          {/* Convertir devis → facture */}
           {isQuote && !invoice.converted_to_id && ['draft', 'sent'].includes(invoice.status) && (
             <CanDo permission="invoices.create">
               <Button icon={<RefreshCw className="h-4 w-4" />}
                 onClick={() => setShowConvertModal(true)}>
-                Convertir en facture
+                {t('invoices.convert_action')}
               </Button>
             </CanDo>
           )}
 
-          {/* Encaisser */}
           {(invoice.status === 'sent' || invoice.status === 'overdue') && amountDue > 0 && !isQuote && (
             <CanDo permission="invoices.edit">
               <Button icon={<Banknote className="h-4 w-4" />}
                 onClick={() => setShowPaymentModal(true)}>
-                Encaisser
+                {t('invoices.collect')}
               </Button>
             </CanDo>
           )}
 
-          {/* Relance */}
           {['sent', 'overdue'].includes(invoice.status) && !isQuote && (
             <CanDo permission="invoices.edit">
               <Button variant="outline" icon={<Bell className="h-4 w-4" />}
                 loading={reminderMutation.isPending}
                 onClick={() => reminderMutation.mutate()}>
-                Relancer
+                {t('invoices.send_reminder')}
               </Button>
             </CanDo>
           )}
 
-          {/* Avoir */}
           {invoice.status === 'paid' && !isQuote && (
             <CanDo permission="invoices.create">
               <Button variant="outline" icon={<FileText className="h-4 w-4" />}
                 onClick={() => setShowCreditModal(true)}>
-                Créer un avoir
+                {t('invoices.create_credit')}
               </Button>
             </CanDo>
           )}
 
-          {/* Annuler */}
           {['draft', 'sent', 'overdue'].includes(invoice.status) && (
             <CanDo permission="invoices.edit">
               <Button variant="danger" icon={<XCircle className="h-4 w-4" />}
                 onClick={() => setShowCancel(true)}>
-                Annuler
+                {t('common.cancel')}
               </Button>
             </CanDo>
           )}
@@ -356,11 +362,11 @@ export default function InvoiceDetailPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                <th className="px-4 py-3 font-medium">Désignation</th>
-                <th className="px-4 py-3 text-right font-medium">Qté</th>
-                <th className="px-4 py-3 text-right font-medium">Prix unit.</th>
-                <th className="px-4 py-3 text-right font-medium">Remise</th>
-                <th className="px-4 py-3 text-right font-medium">Total</th>
+                <th className="px-4 py-3 font-medium">{t('invoices.col_designation')}</th>
+                <th className="px-4 py-3 text-right font-medium">{t('invoices.col_qty')}</th>
+                <th className="px-4 py-3 text-right font-medium">{t('invoices.col_unit_price')}</th>
+                <th className="px-4 py-3 text-right font-medium">{t('common.discount')}</th>
+                <th className="px-4 py-3 text-right font-medium">{t('common.total')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -388,11 +394,11 @@ export default function InvoiceDetailPage() {
         <div className="border-t border-gray-100 px-4 py-4">
           <div className="ml-auto w-64 space-y-1.5 text-sm">
             <div className="flex justify-between text-gray-600">
-              <span>Sous-total</span><span>{formatCurrency(invoice.subtotal)}</span>
+              <span>{t('common.subtotal')}</span><span>{formatCurrency(invoice.subtotal)}</span>
             </div>
             {parseFloat(invoice.discount_amount) > 0 && (
               <div className="flex justify-between text-red-500">
-                <span>Remise{invoice.discount_type === 'percent' && ` (${invoice.discount_value}%)`}</span>
+                <span>{t('common.discount')}{invoice.discount_type === 'percent' && ` (${invoice.discount_value}%)`}</span>
                 <span>−{formatCurrency(invoice.discount_amount)}</span>
               </div>
             )}
@@ -403,11 +409,11 @@ export default function InvoiceDetailPage() {
               </div>
             )}
             <div className="flex justify-between border-t border-gray-100 pt-2 text-base font-bold text-gray-900">
-              <span>Total</span><span>{formatCurrency(invoice.total)}</span>
+              <span>{t('common.total')}</span><span>{formatCurrency(invoice.total)}</span>
             </div>
             {parseFloat(invoice.paid_amount) > 0 && (
               <div className="flex justify-between font-medium text-emerald-600">
-                <span>Encaissé</span><span>{formatCurrency(invoice.paid_amount)}</span>
+                <span>{t('invoices.collected')}</span><span>{formatCurrency(invoice.paid_amount)}</span>
               </div>
             )}
             {amountDue > 0 && invoice.status !== 'cancelled' && !isQuote && (
@@ -416,18 +422,18 @@ export default function InvoiceDetailPage() {
                   ? 'bg-orange-50 text-orange-600'
                   : 'bg-red-50 text-red-600'
               }`}>
-                <span>{isCreditNote ? 'Crédit client' : 'Reste dû'}</span>
+                <span>{isCreditNote ? t('invoices.credit_client') : t('invoices.amount_due')}</span>
                 <span>{formatCurrency(amountDue)}</span>
               </div>
             )}
             {invoice.status === 'paid' && (
               <div className="rounded-lg bg-emerald-50 px-3 py-2 text-center text-sm font-semibold text-emerald-700">
-                {isCreditNote ? 'Avoir intégralement remboursé ✓' : 'Facture intégralement réglée ✓'}
+                {isCreditNote ? t('invoices.credit_note_paid') : t('invoices.paid_full')}
               </div>
             )}
             {invoice.status === 'cancelled' && (
               <div className="rounded-lg bg-gray-100 px-3 py-2 text-center text-sm font-medium text-gray-500">
-                {docLabel} annulée — aucun montant dû
+                {t('invoices.cancelled_doc', { label: docLabel })}
               </div>
             )}
           </div>
@@ -444,9 +450,9 @@ export default function InvoiceDetailPage() {
           >
             <span className="flex items-center gap-2">
               <Banknote className="h-4 w-4 text-gray-400" />
-              Historique des paiements
+              {t('invoices.payment_history')}
               <span className="text-xs font-normal text-gray-400">
-                ({(invoice.payments ?? []).length} encaissement{(invoice.payments ?? []).length > 1 ? 's' : ''})
+                ({t('invoices.payment_count', { count: (invoice.payments ?? []).length })})
               </span>
             </span>
             {showPayHistory ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
@@ -463,7 +469,7 @@ export default function InvoiceDetailPage() {
                     <div>
                       <p className="font-medium text-gray-900">{formatCurrency(payment.amount)}</p>
                       <p className="text-xs text-gray-500">
-                        {PAYMENT_METHOD_LABELS[payment.method]}
+                        {PAYMENT_METHOD_LABELS_I18N[payment.method] ?? payment.method}
                         {payment.reference && ` · Réf: ${payment.reference}`}
                         {payment.user && ` · ${payment.user.name}`}
                       </p>
@@ -481,126 +487,124 @@ export default function InvoiceDetailPage() {
       {/* Notes */}
       {invoice.notes && (
         <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Notes</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.notes')}</p>
           <p className="mt-1 text-sm text-gray-700">{invoice.notes}</p>
         </div>
       )}
 
       {/* ── Modal Envoyer ───────────────────────────────────────────────────── */}
       <Modal isOpen={showSendModal} onClose={() => setShowSendModal(false)}
-        title={`Envoyer ${isQuote ? 'le devis' : isCreditNote ? "l'avoir" : 'la facture'}`} size="sm"
+        title={t('invoices.send_doc_title', { type: isQuote ? t('invoices.cancel_the_quote') : isCreditNote ? t('invoices.type_credit_badge').toLowerCase() : t('invoices.cancel_the_invoice') })} size="sm"
         footer={<>
-          <Button variant="outline" onClick={() => setShowSendModal(false)}>Annuler</Button>
+          <Button variant="outline" onClick={() => setShowSendModal(false)}>{t('common.cancel')}</Button>
           <Button loading={sendMutation.isPending} onClick={() => sendMutation.mutate()}>
             <SendHorizonal className="h-4 w-4 mr-1.5" />
-            Envoyer
+            {t('common.send')}
           </Button>
         </>}
       >
         <div className="space-y-3">
           <Input
-            label="Destinataire (email)"
+            label={t('invoices.send_recipient')}
             type="email"
             placeholder={invoice.customer?.email ?? 'email@client.com'}
             value={sendEmail}
             onChange={(e) => setSendEmail(e.target.value)}
           />
           <Input
-            label="Objet (optionnel)"
+            label={t('invoices.send_subject_label')}
             placeholder={`${docLabel} N° ${invoice.reference}`}
             value={sendSubject}
             onChange={(e) => setSendSubject(e.target.value)}
           />
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Message (optionnel)
+              {t('invoices.send_message_label')}
             </label>
             <textarea
               rows={3}
-              placeholder="Le message par défaut sera utilisé si vide…"
+              placeholder={t('invoices.send_message_placeholder')}
               value={sendMessage}
               onChange={(e) => setSendMessage(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none"
             />
           </div>
-          <p className="text-xs text-gray-500">Le PDF sera joint automatiquement.</p>
+          <p className="text-xs text-gray-500">{t('invoices.pdf_attached')}</p>
         </div>
       </Modal>
 
       {/* ── Modal Encaisser ─────────────────────────────────────────────────── */}
       <Modal isOpen={showPaymentModal}
         onClose={() => { setShowPaymentModal(false); setPayAmount('') }}
-        title="Enregistrer un paiement" size="sm"
+        title={t('invoices.record_payment_title')} size="sm"
         footer={<>
-          <Button variant="outline" onClick={() => { setShowPaymentModal(false); setPayAmount('') }}>Annuler</Button>
-          <Button loading={paymentMutation.isPending} onClick={() => paymentMutation.mutate()}>Valider</Button>
+          <Button variant="outline" onClick={() => { setShowPaymentModal(false); setPayAmount('') }}>{t('common.cancel')}</Button>
+          <Button loading={paymentMutation.isPending} onClick={() => paymentMutation.mutate()}>{t('common.validate')}</Button>
         </>}
       >
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">Reste dû : <strong>{formatCurrency(amountDue)}</strong></p>
-          <Input label="Montant encaissé (FCFA)" type="number" min={0.01} max={amountDue} step={1}
+          <p className="text-sm text-gray-500">{t('invoices.remaining_due_label')} <strong>{formatCurrency(amountDue)}</strong></p>
+          <Input label={t('invoices.amount_collected_label', { currency: 'FCFA' })} type="number" min={0.01} max={amountDue} step={1}
             value={payAmount} onChange={(e) => setPayAmount(e.target.value)}
             placeholder={String(Math.round(amountDue))} />
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mode de paiement</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoices.payment_method_label')}</label>
             <select value={payMethod} onChange={(e) => setPayMethod(e.target.value as PaymentMethod)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500">
-              {Object.entries(PAYMENT_METHOD_LABELS).map(([k, v]) => (
+              {Object.entries(PAYMENT_METHOD_LABELS_I18N).map(([k, v]) => (
                 <option key={k} value={k}>{v}</option>
               ))}
             </select>
           </div>
-          <Input label="Date de paiement" type="date" value={payDate}
+          <Input label={t('invoices.payment_date')} type="date" value={payDate}
             onChange={(e) => setPayDate(e.target.value)} />
-          <Input label="Référence (n° chèque, virement…)" value={payRef}
-            onChange={(e) => setPayRef(e.target.value)} placeholder="Optionnel" />
-          <Input label="Note interne" value={payNote}
-            onChange={(e) => setPayNote(e.target.value)} placeholder="Optionnel" />
+          <Input label={t('invoices.reference_field')} value={payRef}
+            onChange={(e) => setPayRef(e.target.value)} placeholder={t('common.optional')} />
+          <Input label={t('invoices.internal_note')} value={payNote}
+            onChange={(e) => setPayNote(e.target.value)} placeholder={t('common.optional')} />
         </div>
       </Modal>
 
       {/* ── Modal Annuler ───────────────────────────────────────────────────── */}
       <Modal isOpen={showCancel} onClose={() => setShowCancel(false)}
-        title={`Annuler ${isQuote ? 'le devis' : 'la facture'}`} size="sm"
+        title={t('invoices.cancel_doc_title', { type: isQuote ? t('invoices.cancel_the_quote') : t('invoices.cancel_the_invoice') })} size="sm"
         footer={<>
-          <Button variant="outline" onClick={() => setShowCancel(false)}>Retour</Button>
+          <Button variant="outline" onClick={() => setShowCancel(false)}>{t('common.back')}</Button>
           <Button variant="danger" loading={cancelMutation.isPending} onClick={() => cancelMutation.mutate()}>
-            Annuler {isQuote ? 'le devis' : 'la facture'}
+            {t('invoices.cancel_action_doc', { type: isQuote ? t('invoices.cancel_the_quote') : t('invoices.cancel_the_invoice') })}
           </Button>
         </>}
       >
-        <p className="text-sm text-gray-600">Voulez-vous annuler ce document ? Cette action ne peut pas être annulée.</p>
+        <p className="text-sm text-gray-600">{t('invoices.cancel_doc_text')}</p>
       </Modal>
 
       {/* ── Modal Convertir devis → facture ─────────────────────────────────── */}
       <Modal isOpen={showConvertModal} onClose={() => setShowConvertModal(false)}
-        title="Convertir en facture" size="sm"
+        title={t('invoices.convert_title')} size="sm"
         footer={<>
-          <Button variant="outline" onClick={() => setShowConvertModal(false)}>Annuler</Button>
+          <Button variant="outline" onClick={() => setShowConvertModal(false)}>{t('common.cancel')}</Button>
           <Button loading={convertMutation.isPending} onClick={() => convertMutation.mutate()}>
-            Convertir en facture
+            {t('invoices.convert_action')}
           </Button>
         </>}
       >
         <p className="text-sm text-gray-600">
-          Une nouvelle facture sera créée avec les mêmes lignes que le devis <strong>{invoice.reference}</strong>.
-          Le devis passera en statut "Annulé".
+          {t('invoices.convert_text', { ref: invoice.reference })}
         </p>
       </Modal>
 
       {/* ── Modal Avoir ─────────────────────────────────────────────────────── */}
       <Modal isOpen={showCreditModal} onClose={() => setShowCreditModal(false)}
-        title="Créer un avoir" size="sm"
+        title={t('invoices.credit_note_title')} size="sm"
         footer={<>
-          <Button variant="outline" onClick={() => setShowCreditModal(false)}>Annuler</Button>
+          <Button variant="outline" onClick={() => setShowCreditModal(false)}>{t('common.cancel')}</Button>
           <Button loading={creditNoteMutation.isPending} onClick={() => creditNoteMutation.mutate()}>
-            Créer l'avoir
+            {t('invoices.credit_note_action')}
           </Button>
         </>}
       >
         <p className="text-sm text-gray-600">
-          Un avoir (<strong>AVO-</strong>) sera créé pour la facture <strong>{invoice.reference}</strong>,
-          reprenant les mêmes lignes. L'avoir part en statut brouillon pour que vous puissiez l'ajuster avant envoi.
+          {t('invoices.credit_note_text', { ref: invoice.reference })}
         </p>
       </Modal>
     </div>

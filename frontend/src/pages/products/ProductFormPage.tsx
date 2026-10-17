@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getProduct, createProduct, updateProduct, createVariant, deleteProduct } from '@/services/api/products'
 import { adjustStock } from '@/services/api/stock'
 import { getApiErrorMessage } from '@/lib/errors'
@@ -131,6 +132,7 @@ function ImageUpload({
   onFileChange: (file: File) => void
   onRemove: () => void
 }) {
+  const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,7 +161,7 @@ function ImageUpload({
           onClick={() => inputRef.current?.click()}
           className="mt-2 block w-32 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-center text-xs text-gray-600 hover:bg-gray-50"
         >
-          Changer
+          {t('products.image_change_btn')}
         </button>
         <input
           ref={inputRef}
@@ -199,6 +201,7 @@ function ImageUpload({
 // ── Page principale ────────────────────────────────────────────────────────
 
 export default function ProductFormPage() {
+  const { t } = useTranslation()
   const { uid } = useParams<{ uid: string }>()
   const isEdit   = !!uid
   const navigate = useNavigate()
@@ -284,11 +287,11 @@ export default function ProductFormPage() {
 
   const handleFileChange = (file: File) => {
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      setImageError('Format non supporté. Utilisez JPEG, PNG ou WebP.')
+      setImageError(t('products.image_invalid_format'))
       return
     }
     if (file.size > MAX_SIZE_BYTES) {
-      setImageError('Image trop lourde. Maximum 2 Mo.')
+      setImageError(t('products.image_too_large'))
       return
     }
     setImageError(null)
@@ -340,7 +343,7 @@ export default function ProductFormPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
-      toast.success('Produit créé avec succès.')
+      toast.success(t('products.created_ok'))
       navigate('/products')
     },
   })
@@ -353,7 +356,7 @@ export default function ProductFormPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['product', uid] })
-      toast.success('Produit mis à jour.')
+      toast.success(t('products.updated_ok'))
       navigate('/products')
     },
   })
@@ -369,7 +372,7 @@ export default function ProductFormPage() {
 
   if (isEdit && productLoading) {
     return (
-      <div className="p-6 text-sm text-gray-400">Chargement du produit…</div>
+      <div className="p-6 text-sm text-gray-400">{t('products.loading_product')}</div>
     )
   }
 
@@ -378,17 +381,17 @@ export default function ProductFormPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900">
-            {isEdit ? 'Modifier le produit' : 'Nouveau produit'}
+            {isEdit ? t('products.form_edit_title') : t('products.form_new_title')}
           </h1>
           <p className="mt-0.5 text-xs text-gray-400">
-            Les champs marqués <span className="text-red-500">*</span> sont obligatoires
+            {t('products.required_hint')}
           </p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Section : Informations de base */}
-        <Section title="Informations de base">
+        <Section title={t('products.section_basic')}>
           {/* Image + champs : colonne sur mobile, ligne sur sm+ */}
           <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
             <div className="flex flex-col items-center sm:items-start gap-1.5">
@@ -403,8 +406,8 @@ export default function ProductFormPage() {
             </div>
             <div className="w-full flex-1 space-y-4">
               <Input
-                label="Nom du produit"
-                placeholder="Ex : T-shirt coton"
+                label={t('common.name')}
+                placeholder={t('products.product_name_placeholder')}
                 error={errors.name?.message}
                 required
                 {...register('name')}
@@ -457,11 +460,11 @@ export default function ProductFormPage() {
         </Section>
 
         {/* Section : Prix et stock */}
-        <Section title="Prix et stock">
+        <Section title={t('products.section_price_stock')}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Prix de vente ({currency}) <span className="text-red-500">*</span>
+                {t('products.selling_price_label', { currency })}
               </label>
               <Controller
                 name="price"
@@ -480,7 +483,7 @@ export default function ProductFormPage() {
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Prix barré ({currency})
+                {t('products.compare_price_label', { currency })}
               </label>
               <Controller
                 name="compare_at_price"
@@ -491,7 +494,7 @@ export default function ProductFormPage() {
                     onChange={field.onChange}
                     onBlur={field.onBlur}
                     currency={currency}
-                    placeholder="Ancien prix avant remise"
+                    placeholder={t('products.compare_price_placeholder')}
                     error={!!errors.compare_at_price}
                   />
                 )}
@@ -500,7 +503,7 @@ export default function ProductFormPage() {
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Prix d'achat ({currency})
+                {t('products.cost_price_label', { currency })}
               </label>
               <Controller
                 name="cost_price"
@@ -520,12 +523,12 @@ export default function ProductFormPage() {
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             <Input
-              label="Unité"
-              placeholder="pièce, kg, L…"
+              label={t('products.unit')}
+              placeholder={t('products.unit_placeholder')}
               {...register('unit')}
             />
             <Input
-              label="Seuil d'alerte stock"
+              label={t('products.alert_threshold_label')}
               type="number"
               min={0}
               placeholder="5"
@@ -536,15 +539,15 @@ export default function ProductFormPage() {
           {!isEdit && !hasVariants && (
             <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                Stock initial
-                <span className="ml-1.5 text-xs font-normal text-gray-400">optionnel</span>
+                {t('products.initial_stock_label')}
+                <span className="ml-1.5 text-xs font-normal text-gray-400">{t('products.initial_stock_optional')}</span>
               </label>
               <Input
                 type="number"
                 min={0}
                 step="any"
                 placeholder="0"
-                hint="Quantité disponible dès la création. Enregistrée comme mouvement de stock."
+                hint={t('products.initial_stock_hint')}
                 error={errors.initial_stock?.message}
                 {...register('initial_stock', { valueAsNumber: true })}
               />
@@ -553,7 +556,7 @@ export default function ProductFormPage() {
         </Section>
 
         {/* Section : Options */}
-        <Section title="Options">
+        <Section title={t('products.section_options')}>
           <div className="space-y-3">
             <Controller
               name="has_variants"
@@ -562,8 +565,8 @@ export default function ProductFormPage() {
                 <Toggle
                   checked={field.value}
                   onChange={field.onChange}
-                  label="Produit à variantes"
-                  hint="Couleur, taille, format…"
+                  label={t('products.toggle_variants_label')}
+                  hint={t('products.toggle_variants_hint')}
                   disabled={isEdit}
                 />
               )}
@@ -575,8 +578,8 @@ export default function ProductFormPage() {
                 <Toggle
                   checked={field.value}
                   onChange={field.onChange}
-                  label="Vendu au poids"
-                  hint="Quantité en kilogrammes"
+                  label={t('products.toggle_weight_label')}
+                  hint={t('products.toggle_weight_hint')}
                 />
               )}
             />
@@ -587,8 +590,8 @@ export default function ProductFormPage() {
                 <Toggle
                   checked={field.value}
                   onChange={field.onChange}
-                  label="Gestion par lots / expiration"
-                  hint="Dates de péremption, numéros de lot"
+                  label={t('products.toggle_expiry_label')}
+                  hint={t('products.toggle_expiry_hint')}
                 />
               )}
             />
@@ -598,7 +601,7 @@ export default function ProductFormPage() {
         {/* Section : Variantes (création uniquement) */}
         {hasVariants && !isEdit && (
           <div ref={variantsSectionRef}>
-            <Section title="Variantes">
+            <Section title={t('products.section_variants')}>
               <VariantManager
                 productPrice={price}
                 productSku={sku}
@@ -622,10 +625,10 @@ export default function ProductFormPage() {
             variant="outline"
             onClick={() => navigate('/products')}
           >
-            Annuler
+            {t('common.cancel')}
           </Button>
           <Button type="submit" loading={isPending}>
-            {isEdit ? 'Enregistrer' : 'Créer le produit'}
+            {isEdit ? t('common.save') : t('products.create_action')}
           </Button>
         </div>
       </form>

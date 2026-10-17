@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getProducts } from '@/services/api/products'
 import { getCustomers } from '@/services/api/customers'
 import { getInvoice, createInvoice, updateInvoice } from '@/services/api/invoices'
@@ -51,6 +52,7 @@ function emptyLine(): LineItem {
 // ── Sélecteur produit ─────────────────────────────────────────────────────
 
 function ProductPicker({ onSelect }: { onSelect: (p: Product) => void }) {
+  const { t } = useTranslation()
   const [text, setText] = useState('')
   const [open, setOpen] = useState(false)
   const [deb, setDeb]   = useState('')
@@ -82,8 +84,8 @@ function ProductPicker({ onSelect }: { onSelect: (p: Product) => void }) {
       <input type="text" value={text}
         onChange={(e) => { setText(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
-        placeholder="Ajouter depuis un produit (optionnel)…"
-        aria-label="Rechercher un produit"
+        placeholder={t('invoices.picker_product_placeholder')}
+        aria-label={t('invoices.picker_product_placeholder')}
         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
       />
       {open && deb.length >= 1 && (data?.data.length ?? 0) > 0 && (
@@ -108,6 +110,7 @@ function ProductPicker({ onSelect }: { onSelect: (p: Product) => void }) {
 // ── Sélecteur client avec recherche ──────────────────────────────────────
 
 function CustomerPicker({ initialName = '', onChange }: { initialName?: string; onChange: (id: number | null) => void }) {
+  const { t } = useTranslation()
   const [text, setText]   = useState(initialName)
   const [open, setOpen]   = useState(false)
   const [deb, setDeb]     = useState('')
@@ -144,8 +147,8 @@ function CustomerPicker({ initialName = '', onChange }: { initialName?: string; 
         value={text}
         onChange={(e) => { const v = e.target.value; setText(v); setOpen(true); if (v === '') onChange(null) }}
         onFocus={() => setOpen(true)}
-        placeholder="Rechercher un client…"
-        aria-label="Rechercher un client"
+        placeholder={t('invoices.picker_customer_placeholder')}
+        aria-label={t('invoices.picker_customer_placeholder')}
         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
       />
       {open && (
@@ -155,7 +158,7 @@ function CustomerPicker({ initialName = '', onChange }: { initialName?: string; 
               onClick={() => { onChange(null); setText(''); setOpen(false) }}
               className="w-full px-3 py-2 text-left text-sm italic text-gray-400 hover:bg-gray-50"
             >
-              Aucun client
+              {t('invoices.picker_no_customer')}
             </button>
           </li>
           {customers.map((c) => (
@@ -170,7 +173,7 @@ function CustomerPicker({ initialName = '', onChange }: { initialName?: string; 
             </li>
           ))}
           {customers.length === 0 && deb.length > 0 && (
-            <li className="px-3 py-2 text-sm text-gray-400">Aucun résultat</li>
+            <li className="px-3 py-2 text-sm text-gray-400">{t('invoices.picker_no_result')}</li>
           )}
         </ul>
       )}
@@ -181,6 +184,7 @@ function CustomerPicker({ initialName = '', onChange }: { initialName?: string; 
 // ── Page ──────────────────────────────────────────────────────────────────
 
 export default function InvoiceFormPage() {
+  const { t } = useTranslation()
   const { uid } = useParams<{ uid: string }>()
   const [searchParams] = useSearchParams()
   const isEdit = !!uid
@@ -241,7 +245,7 @@ export default function InvoiceFormPage() {
 
   const buildPayload = (v: FormValues) => {
     const validItems = items.filter((i) => i.description.trim())
-    if (validItems.length === 0) throw new Error('Ajoutez au moins une ligne.')
+    if (validItems.length === 0) throw new Error(t('invoices.min_line_error'))
     return {
       type:           isQuoteCreation ? 'quote' as const : (invoiceData?.type ?? 'invoice' as const),
       customer_id:    v.customer_id ?? null,
@@ -262,15 +266,16 @@ export default function InvoiceFormPage() {
     }
   }
 
-  const docLabel = isEdit
-    ? (invoiceData?.type === 'quote' ? 'devis' : 'facture')
-    : (isQuoteCreation ? 'devis' : 'facture')
+  const docLabelKey = isEdit
+    ? (invoiceData?.type === 'quote' ? 'invoices.type_quote' : 'invoices.type_invoice')
+    : (isQuoteCreation ? 'invoices.type_quote' : 'invoices.type_invoice')
+  const docLabel = t(docLabelKey)
 
   const createMutation = useMutation({
     mutationFn: (v: FormValues) => createInvoice(buildPayload(v)),
     onSuccess: (inv) => {
       qc.invalidateQueries({ queryKey: ['invoices'] })
-      toast.success(`${isQuoteCreation ? 'Devis' : 'Facture'} créé(e).`)
+      toast.success(t('invoices.created_type', { type: docLabel }))
       navigate(`/invoices/${inv.uid}`)
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -280,7 +285,7 @@ export default function InvoiceFormPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['invoices'] })
       qc.invalidateQueries({ queryKey: ['invoice', uid] })
-      toast.success('Facture mise à jour.')
+      toast.success(t('invoices.updated_toast'))
       navigate(`/invoices/${uid}`)
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
@@ -298,42 +303,42 @@ export default function InvoiceFormPage() {
     setItems((prev) => prev.filter((i) => i.uid !== uid))
   }, [])
 
-  if (isEdit && isLoading) return <div className="p-6 text-sm text-gray-400">Chargement…</div>
+  if (isEdit && isLoading) return <div className="p-6 text-sm text-gray-400">{t('common.loading')}</div>
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
       <h1 className="text-xl font-bold text-slate-900">
-        {isEdit ? `Modifier le ${docLabel}` : `Nouveau ${docLabel}`}
+        {isEdit ? t('invoices.form_edit_title', { type: docLabel }) : t('invoices.form_new_title', { type: docLabel })}
       </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Informations générales */}
         <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">Informations</h2>
+          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('invoices.section_info')}</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Client</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('invoices.label_client')}</label>
               <CustomerPicker
                 initialName={invoiceData?.customer?.name ?? ''}
                 onChange={(id) => setValue('customer_id', id)}
               />
             </div>
-            <Input label="Date d'émission *" type="date" error={errors.issue_date?.message} {...register('issue_date')} />
-            <Input label="Date d'échéance" type="date" {...register('due_date')} />
+            <Input label={t('invoices.issue_date_label')} type="date" error={errors.issue_date?.message} {...register('issue_date')} />
+            <Input label={t('invoices.due_date_label')} type="date" {...register('due_date')} />
           </div>
           <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Remise</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('invoices.discount_label')}</label>
               <Select {...register('discount_type', { setValueAs: (v) => v === '' ? null : v })}>
-                <option value="">Aucune</option>
-                <option value="percent">En pourcentage (%)</option>
-                <option value="fixed">Montant fixe (FCFA)</option>
+                <option value="">{t('invoices.discount_none')}</option>
+                <option value="percent">{t('invoices.discount_percent')}</option>
+                <option value="fixed">{t('invoices.discount_fixed', { currency })}</option>
               </Select>
             </div>
             {discountType && (
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-gray-700">
-                  {discountType === 'percent' ? 'Taux (%)' : `Montant (${currency})`}
+                  {discountType === 'percent' ? t('invoices.rate_percent') : t('invoices.amount_currency', { currency })}
                 </label>
                 {discountType === 'fixed' ? (
                   <Controller
@@ -357,14 +362,14 @@ export default function InvoiceFormPage() {
                 )}
               </div>
             )}
-            <Input label="TVA (%)" type="number" min={0} max={100} placeholder="0"
+            <Input label={t('invoices.tax_rate_label')} type="number" min={0} max={100} placeholder="0"
               {...register('tax_rate', { valueAsNumber: true })} />
           </div>
         </div>
 
         {/* Lignes */}
         <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">Lignes de facturation</h2>
+          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('invoices.section_lines')}</h2>
 
           {/* Sélecteur rapide produit */}
           <div className="mb-4">
@@ -388,50 +393,50 @@ export default function InvoiceFormPage() {
                     type="text"
                     value={item.description}
                     onChange={(e) => updateItem(item.uid, { description: e.target.value })}
-                    placeholder="Désignation de la prestation…"
-                    aria-label="Description de la ligne"
+                    placeholder={t('invoices.line_placeholder')}
+                    aria-label={t('invoices.col_description')}
                     className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                   />
                   <div className="flex gap-2">
                     <div className="w-20 shrink-0">
-                      <p className="mb-1 text-[11px] text-gray-400">Qté</p>
+                      <p className="mb-1 text-[11px] text-gray-400">{t('invoices.col_qty')}</p>
                       <input
                         type="number" min="0.001" step="0.001"
                         value={item.quantity}
                         onChange={(e) => updateItem(item.uid, { quantity: parseFloat(e.target.value) || 0 })}
-                        aria-label="Quantité"
+                        aria-label={t('invoices.col_qty')}
                         className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                       />
                     </div>
                     <div className="flex-1">
-                      <p className="mb-1 text-[11px] text-gray-400">Prix unit.</p>
+                      <p className="mb-1 text-[11px] text-gray-400">{t('invoices.col_unit_price')}</p>
                       <PriceInput
                         value={item.unit_price || null}
                         onChange={(v) => updateItem(item.uid, { unit_price: v ?? 0 })}
                         currency={currency}
-                        aria-label="Prix unitaire"
+                        aria-label={t('invoices.col_unit_price')}
                       />
                     </div>
                     <div className="flex-1">
-                      <p className="mb-1 text-[11px] text-gray-400">Remise</p>
+                      <p className="mb-1 text-[11px] text-gray-400">{t('common.discount')}</p>
                       <PriceInput
                         value={item.discount || null}
                         onChange={(v) => updateItem(item.uid, { discount: v ?? 0 })}
                         currency={currency}
                         placeholder="0"
-                        aria-label="Remise sur la ligne"
+                        aria-label={t('common.discount')}
                       />
                     </div>
                   </div>
                   <div className="flex items-center justify-between border-t border-gray-200 pt-2">
                     <span className="text-sm font-semibold text-gray-900">
-                      Total : {formatCurrency(Math.max(0, lineTotal))}
+                      {t('common.total')} : {formatCurrency(Math.max(0, lineTotal))}
                     </span>
                     <button
                       type="button"
                       onClick={() => removeItem(item.uid)}
                       disabled={items.length === 1}
-                      aria-label="Supprimer la ligne"
+                      aria-label={t('common.delete')}
                       className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
                     >
                       <TrashIcon className="h-4 w-4" />
@@ -442,11 +447,11 @@ export default function InvoiceFormPage() {
             })}
             <div className="rounded-lg border border-gray-100 p-3 space-y-1 text-sm">
               <div className="flex justify-between text-gray-500">
-                <span>Sous-total</span><span>{formatCurrency(subtotal)}</span>
+                <span>{t('common.subtotal')}</span><span>{formatCurrency(subtotal)}</span>
               </div>
               {discountAmt > 0 && (
                 <div className="flex justify-between text-red-500">
-                  <span>Remise</span><span>−{formatCurrency(discountAmt)}</span>
+                  <span>{t('common.discount')}</span><span>−{formatCurrency(discountAmt)}</span>
                 </div>
               )}
               {taxAmount > 0 && (
@@ -455,7 +460,7 @@ export default function InvoiceFormPage() {
                 </div>
               )}
               <div className="flex justify-between border-t border-gray-100 pt-2 font-bold text-gray-900">
-                <span>TOTAL</span><span>{formatCurrency(total)}</span>
+                <span>{t('common.total')}</span><span>{formatCurrency(total)}</span>
               </div>
             </div>
           </div>
@@ -465,11 +470,11 @@ export default function InvoiceFormPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                  <th className="pb-2 pr-3 font-medium">Description</th>
-                  <th className="pb-2 pr-3 w-20 font-medium">Qté</th>
-                  <th className="pb-2 pr-3 w-28 font-medium">Prix unit.</th>
-                  <th className="pb-2 pr-3 w-24 font-medium">Remise</th>
-                  <th className="pb-2 w-24 text-right font-medium">Total</th>
+                  <th className="pb-2 pr-3 font-medium">{t('invoices.col_description')}</th>
+                  <th className="pb-2 pr-3 w-20 font-medium">{t('invoices.col_qty')}</th>
+                  <th className="pb-2 pr-3 w-28 font-medium">{t('invoices.col_unit_price')}</th>
+                  <th className="pb-2 pr-3 w-24 font-medium">{t('common.discount')}</th>
+                  <th className="pb-2 w-24 text-right font-medium">{t('common.total')}</th>
                   <th className="pb-2 w-10"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
@@ -481,15 +486,15 @@ export default function InvoiceFormPage() {
                       <td className="py-2 pr-3">
                         <input type="text" value={item.description}
                           onChange={(e) => updateItem(item.uid, { description: e.target.value })}
-                          placeholder="Désignation de la prestation…"
-                          aria-label="Description de la ligne"
+                          placeholder={t('invoices.line_placeholder')}
+                          aria-label={t('invoices.col_description')}
                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                         />
                       </td>
                       <td className="py-2 pr-3">
                         <input type="number" min="0.001" step="0.001" value={item.quantity}
                           onChange={(e) => updateItem(item.uid, { quantity: parseFloat(e.target.value) || 0 })}
-                          aria-label="Quantité"
+                          aria-label={t('invoices.col_qty')}
                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                         />
                       </td>
@@ -498,7 +503,7 @@ export default function InvoiceFormPage() {
                           value={item.unit_price || null}
                           onChange={(v) => updateItem(item.uid, { unit_price: v ?? 0 })}
                           currency={currency}
-                          aria-label="Prix unitaire"
+                          aria-label={t('invoices.col_unit_price')}
                         />
                       </td>
                       <td className="py-2 pr-3">
@@ -507,7 +512,7 @@ export default function InvoiceFormPage() {
                           onChange={(v) => updateItem(item.uid, { discount: v ?? 0 })}
                           currency={currency}
                           placeholder="0"
-                          aria-label="Remise sur la ligne"
+                          aria-label={t('common.discount')}
                         />
                       </td>
                       <td className="py-2 text-right font-medium text-gray-900">
@@ -516,7 +521,7 @@ export default function InvoiceFormPage() {
                       <td className="py-2 pl-2">
                         <button type="button" onClick={() => removeItem(item.uid)}
                           disabled={items.length === 1}
-                          aria-label="Supprimer la ligne"
+                          aria-label={t('common.delete')}
                           className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-30">
                           <TrashIcon className="h-4 w-4" />
                         </button>
@@ -526,10 +531,10 @@ export default function InvoiceFormPage() {
                 })}
               </tbody>
               <tfoot>
-                <tr><td colSpan={4} className="pt-3 text-right text-xs text-gray-500">Sous-total</td><td className="pt-3 text-right text-sm text-gray-700">{formatCurrency(subtotal)}</td><td /></tr>
-                {discountAmt > 0 && <tr><td colSpan={4} className="text-right text-xs text-red-500">Remise</td><td className="text-right text-sm text-red-500">−{formatCurrency(discountAmt)}</td><td /></tr>}
+                <tr><td colSpan={4} className="pt-3 text-right text-xs text-gray-500">{t('common.subtotal')}</td><td className="pt-3 text-right text-sm text-gray-700">{formatCurrency(subtotal)}</td><td /></tr>
+                {discountAmt > 0 && <tr><td colSpan={4} className="text-right text-xs text-red-500">{t('common.discount')}</td><td className="text-right text-sm text-red-500">−{formatCurrency(discountAmt)}</td><td /></tr>}
                 {taxAmount > 0 && <tr><td colSpan={4} className="text-right text-xs text-gray-500">TVA ({taxRate}%)</td><td className="text-right text-sm text-gray-700">{formatCurrency(taxAmount)}</td><td /></tr>}
-                <tr><td colSpan={4} className="pt-2 text-right text-sm font-bold text-gray-900">TOTAL</td><td className="pt-2 text-right text-base font-bold text-gray-900">{formatCurrency(total)}</td><td /></tr>
+                <tr><td colSpan={4} className="pt-2 text-right text-sm font-bold text-gray-900">{t('common.total')}</td><td className="pt-2 text-right text-base font-bold text-gray-900">{formatCurrency(total)}</td><td /></tr>
               </tfoot>
             </table>
           </div>
@@ -537,31 +542,31 @@ export default function InvoiceFormPage() {
           <button type="button" onClick={() => setItems((prev) => [...prev, emptyLine()])}
             className="mt-4 flex items-center gap-1.5 text-sm text-brand-primary hover:underline">
             <PlusIcon className="h-4 w-4" />
-            Ajouter une ligne
+            {t('invoices.add_line')}
           </button>
         </div>
 
         {/* Notes & Footer */}
         <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">Notes & mentions</h2>
+          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('invoices.section_notes')}</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Textarea label="Notes internes" placeholder="Visible uniquement en interne…" {...register('notes')} />
-            <Textarea label="Mentions légales / conditions" placeholder="Ex : Paiement à 30 jours…" {...register('footer')} />
+            <Textarea label={t('invoices.notes_internal')} placeholder={t('invoices.notes_internal_placeholder')} {...register('notes')} />
+            <Textarea label={t('invoices.footer_label')} placeholder={t('invoices.footer_placeholder')} {...register('footer')} />
           </div>
         </div>
 
         {mutationError && (
           <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
-            {mutationError instanceof Error ? mutationError.message : 'Une erreur est survenue.'}
+            {mutationError instanceof Error ? mutationError.message : getApiErrorMessage(mutationError)}
           </p>
         )}
 
         <div className="flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={() => navigate(isEdit ? `/invoices/${uid}` : '/invoices')}>
-            Annuler
+            {t('common.cancel')}
           </Button>
           <Button type="submit" loading={isPending}>
-            {isEdit ? 'Enregistrer' : `Créer le ${docLabel}`}
+            {isEdit ? t('common.save') : t('invoices.create_action', { type: docLabel })}
           </Button>
         </div>
       </form>

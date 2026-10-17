@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import { getShopOrder, getShopOrders, updateShopOrderStatus } from '@/shop/services/shop'
 import type { ShopOrderAdmin, ShopOrderAdminItem } from '@/shop/services/shop'
 import { toast } from '@/store/toastStore'
@@ -10,13 +11,13 @@ import EmptyState from '@/components/ui/EmptyState'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
-  pending  : { label: 'En attente',  bg: 'bg-yellow-100', text: 'text-yellow-800' },
-  confirmed: { label: 'Confirmée',   bg: 'bg-blue-100',   text: 'text-blue-800'   },
-  preparing: { label: 'En prép.',    bg: 'bg-orange-100', text: 'text-orange-800' },
-  shipped  : { label: 'Expédiée',    bg: 'bg-purple-100', text: 'text-purple-800' },
-  delivered: { label: 'Livrée',      bg: 'bg-green-100',  text: 'text-green-800'  },
-  cancelled: { label: 'Annulée',     bg: 'bg-red-100',    text: 'text-red-800'    },
+const STATUS_CSS: Record<string, { bg: string; text: string }> = {
+  pending  : { bg: 'bg-yellow-100', text: 'text-yellow-800' },
+  confirmed: { bg: 'bg-blue-100',   text: 'text-blue-800'   },
+  preparing: { bg: 'bg-orange-100', text: 'text-orange-800' },
+  shipped  : { bg: 'bg-purple-100', text: 'text-purple-800' },
+  delivered: { bg: 'bg-green-100',  text: 'text-green-800'  },
+  cancelled: { bg: 'bg-red-100',    text: 'text-red-800'    },
 }
 
 const NEXT_STATUS: Record<string, string> = {
@@ -26,16 +27,10 @@ const NEXT_STATUS: Record<string, string> = {
   shipped  : 'delivered',
 }
 
-const NEXT_LABEL: Record<string, string> = {
-  pending  : 'Confirmer',
-  confirmed: 'Préparer',
-  preparing: 'Expédier',
-  shipped  : 'Livré',
-}
-
 // ── Composant principal ───────────────────────────────────────────────────────
 
 export default function ShopOrdersPage() {
+  const { t } = useTranslation()
   const qc = useQueryClient()
 
   // Filtres
@@ -89,7 +84,7 @@ export default function ShopOrdersPage() {
       qc.invalidateQueries({ queryKey: ['shop-orders'] })
       qc.invalidateQueries({ queryKey: ['shop-order', detailUid] })
       qc.invalidateQueries({ queryKey: ['dashboard-summary'] })
-      toast.success('Statut mis à jour')
+      toast.success(t('shop_orders.status_updated'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -104,29 +99,29 @@ export default function ShopOrdersPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">Commandes boutique</h1>
-        <span className="text-sm text-gray-500">{total} commande{total !== 1 ? 's' : ''}</span>
+        <h1 className="text-2xl font-semibold text-gray-900">{t('shop_orders.title')}</h1>
+        <span className="text-sm text-gray-500">{t('shop_orders.order_count', { count: total })}</span>
       </div>
 
       {/* ── Filtres ─────────────────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-wrap gap-3">
         <input
           type="text"
-          placeholder="Rechercher (référence, client)…"
+          placeholder={t('shop_orders.search_placeholder')}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           className="flex-1 min-w-48 px-4 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-gray-900 transition-colors"
         />
 
         <select
-          aria-label="Filtrer par statut"
+          aria-label={t('shop_orders.filter_status_label')}
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
           className="px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-gray-900 bg-white"
         >
-          <option value="">Tous les statuts</option>
-          {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-            <option key={k} value={k}>{v.label}</option>
+          <option value="">{t('shop_orders.all_statuses')}</option>
+          {Object.keys(STATUS_CSS).map((k) => (
+            <option key={k} value={k}>{t(`shop_orders.status_${k}`)}</option>
           ))}
         </select>
 
@@ -143,13 +138,22 @@ export default function ShopOrdersPage() {
             <div className="w-7 h-7 rounded-full border-4 border-gray-200 border-t-gray-500 animate-spin" />
           </div>
         ) : orders.length === 0 ? (
-          <EmptyState icon={<ShoppingBagIcon className="h-7 w-7" />} title="Aucune commande pour l'instant" description="Les commandes passées sur votre boutique en ligne apparaîtront ici." />
+          <EmptyState icon={<ShoppingBagIcon className="h-7 w-7" />} title={t('shop_orders.empty_title')} description={t('shop_orders.empty_desc')} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  {['Référence','Client','Téléphone','Total','Méthode','Statut','Date','Actions'].map((h) => (
+                  {([
+                    t('shop_orders.col_ref'),
+                    t('shop_orders.col_customer'),
+                    t('shop_orders.col_phone'),
+                    t('common.total'),
+                    t('shop_orders.col_method'),
+                    t('common.status'),
+                    t('common.date'),
+                    t('common.actions'),
+                  ]).map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
@@ -204,10 +208,12 @@ export default function ShopOrdersPage() {
 // ── OrderRow ──────────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, bg: 'bg-gray-100', text: 'text-gray-600' }
+  const { t } = useTranslation()
+  const css = STATUS_CSS[status] ?? { bg: 'bg-gray-100', text: 'text-gray-600' }
+  const label = STATUS_CSS[status] ? t(`shop_orders.status_${status}`) : status
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}>
-      {cfg.label}
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${css.bg} ${css.text}`}>
+      {label}
     </span>
   )
 }
@@ -220,7 +226,15 @@ function OrderRow({
   onStatus: (s: string) => void
   isUpdating: boolean
 }) {
+  const { t } = useTranslation()
   const [pending, setPending] = useState<{ status: string; label: string } | null>(null)
+
+  const NEXT_LABEL: Record<string, string> = {
+    pending  : t('shop_orders.action_confirm'),
+    confirmed: t('shop_orders.action_prepare'),
+    preparing: t('shop_orders.action_ship'),
+    shipped  : t('shop_orders.action_deliver'),
+  }
 
   const nextStatus = NEXT_STATUS[order.status]
   const canCancel  = !['delivered', 'cancelled'].includes(order.status)
@@ -238,7 +252,7 @@ function OrderRow({
         {Math.round(order.total).toLocaleString('fr-FR')} F
       </td>
       <td className="px-4 py-3 text-gray-500 whitespace-nowrap capitalize">
-        {order.payment_method === 'cod' ? 'Livraison' : 'WhatsApp'}
+        {order.payment_method === 'cod' ? t('shop_orders.payment_cod') : 'WhatsApp'}
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
         <StatusBadge status={order.status} />
@@ -253,11 +267,11 @@ function OrderRow({
             <span className="text-xs text-gray-600">{pending.label} ?</span>
             <button type="button" disabled={isUpdating} onClick={confirm}
               className="px-2.5 py-1 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-700 disabled:opacity-50">
-              Oui
+              {t('common.yes')}
             </button>
             <button type="button" onClick={cancel}
               className="px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50">
-              Non
+              {t('common.no')}
             </button>
           </div>
         ) : (
@@ -271,14 +285,14 @@ function OrderRow({
             )}
             {canCancel && (
               <button type="button" disabled={isUpdating}
-                onClick={() => ask('cancelled', 'Annuler la commande')}
+                onClick={() => ask('cancelled', t('shop_orders.action_cancel_order'))}
                 className="px-3 py-1 rounded-lg border border-red-200 text-red-600 text-xs font-medium hover:bg-red-50 disabled:opacity-50">
-                Annuler
+                {t('common.cancel')}
               </button>
             )}
             <button type="button" onClick={onDetail}
               className="px-3 py-1 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50">
-              Détail
+              {t('common.details')}
             </button>
           </div>
         )}
@@ -298,7 +312,15 @@ function OrderDetailModal({
   onStatus     : (s: string) => void
   isUpdating   : boolean
 }) {
+  const { t } = useTranslation()
   const [pending, setPending] = useState<{ status: string; label: string } | null>(null)
+
+  const NEXT_LABEL: Record<string, string> = {
+    pending  : t('shop_orders.action_confirm'),
+    confirmed: t('shop_orders.action_prepare'),
+    preparing: t('shop_orders.action_ship'),
+    shipped  : t('shop_orders.action_deliver'),
+  }
 
   const ask     = (status: string, label: string) => setPending({ status, label })
   const confirm = () => { if (pending) { onStatus(pending.status); setPending(null) } }
@@ -309,7 +331,7 @@ function OrderDetailModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <div className="bg-white rounded-2xl p-8 flex items-center gap-3">
           <div className="w-6 h-6 rounded-full border-4 border-gray-200 border-t-gray-500 animate-spin" />
-          <span className="text-sm text-gray-500">Chargement…</span>
+          <span className="text-sm text-gray-500">{t('common.loading')}</span>
         </div>
       </div>
     )
@@ -340,18 +362,18 @@ function OrderDetailModal({
 
         <div className="p-5 space-y-5">
           {/* Client */}
-          <Section title="Client">
-            <Row label="Nom"      value={order.customer_name} />
-            <Row label="Téléphone" value={order.customer_phone} />
-            {order.customer_email  && <Row label="Email"    value={order.customer_email} />}
-            {order.customer_address && <Row label="Adresse" value={order.customer_address} />}
-            {order.delivery_zone   && <Row label="Zone livraison" value={order.delivery_zone} />}
-            {order.notes           && <Row label="Notes"   value={order.notes} />}
+          <Section title={t('shop_orders.section_customer')}>
+            <Row label={t('common.name')}      value={order.customer_name} />
+            <Row label={t('common.phone')} value={order.customer_phone} />
+            {order.customer_email  && <Row label={t('common.email')}    value={order.customer_email} />}
+            {order.customer_address && <Row label={t('shop_orders.label_address')} value={order.customer_address} />}
+            {order.delivery_zone   && <Row label={t('shop_orders.label_delivery_zone')} value={order.delivery_zone} />}
+            {order.notes           && <Row label={t('shop_orders.label_notes')}   value={order.notes} />}
           </Section>
 
           {/* Articles */}
           {order.items && order.items.length > 0 && (
-            <Section title="Articles">
+            <Section title={t('shop_orders.section_items')}>
               <div className="space-y-2">
                 {order.items.map((item: ShopOrderAdminItem) => (
                   <div key={item.id} className="flex justify-between text-sm">
@@ -370,13 +392,13 @@ function OrderDetailModal({
           )}
 
           {/* Totaux */}
-          <Section title="Totaux">
-            <Row label="Sous-total" value={`${Math.round(order.subtotal).toLocaleString('fr-FR')} FCFA`} />
+          <Section title={t('shop_orders.section_totals')}>
+            <Row label={t('common.subtotal')} value={`${Math.round(order.subtotal).toLocaleString('fr-FR')} FCFA`} />
             {order.delivery_fee > 0 && (
-              <Row label="Livraison" value={`${Math.round(order.delivery_fee).toLocaleString('fr-FR')} FCFA`} />
+              <Row label={t('shop_orders.label_delivery_fee')} value={`${Math.round(order.delivery_fee).toLocaleString('fr-FR')} FCFA`} />
             )}
-            <Row label="Total" value={`${Math.round(order.total).toLocaleString('fr-FR')} FCFA`} bold />
-            <Row label="Paiement" value={order.payment_method === 'cod' ? 'À la livraison' : 'WhatsApp'} />
+            <Row label={t('common.total')} value={`${Math.round(order.total).toLocaleString('fr-FR')} FCFA`} bold />
+            <Row label={t('shop_orders.label_payment')} value={order.payment_method === 'cod' ? t('shop_orders.payment_cod_long') : 'WhatsApp'} />
           </Section>
 
           {/* Actions */}
@@ -384,15 +406,15 @@ function OrderDetailModal({
             /* ── Confirmation inline ── */
             <div className="flex items-center gap-3 pt-1 p-3 rounded-xl bg-gray-50 border border-gray-200">
               <p className="text-sm text-gray-700 flex-1">
-                Confirmer : <span className="font-medium">{pending.label}</span> ?
+                {t('shop_orders.confirm_action', { label: pending.label })}
               </p>
               <button type="button" disabled={isUpdating} onClick={confirm}
                 className="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 disabled:opacity-50">
-                Oui
+                {t('common.yes')}
               </button>
               <button type="button" onClick={cancel}
                 className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-100">
-                Non
+                {t('common.no')}
               </button>
             </div>
           ) : (
@@ -406,9 +428,9 @@ function OrderDetailModal({
               )}
               {canCancel && (
                 <button type="button" disabled={isUpdating}
-                  onClick={() => ask('cancelled', 'Annuler la commande')}
+                  onClick={() => ask('cancelled', t('shop_orders.action_cancel_order'))}
                   className="px-4 py-2 rounded-xl border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 disabled:opacity-50">
-                  Annuler
+                  {t('common.cancel')}
                 </button>
               )}
               {whatsappUrl && (

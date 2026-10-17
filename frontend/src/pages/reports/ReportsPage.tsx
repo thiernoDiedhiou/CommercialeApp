@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
@@ -58,6 +59,7 @@ const yFmt = (v: number) =>
 // ── Onglet Ventes ─────────────────────────────────────────────────────────
 
 function SalesTab({ data, isLoading }: { data?: SalesReport; isLoading: boolean }) {
+  const { t } = useTranslation()
   const brandColor = useBrandColor()
 
   if (isLoading) {
@@ -84,9 +86,9 @@ function SalesTab({ data, isLoading }: { data?: SalesReport; isLoading: boolean 
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
           <PresentationChartLineIcon className="h-7 w-7 text-slate-400" />
         </div>
-        <p className="text-sm font-semibold text-slate-700">Aucune donnée pour cette période</p>
+        <p className="text-sm font-semibold text-slate-700">{t('reports.no_data_period')}</p>
         <p className="mt-1.5 max-w-xs text-xs text-slate-400 leading-relaxed">
-          Sélectionnez une autre période ou vérifiez que des ventes ont été enregistrées.
+          {t('reports.no_data_desc')}
         </p>
       </div>
     )
@@ -99,22 +101,22 @@ function SalesTab({ data, isLoading }: { data?: SalesReport; isLoading: boolean 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard
-          title="Chiffre d'affaires"
+          title={t('reports.kpi_revenue')}
           value={formatCurrency(summary.revenue)}
           icon={<BanknotesIcon className="h-5 w-5" />}
         />
         <KpiCard
-          title="Nombre de ventes"
+          title={t('reports.kpi_sales_count')}
           value={summary.sales_count.toLocaleString('fr-SN')}
           icon={<ShoppingCartIcon className="h-5 w-5" />}
         />
         <KpiCard
-          title="Bénéfice"
+          title={t('reports.kpi_profit')}
           value={formatCurrency(summary.profit)}
           icon={<ArrowTrendingUpIcon className="h-5 w-5" />}
         />
         <KpiCard
-          title="Panier moyen"
+          title={t('reports.kpi_avg_basket')}
           value={formatCurrency(summary.average_basket)}
           icon={<ArchiveBoxIcon className="h-5 w-5" />}
         />
@@ -122,14 +124,14 @@ function SalesTab({ data, isLoading }: { data?: SalesReport; isLoading: boolean 
 
       {/* Graphique CA */}
       <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-        <h2 className="mb-4 text-sm font-semibold text-gray-700">Évolution du chiffre d'affaires</h2>
+        <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('reports.revenue_chart')}</h2>
         {chart.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
               <ChartBarIcon className="h-7 w-7 text-slate-400" />
             </div>
-            <p className="text-sm font-semibold text-slate-700">Aucune vente sur cette période</p>
-            <p className="mt-1 text-xs text-slate-400">Élargissez la période pour voir les données.</p>
+            <p className="text-sm font-semibold text-slate-700">{t('reports.no_sales_chart')}</p>
+            <p className="mt-1 text-xs text-slate-400">{t('reports.no_sales_chart_desc')}</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={240}>
@@ -165,6 +167,7 @@ function SalesTab({ data, isLoading }: { data?: SalesReport; isLoading: boolean 
 // ── Onglet Produits ───────────────────────────────────────────────────────
 
 function ProductsTab({ data, isLoading }: { data?: ProductsReport; isLoading: boolean }) {
+  const { t } = useTranslation()
   if (isLoading) {
     return (
       <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100 space-y-3">
@@ -179,8 +182,8 @@ function ProductsTab({ data, isLoading }: { data?: ProductsReport; isLoading: bo
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
           <ShoppingCartIcon className="h-7 w-7 text-slate-400" />
         </div>
-        <p className="text-sm font-semibold text-slate-700">Aucune vente sur cette période</p>
-        <p className="mt-1.5 max-w-xs text-xs text-slate-400 leading-relaxed">Élargissez la période pour voir les produits vendus.</p>
+        <p className="text-sm font-semibold text-slate-700">{t('reports.no_sales_products')}</p>
+        <p className="mt-1.5 max-w-xs text-xs text-slate-400 leading-relaxed">{t('reports.no_sales_products_desc')}</p>
       </div>
     )
   }
@@ -192,12 +195,12 @@ function ProductsTab({ data, isLoading }: { data?: ProductsReport; isLoading: bo
           <thead>
             <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
               <th className="px-4 py-3 w-8 font-medium">#</th>
-              <th className="px-4 py-3 font-medium">Produit</th>
-              <th className="px-4 py-3 font-medium">Catégorie</th>
-              <th className="px-4 py-3 text-right font-medium">Qté vendue</th>
-              <th className="px-4 py-3 text-right font-medium">CA (FCFA)</th>
-              <th className="px-4 py-3 text-right font-medium">Bénéfice (FCFA)</th>
-              <th className="px-4 py-3 text-right font-medium">Marge</th>
+              <th className="px-4 py-3 font-medium">{t('common.product')}</th>
+              <th className="px-4 py-3 font-medium">{t('products.category')}</th>
+              <th className="px-4 py-3 text-right font-medium">{t('reports.col_qty_sold')}</th>
+              <th className="px-4 py-3 text-right font-medium">{t('reports.col_revenue')}</th>
+              <th className="px-4 py-3 text-right font-medium">{t('reports.col_profit')}</th>
+              <th className="px-4 py-3 text-right font-medium">{t('reports.col_margin')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -230,6 +233,7 @@ function ProductsTab({ data, isLoading }: { data?: ProductsReport; isLoading: bo
 // ── Onglet Stock ──────────────────────────────────────────────────────────
 
 function StockTab({ data, isLoading }: { data?: StockReport; isLoading: boolean }) {
+  const { t } = useTranslation()
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -257,27 +261,27 @@ function StockTab({ data, isLoading }: { data?: StockReport; isLoading: boolean 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard
-          title="Total entrées"
+          title={t('reports.kpi_total_in')}
           value={summary.total_in.toLocaleString('fr-SN')}
           icon={<ArrowUpIcon className="h-5 w-5" />}
         />
         <KpiCard
-          title="Total sorties"
+          title={t('reports.kpi_total_out')}
           value={summary.total_out.toLocaleString('fr-SN')}
           icon={<ArrowDownIcon className="h-5 w-5" />}
         />
         <KpiCard
-          title="Retours"
+          title={t('reports.kpi_returns')}
           value={summary.total_return.toLocaleString('fr-SN')}
           icon={<ArchiveBoxIcon className="h-5 w-5" />}
         />
         <KpiCard
-          title="Ajustements"
+          title={t('reports.kpi_adjustments')}
           value={summary.total_adjustment.toLocaleString('fr-SN')}
           icon={<ArchiveBoxIcon className="h-5 w-5" />}
         />
         <KpiCard
-          title="Valeur totale du stock"
+          title={t('reports.kpi_stock_value')}
           value={formatCurrency(summary.total_stock_value)}
           icon={<BanknotesIcon className="h-5 w-5" />}
           accent="secondary"
@@ -291,8 +295,8 @@ function StockTab({ data, isLoading }: { data?: StockReport; isLoading: boolean 
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
             <CubeIcon className="h-7 w-7 text-slate-400" />
           </div>
-          <p className="text-sm font-semibold text-slate-700">Aucun mouvement de stock sur cette période</p>
-          <p className="mt-1.5 max-w-xs text-xs text-slate-400 leading-relaxed">Élargissez la période pour voir les mouvements de stock.</p>
+          <p className="text-sm font-semibold text-slate-700">{t('reports.no_stock_movements')}</p>
+          <p className="mt-1.5 max-w-xs text-xs text-slate-400 leading-relaxed">{t('reports.no_stock_movements_desc')}</p>
         </div>
       ) : (
         <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
@@ -300,13 +304,13 @@ function StockTab({ data, isLoading }: { data?: StockReport; isLoading: boolean 
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                  <th className="px-4 py-3 font-medium">Produit</th>
-                  <th className="px-4 py-3 text-right font-medium">Entrées</th>
-                  <th className="px-4 py-3 text-right font-medium">Sorties</th>
-                  <th className="px-4 py-3 text-right font-medium">Retours</th>
-                  <th className="px-4 py-3 text-right font-medium">Ajustements</th>
-                  <th className="px-4 py-3 text-right font-medium">Stock actuel</th>
-                  <th className="px-4 py-3 text-right font-medium">Valeur (FCFA)</th>
+                  <th className="px-4 py-3 font-medium">{t('common.product')}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('reports.stock_col_in')}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('reports.stock_col_out')}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('reports.stock_col_returns')}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('reports.stock_col_adj')}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('reports.stock_col_current')}</th>
+                  <th className="px-4 py-3 text-right font-medium">{t('reports.stock_col_value')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -346,13 +350,8 @@ function StockTab({ data, isLoading }: { data?: StockReport; isLoading: boolean 
 
 type Tab = 'sales' | 'products' | 'stock'
 
-const TAB_LABELS: Record<Tab, string> = {
-  sales:    'Ventes',
-  products: 'Produits',
-  stock:    'Stock',
-}
-
 export default function ReportsPage() {
+  const { t } = useTranslation()
   const [tab, setTab]         = useState<Tab>('sales')
   const [from, setFrom]       = useState(startOfMonth)
   const [to, setTo]           = useState(today)
@@ -381,6 +380,12 @@ export default function ReportsPage() {
     staleTime: 60_000,
   })
 
+  const TAB_LABELS: Record<Tab, string> = {
+    sales:    t('nav.sales'),
+    products: t('nav.products'),
+    stock:    t('nav.stock'),
+  }
+
   const handleExport = async () => {
     setExporting(true)
     try {
@@ -388,7 +393,7 @@ export default function ReportsPage() {
       if (tab === 'products') await exportProductsCsv({ from, to, limit })
       if (tab === 'stock')    await exportStockCsv({ from, to })
     } catch {
-      alert("Une erreur est survenue lors de l'export. Veuillez réessayer.")
+      alert(t('reports.export_error'))
     } finally {
       setExporting(false)
     }
@@ -398,14 +403,14 @@ export default function ReportsPage() {
     <div className="space-y-5 p-4 sm:p-6">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">Rapports</h1>
+        <h1 className="text-xl font-bold text-slate-900">{t('reports.title')}</h1>
         <Button
           variant="outline"
           icon={<ArrowDownTrayIcon className="h-4 w-4" />}
           loading={exporting}
           onClick={handleExport}
         >
-          Exporter CSV
+          {t('reports.export_csv')}
         </Button>
       </div>
 
@@ -413,7 +418,7 @@ export default function ReportsPage() {
       <div className="flex flex-wrap items-end gap-3">
         <div className="w-40">
           <Input
-            label="Du"
+            label={t('reports.from_label')}
             type="date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
@@ -421,7 +426,7 @@ export default function ReportsPage() {
         </div>
         <div className="w-40">
           <Input
-            label="Au"
+            label={t('reports.to_label')}
             type="date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
@@ -433,8 +438,8 @@ export default function ReportsPage() {
               value={groupBy}
               onChange={(e) => setGroupBy(e.target.value as 'day' | 'month')}
             >
-              <option value="day">Par jour</option>
-              <option value="month">Par mois</option>
+              <option value="day">{t('reports.group_by_day')}</option>
+              <option value="month">{t('reports.group_by_month')}</option>
             </Select>
           </div>
         )}
@@ -455,18 +460,18 @@ export default function ReportsPage() {
 
       {/* Onglets */}
       <div className="flex gap-1 rounded-xl bg-gray-100 p-1">
-        {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
+        {(Object.keys(TAB_LABELS) as Tab[]).map((tabKey) => (
           <button
-            key={t}
+            key={tabKey}
             type="button"
-            onClick={() => setTab(t)}
+            onClick={() => setTab(tabKey)}
             className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-              tab === t
+              tab === tabKey
                 ? 'bg-white text-gray-900 shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            {TAB_LABELS[t]}
+            {TAB_LABELS[tabKey]}
           </button>
         ))}
       </div>
