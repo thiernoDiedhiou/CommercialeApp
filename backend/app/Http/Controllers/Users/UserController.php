@@ -6,13 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Users\StoreUserRequest;
 use App\Http\Requests\Users\SyncGroupsRequest;
 use App\Http\Requests\Users\UpdateUserRequest;
+use App\Jobs\SendUserWelcomeJob;
 use App\Models\User;
 use App\Services\PermissionService;
+use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
 
 class UserController extends Controller
 {
-    public function __construct(private readonly PermissionService $permissionService) {}
+    public function __construct(
+        private readonly PermissionService $permissionService,
+        private readonly TenantService $tenantService,
+    ) {}
 
     public function index(): JsonResponse
     {
@@ -25,6 +30,8 @@ class UserController extends Controller
 
     public function store(StoreUserRequest $request): JsonResponse
     {
+        $plainPassword = $request->input('password');
+
         $user = User::create($request->safe()->except('group_ids'));
 
         if ($request->filled('group_ids')) {
@@ -32,6 +39,11 @@ class UserController extends Controller
         }
 
         $user->load('groups:id,name');
+
+        // Envoie les identifiants par email si le nouvel utilisateur a une adresse email.
+        $tenant = $this->tenantService->current();
+        SendUserWelcomeJob::dispatch($tenant, $user, $plainPassword)
+            ->onQueue('notifications');
 
         return response()->json($user, 201);
     }

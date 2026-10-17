@@ -1060,6 +1060,7 @@
     "field_email_required": "Email *",
     "field_password": "Password",
     "field_password_note": "(empty = unchanged)",
+    "field_password_confirm": "Confirm password",
     "field_active": "Active account",
     "delete_user_title": "Delete user",
     "delete_user_confirm": "Do you want to delete",

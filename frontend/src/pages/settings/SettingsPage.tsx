@@ -61,13 +61,27 @@ type Tab = 'boutique' | 'vente' | 'facturation' | 'email' | 'users' | 'groups'
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 
-const userSchema = z.object({
+const userCreateSchema = z.object({
+  name:                 z.string().min(2, 'Nom requis'),
+  email:                z.string().email('Email invalide'),
+  password:             z.string().min(8, '8 caractères min'),
+  password_confirmation: z.string().min(1, 'Confirmation requise'),
+  is_active:            z.boolean().optional(),
+}).refine((d) => d.password === d.password_confirmation, {
+  message: 'Les mots de passe ne correspondent pas',
+  path: ['password_confirmation'],
+})
+
+const userEditSchema = z.object({
   name:      z.string().min(2, 'Nom requis'),
   email:     z.string().email('Email invalide'),
   password:  z.string().min(8, '8 caractères min').or(z.literal('')).optional(),
   is_active: z.boolean().optional(),
 })
-type UserValues = z.infer<typeof userSchema>
+
+type UserCreateValues = z.infer<typeof userCreateSchema>
+type UserEditValues   = z.infer<typeof userEditSchema>
+type UserValues = UserCreateValues | UserEditValues
 
 const groupSchema = z.object({
   name:        z.string().min(2, 'Nom requis'),
@@ -580,17 +594,20 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
   const [selectedGroupIds, setSelectedGroupIds] = useState<number[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<UserValues>({
-    resolver: zodResolver(userSchema),
+  const schema = editing ? userEditSchema : userCreateSchema
+
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<UserCreateValues>({
+    resolver: zodResolver(schema),
   })
 
   useEffect(() => {
     if (!isOpen) return
     reset({
-      name:      editing?.name     ?? '',
-      email:     editing?.email    ?? '',
-      password:  '',
-      is_active: editing?.is_active ?? true,
+      name:                  editing?.name     ?? '',
+      email:                 editing?.email    ?? '',
+      password:              '',
+      password_confirmation: '',
+      is_active:             editing?.is_active ?? true,
     })
     setSelectedGroupIds(editing?.groups?.map((g) => g.id) ?? [])
     setApiError(null)
@@ -664,6 +681,23 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
           <input type="password" autoComplete="new-password" {...register('password')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
           {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
         </div>
+
+        {!editing && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('settings.field_password_confirm')} *
+            </label>
+            <input
+              type="password"
+              autoComplete="new-password"
+              {...register('password_confirmation')}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition"
+            />
+            {'password_confirmation' in errors && errors.password_confirmation && (
+              <p className="mt-1 text-xs text-red-500">{errors.password_confirmation.message}</p>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
           <input type="checkbox" id="is_active_u" {...register('is_active')} className="h-4 w-4 rounded border-gray-300 text-indigo-600" />

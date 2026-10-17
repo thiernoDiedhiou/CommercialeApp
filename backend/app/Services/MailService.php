@@ -7,6 +7,7 @@ use App\Mail\InvoiceSentMail;
 use App\Mail\StockAlertMail;
 use App\Mail\SubscriptionExpiringMail;
 use App\Mail\TenantWelcomeMail;
+use App\Mail\UserWelcomeMail;
 use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -172,6 +173,30 @@ class MailService
         } catch (\Throwable $e) {
             Log::channel('daily')->error('TenantWelcome mail failed', [
                 'tenant_id' => $tenant->id,
+                'error'     => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Envoie les identifiants au nouvel utilisateur créé par un tenant admin.
+     * Utilise le SMTP du tenant s'il est configuré, sinon le SMTP global.
+     * Appelé depuis SendUserWelcomeJob.
+     */
+    public function sendUserWelcome(Tenant $tenant, User $user, string $plainPassword): void
+    {
+        if (empty($user->email)) {
+            return;
+        }
+
+        try {
+            $this->resolveMail($tenant)
+                ->to($user->email, $user->name) // @phpstan-ignore-line
+                ->send(new UserWelcomeMail($tenant, $user, $plainPassword));
+        } catch (\Throwable $e) {
+            Log::channel('daily')->error('UserWelcome mail failed', [
+                'tenant_id' => $tenant->id,
+                'user_id'   => $user->id,
                 'error'     => $e->getMessage(),
             ]);
         }
