@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, PencilSquareIcon, TrashIcon, NoSymbolIcon, TruckIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from '@/services/api/suppliers'
 import PhoneInput, { normalizePhone } from '@/components/ui/PhoneInput'
 import { toast } from '@/store/toastStore'
@@ -37,6 +38,7 @@ const FORM_ID = 'supplier-form'
 type ModalState = { mode: 'create' } | { mode: 'edit'; supplier: Supplier } | null
 
 export default function SuppliersPage() {
+  const { t } = useTranslation()
   const qc = useQueryClient()
   const navigate = useNavigate()
 
@@ -95,7 +97,7 @@ export default function SuppliersPage() {
       address: v.address || null,
       notes:   v.notes || null,
     }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setModal(null); toast.success('Fournisseur créé avec succès.') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setModal(null); toast.success(t('suppliers.created')) },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
@@ -108,19 +110,19 @@ export default function SuppliersPage() {
       address: v.address || null,
       notes:   v.notes || null,
     }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setModal(null); toast.success('Fournisseur mis à jour.') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setModal(null); toast.success(t('suppliers.updated')) },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const toggleMutation = useMutation({
     mutationFn: (s: Supplier) => updateSupplier(s.uid, { is_active: !s.is_active }),
-    onSuccess: (_, s) => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setToggleTarget(null); toast.success(s.is_active ? 'Fournisseur désactivé.' : 'Fournisseur activé.') },
+    onSuccess: (_, s) => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setToggleTarget(null); toast.success(t(s.is_active ? 'suppliers.deactivated' : 'suppliers.activated')) },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
   const deleteMutation = useMutation({
     mutationFn: (uid: string) => deleteSupplier(uid),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setDeleteTarget(null); toast.success('Fournisseur supprimé.') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['suppliers'] }); setDeleteTarget(null); toast.success(t('suppliers.deleted')) },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
@@ -136,26 +138,26 @@ export default function SuppliersPage() {
   const columns: Column<Supplier>[] = [
     {
       key: 'name',
-      header: 'Nom',
+      header: t('common.name'),
       render: (s) => <span className="font-medium text-gray-900">{s.name}</span>,
     },
     {
       key: 'phone',
-      header: 'Téléphone',
+      header: t('common.phone'),
       render: (s) => <span className={s.phone ? 'text-sm text-gray-700' : 'text-sm text-gray-300'}>{s.phone ?? '—'}</span>,
     },
     {
       key: 'email',
-      header: 'Email',
+      header: t('common.email'),
       render: (s) => <span className={s.email ? 'text-sm text-gray-700' : 'text-sm text-gray-300'}>{s.email ?? '—'}</span>,
     },
     {
       key: 'is_active',
-      header: 'Statut',
+      header: t('common.status'),
       align: 'center',
       render: (s) => (
         <Badge variant={s.is_active ? 'success' : 'default'}>
-          {s.is_active ? 'Actif' : 'Inactif'}
+          {t(s.is_active ? 'common.active' : 'common.inactive')}
         </Badge>
       ),
     },
@@ -167,20 +169,20 @@ export default function SuppliersPage() {
         <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           <CanDo permission="suppliers.edit">
             <button type="button" onClick={() => setModal({ mode: 'edit', supplier: s })}
-              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title="Modifier">
+              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title={t('common.edit')}>
               <PencilSquareIcon className="h-4 w-4" />
             </button>
           </CanDo>
           <CanDo permission="suppliers.edit">
             <button type="button" onClick={() => setToggleTarget(s)}
               className={`rounded p-1.5 transition-colors ${s.is_active ? 'text-gray-400 hover:bg-orange-50 hover:text-orange-500' : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-600'}`}
-              title={s.is_active ? 'Désactiver' : 'Activer'}>
+              title={t(s.is_active ? 'common.deactivate' : 'common.activate')}>
               <NoSymbolIcon className="h-4 w-4" />
             </button>
           </CanDo>
           <CanDo permission="suppliers.delete">
             <button type="button" onClick={() => setDeleteTarget(s)}
-              className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title="Supprimer">
+              className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title={t('common.delete')}>
               <TrashIcon className="h-4 w-4" />
             </button>
           </CanDo>
@@ -192,16 +194,16 @@ export default function SuppliersPage() {
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">Fournisseurs</h1>
+        <h1 className="text-xl font-bold text-slate-900">{t('suppliers.title')}</h1>
         <CanDo permission="suppliers.create">
           <Button icon={<PlusIcon className="h-4 w-4" />} onClick={() => setModal({ mode: 'create' })}>
-            Nouveau fournisseur
+            {t('suppliers.new')}
           </Button>
         </CanDo>
       </div>
 
       <div className="max-w-xs">
-        <Input placeholder="Rechercher un fournisseur…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <Input placeholder={t('suppliers.search')} value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>
 
       <Table<Supplier>
@@ -211,13 +213,13 @@ export default function SuppliersPage() {
         loading={isLoading}
         skeletonRows={8}
         onRowClick={(s) => navigate(`/suppliers/${s.uid}`)}
-        emptyMessage={<EmptyState icon={<TruckIcon className="h-7 w-7" />} title="Aucun fournisseur pour l'instant" description="Renseignez vos fournisseurs pour créer des bons de commande." />}
+        emptyMessage={<EmptyState icon={<TruckIcon className="h-7 w-7" />} title={t('suppliers.empty_title')} description={t('suppliers.empty_desc')} />}
         mobileCard={(s) => (
           <div className="flex items-start justify-between gap-3 px-4 py-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="font-medium text-gray-900">{s.name}</span>
-                <Badge variant={s.is_active ? 'success' : 'default'}>{s.is_active ? 'Actif' : 'Inactif'}</Badge>
+                <Badge variant={s.is_active ? 'success' : 'default'}>{t(s.is_active ? 'common.active' : 'common.inactive')}</Badge>
               </div>
               {s.phone && <p className="text-xs text-gray-500">{s.phone}</p>}
               {s.email && <p className="text-xs text-gray-400 truncate">{s.email}</p>}
@@ -248,25 +250,25 @@ export default function SuppliersPage() {
       <Modal
         isOpen={modal !== null}
         onClose={() => setModal(null)}
-        title={modal?.mode === 'edit' ? 'Modifier le fournisseur' : 'Nouveau fournisseur'}
+        title={modal?.mode === 'edit' ? t('suppliers.edit') : t('suppliers.new')}
         size="md"
         footer={
           <>
-            <Button variant="outline" type="button" onClick={() => setModal(null)}>Annuler</Button>
+            <Button variant="outline" type="button" onClick={() => setModal(null)}>{t('common.cancel')}</Button>
             <Button form={FORM_ID} type="submit" loading={isMutating}>
-              {modal?.mode === 'edit' ? 'Enregistrer' : 'Créer'}
+              {modal?.mode === 'edit' ? t('common.save') : t('common.create')}
             </Button>
           </>
         }
       >
         {mutationError && (
-          <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">Une erreur est survenue. Veuillez réessayer.</p>
+          <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{t('common.error_generic')}</p>
         )}
         <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className="space-y-3">
           <p className="text-xs text-gray-400">
-            Les champs marqués <span className="text-red-500">*</span> sont obligatoires
+            {t('common.required_fields')}
           </p>
-          <Input label="Nom" error={errors.name?.message} required {...register('name')} />
+          <Input label={t('common.name')} error={errors.name?.message} required {...register('name')} />
           <Controller
             name="phone"
             control={control}
@@ -276,7 +278,7 @@ export default function SuppliersPage() {
                 control={control}
                 render={({ field: countryField }) => (
                   <PhoneInput
-                    label="Téléphone"
+                    label={t('common.phone')}
                     country={countryField.value}
                     onCountryChange={countryField.onChange}
                     phoneProps={{
@@ -291,9 +293,9 @@ export default function SuppliersPage() {
               />
             )}
           />
-          <Input label="Email" type="email" error={errors.email?.message} {...register('email')} />
-          <Textarea label="Adresse" {...register('address')} />
-          <Textarea label="Notes" {...register('notes')} />
+          <Input label={t('common.email')} type="email" error={errors.email?.message} {...register('email')} />
+          <Textarea label={t('common.address')} {...register('address')} />
+          <Textarea label={t('common.notes')} {...register('notes')} />
         </form>
       </Modal>
 
@@ -301,19 +303,19 @@ export default function SuppliersPage() {
       <Modal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title="Supprimer le fournisseur"
+        title={t('suppliers.delete_title')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
             <Button variant="danger" loading={deleteMutation.isPending} onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}>
-              Supprimer
+              {t('common.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-gray-600">
-          Voulez-vous supprimer <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ? Cette action est irréversible.
+          {t('suppliers.delete_confirm')} <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ? {t('common.action_irreversible')}
         </p>
       </Modal>
 
@@ -321,23 +323,23 @@ export default function SuppliersPage() {
       <Modal
         isOpen={!!toggleTarget}
         onClose={() => setToggleTarget(null)}
-        title={toggleTarget?.is_active ? 'Désactiver le fournisseur' : 'Activer le fournisseur'}
+        title={t(toggleTarget?.is_active ? 'suppliers.deactivate_title' : 'suppliers.activate_title')}
         size="sm"
         footer={
           <>
-            <Button variant="outline" onClick={() => setToggleTarget(null)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setToggleTarget(null)}>{t('common.cancel')}</Button>
             <Button
               variant={toggleTarget?.is_active ? 'danger' : undefined}
               loading={toggleMutation.isPending}
               onClick={() => toggleTarget && toggleMutation.mutate(toggleTarget)}
             >
-              {toggleTarget?.is_active ? 'Désactiver' : 'Activer'}
+              {t(toggleTarget?.is_active ? 'common.deactivate' : 'common.activate')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-gray-600">
-          Voulez-vous {toggleTarget?.is_active ? 'désactiver' : 'activer'} le fournisseur{' '}
+          {t(toggleTarget?.is_active ? 'suppliers.deactivate_confirm' : 'suppliers.activate_confirm')}{' '}
           <span className="font-semibold text-gray-900">«{toggleTarget?.name}»</span> ?
         </p>
       </Modal>

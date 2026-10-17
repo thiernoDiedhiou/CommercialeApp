@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { MagnifyingGlassIcon, ArrowUturnLeftIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getReturns } from '@/services/api/sales'
 import Badge from '@/components/ui/Badge'
 import { SkeletonRow } from '@/components/ui/Skeleton'
@@ -10,12 +11,6 @@ import { formatCurrency, formatDateTime } from '@/lib/utils'
 import type { RefundMethod } from '@/types'
 import EmptyState from '@/components/ui/EmptyState'
 
-const REFUND_LABELS: Record<RefundMethod, string> = {
-  cash:   'Espèces',
-  credit: 'Avoir client',
-  none:   'Sans remboursement',
-}
-
 const REFUND_BADGE: Record<RefundMethod, 'success' | 'info' | 'default'> = {
   cash:   'success',
   credit: 'info',
@@ -23,9 +18,16 @@ const REFUND_BADGE: Record<RefundMethod, 'success' | 'info' | 'default'> = {
 }
 
 export default function ReturnsPage() {
+  const { t } = useTranslation()
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [refundFilter, setRefundFilter] = useState('')
+
+  const REFUND_LABELS: Record<RefundMethod, string> = {
+    cash:   t('returns.refund_cash'),
+    credit: t('returns.refund_credit'),
+    none:   t('returns.refund_none'),
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['returns', { search, page, refundFilter }],
@@ -39,7 +41,7 @@ export default function ReturnsPage() {
 
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">Retours</h1>
+        <h1 className="text-xl font-bold text-slate-900">{t('returns.title')}</h1>
       </div>
 
       {/* Filtres */}
@@ -48,7 +50,7 @@ export default function ReturnsPage() {
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="search"
-            placeholder="Rechercher une référence…"
+            placeholder={t('returns.search')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
@@ -60,10 +62,10 @@ export default function ReturnsPage() {
           onChange={(e) => { setRefundFilter(e.target.value); setPage(1) }}
           className="rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-primary"
         >
-          <option value="">Tous les types</option>
-          <option value="cash">Remboursement espèces</option>
-          <option value="credit">Avoir client</option>
-          <option value="none">Sans remboursement</option>
+          <option value="">{t('returns.filter_all')}</option>
+          <option value="cash">{t('returns.refund_cash')}</option>
+          <option value="credit">{t('returns.refund_credit')}</option>
+          <option value="none">{t('returns.refund_none')}</option>
         </select>
       </div>
 
@@ -78,7 +80,7 @@ export default function ReturnsPage() {
             </div>
           ))
         ) : returns.length === 0 ? (
-          <EmptyState icon={<ArrowUturnLeftIcon className="h-7 w-7" />} title="Aucun retour pour l'instant" description="Les retours de ventes et avoirs clients apparaîtront ici." />
+          <EmptyState icon={<ArrowUturnLeftIcon className="h-7 w-7" />} title={t('returns.empty_title')} description={t('returns.empty_desc')} />
         ) : (
           returns.map((ret) => (
             <div key={ret.id} className="px-4 py-3">
@@ -98,7 +100,7 @@ export default function ReturnsPage() {
                 ) : (
                   <span className="text-sm text-gray-400">—</span>
                 )}
-                <span className="text-xs text-gray-400">{ret.items_count ?? '—'} article(s)</span>
+                <span className="text-xs text-gray-400">{ret.items_count ?? '—'} {t('returns.items')}</span>
               </div>
               <div className="flex items-center justify-between text-xs text-gray-400">
                 <span>{formatDateTime(ret.created_at)}</span>
@@ -115,12 +117,12 @@ export default function ReturnsPage() {
           <table className="min-w-full divide-y divide-gray-100 text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Référence</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Vente d'origine</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Date</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Articles</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Remboursement</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">Montant</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('returns.reference')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('returns.original_sale')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('returns.date')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('returns.items')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('returns.refund_method')}</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('returns.total_refund')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -132,7 +134,7 @@ export default function ReturnsPage() {
                 ? (
                   <tr>
                     <td colSpan={6}>
-                      <EmptyState icon={<ArrowUturnLeftIcon className="h-7 w-7" />} title="Aucun retour pour l'instant" description="Les retours de ventes et avoirs clients apparaîtront ici." />
+                      <EmptyState icon={<ArrowUturnLeftIcon className="h-7 w-7" />} title={t('returns.empty_title')} description={t('returns.empty_desc')} />
                     </td>
                   </tr>
                 )
@@ -155,7 +157,7 @@ export default function ReturnsPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-500">{formatDateTime(ret.created_at)}</td>
                     <td className="px-4 py-3 text-gray-600">
-                      {ret.items_count ?? '—'} article(s)
+                      {ret.items_count ?? '—'} {t('returns.items')}
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={REFUND_BADGE[ret.refund_method]}>

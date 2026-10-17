@@ -8,6 +8,7 @@ import {
   XCircleIcon,
   ReceiptRefundIcon,
 } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getSales, cancelSale, openSalePdf } from '@/services/api/sales'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
@@ -29,15 +30,17 @@ const STATUS_VARIANT: Record<Sale['status'], 'success' | 'default' | 'danger'> =
   draft:     'default',
   cancelled: 'danger',
 }
-const STATUS_LABEL: Record<Sale['status'], string> = {
-  confirmed: 'Confirmée',
-  draft:     'Brouillon',
-  cancelled: 'Annulée',
-}
 
 export default function SalesPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const qc = useQueryClient()
+
+  const STATUS_LABEL: Record<Sale['status'], string> = {
+    confirmed: t('sales.confirmed'),
+    draft:     t('sales.draft'),
+    cancelled: t('sales.cancelled'),
+  }
 
   // ── Filtres ──────────────────────────────────────────────────────────────
   const [search, setSearch]   = useState('')
@@ -70,7 +73,7 @@ export default function SalesPage() {
       qc.invalidateQueries({ queryKey: ['sale', uid] })
       qc.invalidateQueries({ queryKey: ['dashboard-summary'] })
       setCancelTarget(null)
-      toast.success('Vente annulée.')
+      toast.success(t('sales.cancelled_ok'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -86,24 +89,24 @@ export default function SalesPage() {
   const columns: Column<Sale>[] = [
     {
       key: 'reference',
-      header: 'Référence',
+      header: t('sales.reference'),
       render: (s) => (
         <span className="font-mono text-sm font-semibold text-gray-900">{s.reference}</span>
       ),
     },
     {
       key: 'customer',
-      header: 'Client',
+      header: t('sales.customer'),
       render: (s) =>
         s.customer ? (
           <span className="text-sm text-gray-700">{s.customer.name}</span>
         ) : (
-          <span className="text-sm text-gray-300">Anonyme</span>
+          <span className="text-sm text-gray-300">{t('sales.anonymous')}</span>
         ),
     },
     {
       key: 'date',
-      header: 'Date',
+      header: t('sales.date'),
       render: (s) => (
         <span className="text-sm text-gray-600">
           {formatDateTime(s.confirmed_at ?? s.created_at)}
@@ -112,7 +115,7 @@ export default function SalesPage() {
     },
     {
       key: 'total',
-      header: 'Montant',
+      header: t('common.total'),
       align: 'right',
       render: (s) => (
         <span className="font-medium text-gray-900">{formatCurrency(s.total)}</span>
@@ -120,7 +123,7 @@ export default function SalesPage() {
     },
     {
       key: 'paid_amount',
-      header: 'Payé',
+      header: t('sales.paid'),
       align: 'right',
       render: (s) => (
         <span className="text-sm font-medium text-emerald-600">{formatCurrency(s.paid_amount)}</span>
@@ -128,7 +131,7 @@ export default function SalesPage() {
     },
     {
       key: 'due',
-      header: 'Reste dû',
+      header: t('sales.due'),
       align: 'right',
       render: (s) => {
         const due = parseFloat(s.total) - parseFloat(s.paid_amount)
@@ -141,7 +144,7 @@ export default function SalesPage() {
     },
     {
       key: 'status',
-      header: 'Statut',
+      header: t('common.status'),
       align: 'center',
       render: (s) => (
         <Badge variant={STATUS_VARIANT[s.status]}>{STATUS_LABEL[s.status]}</Badge>
@@ -158,7 +161,7 @@ export default function SalesPage() {
             type="button"
             onClick={(e) => { e.stopPropagation(); navigate(`/sales/${s.uid}`) }}
             className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-            title="Voir le détail"
+            title={t('sales.details')}
           >
             <EyeIcon className="h-4 w-4" />
           </button>
@@ -170,7 +173,7 @@ export default function SalesPage() {
               onClick={(e) => { e.stopPropagation(); handlePdf(s.uid, s.reference) }}
               disabled={pdfLoading === s.uid}
               className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40"
-              title="Télécharger PDF"
+              title={t('sales.export_pdf')}
             >
               {pdfLoading === s.uid ? (
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -190,7 +193,7 @@ export default function SalesPage() {
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setCancelTarget(s) }}
                 className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
-                title="Annuler la vente"
+                title={t('sales.cancel_title')}
               >
                 <XCircleIcon className="h-4 w-4" />
               </button>
@@ -205,13 +208,13 @@ export default function SalesPage() {
     <div className="space-y-4 p-4 sm:p-6">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">Ventes</h1>
+        <h1 className="text-xl font-bold text-slate-900">{t('sales.title')}</h1>
         <CanDo permission="sales.create">
           <Button
             icon={<PlusIcon className="h-4 w-4" />}
             onClick={() => navigate('/sales/new')}
           >
-            Nouvelle vente
+            {t('sales.new')}
           </Button>
         </CanDo>
       </div>
@@ -220,17 +223,17 @@ export default function SalesPage() {
       <div className="flex flex-wrap gap-3">
         <div className="min-w-48 flex-1">
           <Input
-            placeholder="Référence ou client…"
+            placeholder={t('sales.search')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <div className="w-40">
           <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">Tous statuts</option>
-            <option value="confirmed">Confirmée</option>
-            <option value="draft">Brouillon</option>
-            <option value="cancelled">Annulée</option>
+            <option value="">{t('sales.filter_all')}</option>
+            <option value="confirmed">{t('sales.confirmed')}</option>
+            <option value="draft">{t('sales.draft')}</option>
+            <option value="cancelled">{t('sales.cancelled')}</option>
           </Select>
         </div>
         <div className="w-40">
@@ -258,7 +261,7 @@ export default function SalesPage() {
         keyExtractor={(s) => s.id}
         loading={isLoading}
         skeletonRows={8}
-        emptyMessage={<EmptyState icon={<ReceiptRefundIcon className="h-7 w-7" />} title="Aucune vente" description="Les ventes passées en caisse ou via la boutique en ligne apparaîtront ici." />}
+        emptyMessage={<EmptyState icon={<ReceiptRefundIcon className="h-7 w-7" />} title={t('sales.empty_title')} description={t('sales.empty_desc')} />}
         onRowClick={(s) => navigate(`/sales/${s.uid}`)}
         mobileCard={(s) => {
           const due = parseFloat(s.total) - parseFloat(s.paid_amount)
@@ -270,7 +273,7 @@ export default function SalesPage() {
               </div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-gray-600">
-                  {s.customer ? s.customer.name : <span className="text-gray-300">Anonyme</span>}
+                  {s.customer ? s.customer.name : <span className="text-gray-300">{t('sales.anonymous')}</span>}
                 </span>
                 <span className="text-xs text-gray-400">{formatDateTime(s.confirmed_at ?? s.created_at)}</span>
               </div>
@@ -309,7 +312,7 @@ export default function SalesPage() {
                       className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-red-500 hover:bg-red-50"
                     >
                       <XCircleIcon className="h-3.5 w-3.5" />
-                      Annuler
+                      {t('sales.cancel')}
                     </button>
                   </CanDo>
                 )}
@@ -334,27 +337,27 @@ export default function SalesPage() {
       <Modal
         isOpen={!!cancelTarget}
         onClose={() => setCancelTarget(null)}
-        title="Annuler la vente"
+        title={t('sales.cancel_title')}
         size="sm"
         footer={
           <>
             <Button variant="outline" onClick={() => setCancelTarget(null)}>
-              Retour
+              {t('common.back')}
             </Button>
             <Button
               variant="danger"
               loading={cancelMutation.isPending}
               onClick={() => cancelTarget && cancelMutation.mutate(cancelTarget.uid)}
             >
-              Confirmer l'annulation
+              {t('sales.cancel_confirm')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-gray-600">
-          Voulez-vous annuler la vente{' '}
-          <span className="font-mono font-semibold text-gray-900">{cancelTarget?.reference}</span> ?
-          Le stock sera restitué automatiquement.
+          {t('sales.cancel')}{' '}
+          <span className="font-mono font-semibold text-gray-900">{cancelTarget?.reference}</span> ?{' '}
+          {t('sales.cancel_stock')}
         </p>
       </Modal>
     </div>

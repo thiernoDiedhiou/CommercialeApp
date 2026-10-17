@@ -6,6 +6,7 @@ import {
   PaperAirplaneIcon, XCircleIcon, TrashIcon, ChevronDownIcon,
   DocumentTextIcon,
 } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import {
   getInvoices, sendInvoice, cancelInvoice,
   deleteInvoice, openInvoicePdf,
@@ -32,21 +33,30 @@ const STATUS_VARIANT: Record<InvoiceStatus, 'default' | 'info' | 'success' | 'da
   overdue:   'danger',
   cancelled: 'default',
 }
-const STATUS_LABEL: Record<InvoiceStatus, string> = {
-  draft:     'Brouillon',
-  sent:      'Envoyée',
-  paid:      'Payée',
-  overdue:   'En retard',
-  cancelled: 'Annulée',
-}
-const SENT_LABEL: Record<InvoiceType, Record<InvoiceStatus, string>> = {
-  invoice: STATUS_LABEL,
-  quote: { draft: 'Brouillon', sent: 'Envoyé', paid: 'Accepté', overdue: 'Expiré', cancelled: 'Annulé' },
-}
 
 export default function InvoicesPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const qc = useQueryClient()
+
+  const STATUS_LABEL: Record<InvoiceStatus, string> = {
+    draft:     t('invoices.draft'),
+    sent:      t('invoices.sent'),
+    paid:      t('invoices.paid'),
+    overdue:   t('invoices.overdue'),
+    cancelled: t('invoices.cancelled'),
+  }
+  const QUOTE_LABEL: Record<InvoiceStatus, string> = {
+    draft:     t('invoices.draft'),
+    sent:      t('invoices.quote_sent'),
+    paid:      t('invoices.quote_accepted'),
+    overdue:   t('invoices.quote_expired'),
+    cancelled: t('invoices.cancelled'),
+  }
+  const SENT_LABEL: Record<InvoiceType, Record<InvoiceStatus, string>> = {
+    invoice: STATUS_LABEL,
+    quote: QUOTE_LABEL,
+  }
 
   // ── Filtres ───────────────────────────────────────────────────────────────
   const [docType, setDocType]   = useState<InvoiceType | ''>('')
@@ -87,17 +97,17 @@ export default function InvoicesPage() {
 
   const sendMutation = useMutation({
     mutationFn: (uid: string) => sendInvoice(uid),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setSendTarget(null); toast.success('Facture marquée comme envoyée.') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setSendTarget(null); toast.success(t('invoices.sent_ok')) },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
   const cancelMutation = useMutation({
     mutationFn: (uid: string) => cancelInvoice(uid),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setCancelTarget(null); toast.success('Facture annulée.') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setCancelTarget(null); toast.success(t('invoices.cancelled_ok')) },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
   const deleteMutation = useMutation({
     mutationFn: (uid: string) => deleteInvoice(uid),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setDeleteTarget(null); toast.success('Facture supprimée.') },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); setDeleteTarget(null); toast.success(t('invoices.deleted_ok')) },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
@@ -110,24 +120,24 @@ export default function InvoicesPage() {
   const columns: Column<Invoice>[] = [
     {
       key: 'reference',
-      header: 'Référence',
+      header: t('invoices.reference'),
       render: (i) => <span className="font-mono text-sm font-semibold text-gray-900">{i.reference}</span>,
     },
     {
       key: 'customer',
-      header: 'Client',
+      header: t('invoices.customer'),
       render: (i) => i.customer
         ? <span className="text-sm text-gray-700">{i.customer.name}</span>
         : <span className="text-sm text-gray-300">—</span>,
     },
     {
       key: 'issue_date',
-      header: 'Émission',
+      header: t('invoices.issue_date'),
       render: (i) => <span className="text-sm text-gray-600">{formatDate(i.issue_date)}</span>,
     },
     {
       key: 'due_date',
-      header: 'Échéance',
+      header: t('invoices.due_date'),
       render: (i) => (
         <span className={`text-sm ${i.status === 'overdue' ? 'font-semibold text-red-600' : 'text-gray-600'}`}>
           {formatDate(i.due_date)}
@@ -136,13 +146,13 @@ export default function InvoicesPage() {
     },
     {
       key: 'total',
-      header: 'Montant',
+      header: t('common.total'),
       align: 'right',
       render: (i) => <span className="font-medium text-gray-900">{formatCurrency(i.total)}</span>,
     },
     {
       key: 'paid_amount',
-      header: 'Encaissé',
+      header: t('invoices.amount_paid'),
       align: 'right',
       render: (i) => {
         const due = Math.max(0, parseFloat(i.total) - parseFloat(i.paid_amount))
@@ -153,15 +163,15 @@ export default function InvoicesPage() {
     },
     {
       key: 'status',
-      header: 'Statut',
+      header: t('common.status'),
       align: 'center',
       render: (i) => (
         <div className="flex items-center justify-center gap-1.5 flex-wrap">
           {i.type === 'quote' && (
-            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">Devis</span>
+            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">{t('invoices.type_quote')}</span>
           )}
           {i.credit_note_for_id && (
-            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700">Avoir</span>
+            <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700">{t('invoices.type_credit_note')}</span>
           )}
           <Badge variant={STATUS_VARIANT[i.status]}>
             {(SENT_LABEL[i.type ?? 'invoice'] ?? STATUS_LABEL)[i.status]}
@@ -176,14 +186,14 @@ export default function InvoicesPage() {
       render: (i) => (
         <div className="flex items-center justify-end gap-1">
           <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/invoices/${i.uid}`) }}
-            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title="Voir">
+            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title={t('common.view')}>
             <EyeIcon className="h-4 w-4" />
           </button>
 
           <CanDo permission="invoices.pdf">
             <button type="button" onClick={(e) => { e.stopPropagation(); handlePdf(i.uid, i.reference) }}
               disabled={pdfLoading === i.uid}
-              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40" title="PDF">
+              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40" title={t('invoices.download_pdf')}>
               {pdfLoading === i.uid ? (
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -198,7 +208,7 @@ export default function InvoicesPage() {
           {i.status === 'draft' && (
             <CanDo permission="invoices.edit">
               <button type="button" onClick={(e) => { e.stopPropagation(); setSendTarget(i) }}
-                className="rounded p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600" title="Envoyer">
+                className="rounded p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600" title={t('common.send')}>
                 <PaperAirplaneIcon className="h-4 w-4" />
               </button>
             </CanDo>
@@ -207,7 +217,7 @@ export default function InvoicesPage() {
           {(i.status === 'draft' || i.status === 'sent') && (
             <CanDo permission="invoices.edit">
               <button type="button" onClick={(e) => { e.stopPropagation(); setCancelTarget(i) }}
-                className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title="Annuler">
+                className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title={t('common.cancel')}>
                 <XCircleIcon className="h-4 w-4" />
               </button>
             </CanDo>
@@ -216,7 +226,7 @@ export default function InvoicesPage() {
           {i.status === 'draft' && (
             <CanDo permission="invoices.delete">
               <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteTarget(i) }}
-                className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title="Supprimer">
+                className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title={t('common.delete')}>
                 <TrashIcon className="h-4 w-4" />
               </button>
             </CanDo>
@@ -230,7 +240,7 @@ export default function InvoicesPage() {
     <div className="space-y-4 p-4 sm:p-6">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">Factures & Devis</h1>
+        <h1 className="text-xl font-bold text-slate-900">{t('invoices.title')}</h1>
         <CanDo permission="invoices.create">
           <div className="relative">
             <div className="flex rounded-lg overflow-hidden ring-1 ring-brand-primary shadow-sm">
@@ -238,7 +248,7 @@ export default function InvoicesPage() {
                 onClick={() => navigate('/invoices/new')}
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-brand-primary hover:opacity-90 transition">
                 <PlusIcon className="h-4 w-4" />
-                Nouvelle facture
+                {t('invoices.new')}
               </button>
               <button type="button"
                 onClick={() => setNewOpen((v) => !v)}
@@ -252,12 +262,12 @@ export default function InvoicesPage() {
                 <button type="button"
                   onClick={() => { navigate('/invoices/new'); setNewOpen(false) }}
                   className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                  📄 Nouvelle facture
+                  📄 {t('invoices.new')}
                 </button>
                 <button type="button"
                   onClick={() => { navigate('/invoices/new?type=quote'); setNewOpen(false) }}
                   className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
-                  📋 Nouveau devis
+                  📋 {t('invoices.new_quote')}
                 </button>
               </div>
             )}
@@ -267,7 +277,7 @@ export default function InvoicesPage() {
 
       {/* Onglets Tous / Factures / Devis */}
       <div className="flex border-b border-gray-200">
-        {([['', 'Tous'], ['invoice', 'Factures'], ['quote', 'Devis']] as [InvoiceType | '', string][]).map(([val, label]) => (
+        {([['' , t('invoices.filter_all')], ['invoice', t('invoices.type_invoice')], ['quote', t('invoices.type_quote')]] as [InvoiceType | '', string][]).map(([val, label]) => (
           <button key={val} type="button"
             onClick={() => { setDocType(val); setPage(1) }}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition ${
@@ -282,16 +292,16 @@ export default function InvoicesPage() {
 
       <div className="flex flex-wrap gap-3">
         <div className="min-w-48 flex-1">
-          <Input placeholder="Référence, client…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input placeholder={t('invoices.search')} value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="w-40">
           <Select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1) }}>
-            <option value="">Tous statuts</option>
-            <option value="draft">Brouillon</option>
-            <option value="sent">{docType === 'quote' ? 'Envoyé' : 'Envoyée'}</option>
-            <option value="paid">{docType === 'quote' ? 'Accepté' : 'Payée'}</option>
-            <option value="overdue">{docType === 'quote' ? 'Expiré' : 'En retard'}</option>
-            <option value="cancelled">Annulé(e)</option>
+            <option value="">{t('invoices.filter_all')}</option>
+            <option value="draft">{t('invoices.draft')}</option>
+            <option value="sent">{docType === 'quote' ? t('invoices.quote_sent') : t('invoices.sent')}</option>
+            <option value="paid">{docType === 'quote' ? t('invoices.quote_accepted') : t('invoices.paid')}</option>
+            <option value="overdue">{docType === 'quote' ? t('invoices.quote_expired') : t('invoices.overdue')}</option>
+            <option value="cancelled">{t('invoices.cancelled')}</option>
           </Select>
         </div>
         <div className="w-36">
@@ -308,7 +318,7 @@ export default function InvoicesPage() {
         keyExtractor={(i) => i.id}
         loading={isLoading}
         skeletonRows={8}
-        emptyMessage={<EmptyState icon={<DocumentTextIcon className="h-7 w-7" />} title="Aucune facture" description="Créez votre première facture pour un client ou un devis." />}
+        emptyMessage={<EmptyState icon={<DocumentTextIcon className="h-7 w-7" />} title={t('invoices.empty_title')} description={t('invoices.empty_desc')} />}
         onRowClick={(i) => navigate(`/invoices/${i.uid}`)}
         mobileCard={(inv) => (
           <div className="px-4 py-4">
@@ -316,10 +326,10 @@ export default function InvoicesPage() {
               <span className="font-mono text-sm font-semibold text-gray-900">{inv.reference}</span>
               <div className="flex items-center gap-1 flex-wrap justify-end">
                 {inv.type === 'quote' && (
-                  <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">Devis</span>
+                  <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">{t('invoices.type_quote')}</span>
                 )}
                 {inv.credit_note_for_id && (
-                  <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700">Avoir</span>
+                  <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700">{t('invoices.type_credit_note')}</span>
                 )}
                 <Badge variant={STATUS_VARIANT[inv.status]}>
                   {(SENT_LABEL[inv.type ?? 'invoice'] ?? STATUS_LABEL)[inv.status]}
@@ -334,7 +344,7 @@ export default function InvoicesPage() {
             <div className="flex items-center gap-1 pt-2 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
               <button type="button" onClick={() => navigate(`/invoices/${inv.uid}`)}
                 className="flex-1 flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs text-gray-500 hover:bg-gray-100">
-                <EyeIcon className="h-3.5 w-3.5" /> Voir
+                <EyeIcon className="h-3.5 w-3.5" /> {t('common.view')}
               </button>
               <CanDo permission="invoices.pdf">
                 <button type="button" onClick={() => handlePdf(inv.uid, inv.reference)} disabled={pdfLoading === inv.uid}
@@ -353,7 +363,7 @@ export default function InvoicesPage() {
                 <CanDo permission="invoices.edit">
                   <button type="button" onClick={() => setSendTarget(inv)}
                     className="flex-1 flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs text-blue-500 hover:bg-blue-50">
-                    <PaperAirplaneIcon className="h-3.5 w-3.5" /> Envoyer
+                    <PaperAirplaneIcon className="h-3.5 w-3.5" /> {t('common.send')}
                   </button>
                 </CanDo>
               )}
@@ -367,44 +377,44 @@ export default function InvoicesPage() {
       )}
 
       {/* Modal envoyer */}
-      <Modal isOpen={!!sendTarget} onClose={() => setSendTarget(null)} title="Envoyer la facture" size="sm"
+      <Modal isOpen={!!sendTarget} onClose={() => setSendTarget(null)} title={t('invoices.send_title')} size="sm"
         footer={<>
-          <Button variant="outline" onClick={() => setSendTarget(null)}>Annuler</Button>
+          <Button variant="outline" onClick={() => setSendTarget(null)}>{t('common.cancel')}</Button>
           <Button loading={sendMutation.isPending} onClick={() => sendTarget && sendMutation.mutate(sendTarget.uid)}>
-            Envoyer
+            {t('common.send')}
           </Button>
         </>}
       >
         <p className="text-sm text-gray-600">
-          Passer la facture <span className="font-mono font-semibold text-gray-900">{sendTarget?.reference}</span> en statut "Envoyée" ?
+          {t('invoices.send_confirm')} <span className="font-mono font-semibold text-gray-900">{sendTarget?.reference}</span> ?
         </p>
       </Modal>
 
       {/* Modal annuler */}
-      <Modal isOpen={!!cancelTarget} onClose={() => setCancelTarget(null)} title="Annuler la facture" size="sm"
+      <Modal isOpen={!!cancelTarget} onClose={() => setCancelTarget(null)} title={t('invoices.cancel_title')} size="sm"
         footer={<>
-          <Button variant="outline" onClick={() => setCancelTarget(null)}>Retour</Button>
+          <Button variant="outline" onClick={() => setCancelTarget(null)}>{t('common.back')}</Button>
           <Button variant="danger" loading={cancelMutation.isPending} onClick={() => cancelTarget && cancelMutation.mutate(cancelTarget.uid)}>
-            Annuler la facture
+            {t('invoices.cancel_action')}
           </Button>
         </>}
       >
         <p className="text-sm text-gray-600">
-          Voulez-vous annuler <span className="font-mono font-semibold text-gray-900">{cancelTarget?.reference}</span> ?
+          {t('invoices.cancel_confirm')} <span className="font-mono font-semibold text-gray-900">{cancelTarget?.reference}</span> ?
         </p>
       </Modal>
 
       {/* Modal supprimer */}
-      <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Supprimer la facture" size="sm"
+      <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title={t('invoices.delete_title')} size="sm"
         footer={<>
-          <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+          <Button variant="outline" onClick={() => setDeleteTarget(null)}>{t('common.cancel')}</Button>
           <Button variant="danger" loading={deleteMutation.isPending} onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}>
-            Supprimer
+            {t('common.delete')}
           </Button>
         </>}
       >
         <p className="text-sm text-gray-600">
-          Supprimer définitivement <span className="font-mono font-semibold text-gray-900">{deleteTarget?.reference}</span> ?
+          {t('invoices.delete_confirm')} <span className="font-mono font-semibold text-gray-900">{deleteTarget?.reference}</span> ?
         </p>
       </Modal>
     </div>

@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PlusIcon, PencilSquareIcon, TrashIcon, ArrowUpTrayIcon, ArrowDownTrayIcon, CubeIcon } from '@heroicons/react/24/outline'
+import { useTranslation } from 'react-i18next'
 import { getProducts, deleteProduct } from '@/services/api/products'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
@@ -25,6 +26,7 @@ function flatCategories(nodes: Category[]): Category[] {
 }
 
 export default function ProductsPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const qc = useQueryClient()
 
@@ -106,7 +108,7 @@ export default function ProductsPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
       setDeleteTarget(null)
-      toast.success('Produit supprimé.')
+      toast.success(t('products.deleted_ok'))
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -115,7 +117,7 @@ export default function ProductsPage() {
   const columns: Column<Product>[] = [
     {
       key: 'name',
-      header: 'Produit',
+      header: t('common.name'),
       render: (p) => (
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 shrink-0 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-xs overflow-hidden">
@@ -130,10 +132,10 @@ export default function ProductsPage() {
               <p className="text-xs text-gray-400 leading-none mt-0.5">{p.brand.name}</p>
             )}
             <div className="flex flex-wrap gap-1 mt-0.5">
-              {p.has_variants && <Badge variant="info" dot>Variantes</Badge>}
-              {p.is_weight_based && <Badge variant="default">Poids</Badge>}
-              {p.has_expiry && <Badge variant="warning">Expiration</Badge>}
-              {!p.is_active && <Badge variant="danger">Inactif</Badge>}
+              {p.has_variants && <Badge variant="info" dot>{t('products.has_variants')}</Badge>}
+              {p.is_weight_based && <Badge variant="default">{t('products.weight')}</Badge>}
+              {p.has_expiry && <Badge variant="warning">{t('products.expiry')}</Badge>}
+              {!p.is_active && <Badge variant="danger">{t('common.inactive')}</Badge>}
             </div>
           </div>
         </div>
@@ -148,7 +150,7 @@ export default function ProductsPage() {
     },
     {
       key: 'category',
-      header: 'Catégorie',
+      header: t('common.category'),
       render: (p) => (
         <span className="text-sm text-gray-600">
           {flatCats.find((c) => c.id === p.category_id)?.name ?? '—'}
@@ -157,7 +159,7 @@ export default function ProductsPage() {
     },
     {
       key: 'price',
-      header: 'Prix',
+      header: t('common.price'),
       align: 'right',
       render: (p) => (
         <span className="font-medium text-gray-900">{formatCurrency(p.price)}</span>
@@ -165,11 +167,11 @@ export default function ProductsPage() {
     },
     {
       key: 'stock_quantity',
-      header: 'Stock',
+      header: t('stock.title'),
       align: 'right',
       render: (p) => {
         if (p.has_variants) {
-          return <span className="text-xs text-gray-400 italic">variantes</span>
+          return <span className="text-xs text-gray-400 italic">{t('products.has_variants')}</span>
         }
         const low = p.alert_threshold !== null && p.stock_quantity <= p.alert_threshold
         return (
@@ -191,7 +193,7 @@ export default function ProductsPage() {
               type="button"
               onClick={(e) => { e.stopPropagation(); navigate(`/products/${p.uid}/edit`) }}
               className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-              title="Modifier"
+              title={t('common.edit')}
             >
               <PencilSquareIcon className="h-4 w-4" />
             </button>
@@ -201,7 +203,7 @@ export default function ProductsPage() {
               type="button"
               onClick={(e) => { e.stopPropagation(); setDeleteTarget(p) }}
               className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
-              title="Supprimer"
+              title={t('common.delete')}
             >
               <TrashIcon className="h-4 w-4" />
             </button>
@@ -215,7 +217,7 @@ export default function ProductsPage() {
     <div className="space-y-4 p-4 sm:p-6">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">Produits</h1>
+        <h1 className="text-xl font-bold text-slate-900">{t('products.title')}</h1>
         <div className="flex gap-2">
           <CanDo permission="products.import">
             <Button
@@ -223,7 +225,7 @@ export default function ProductsPage() {
               icon={<ArrowUpTrayIcon className="h-4 w-4" />}
               onClick={() => setShowImport(true)}
             >
-              Importer CSV
+              {t('products.import_title')}
             </Button>
           </CanDo>
           <CanDo permission="products.create">
@@ -231,7 +233,7 @@ export default function ProductsPage() {
               icon={<PlusIcon className="h-4 w-4" />}
               onClick={() => navigate('/products/new')}
             >
-              Nouveau produit
+              {t('products.new')}
             </Button>
           </CanDo>
         </div>
@@ -241,7 +243,7 @@ export default function ProductsPage() {
       <div className="flex flex-wrap gap-3">
         <div className="flex-1 min-w-48">
           <Input
-            placeholder="Rechercher un produit…"
+            placeholder={t('products.search')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -251,7 +253,7 @@ export default function ProductsPage() {
             value={categoryId}
             onChange={(e) => { setCategoryId(e.target.value === '' ? '' : Number(e.target.value)); setPage(1) }}
           >
-            <option value="">Toutes catégories</option>
+            <option value="">{t('products.filter_category')}</option>
             {flatCats.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
@@ -262,9 +264,9 @@ export default function ProductsPage() {
             value={isActive}
             onChange={(e) => { setIsActive(e.target.value as '' | 'true' | 'false'); setPage(1) }}
           >
-            <option value="">Tous statuts</option>
-            <option value="true">Actifs</option>
-            <option value="false">Inactifs</option>
+            <option value="">{t('common.status')}</option>
+            <option value="true">{t('common.active')}</option>
+            <option value="false">{t('common.inactive')}</option>
           </Select>
         </div>
       </div>
@@ -276,7 +278,7 @@ export default function ProductsPage() {
         keyExtractor={(p) => p.id}
         loading={isLoading}
         skeletonRows={8}
-        emptyMessage={<EmptyState icon={<CubeIcon className="h-7 w-7" />} title="Aucun produit" description="Ajoutez vos produits ou importez-les via le fichier CSV." />}
+        emptyMessage={<EmptyState icon={<CubeIcon className="h-7 w-7" />} title={t('products.empty_title')} description={t('products.empty_desc')} />}
         onRowClick={(p) => navigate(`/products/${p.uid}`)}
         mobileCard={(p) => {
           const cat = flatCats.find((c) => c.id === p.category_id)
@@ -300,11 +302,11 @@ export default function ProductsPage() {
                     <span className="font-medium text-gray-900">{formatCurrency(p.price)}</span>
                     {!p.has_variants && (
                       <span className={`text-xs font-semibold ${low ? 'text-red-600' : 'text-emerald-600'}`}>
-                        Stock : {p.stock_quantity}
+                        {t('stock.title')} : {p.stock_quantity}
                       </span>
                     )}
                     {p.has_variants && (
-                      <span className="text-xs text-gray-400 italic">variantes</span>
+                      <span className="text-xs text-gray-400 italic">{t('products.has_variants')}</span>
                     )}
                   </div>
                 </div>
@@ -329,22 +331,22 @@ export default function ProductsPage() {
       <Modal
         isOpen={showImport}
         onClose={handleImportClose}
-        title="Importer des produits depuis un fichier CSV"
+        title={t('products.import_title')}
         size="md"
         footer={
           importResult ? (
-            <Button onClick={handleImportClose}>Fermer</Button>
+            <Button onClick={handleImportClose}>{t('common.close')}</Button>
           ) : (
             <>
               <Button variant="outline" type="button" onClick={handleImportClose}>
-                Annuler
+                {t('common.cancel')}
               </Button>
               <Button
                 loading={importMutation.isPending}
                 disabled={!importFile}
                 onClick={() => importMutation.mutate()}
               >
-                Importer
+                {t('products.import_action')}
               </Button>
             </>
           )
@@ -356,22 +358,22 @@ export default function ProductsPage() {
             <div className="grid grid-cols-3 gap-3 text-center">
               <div className="rounded-lg bg-emerald-50 p-3">
                 <p className="text-2xl font-bold text-emerald-700">{importResult.created}</p>
-                <p className="text-xs text-emerald-600">Créés</p>
+                <p className="text-xs text-emerald-600">{t('products.import_created')}</p>
               </div>
               <div className="rounded-lg bg-blue-50 p-3">
                 <p className="text-2xl font-bold text-blue-700">{importResult.updated}</p>
-                <p className="text-xs text-blue-600">Mis à jour</p>
+                <p className="text-xs text-blue-600">{t('products.import_updated')}</p>
               </div>
               <div className="rounded-lg bg-gray-100 p-3">
                 <p className="text-2xl font-bold text-gray-600">{importResult.skipped}</p>
-                <p className="text-xs text-gray-500">Ignorés</p>
+                <p className="text-xs text-gray-500">{t('products.import_skipped')}</p>
               </div>
             </div>
 
             {importResult.errors.length > 0 && (
               <div className="rounded-lg bg-red-50 p-3">
                 <p className="mb-2 text-sm font-semibold text-red-700">
-                  {importResult.errors.length} ligne{importResult.errors.length > 1 ? 's' : ''} en erreur
+                  {importResult.errors.length} {t('products.import_errors')}
                 </p>
                 <ul className="space-y-1 max-h-40 overflow-y-auto">
                   {importResult.errors.map((e, i) => (
@@ -410,8 +412,8 @@ export default function ProductsPage() {
                   <p className="text-sm font-medium">{importFile.name}</p>
                 ) : (
                   <>
-                    <p className="text-sm font-medium">Cliquer pour choisir un fichier CSV</p>
-                    <p className="mt-1 text-xs">Format : UTF-8, séparateur point-virgule (;), max 2 Mo</p>
+                    <p className="text-sm font-medium">{t('products.import_click')}</p>
+                    <p className="mt-1 text-xs">{t('products.import_format')}</p>
                   </>
                 )}
               </button>
@@ -426,21 +428,21 @@ export default function ProductsPage() {
                 className="h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
               />
               <span className="text-sm text-gray-700">
-                Mettre à jour les produits existants (correspondance par SKU)
+                {t('products.update_existing')}
               </span>
             </label>
 
             {/* Télécharger le modèle */}
             <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2.5">
               <ArrowDownTrayIcon className="h-4 w-4 shrink-0 text-gray-400" />
-              <span className="text-xs text-gray-500">Besoin du format exact ?</span>
+              <span className="text-xs text-gray-500">{t('products.import_need_format')}</span>
               <button
                 type="button"
                 onClick={handleDownloadTemplate}
                 disabled={dlLoading}
                 className="text-xs font-medium text-brand-primary hover:underline disabled:opacity-50"
               >
-                {dlLoading ? 'Téléchargement…' : 'Télécharger le modèle CSV'}
+                {dlLoading ? t('common.loading') : t('products.download_template')}
               </button>
             </div>
 
@@ -459,27 +461,27 @@ export default function ProductsPage() {
       <Modal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
-        title="Supprimer le produit"
+        title={t('products.delete_title')}
         size="sm"
         footer={
           <>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              Annuler
+              {t('common.cancel')}
             </Button>
             <Button
               variant="danger"
               loading={deleteMutation.isPending}
               onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.uid)}
             >
-              Supprimer
+              {t('common.delete')}
             </Button>
           </>
         }
       >
         <p className="text-sm text-gray-600">
-          Voulez-vous supprimer{' '}
-          <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ?
-          Cette action est irréversible si le produit n'a pas d'historique de ventes.
+          {t('common.confirm_delete')}{' '}
+          <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ?{' '}
+          {t('products.delete_warning')}
         </p>
       </Modal>
     </div>
