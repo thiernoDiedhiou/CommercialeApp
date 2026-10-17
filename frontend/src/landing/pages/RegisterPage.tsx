@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useForm, Controller, useWatch } from 'react-hook-form'
@@ -7,7 +7,11 @@ import SeoHead from '@/landing/components/SeoHead'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerTenant, type RegisterData } from '@/services/api/public'
 import { getApiErrorMessage } from '@/lib/errors'
-import { EyeIcon, EyeSlashIcon, CheckCircleIcon, CheckIcon } from '@heroicons/react/24/outline'
+import {
+  EyeIcon, EyeSlashIcon, CheckCircleIcon, CheckIcon,
+  BuildingStorefrontIcon, CakeIcon, SwatchIcon, SparklesIcon,
+  BeakerIcon, ComputerDesktopIcon, WrenchScrewdriverIcon, GlobeAltIcon,
+} from '@heroicons/react/24/outline'
 import PhoneInput, { normalizePhone } from '@/components/ui/PhoneInput'
 
 const SECTOR_VALUES = ['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services', 'ecommerce'] as const
@@ -28,15 +32,15 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>
 
-const SECTORS = [
-  { value: 'general',     label: 'Commerce général',      emoji: '🛒' },
-  { value: 'food',        label: 'Alimentation',          emoji: '🍽️' },
-  { value: 'fashion',     label: 'Mode & vêtements',      emoji: '👗' },
-  { value: 'cosmetic',    label: 'Cosmétique & beauté',   emoji: '💄' },
-  { value: 'pharmacy',    label: 'Pharmacie',             emoji: '💊' },
-  { value: 'electronics', label: 'Électronique',          emoji: '💻' },
-  { value: 'services',    label: 'Services',              emoji: '🔧' },
-  { value: 'ecommerce',   label: 'E-commerce',            emoji: '🌐' },
+const SECTORS: { value: string; label: string; Icon: React.FC<React.SVGProps<SVGSVGElement>> }[] = [
+  { value: 'general',     label: 'Commerce général',    Icon: BuildingStorefrontIcon },
+  { value: 'food',        label: 'Alimentation',        Icon: CakeIcon               },
+  { value: 'fashion',     label: 'Mode & vêtements',    Icon: SwatchIcon             },
+  { value: 'cosmetic',    label: 'Cosmétique & beauté', Icon: SparklesIcon           },
+  { value: 'pharmacy',    label: 'Pharmacie',           Icon: BeakerIcon             },
+  { value: 'electronics', label: 'Électronique',        Icon: ComputerDesktopIcon    },
+  { value: 'services',    label: 'Services',            Icon: WrenchScrewdriverIcon  },
+  { value: 'ecommerce',   label: 'E-commerce',          Icon: GlobeAltIcon           },
 ]
 
 function getPasswordStrength(pwd: string): { score: number; label: string; color: string; textColor: string } {
@@ -215,7 +219,7 @@ export default function RegisterPage() {
                     control={control}
                     render={({ field }) => (
                       <div className="grid grid-cols-2 gap-2">
-                        {SECTORS.map(({ value, label, emoji }) => (
+                        {SECTORS.map(({ value, label, Icon }) => (
                           <button
                             key={value}
                             type="button"
@@ -226,7 +230,7 @@ export default function RegisterPage() {
                                 : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-300 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                             }`}
                           >
-                            <span className="text-xl leading-none flex-shrink-0">{emoji}</span>
+                            <Icon className={`h-5 w-5 flex-shrink-0 ${field.value === value ? 'text-ds-blue' : 'text-gray-400 dark:text-gray-500'}`} />
                             <span className="leading-tight">{label}</span>
                           </button>
                         ))}
