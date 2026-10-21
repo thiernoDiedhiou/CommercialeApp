@@ -146,14 +146,14 @@ export default function CustomersPage() {
       key: 'name',
       header: t('common.name'),
       render: (c) => (
-        <span className="font-medium text-gray-900">{c.name}</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">{c.name}</span>
       ),
     },
     {
       key: 'phone',
       header: t('common.phone'),
       render: (c) => (
-        <span className={c.phone ? 'text-sm text-gray-700' : 'text-sm text-gray-300'}>
+        <span className={c.phone ? 'text-sm text-gray-700 dark:text-gray-300' : 'text-sm text-gray-300 dark:text-gray-600'}>
           {c.phone ?? '—'}
         </span>
       ),
@@ -162,7 +162,7 @@ export default function CustomersPage() {
       key: 'email',
       header: t('common.email'),
       render: (c) => (
-        <span className={c.email ? 'text-sm text-gray-700' : 'text-sm text-gray-300'}>
+        <span className={c.email ? 'text-sm text-gray-700 dark:text-gray-300' : 'text-sm text-gray-300 dark:text-gray-600'}>
           {c.email ?? '—'}
         </span>
       ),
@@ -187,7 +187,7 @@ export default function CustomersPage() {
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); navigate(`/customers/${c.uid}`) }}
-            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300"
             title={t('customers.view_profile')}
           >
             <EyeIcon className="h-4 w-4" />
@@ -198,7 +198,7 @@ export default function CustomersPage() {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setModal({ mode: 'edit', customer: c }) }}
-              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300"
               title={t('common.edit')}
             >
               <PencilSquareIcon className="h-4 w-4" />
@@ -212,8 +212,8 @@ export default function CustomersPage() {
               onClick={(e) => { e.stopPropagation(); setToggleTarget(c) }}
               className={`rounded p-1.5 transition-colors ${
                 c.is_active
-                  ? 'text-gray-400 hover:bg-orange-50 hover:text-orange-500'
-                  : 'text-gray-400 hover:bg-emerald-50 hover:text-emerald-600'
+                  ? 'text-gray-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:text-orange-500'
+                  : 'text-gray-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-600'
               }`}
               title={c.is_active ? t('common.deactivate') : t('common.activate')}
             >
@@ -226,7 +226,7 @@ export default function CustomersPage() {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setDeleteTarget(c) }}
-              className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+              className="rounded p-1.5 text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600"
               title={t('common.delete')}
             >
               <TrashIcon className="h-4 w-4" />
@@ -241,7 +241,7 @@ export default function CustomersPage() {
     <div className="space-y-4 p-4 sm:p-6">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">{t('customers.title')}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">{t('customers.title')}</h1>
         <CanDo permission="customers.create">
           <Button
             icon={<PlusIcon className="h-4 w-4" />}
@@ -292,7 +292,7 @@ export default function CustomersPage() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="font-medium text-gray-900 truncate">{c.name}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100 truncate">{c.name}</span>
                 <Badge variant={c.is_active ? 'success' : 'default'}>{c.is_active ? t('common.active') : t('common.inactive')}</Badge>
               </div>
               {c.email && <p className="text-xs text-gray-500 truncate">{c.email}</p>}
@@ -364,9 +364,9 @@ export default function CustomersPage() {
           </>
         }
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t('customers.delete_confirm')}{' '}
-          <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ?
+          <span className="font-semibold text-gray-900 dark:text-gray-100">«{deleteTarget?.name}»</span> ?
           {' '}{t('common.action_irreversible')}
         </p>
       </Modal>
@@ -392,11 +392,11 @@ export default function CustomersPage() {
           </>
         }
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t(toggleTarget?.is_active ? 'customers.toggle_deactivate' : 'customers.toggle_activate')}{' '}
-          <span className="font-semibold text-gray-900">«{toggleTarget?.name}»</span> ?
+          <span className="font-semibold text-gray-900 dark:text-gray-100">«{toggleTarget?.name}»</span> ?
           {toggleTarget?.is_active && (
-            <span className="mt-1 block text-xs text-gray-400">
+            <span className="mt-1 block text-xs text-gray-400 dark:text-gray-500">
               {t('customers.toggle_pos_warning')}
             </span>
           )}

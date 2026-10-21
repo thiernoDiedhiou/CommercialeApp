@@ -127,7 +127,7 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
               value={line.method}
               onChange={(e) => updateLine(i, { method: e.target.value })}
               aria-label="Méthode de paiement"
-              className="flex-1 rounded-lg border border-gray-200 py-2 px-2 text-sm text-gray-700 bg-white"
+              className="flex-1 rounded-lg border border-gray-200 dark:border-gray-600 py-2 px-2 text-sm text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700"
             >
               {METHODS.map((m) => (
                 <option key={m.value} value={m.value}>
@@ -176,8 +176,8 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
 
       {/* Remaining / change */}
       {!fullCredit && (
-        <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
-          <span className="text-sm text-gray-500">
+        <div className="mt-4 flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-3">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
             {overpaid > 0 ? 'Monnaie à rendre' : remaining > 0 ? 'Reste à payer' : 'Soldé'}
           </span>
           <span
@@ -199,7 +199,7 @@ export function PaymentModal({ isOpen, total, customerName, onConfirm, onClose }
         <button
           type="button"
           onClick={addLine}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 py-2 text-sm text-gray-400 hover:border-brand-primary hover:text-brand-primary transition-colors"
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 dark:border-gray-600 py-2 text-sm text-gray-400 dark:text-gray-500 hover:border-brand-primary hover:text-brand-primary transition-colors"
         >
           <PlusIcon className="h-4 w-4" />
           Ajouter un mode de paiement

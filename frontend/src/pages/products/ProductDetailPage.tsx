@@ -185,7 +185,7 @@ export default function ProductDetailPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => navigate('/products')}
-            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+            className="rounded-lg p-1.5 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition"
             aria-label="Retour aux produits">
             <ArrowLeftIcon className="h-5 w-5" />
           </button>
@@ -193,27 +193,27 @@ export default function ProductDetailPage() {
             <img src={product.image_url} alt={product.name}
               className="h-14 w-14 rounded-xl object-cover ring-1 ring-gray-200" />
           ) : (
-            <div className="h-14 w-14 rounded-xl bg-gray-100 flex items-center justify-center text-2xl font-bold text-gray-300">
+            <div className="h-14 w-14 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-2xl font-bold text-gray-300 dark:text-gray-600">
               {product.name.charAt(0).toUpperCase()}
             </div>
           )}
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-bold text-slate-900">{product.name}</h1>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">{product.name}</h1>
               {!product.is_active && <Badge variant="danger">Inactif</Badge>}
               {hasVariants && <Badge variant="info">Variantes</Badge>}
               {product.is_weight_based && <Badge variant="default">Poids</Badge>}
               {product.has_expiry && <Badge variant="warning">Expiration</Badge>}
             </div>
             {product.sku && (
-              <p className="text-xs font-mono text-gray-400 mt-0.5">SKU : {product.sku}</p>
+              <p className="text-xs font-mono text-gray-400 dark:text-gray-500 mt-0.5">SKU : {product.sku}</p>
             )}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
               {product.brand != null && (
-                <p className="text-xs font-medium text-gray-600">{product.brand.name}</p>
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-400">{product.brand.name}</p>
               )}
               {product.category && (
-                <p className="text-xs text-gray-500">{product.category.name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-500">{product.category.name}</p>
               )}
             </div>
           </div>
@@ -251,30 +251,30 @@ export default function ProductDetailPage() {
       {/* Cartes KPI */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {/* Prix */}
-        <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
           <div className="flex items-center gap-2 mb-3">
             <TagIcon className="h-4 w-4 text-brand-primary" />
-            <p className="text-sm font-semibold text-gray-700">Tarification</p>
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Tarification</p>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Prix de vente</span>
-              <span className="font-semibold text-gray-900">{formatCurrency(product.price)}</span>
+              <span className="text-gray-500 dark:text-gray-400">Prix de vente</span>
+              <span className="font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(product.price)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Prix d'achat</span>
-              <span className="font-medium text-gray-700">
-                {product.cost_price ? formatCurrency(product.cost_price) : <span className="text-gray-300">—</span>}
+              <span className="text-gray-500 dark:text-gray-400">Prix d'achat</span>
+              <span className="font-medium text-gray-700 dark:text-gray-300">
+                {product.cost_price ? formatCurrency(product.cost_price) : <span className="text-gray-300 dark:text-gray-600">—</span>}
               </span>
             </div>
             {product.cost_price && (
               <>
-                <div className="flex justify-between text-sm border-t border-gray-50 pt-2">
-                  <span className="text-gray-500">Bénéfice unitaire</span>
+                <div className="flex justify-between text-sm border-t border-gray-50 dark:border-gray-700 pt-2">
+                  <span className="text-gray-500 dark:text-gray-400">Bénéfice unitaire</span>
                   <span className="font-medium text-emerald-600">{profit(product.price, product.cost_price)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Marge</span>
+                  <span className="text-gray-500 dark:text-gray-400">Marge</span>
                   <span className="font-medium text-emerald-600">{margin(product.price, product.cost_price)}</span>
                 </div>
               </>
@@ -283,28 +283,28 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Stock */}
-        <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
           <div className="flex items-center gap-2 mb-3">
             <CubeIcon className="h-4 w-4 text-brand-secondary" />
-            <p className="text-sm font-semibold text-gray-700">Stock</p>
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Stock</p>
           </div>
           {hasVariants ? (
             <div className="space-y-2">
-              <p className="text-xs text-gray-400 italic">Le stock est géré par variante</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 italic">Le stock est géré par variante</p>
               {variants.map((v) => {
                 const low = v.alert_threshold !== null && v.stock_quantity <= v.alert_threshold
                 return (
                   <div key={v.id} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">{v.attribute_summary || '—'}</span>
+                    <span className="text-gray-600 dark:text-gray-400">{v.attribute_summary || '—'}</span>
                     <span className={`font-bold ${low ? 'text-red-600' : 'text-emerald-600'}`}>
                       {v.stock_quantity}
                     </span>
                   </div>
                 )
               })}
-              <div className="border-t border-gray-50 pt-2 flex justify-between text-sm font-medium">
-                <span className="text-gray-500">Total</span>
-                <span className="text-gray-900">{variants.reduce((s, v) => s + v.stock_quantity, 0)}</span>
+              <div className="border-t border-gray-50 dark:border-gray-700 pt-2 flex justify-between text-sm font-medium">
+                <span className="text-gray-500 dark:text-gray-400">Total</span>
+                <span className="text-gray-900 dark:text-gray-100">{variants.reduce((s, v) => s + v.stock_quantity, 0)}</span>
               </div>
             </div>
           ) : product.has_expiry ? (
@@ -318,7 +318,7 @@ export default function ProductDetailPage() {
               return (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Disponible</span>
+                    <span className="text-gray-500 dark:text-gray-400">Disponible</span>
                     <span className={`text-xl font-bold ${low ? 'text-red-600' : 'text-emerald-600'}`}>
                       {lotAvailable}
                       {product.unit && <span className="text-sm font-normal ml-1">{product.unit}</span>}
@@ -326,13 +326,13 @@ export default function ProductDetailPage() {
                   </div>
                   {orphaned > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-400">Sans lot</span>
+                      <span className="text-gray-400 dark:text-gray-500">Sans lot</span>
                       <span className="text-amber-600 font-medium">{orphaned}</span>
                     </div>
                   )}
                   {product.alert_threshold !== null && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">Seuil d'alerte</span>
+                      <span className="text-gray-500 dark:text-gray-400">Seuil d'alerte</span>
                       <span className="font-medium text-amber-600">{product.alert_threshold}</span>
                     </div>
                   )}
@@ -347,7 +347,7 @@ export default function ProductDetailPage() {
           ) : (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500">En stock</span>
+                <span className="text-gray-500 dark:text-gray-400">En stock</span>
                 <span className={`text-xl font-bold ${
                   product.alert_threshold !== null && product.stock_quantity <= product.alert_threshold
                     ? 'text-red-600' : 'text-emerald-600'
@@ -358,7 +358,7 @@ export default function ProductDetailPage() {
               </div>
               {product.alert_threshold !== null && (
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Seuil d'alerte</span>
+                  <span className="text-gray-500 dark:text-gray-400">Seuil d'alerte</span>
                   <span className="font-medium text-amber-600">{product.alert_threshold}</span>
                 </div>
               )}
@@ -372,30 +372,30 @@ export default function ProductDetailPage() {
         </div>
 
         {/* Infos */}
-        <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
           <div className="flex items-center gap-2 mb-3">
-            <ChartBarIcon className="h-4 w-4 text-gray-400" />
-            <p className="text-sm font-semibold text-gray-700">Informations</p>
+            <ChartBarIcon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Informations</p>
           </div>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-500">Statut</span>
+              <span className="text-gray-500 dark:text-gray-400">Statut</span>
               <Badge variant={product.is_active ? 'success' : 'danger'} dot>
                 {product.is_active ? 'Actif' : 'Inactif'}
               </Badge>
             </div>
             {product.barcode && (
               <div className="flex justify-between">
-                <span className="text-gray-500">Code-barres</span>
-                <span className="font-mono text-xs text-gray-700">{product.barcode}</span>
+                <span className="text-gray-500 dark:text-gray-400">Code-barres</span>
+                <span className="font-mono text-xs text-gray-700 dark:text-gray-300">{product.barcode}</span>
               </div>
             )}
             <div className="flex justify-between">
-              <span className="text-gray-500">Vendu au poids</span>
+              <span className="text-gray-500 dark:text-gray-400">Vendu au poids</span>
               <span>{product.is_weight_based ? 'Oui' : 'Non'}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Suivi expiration</span>
+              <span className="text-gray-500 dark:text-gray-400">Suivi expiration</span>
               <span>{product.has_expiry ? 'Oui' : 'Non'}</span>
             </div>
           </div>
@@ -404,19 +404,19 @@ export default function ProductDetailPage() {
 
       {/* Description */}
       {product.description && (
-        <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <p className="text-sm font-semibold text-gray-700 mb-2">Description</p>
-          <p className="text-sm text-gray-600 whitespace-pre-wrap">{product.description}</p>
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Description</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-wrap">{product.description}</p>
         </div>
       )}
 
       {/* Variantes */}
       {hasVariants && (
-        <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-            <p className="text-sm font-semibold text-gray-700">
+        <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-50 dark:border-gray-700 flex items-center justify-between">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
               Variantes
-              <span className="ml-2 text-xs font-normal text-gray-400">({variants.length})</span>
+              <span className="ml-2 text-xs font-normal text-gray-400 dark:text-gray-500">({variants.length})</span>
             </p>
             <CanDo permission="variants.create">
               <Button size="sm" variant="outline"
@@ -427,11 +427,11 @@ export default function ProductDetailPage() {
             </CanDo>
           </div>
           {variants.length === 0 ? (
-            <div className="px-5 py-8 text-center text-sm text-gray-400">Aucune variante.</div>
+            <div className="px-5 py-8 text-center text-sm text-gray-400 dark:text-gray-500">Aucune variante.</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                   <tr>
                     <th className="px-4 py-3 text-left">Combinaison</th>
                     <th className="px-4 py-3 text-left">SKU</th>
@@ -441,19 +441,19 @@ export default function ProductDetailPage() {
                     <th className="px-4 py-3 sr-only">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-700/60">
                   {variants.map((v) => {
                     const low = v.alert_threshold !== null && v.stock_quantity <= v.alert_threshold
                     return (
-                      <tr key={v.id} className="hover:bg-gray-50/50 transition">
-                        <td className="px-4 py-3 font-medium text-gray-800">
+                      <tr key={v.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/40 transition">
+                        <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">
                           {v.attribute_summary || '—'}
                         </td>
-                        <td className="px-4 py-3 font-mono text-xs text-gray-500">
+                        <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">
                           {v.sku ?? '—'}
                         </td>
-                        <td className="px-4 py-3 text-right text-gray-700">
-                          {v.price ? formatCurrency(v.price) : <span className="text-gray-300">Hérité</span>}
+                        <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
+                          {v.price ? formatCurrency(v.price) : <span className="text-gray-300 dark:text-gray-600">Hérité</span>}
                         </td>
                         <td className={`px-4 py-3 text-right font-semibold ${low ? 'text-red-600' : 'text-emerald-600'}`}>
                           {v.stock_quantity}
@@ -468,7 +468,7 @@ export default function ProductDetailPage() {
                             <CanDo permission="variants.edit">
                               <button type="button"
                                 onClick={() => setEditVariant(v)}
-                                className="rounded px-2 py-1 text-xs text-gray-600 border border-gray-200 hover:bg-gray-50 transition">
+                                className="rounded px-2 py-1 text-xs text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                                 Modifier
                               </button>
                             </CanDo>
@@ -524,11 +524,11 @@ export default function ProductDetailPage() {
 
       {/* Lots (produits avec suivi d'expiration) */}
       {product.has_expiry && (
-        <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-            <p className="text-sm font-semibold text-gray-700">
+        <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-50 dark:border-gray-700 flex items-center justify-between">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
               Lots / Expiration
-              <span className="ml-2 text-xs font-normal text-gray-400">({lots.length})</span>
+              <span className="ml-2 text-xs font-normal text-gray-400 dark:text-gray-500">({lots.length})</span>
             </p>
             <CanDo permission="stock.adjust">
               <Button size="sm" variant="outline"
@@ -543,13 +543,13 @@ export default function ProductDetailPage() {
               {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}
             </div>
           ) : lots.length === 0 ? (
-            <div className="px-5 py-8 text-center text-sm text-gray-400">
+            <div className="px-5 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
               Aucun lot enregistré. Réceptionnez un bon de commande ou ajoutez un lot manuellement.
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                   <tr>
                     <th className="px-4 py-3 text-left">N° Lot</th>
                     <th className="px-4 py-3 text-left">Expiration</th>
@@ -559,29 +559,29 @@ export default function ProductDetailPage() {
                     <th className="px-4 py-3 sr-only">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-700/60">
                   {lots.map((lot) => {
                     const expired = lot.expiry_date && new Date(lot.expiry_date) < new Date()
                     const expiringSoon = !expired && lot.expiry_date &&
                       new Date(lot.expiry_date) <= new Date(Date.now() + 30 * 86400000)
                     return (
-                      <tr key={lot.id} className="hover:bg-gray-50/50 transition">
-                        <td className="px-4 py-3 font-mono text-xs font-medium text-gray-800">
+                      <tr key={lot.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/40 transition">
+                        <td className="px-4 py-3 font-mono text-xs font-medium text-gray-800 dark:text-gray-200">
                           {lot.lot_number}
                         </td>
                         <td className="px-4 py-3">
                           {lot.expiry_date ? (
-                            <span className={`text-sm ${expired ? 'text-red-600 font-medium' : expiringSoon ? 'text-amber-600 font-medium' : 'text-gray-700'}`}>
+                            <span className={`text-sm ${expired ? 'text-red-600 font-medium' : expiringSoon ? 'text-amber-600 font-medium' : 'text-gray-700 dark:text-gray-300'}`}>
                               {formatDate(lot.expiry_date)}
                               {expired && ' — Expiré'}
                               {expiringSoon && !expired && ' — Bientôt'}
                             </span>
                           ) : (
-                            <span className="text-gray-300">—</span>
+                            <span className="text-gray-300 dark:text-gray-600">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right text-gray-500">{lot.quantity_received}</td>
-                        <td className={`px-4 py-3 text-right font-semibold ${lot.quantity_remaining <= 0 ? 'text-gray-400' : 'text-emerald-600'}`}>
+                        <td className="px-4 py-3 text-right text-gray-500 dark:text-gray-400">{lot.quantity_received}</td>
+                        <td className={`px-4 py-3 text-right font-semibold ${lot.quantity_remaining <= 0 ? 'text-gray-400 dark:text-gray-600' : 'text-emerald-600'}`}>
                           {lot.quantity_remaining}
                         </td>
                         <td className="px-4 py-3 text-center">
@@ -593,7 +593,7 @@ export default function ProductDetailPage() {
                           <CanDo permission="stock.adjust">
                             <button type="button"
                               onClick={() => setEditLot(lot)}
-                              className="rounded px-2 py-1 text-xs text-gray-600 border border-gray-200 hover:bg-gray-50 transition">
+                              className="rounded px-2 py-1 text-xs text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
                               Modifier
                             </button>
                           </CanDo>
@@ -609,9 +609,9 @@ export default function ProductDetailPage() {
       )}
 
       {/* Mouvements de stock récents */}
-      <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
-          <p className="text-sm font-semibold text-gray-700">Mouvements de stock récents</p>
+      <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-50 dark:border-gray-700 flex items-center justify-between">
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Mouvements de stock récents</p>
           <Link to="/stock" className="text-xs text-brand-primary hover:underline">
             Voir tout le stock
           </Link>
@@ -622,11 +622,11 @@ export default function ProductDetailPage() {
             {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-8 rounded" />)}
           </div>
         ) : movements.length === 0 ? (
-          <div className="px-5 py-8 text-center text-sm text-gray-400">Aucun mouvement de stock.</div>
+          <div className="px-5 py-8 text-center text-sm text-gray-400 dark:text-gray-500">Aucun mouvement de stock.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+              <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 <tr>
                   <th className="px-4 py-3 text-left">Type</th>
                   <th className="px-4 py-3 text-left hidden sm:table-cell">Variante</th>
@@ -636,28 +636,28 @@ export default function ProductDetailPage() {
                   <th className="px-4 py-3 text-left">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700/60">
                 {movements.slice(0, 10).map((m) => {
                   const badge = TYPE_BADGE[m.type] ?? { variant: 'default' as const, label: m.type }
                   const isOut = m.type === 'out'
                   return (
-                    <tr key={m.id} className="hover:bg-gray-50/50 transition">
+                    <tr key={m.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/40 transition">
                       <td className="px-4 py-3">
                         <Badge variant={badge.variant}>{badge.label}</Badge>
                       </td>
-                      <td className="px-4 py-3 hidden sm:table-cell text-gray-500 text-xs">
+                      <td className="px-4 py-3 hidden sm:table-cell text-gray-500 dark:text-gray-400 text-xs">
                         {m.variant?.attribute_summary ?? '—'}
                       </td>
                       <td className={`px-4 py-3 text-right font-semibold ${isOut ? 'text-red-600' : 'text-emerald-600'}`}>
                         {isOut ? '-' : '+'}{m.quantity}
                       </td>
-                      <td className="px-4 py-3 text-right hidden md:table-cell text-gray-500">
+                      <td className="px-4 py-3 text-right hidden md:table-cell text-gray-500 dark:text-gray-400">
                         {m.stock_after}
                       </td>
-                      <td className="px-4 py-3 hidden lg:table-cell text-gray-400 text-xs truncate max-w-[180px]">
+                      <td className="px-4 py-3 hidden lg:table-cell text-gray-400 dark:text-gray-500 text-xs truncate max-w-[180px]">
                         {m.notes ?? '—'}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">
+                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 text-xs">
                         {formatDate(m.created_at)}
                       </td>
                     </tr>
@@ -778,15 +778,15 @@ function RegularizeModal({
           onChange={(e) => setLotNumber(e.target.value)}
         />
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Date d'expiration <span className="text-gray-400 font-normal">(optionnel)</span>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Date d'expiration <span className="text-gray-400 dark:text-gray-500 font-normal">(optionnel)</span>
           </label>
           <input
             type="date"
             title="Date d'expiration du lot de régularisation"
             value={expiryDate}
             onChange={(e) => setExpiryDate(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
           />
         </div>
         <Input
@@ -860,13 +860,13 @@ function AddLotModal({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Date d'expiration</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date d'expiration</label>
           <input
             type="date"
             title="Date d'expiration du lot"
             value={expiryDate}
             onChange={(e) => setExpiryDate(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
           />
         </div>
       </div>
@@ -911,13 +911,13 @@ function EditLotModal({
     >
       <div className="space-y-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Date d'expiration</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date d'expiration</label>
           <input
             type="date"
             title="Date d'expiration du lot"
             value={expiryDate}
             onChange={(e) => setExpiryDate(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
           />
         </div>
         <Input
@@ -934,7 +934,7 @@ function EditLotModal({
             onChange={(e) => setIsActive(e.target.checked)}
             className="h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
           />
-          <span className="text-sm text-gray-700">Lot actif (disponible à la vente)</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">Lot actif (disponible à la vente)</span>
         </label>
       </div>
     </Modal>
@@ -1021,7 +1021,7 @@ function EditVariantModal({
             onChange={(e) => setIsActive(e.target.checked)}
             className="h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
           />
-          <span className="text-sm text-gray-700">Variante active</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">Variante active</span>
         </label>
       </div>
     </Modal>
@@ -1100,7 +1100,7 @@ function AddVariantModal({
         ) : (
           attributes.map((attr) => (
             <div key={attr.id}>
-              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 {attr.name}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -1112,7 +1112,7 @@ function AddVariantModal({
                     className={`rounded-full border px-3 py-1 text-sm transition-colors ${
                       selected[attr.id] === v.id
                         ? 'border-brand-primary bg-brand-primary text-white'
-                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                        : 'border-gray-300 bg-white dark:bg-gray-700 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                     }`}
                   >
                     {v.value}
@@ -1124,9 +1124,9 @@ function AddVariantModal({
         )}
 
         {label && (
-          <div className="rounded-lg bg-gray-50 px-3 py-2 text-sm">
-            <span className="text-gray-500">Combinaison : </span>
-            <span className="font-medium text-gray-900">{label}</span>
+          <div className="rounded-lg bg-gray-50 dark:bg-gray-700/50 px-3 py-2 text-sm">
+            <span className="text-gray-500 dark:text-gray-400">Combinaison : </span>
+            <span className="font-medium text-gray-900 dark:text-gray-100">{label}</span>
             {alreadyExists && (
               <span className="ml-2 text-xs text-red-500 font-medium">— déjà existante</span>
             )}

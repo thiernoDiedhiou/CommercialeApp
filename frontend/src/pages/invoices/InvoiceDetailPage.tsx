@@ -217,7 +217,7 @@ export default function InvoiceDetailPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="font-mono text-xl font-bold text-slate-900">{invoice.reference}</h1>
+            <h1 className="font-mono text-xl font-bold text-slate-900 dark:text-gray-100">{invoice.reference}</h1>
             {isQuote && (
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-violet-100 text-violet-700">
                 {t('invoices.type_quote_badge')}
@@ -230,7 +230,7 @@ export default function InvoiceDetailPage() {
             )}
             <Badge variant={STATUS_VARIANT[invoice.status]}>{STATUS_LABEL[invoice.status]}</Badge>
           </div>
-          <p className="mt-0.5 text-sm text-gray-500">
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
             {invoice.customer ? invoice.customer.name : t('invoices.no_customer')}
             {' · '}{t('invoices.issued_on')} {formatDate(invoice.issue_date)}
             {invoice.due_date && ` · ${t('invoices.due_date_label')} ${formatDate(invoice.due_date)}`}
@@ -357,11 +357,11 @@ export default function InvoiceDetailPage() {
       </div>
 
       {/* ── Lignes ──────────────────────────────────────────────────────────── */}
-      <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
+      <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+              <tr className="border-b border-gray-100 dark:border-gray-700/60 text-left text-xs text-gray-500 dark:text-gray-400">
                 <th className="px-4 py-3 font-medium">{t('invoices.col_designation')}</th>
                 <th className="px-4 py-3 text-right font-medium">{t('invoices.col_qty')}</th>
                 <th className="px-4 py-3 text-right font-medium">{t('invoices.col_unit_price')}</th>
@@ -369,21 +369,21 @@ export default function InvoiceDetailPage() {
                 <th className="px-4 py-3 text-right font-medium">{t('common.total')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-50 dark:divide-gray-700/40">
               {(invoice.items ?? []).map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50/50">
+                <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/40">
                   <td className="px-4 py-3">
-                    <p className="font-medium text-gray-900">{item.description}</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">{item.description}</p>
                     {item.product?.name && item.product.name !== item.description && (
                       <p className="text-xs text-gray-400">{item.product.name}</p>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-700">{item.quantity}</td>
-                  <td className="px-4 py-3 text-right text-gray-700">{formatCurrency(item.unit_price)}</td>
-                  <td className="px-4 py-3 text-right text-gray-500">
+                  <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{item.quantity}</td>
+                  <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{formatCurrency(item.unit_price)}</td>
+                  <td className="px-4 py-3 text-right text-gray-500 dark:text-gray-400">
                     {parseFloat(item.discount) > 0 ? formatCurrency(item.discount) : '—'}
                   </td>
-                  <td className="px-4 py-3 text-right font-semibold text-gray-900">{formatCurrency(item.total)}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(item.total)}</td>
                 </tr>
               ))}
             </tbody>
@@ -391,9 +391,9 @@ export default function InvoiceDetailPage() {
         </div>
 
         {/* Totaux */}
-        <div className="border-t border-gray-100 px-4 py-4">
+        <div className="border-t border-gray-100 dark:border-gray-700/60 px-4 py-4">
           <div className="ml-auto w-64 space-y-1.5 text-sm">
-            <div className="flex justify-between text-gray-600">
+            <div className="flex justify-between text-gray-600 dark:text-gray-400">
               <span>{t('common.subtotal')}</span><span>{formatCurrency(invoice.subtotal)}</span>
             </div>
             {parseFloat(invoice.discount_amount) > 0 && (
@@ -403,12 +403,12 @@ export default function InvoiceDetailPage() {
               </div>
             )}
             {parseFloat(invoice.tax_amount) > 0 && (
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>TVA ({invoice.tax_rate}%)</span>
                 <span>{formatCurrency(invoice.tax_amount)}</span>
               </div>
             )}
-            <div className="flex justify-between border-t border-gray-100 pt-2 text-base font-bold text-gray-900">
+            <div className="flex justify-between border-t border-gray-100 dark:border-gray-700/60 pt-2 text-base font-bold text-gray-900 dark:text-gray-100">
               <span>{t('common.total')}</span><span>{formatCurrency(invoice.total)}</span>
             </div>
             {parseFloat(invoice.paid_amount) > 0 && (
@@ -432,7 +432,7 @@ export default function InvoiceDetailPage() {
               </div>
             )}
             {invoice.status === 'cancelled' && (
-              <div className="rounded-lg bg-gray-100 px-3 py-2 text-center text-sm font-medium text-gray-500">
+              <div className="rounded-lg bg-gray-100 dark:bg-gray-700/50 px-3 py-2 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
                 {t('invoices.cancelled_doc', { label: docLabel })}
               </div>
             )}
@@ -442,16 +442,16 @@ export default function InvoiceDetailPage() {
 
       {/* ── Historique des paiements ────────────────────────────────────────── */}
       {!isQuote && (invoice.payments ?? []).length > 0 && (
-        <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
+        <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 overflow-hidden">
           <button
             type="button"
             onClick={() => setShowPayHistory((v) => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition"
           >
             <span className="flex items-center gap-2">
               <Banknote className="h-4 w-4 text-gray-400" />
               {t('invoices.payment_history')}
-              <span className="text-xs font-normal text-gray-400">
+              <span className="text-xs font-normal text-gray-400 dark:text-gray-500">
                 ({t('invoices.payment_count', { count: (invoice.payments ?? []).length })})
               </span>
             </span>
@@ -459,7 +459,7 @@ export default function InvoiceDetailPage() {
           </button>
 
           {showPayHistory && (
-            <div className="border-t border-gray-100 divide-y divide-gray-50">
+            <div className="border-t border-gray-100 dark:border-gray-700/60 divide-y divide-gray-50 dark:divide-gray-700/40">
               {(invoice.payments ?? []).map((payment) => (
                 <div key={payment.id} className="flex items-center justify-between px-4 py-3 text-sm">
                   <div className="flex items-center gap-3">
@@ -467,16 +467,16 @@ export default function InvoiceDetailPage() {
                       <Banknote className="h-4 w-4 text-emerald-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{formatCurrency(payment.amount)}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(payment.amount)}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         {PAYMENT_METHOD_LABELS_I18N[payment.method] ?? payment.method}
                         {payment.reference && ` · Réf: ${payment.reference}`}
                         {payment.user && ` · ${payment.user.name}`}
                       </p>
-                      {payment.note && <p className="text-xs text-gray-400 italic">{payment.note}</p>}
+                      {payment.note && <p className="text-xs text-gray-400 dark:text-gray-500 italic">{payment.note}</p>}
                     </div>
                   </div>
-                  <span className="text-xs text-gray-500 shrink-0">{formatDate(payment.paid_at)}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">{formatDate(payment.paid_at)}</span>
                 </div>
               ))}
             </div>
@@ -486,9 +486,9 @@ export default function InvoiceDetailPage() {
 
       {/* Notes */}
       {invoice.notes && (
-        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.notes')}</p>
-          <p className="mt-1 text-sm text-gray-700">{invoice.notes}</p>
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.notes')}</p>
+          <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{invoice.notes}</p>
         </div>
       )}
 
@@ -518,7 +518,7 @@ export default function InvoiceDetailPage() {
             onChange={(e) => setSendSubject(e.target.value)}
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('invoices.send_message_label')}
             </label>
             <textarea
@@ -526,10 +526,10 @@ export default function InvoiceDetailPage() {
               placeholder={t('invoices.send_message_placeholder')}
               value={sendMessage}
               onChange={(e) => setSendMessage(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-500 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none"
             />
           </div>
-          <p className="text-xs text-gray-500">{t('invoices.pdf_attached')}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('invoices.pdf_attached')}</p>
         </div>
       </Modal>
 
@@ -543,14 +543,14 @@ export default function InvoiceDetailPage() {
         </>}
       >
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">{t('invoices.remaining_due_label')} <strong>{formatCurrency(amountDue)}</strong></p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('invoices.remaining_due_label')} <strong>{formatCurrency(amountDue)}</strong></p>
           <Input label={t('invoices.amount_collected_label', { currency: 'FCFA' })} type="number" min={0.01} max={amountDue} step={1}
             value={payAmount} onChange={(e) => setPayAmount(e.target.value)}
             placeholder={String(Math.round(amountDue))} />
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('invoices.payment_method_label')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('invoices.payment_method_label')}</label>
             <select value={payMethod} onChange={(e) => setPayMethod(e.target.value as PaymentMethod)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:border-indigo-500">
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 dark:bg-gray-700 outline-none focus:border-indigo-500">
               {Object.entries(PAYMENT_METHOD_LABELS_I18N).map(([k, v]) => (
                 <option key={k} value={k}>{v}</option>
               ))}
@@ -575,7 +575,7 @@ export default function InvoiceDetailPage() {
           </Button>
         </>}
       >
-        <p className="text-sm text-gray-600">{t('invoices.cancel_doc_text')}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400">{t('invoices.cancel_doc_text')}</p>
       </Modal>
 
       {/* ── Modal Convertir devis → facture ─────────────────────────────────── */}
@@ -588,7 +588,7 @@ export default function InvoiceDetailPage() {
           </Button>
         </>}
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t('invoices.convert_text', { ref: invoice.reference })}
         </p>
       </Modal>
@@ -603,7 +603,7 @@ export default function InvoiceDetailPage() {
           </Button>
         </>}
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t('invoices.credit_note_text', { ref: invoice.reference })}
         </p>
       </Modal>

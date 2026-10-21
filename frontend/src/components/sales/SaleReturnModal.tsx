@@ -14,6 +14,7 @@ interface ReturnLine {
   maxQty: number
   returnQty: number
   selected: boolean
+  restock: boolean
 }
 
 interface Props {
@@ -52,6 +53,7 @@ export function SaleReturnModal({ sale, isOpen, onClose }: Props) {
       maxQty: itemQty(item),
       returnQty: itemQty(item),
       selected: false,
+      restock: true,
     })),
   )
   const [reason, setReason] = useState('')
@@ -70,6 +72,7 @@ export function SaleReturnModal({ sale, isOpen, onClose }: Props) {
         items: selectedLines.map((l) => ({
           sale_item_id: l.saleItem.id,
           quantity: l.returnQty,
+          restock: l.restock,
         })),
       }),
     onSuccess: () => {
@@ -88,6 +91,7 @@ export function SaleReturnModal({ sale, isOpen, onClose }: Props) {
       maxQty: itemQty(item),
       returnQty: itemQty(item),
       selected: false,
+      restock: true,
     })))
     setReason('')
     setRefundMethod('cash')
@@ -96,6 +100,10 @@ export function SaleReturnModal({ sale, isOpen, onClose }: Props) {
 
   const toggleLine = (idx: number) => {
     setLines((prev) => prev.map((l, i) => i === idx ? { ...l, selected: !l.selected } : l))
+  }
+
+  const toggleRestock = (idx: number) => {
+    setLines((prev) => prev.map((l, i) => i === idx ? { ...l, restock: !l.restock } : l))
   }
 
   const setQty = (idx: number, val: string) => {
@@ -132,13 +140,13 @@ export function SaleReturnModal({ sale, isOpen, onClose }: Props) {
 
         {/* Sélection des articles */}
         <div>
-          <p className="mb-2 text-sm font-medium text-gray-700">Articles à retourner</p>
-          <div className="divide-y divide-gray-100 rounded-xl border border-gray-200 overflow-hidden">
+          <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Articles à retourner</p>
+          <div className="divide-y divide-gray-100 dark:divide-gray-700/60 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
             {lines.map((line, idx) => (
               <label
                 key={line.saleItem.id}
                 className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
-                  line.selected ? 'bg-brand-primary/5' : 'hover:bg-gray-50'
+                  line.selected ? 'bg-brand-primary/5' : 'hover:bg-gray-50 dark:hover:bg-gray-700/40'
                 }`}
               >
                 <input
@@ -148,24 +156,35 @@ export function SaleReturnModal({ sale, isOpen, onClose }: Props) {
                   className="h-4 w-4 rounded border-gray-300 text-brand-primary accent-brand-primary"
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">{itemLabel(line.saleItem)}</p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{itemLabel(line.saleItem)}</p>
                   <p className="text-xs text-gray-400">
                     Vendu : {line.maxQty} {itemUnit(line.saleItem)} · {formatCurrency(line.saleItem.unit_price)}/unité
                   </p>
                 </div>
                 {line.selected && (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <input
-                      type="number"
-                      min={0.001}
-                      max={line.maxQty}
-                      step={line.saleItem.unit_weight ? 0.001 : 1}
-                      value={line.returnQty}
-                      onChange={(e) => setQty(idx, e.target.value)}
-                      onClick={(e) => e.preventDefault()}
-                      className="w-20 rounded-lg border border-gray-300 px-2 py-1 text-right text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                    />
-                    <span className="text-xs text-gray-500">{itemUnit(line.saleItem)}</span>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        min={0.001}
+                        max={line.maxQty}
+                        step={line.saleItem.unit_weight ? 0.001 : 1}
+                        value={line.returnQty}
+                        onChange={(e) => setQty(idx, e.target.value)}
+                        onClick={(e) => e.preventDefault()}
+                        className="w-20 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 text-right text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                      />
+                      <span className="text-xs text-gray-500">{itemUnit(line.saleItem)}</span>
+                    </div>
+                    <label className="flex items-center gap-1.5 cursor-pointer select-none" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={line.restock}
+                        onChange={() => toggleRestock(idx)}
+                        className="h-3.5 w-3.5 rounded border-gray-300 accent-brand-primary"
+                      />
+                      <span className="text-xs text-gray-500">Remettre en stock</span>
+                    </label>
                   </div>
                 )}
               </label>
@@ -175,7 +194,7 @@ export function SaleReturnModal({ sale, isOpen, onClose }: Props) {
 
         {/* Méthode de remboursement */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+          <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
             Mode de remboursement
           </label>
           <Select
@@ -190,8 +209,8 @@ export function SaleReturnModal({ sale, isOpen, onClose }: Props) {
 
         {/* Motif */}
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">
-            Motif <span className="text-gray-400 font-normal">(facultatif)</span>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            Motif <span className="text-gray-400 dark:text-gray-500 font-normal">(facultatif)</span>
           </label>
           <textarea
             value={reason}
@@ -199,16 +218,16 @@ export function SaleReturnModal({ sale, isOpen, onClose }: Props) {
             rows={2}
             maxLength={500}
             placeholder="Ex: Produit défectueux, mauvaise taille…"
-            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
+            className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-primary resize-none"
           />
         </div>
 
         {/* Récapitulatif */}
         {selectedLines.length > 0 && (
-          <div className="rounded-xl bg-gray-50 px-4 py-3 text-sm">
-            <div className="flex justify-between text-gray-600">
+          <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 px-4 py-3 text-sm">
+            <div className="flex justify-between text-gray-600 dark:text-gray-400">
               <span>{selectedLines.length} article(s) retourné(s)</span>
-              <span className="font-semibold text-gray-900">{formatCurrency(returnTotal)}</span>
+              <span className="font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(returnTotal)}</span>
             </div>
             <p className="mt-1 text-xs text-gray-400">
               {REFUND_LABELS[refundMethod]}

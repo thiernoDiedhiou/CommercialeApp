@@ -7,6 +7,7 @@ import {
   DocumentArrowDownIcon,
   XCircleIcon,
   ReceiptRefundIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import { getSales, cancelSale, openSalePdf } from '@/services/api/sales'
@@ -91,7 +92,18 @@ export default function SalesPage() {
       key: 'reference',
       header: t('sales.reference'),
       render: (s) => (
-        <span className="font-mono text-sm font-semibold text-gray-900">{s.reference}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">{s.reference}</span>
+          {(s.returns_count ?? 0) > 0 && (
+            <span
+              title={t('sales.has_returns')}
+              className="inline-flex items-center gap-0.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-600 ring-1 ring-amber-200"
+            >
+              <ReceiptRefundIcon className="h-3 w-3" />
+              {s.returns_count}
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -99,16 +111,16 @@ export default function SalesPage() {
       header: t('sales.customer'),
       render: (s) =>
         s.customer ? (
-          <span className="text-sm text-gray-700">{s.customer.name}</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">{s.customer.name}</span>
         ) : (
-          <span className="text-sm text-gray-300">{t('sales.anonymous')}</span>
+          <span className="text-sm text-gray-300 dark:text-gray-600">{t('sales.anonymous')}</span>
         ),
     },
     {
       key: 'date',
       header: t('sales.date'),
       render: (s) => (
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-gray-600 dark:text-gray-400">
           {formatDateTime(s.confirmed_at ?? s.created_at)}
         </span>
       ),
@@ -118,7 +130,7 @@ export default function SalesPage() {
       header: t('common.total'),
       align: 'right',
       render: (s) => (
-        <span className="font-medium text-gray-900">{formatCurrency(s.total)}</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(s.total)}</span>
       ),
     },
     {
@@ -135,11 +147,18 @@ export default function SalesPage() {
       align: 'right',
       render: (s) => {
         const due = parseFloat(s.total) - parseFloat(s.paid_amount)
-        return due > 0 ? (
-          <span className="font-semibold text-red-600">{formatCurrency(due)}</span>
-        ) : (
-          <span className="text-sm text-gray-300">—</span>
-        )
+        if (due > 0) {
+          return <span className="font-semibold text-red-600">{formatCurrency(due)}</span>
+        }
+        if (s.status === 'confirmed') {
+          return (
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-600 ring-1 ring-emerald-200">
+              <CheckCircleIcon className="h-3 w-3" />
+              {t('sales.settled')}
+            </span>
+          )
+        }
+        return <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
       },
     },
     {
@@ -160,7 +179,7 @@ export default function SalesPage() {
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); navigate(`/sales/${s.uid}`) }}
-            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300"
             title={t('sales.details')}
           >
             <EyeIcon className="h-4 w-4" />
@@ -172,7 +191,7 @@ export default function SalesPage() {
               type="button"
               onClick={(e) => { e.stopPropagation(); handlePdf(s.uid, s.reference) }}
               disabled={pdfLoading === s.uid}
-              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40"
+              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-40"
               title={t('sales.export_pdf')}
             >
               {pdfLoading === s.uid ? (
@@ -192,7 +211,7 @@ export default function SalesPage() {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setCancelTarget(s) }}
-                className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                className="rounded p-1.5 text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600"
                 title={t('sales.cancel_title')}
               >
                 <XCircleIcon className="h-4 w-4" />
@@ -208,7 +227,7 @@ export default function SalesPage() {
     <div className="space-y-4 p-4 sm:p-6">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">{t('sales.title')}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">{t('sales.title')}</h1>
         <CanDo permission="sales.create">
           <Button
             icon={<PlusIcon className="h-4 w-4" />}
@@ -268,30 +287,30 @@ export default function SalesPage() {
           return (
             <div className="px-4 py-3">
               <div className="flex items-start justify-between gap-2 mb-1">
-                <span className="font-mono text-sm font-semibold text-gray-900">{s.reference}</span>
+                <span className="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">{s.reference}</span>
                 <Badge variant={STATUS_VARIANT[s.status]}>{STATUS_LABEL[s.status]}</Badge>
               </div>
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-gray-600">
-                  {s.customer ? s.customer.name : <span className="text-gray-300">{t('sales.anonymous')}</span>}
+                  {s.customer ? s.customer.name : <span className="text-gray-300 dark:text-gray-600">{t('sales.anonymous')}</span>}
                 </span>
                 <span className="text-xs text-gray-400">{formatDateTime(s.confirmed_at ?? s.created_at)}</span>
               </div>
               <div className="flex items-center justify-between mb-2">
-                <span className="font-bold text-gray-900">{formatCurrency(s.total)}</span>
+                <span className="font-bold text-gray-900 dark:text-gray-100">{formatCurrency(s.total)}</span>
                 {due > 0 ? (
                   <span className="text-sm font-semibold text-red-600">{formatCurrency(due)}</span>
                 ) : (
-                  <span className="text-sm text-gray-300">—</span>
+                  <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
                 )}
               </div>
-              <div className="flex gap-2 pt-2 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+              <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700" onClick={(e) => e.stopPropagation()}>
                 <CanDo permission="sales.pdf">
                   <button
                     type="button"
                     onClick={() => handlePdf(s.uid, s.reference)}
                     disabled={pdfLoading === s.uid}
-                    className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100 disabled:opacity-40"
+                    className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40"
                   >
                     {pdfLoading === s.uid ? (
                       <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -354,9 +373,9 @@ export default function SalesPage() {
           </>
         }
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t('sales.cancel')}{' '}
-          <span className="font-mono font-semibold text-gray-900">{cancelTarget?.reference}</span> ?{' '}
+          <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">{cancelTarget?.reference}</span> ?{' '}
           {t('sales.cancel_stock')}
         </p>
       </Modal>

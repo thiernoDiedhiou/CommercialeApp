@@ -39,28 +39,28 @@ export default function PosSessionsPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-5 p-4 sm:p-6">
       <div>
-        <h1 className="text-xl font-bold text-slate-900">{t('pos.sessions_title')}</h1>
-        <p className="mt-0.5 text-sm text-gray-500">{t('pos.sessions_subtitle')}</p>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">{t('pos.sessions_title')}</h1>
+        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{t('pos.sessions_subtitle')}</p>
       </div>
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
-          <div className="flex items-center gap-2 text-gray-500 mb-1">
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
             <Clock className="h-4 w-4" />
             <span className="text-xs font-medium">{t('pos.active_sessions')}</span>
           </div>
           <p className="text-2xl font-bold text-brand-primary">{openSessions}</p>
         </div>
-        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
-          <div className="flex items-center gap-2 text-gray-500 mb-1">
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
             <ShoppingCart className="h-4 w-4" />
             <span className="text-xs font-medium">{t('pos.sales_page')}</span>
           </div>
-          <p className="text-2xl font-bold text-slate-800">{totalSales}</p>
+          <p className="text-2xl font-bold text-slate-800 dark:text-gray-100">{totalSales}</p>
         </div>
-        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100 col-span-2">
-          <div className="flex items-center gap-2 text-gray-500 mb-1">
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 col-span-2">
+          <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
             <TrendingUp className="h-4 w-4" />
             <span className="text-xs font-medium">{t('pos.total_collected_page')}</span>
           </div>
@@ -69,19 +69,19 @@ export default function PosSessionsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
+      <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
         {isLoading ? (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-gray-50 dark:divide-gray-700/60">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex items-center gap-4 px-5 py-4">
-                <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
-                <div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
-                <div className="ml-auto h-4 w-20 animate-pulse rounded bg-gray-200" />
+                <div className="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="ml-auto h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
               </div>
             ))}
           </div>
         ) : sessions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+          <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
             <Wallet className="h-10 w-10 mb-3 opacity-40" />
             <p className="text-sm font-medium">{t('pos.no_sessions')}</p>
             <p className="text-xs mt-1">{t('pos.no_sessions_desc')}</p>
@@ -90,7 +90,7 @@ export default function PosSessionsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+                <tr className="border-b border-gray-100 dark:border-gray-700 text-left text-xs text-gray-500 dark:text-gray-400">
                   <th className="px-5 py-3 font-medium">{t('pos.col_cashier')}</th>
                   <th className="px-4 py-3 font-medium">{t('pos.col_opened')}</th>
                   <th className="px-4 py-3 font-medium">{t('pos.col_closed')}</th>
@@ -102,7 +102,7 @@ export default function PosSessionsPage() {
                   <th className="px-4 py-3 font-medium">{t('common.status')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700/60">
                 {sessions.map((s) => (
                   <SessionRow key={s.id} session={s} />
                 ))}
@@ -112,7 +112,7 @@ export default function PosSessionsPage() {
         )}
 
         {lastPage > 1 && (
-          <div className="border-t border-gray-100 px-5 py-3">
+          <div className="border-t border-gray-100 dark:border-gray-700 px-5 py-3">
             <Pagination
               currentPage={page}
               lastPage={lastPage}
@@ -132,47 +132,47 @@ function SessionRow({ session: s }: { session: PosSessionWithStats }) {
   const isOpen = s.status === 'open'
 
   return (
-    <tr className="hover:bg-gray-50/50 transition-colors">
+    <tr className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors">
       {/* Caissier */}
       <td className="px-5 py-3">
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 rounded-full bg-brand-primary/10 flex items-center justify-center text-xs font-semibold text-brand-primary shrink-0">
             {s.user?.name?.charAt(0).toUpperCase() ?? '?'}
           </div>
-          <span className="font-medium text-gray-800">{s.user?.name ?? '—'}</span>
+          <span className="font-medium text-gray-800 dark:text-gray-200">{s.user?.name ?? '—'}</span>
         </div>
       </td>
 
       {/* Ouverture */}
-      <td className="px-4 py-3 text-gray-600 whitespace-nowrap">
+      <td className="px-4 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
         {formatDateTime(s.opened_at)}
       </td>
 
       {/* Fermeture */}
-      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
         {s.closed_at ? formatDateTime(s.closed_at) : <span className="text-amber-500 font-medium">{t('pos.in_progress')}</span>}
       </td>
 
       {/* Durée */}
-      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
         {duration(s.opened_at, s.closed_at)}
       </td>
 
       {/* Ventes */}
       <td className="px-4 py-3 text-right">
-        <span className="font-semibold text-gray-800">{s.sales_count}</span>
+        <span className="font-semibold text-gray-800 dark:text-gray-200">{s.sales_count}</span>
       </td>
 
       {/* Total */}
-      <td className="px-4 py-3 text-right font-semibold text-gray-900 whitespace-nowrap">
+      <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">
         {formatCurrency(Number(s.total_confirmed))}
       </td>
 
       {/* Mise / Clôture */}
       <td className="px-4 py-3 whitespace-nowrap">
         <div className="flex flex-col gap-0.5 text-xs">
-          <span className="text-gray-500">
-            <span className="text-gray-400">{t('pos.opening_cash_label')} </span>
+          <span className="text-gray-500 dark:text-gray-400">
+            <span className="text-gray-400 dark:text-gray-500">{t('pos.opening_cash_label')} </span>
             {formatCurrency(Number(s.opening_cash))}
           </span>
           {s.closing_cash != null && (

@@ -18,12 +18,12 @@ export function ProductCard({ product, onClick }: Props) {
         'flex flex-col items-start rounded-xl border text-left transition-all overflow-hidden',
         'active:scale-95',
         outOfStock
-          ? 'cursor-not-allowed border-gray-200 bg-gray-50 opacity-50'
-          : 'border-gray-200 bg-white cursor-pointer hover:border-brand-primary hover:shadow-sm',
+          ? 'cursor-not-allowed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 opacity-50'
+          : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 cursor-pointer hover:border-brand-primary hover:shadow-sm',
       ].join(' ')}
     >
       {/* Image / placeholder */}
-      <div className="w-full aspect-[4/3] bg-gray-50 shrink-0 overflow-hidden flex items-center justify-center">
+      <div className="w-full aspect-[4/3] bg-gray-50 dark:bg-gray-700 shrink-0 overflow-hidden flex items-center justify-center">
         {product.image_url ? (
           <img
             src={product.image_url}
@@ -31,7 +31,7 @@ export function ProductCard({ product, onClick }: Props) {
             className="h-full w-full object-contain"
           />
         ) : (
-          <span className="text-4xl font-bold text-gray-200 select-none">
+          <span className="text-4xl font-bold text-gray-200 dark:text-gray-600 select-none">
             {product.name.charAt(0).toUpperCase()}
           </span>
         )}
@@ -45,7 +45,7 @@ export function ProductCard({ product, onClick }: Props) {
           </span>
         )}
 
-        <p className="line-clamp-2 text-sm font-semibold text-gray-800 leading-tight">
+        <p className="line-clamp-2 text-sm font-semibold text-gray-800 dark:text-gray-200 leading-tight">
           {product.name}
         </p>
 
@@ -56,7 +56,7 @@ export function ProductCard({ product, onClick }: Props) {
             <p className="text-base font-bold text-brand-primary">
               {formatCurrency(Number(product.price))}
             </p>
-            <p className={`text-[11px] ${outOfStock ? 'text-red-500 font-medium' : 'text-gray-400'}`}>
+            <p className={`text-[11px] ${outOfStock ? 'text-red-500 font-medium' : 'text-gray-400 dark:text-gray-500'}`}>
               {outOfStock
                 ? 'Rupture de stock'
                 : `Stock : ${product.stock_quantity}${product.unit ? ` ${product.unit}` : ''}`}

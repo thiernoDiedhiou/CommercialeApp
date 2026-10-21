@@ -100,19 +100,19 @@ function ProductPicker({
         onChange={(e) => { setText(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
         placeholder={t('purchases.search_product')}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
       />
       {open && deb.length >= 1 && (data?.data.length ?? 0) > 0 && (
-        <ul className="absolute top-full left-0 z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+        <ul className="absolute top-full left-0 z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
           {data!.data.map((p) => (
             <li key={p.id}>
               <button
                 type="button"
                 onClick={() => { onSelect(p); setText(p.name); setOpen(false) }}
-                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700/40"
               >
-                <span className="font-medium text-gray-900">{p.name}</span>
-                {p.sku && <span className="ml-2 text-xs text-gray-400">{p.sku}</span>}
+                <span className="font-medium text-gray-900 dark:text-gray-100">{p.name}</span>
+                {p.sku && <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">{p.sku}</span>}
               </button>
             </li>
           ))}
@@ -233,17 +233,17 @@ export default function PurchaseFormPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
-      <h1 className="text-xl font-bold text-slate-900">
+      <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">
         {isEdit ? t('purchases.form_edit_title') : t('purchases.form_new_title')}
       </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Informations */}
-        <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('purchases.section_info')}</h2>
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+          <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('purchases.section_info')}</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('purchases.supplier_label')}</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('purchases.supplier_label')}</label>
               <Select {...register('supplier_id', { setValueAs: (v) => v === '' ? null : Number(v) })}>
                 <option value="">{t('purchases.no_supplier_option')}</option>
                 {suppliersData?.data.map((s) => (
@@ -257,12 +257,12 @@ export default function PurchaseFormPage() {
         </div>
 
         {/* Articles */}
-        <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('purchases.section_articles')}</h2>
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+          <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('purchases.section_articles')}</h2>
           {/* ── Mobile : cartes empilées ──────────────────────────────────── */}
           <div className="md:hidden space-y-3">
             {items.map((item) => (
-              <div key={item.uid} className="rounded-lg border border-gray-100 bg-gray-50 p-3 space-y-2">
+              <div key={item.uid} className="rounded-lg border border-gray-100 dark:border-gray-700/60 bg-gray-50 dark:bg-gray-700/50 p-3 space-y-2">
                 <ProductPicker
                   value={item.product}
                   onSelect={(p) => updateItem(item.uid, {
@@ -274,17 +274,17 @@ export default function PurchaseFormPage() {
                 />
                 <div className="flex gap-2">
                   <div className="w-24 shrink-0">
-                    <p className="mb-1 text-[11px] text-gray-400">{t('purchases.col_quantity')}</p>
+                    <p className="mb-1 text-[11px] text-gray-400 dark:text-gray-500">{t('purchases.col_quantity')}</p>
                     <input
                       type="number" min="0.001" step="0.001"
                       value={item.quantity_ordered}
                       onChange={(e) => updateItem(item.uid, { quantity_ordered: parseFloat(e.target.value) || 0 })}
                       aria-label="Quantité commandée"
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 bg-white px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                     />
                   </div>
                   <div className="flex-1">
-                    <p className="mb-1 text-[11px] text-gray-400">{t('products.purchase_price')}</p>
+                    <p className="mb-1 text-[11px] text-gray-400 dark:text-gray-500">{t('products.purchase_price')}</p>
                     <PriceInput
                       value={item.unit_cost || null}
                       onChange={(v) => updateItem(item.uid, { unit_cost: v ?? 0 })}
@@ -293,8 +293,8 @@ export default function PurchaseFormPage() {
                     />
                   </div>
                 </div>
-                <div className="flex items-center justify-between border-t border-gray-200 pt-2">
-                  <span className="text-sm font-semibold text-gray-900">
+                <div className="flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-2">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {t('common.subtotal')} : {formatCurrency(item.quantity_ordered * item.unit_cost)}
                   </span>
                   <button
@@ -309,8 +309,8 @@ export default function PurchaseFormPage() {
                 </div>
               </div>
             ))}
-            <div className="rounded-lg border border-gray-100 p-3 text-sm">
-              <div className="flex justify-between font-bold text-gray-900">
+            <div className="rounded-lg border border-gray-100 dark:border-gray-700/60 p-3 text-sm">
+              <div className="flex justify-between font-bold text-gray-900 dark:text-gray-100">
                 <span>{t('purchases.estimated_total')}</span><span>{formatCurrency(total)}</span>
               </div>
             </div>
@@ -320,7 +320,7 @@ export default function PurchaseFormPage() {
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+                <tr className="border-b border-gray-100 dark:border-gray-700/60 text-left text-xs text-gray-500 dark:text-gray-400">
                   <th className="pb-2 pr-3 font-medium">{t('common.product')}</th>
                   <th className="pb-2 pr-3 w-24 font-medium">{t('purchases.col_quantity')}</th>
                   <th className="pb-2 pr-3 w-32 font-medium">{t('purchases.col_unit_cost_currency', { currency })}</th>
@@ -328,7 +328,7 @@ export default function PurchaseFormPage() {
                   <th className="pb-2 w-10" aria-label="Actions" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700/40">
                 {items.map((item) => (
                   <tr key={item.uid}>
                     <td className="py-2 pr-3">
@@ -350,7 +350,7 @@ export default function PurchaseFormPage() {
                         value={item.quantity_ordered}
                         onChange={(e) => updateItem(item.uid, { quantity_ordered: parseFloat(e.target.value) || 0 })}
                         aria-label="Quantité commandée"
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                       />
                     </td>
                     <td className="py-2 pr-3">
@@ -361,7 +361,7 @@ export default function PurchaseFormPage() {
                         aria-label="Prix d'achat unitaire"
                       />
                     </td>
-                    <td className="py-2 text-right font-medium text-gray-900">
+                    <td className="py-2 text-right font-medium text-gray-900 dark:text-gray-100">
                       {formatCurrency(item.quantity_ordered * item.unit_cost)}
                     </td>
                     <td className="py-2 pl-2">
@@ -380,8 +380,8 @@ export default function PurchaseFormPage() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={3} className="pt-4 text-right text-sm font-semibold text-gray-700">{t('purchases.estimated_total')}</td>
-                  <td className="pt-4 text-right text-base font-bold text-gray-900">{formatCurrency(total)}</td>
+                  <td colSpan={3} className="pt-4 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('purchases.estimated_total')}</td>
+                  <td className="pt-4 text-right text-base font-bold text-gray-900 dark:text-gray-100">{formatCurrency(total)}</td>
                   <td />
                 </tr>
               </tfoot>

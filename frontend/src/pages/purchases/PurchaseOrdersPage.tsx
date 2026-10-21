@@ -88,30 +88,30 @@ export default function PurchaseOrdersPage() {
     {
       key: 'reference',
       header: t('purchases.reference'),
-      render: (o) => <span className="font-mono text-sm font-semibold text-gray-900">{o.reference}</span>,
+      render: (o) => <span className="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">{o.reference}</span>,
     },
     {
       key: 'supplier',
       header: t('suppliers.title'),
       render: (o) => o.supplier
-        ? <span className="text-sm text-gray-700">{o.supplier.name}</span>
-        : <span className="text-sm text-gray-300">—</span>,
+        ? <span className="text-sm text-gray-700 dark:text-gray-300">{o.supplier.name}</span>
+        : <span className="text-sm text-gray-300 dark:text-gray-600">—</span>,
     },
     {
       key: 'created_at',
       header: t('common.date'),
-      render: (o) => <span className="text-sm text-gray-600">{formatDate(o.created_at)}</span>,
+      render: (o) => <span className="text-sm text-gray-600 dark:text-gray-400">{formatDate(o.created_at)}</span>,
     },
     {
       key: 'expected_at',
       header: t('purchases.expected_at'),
-      render: (o) => <span className="text-sm text-gray-600">{formatDate(o.expected_at)}</span>,
+      render: (o) => <span className="text-sm text-gray-600 dark:text-gray-400">{formatDate(o.expected_at)}</span>,
     },
     {
       key: 'items_count',
       header: t('purchases.items'),
       align: 'center',
-      render: (o) => <span className="text-sm text-gray-700">{o.items_count ?? 0}</span>,
+      render: (o) => <span className="text-sm text-gray-700 dark:text-gray-300">{o.items_count ?? 0}</span>,
     },
     {
       key: 'status',
@@ -126,7 +126,7 @@ export default function PurchaseOrdersPage() {
       render: (o) => (
         <div className="flex items-center justify-end gap-1">
           <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/purchases/${o.uid}`) }}
-            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title={t('common.view')}>
+            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300" title={t('common.view')}>
             <EyeIcon className="h-4 w-4" />
           </button>
 
@@ -164,7 +164,7 @@ export default function PurchaseOrdersPage() {
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">{t('purchases.title')}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">{t('purchases.title')}</h1>
         <CanDo permission="purchases.create">
           <Button icon={<PlusIcon className="h-4 w-4" />} onClick={() => navigate('/purchases/new')}>
             {t('purchases.new')}
@@ -200,11 +200,11 @@ export default function PurchaseOrdersPage() {
           <div className="flex items-center gap-3 px-4 py-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <span className="font-mono text-sm font-semibold text-gray-900">{o.reference}</span>
+                <span className="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">{o.reference}</span>
                 <Badge variant={STATUS_VARIANT[o.status]}>{STATUS_LABEL[o.status]}</Badge>
               </div>
-              <p className="text-sm text-gray-600 truncate">{o.supplier?.name ?? '—'}</p>
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-sm text-gray-600 dark:text-gray-400 truncate">{o.supplier?.name ?? '—'}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                 {formatDate(o.created_at)} · {o.items_count ?? 0} {t('purchases.items')}
               </p>
             </div>
@@ -226,8 +226,8 @@ export default function PurchaseOrdersPage() {
           </Button>
         </>}
       >
-        <p className="text-sm text-gray-600">
-          {t('purchases.order_confirm')} <span className="font-mono font-semibold text-gray-900">{confirmTarget?.reference}</span> ?
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {t('purchases.order_confirm')} <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">{confirmTarget?.reference}</span> ?
         </p>
       </Modal>
 
@@ -240,8 +240,8 @@ export default function PurchaseOrdersPage() {
           </Button>
         </>}
       >
-        <p className="text-sm text-gray-600">
-          {t('purchases.cancel_confirm')} <span className="font-mono font-semibold text-gray-900">{cancelTarget?.reference}</span> ?
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {t('purchases.cancel_confirm')} <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">{cancelTarget?.reference}</span> ?
         </p>
       </Modal>
 
@@ -254,8 +254,8 @@ export default function PurchaseOrdersPage() {
           </Button>
         </>}
       >
-        <p className="text-sm text-gray-600">
-          {t('purchases.delete_confirm')} <span className="font-mono font-semibold text-gray-900">{deleteTarget?.reference}</span> ?
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {t('purchases.delete_confirm')} <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">{deleteTarget?.reference}</span> ?
         </p>
       </Modal>
     </div>

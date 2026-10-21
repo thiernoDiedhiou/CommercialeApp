@@ -67,13 +67,13 @@ function SalesTab({ data, isLoading }: { data?: SalesReport; isLoading: boolean 
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+            <div key={i} className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="mt-3 h-7 w-32" />
             </div>
           ))}
         </div>
-        <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
           <Skeleton className="h-52 w-full" />
         </div>
       </div>
@@ -83,11 +83,11 @@ function SalesTab({ data, isLoading }: { data?: SalesReport; isLoading: boolean 
   if (!data) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-          <PresentationChartLineIcon className="h-7 w-7 text-slate-400" />
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 dark:bg-gray-700">
+          <PresentationChartLineIcon className="h-7 w-7 text-slate-400 dark:text-gray-500" />
         </div>
-        <p className="text-sm font-semibold text-slate-700">{t('reports.no_data_period')}</p>
-        <p className="mt-1.5 max-w-xs text-xs text-slate-400 leading-relaxed">
+        <p className="text-sm font-semibold text-slate-700 dark:text-gray-300">{t('reports.no_data_period')}</p>
+        <p className="mt-1.5 max-w-xs text-xs text-slate-400 dark:text-gray-500 leading-relaxed">
           {t('reports.no_data_desc')}
         </p>
       </div>
@@ -123,15 +123,15 @@ function SalesTab({ data, isLoading }: { data?: SalesReport; isLoading: boolean 
       </div>
 
       {/* Graphique CA */}
-      <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-        <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('reports.revenue_chart')}</h2>
+      <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+        <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('reports.revenue_chart')}</h2>
         {chart.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-              <ChartBarIcon className="h-7 w-7 text-slate-400" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 dark:bg-gray-700">
+              <ChartBarIcon className="h-7 w-7 text-slate-400 dark:text-gray-500" />
             </div>
-            <p className="text-sm font-semibold text-slate-700">{t('reports.no_sales_chart')}</p>
-            <p className="mt-1 text-xs text-slate-400">{t('reports.no_sales_chart_desc')}</p>
+            <p className="text-sm font-semibold text-slate-700 dark:text-gray-300">{t('reports.no_sales_chart')}</p>
+            <p className="mt-1 text-xs text-slate-400 dark:text-gray-500">{t('reports.no_sales_chart_desc')}</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={240}>
@@ -170,7 +170,7 @@ function ProductsTab({ data, isLoading }: { data?: ProductsReport; isLoading: bo
   const { t } = useTranslation()
   if (isLoading) {
     return (
-      <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100 space-y-3">
+      <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 space-y-3">
         {Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
       </div>
     )
@@ -179,21 +179,21 @@ function ProductsTab({ data, isLoading }: { data?: ProductsReport; isLoading: bo
   if (!data?.data.length) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-          <ShoppingCartIcon className="h-7 w-7 text-slate-400" />
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 dark:bg-gray-700">
+          <ShoppingCartIcon className="h-7 w-7 text-slate-400 dark:text-gray-500" />
         </div>
-        <p className="text-sm font-semibold text-slate-700">{t('reports.no_sales_products')}</p>
-        <p className="mt-1.5 max-w-xs text-xs text-slate-400 leading-relaxed">{t('reports.no_sales_products_desc')}</p>
+        <p className="text-sm font-semibold text-slate-700 dark:text-gray-300">{t('reports.no_sales_products')}</p>
+        <p className="mt-1.5 max-w-xs text-xs text-slate-400 dark:text-gray-500 leading-relaxed">{t('reports.no_sales_products_desc')}</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
+    <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+            <tr className="border-b border-gray-100 dark:border-gray-700/60 text-left text-xs text-gray-500 dark:text-gray-400">
               <th className="px-4 py-3 w-8 font-medium">#</th>
               <th className="px-4 py-3 font-medium">{t('common.product')}</th>
               <th className="px-4 py-3 font-medium">{t('products.category')}</th>
@@ -203,16 +203,16 @@ function ProductsTab({ data, isLoading }: { data?: ProductsReport; isLoading: bo
               <th className="px-4 py-3 text-right font-medium">{t('reports.col_margin')}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-gray-50 dark:divide-gray-700/40">
             {data.data.map((row, idx) => (
-              <tr key={row.product_id} className="hover:bg-gray-50/50">
-                <td className="px-4 py-3 text-gray-400">{idx + 1}</td>
-                <td className="px-4 py-3 font-medium text-gray-900">{row.name}</td>
-                <td className="px-4 py-3 text-gray-500">{row.category ?? '—'}</td>
-                <td className="px-4 py-3 text-right text-gray-700">
+              <tr key={row.product_id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/40">
+                <td className="px-4 py-3 text-gray-400 dark:text-gray-500">{idx + 1}</td>
+                <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{row.name}</td>
+                <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{row.category ?? '—'}</td>
+                <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
                   {parseFloat(String(row.qty_sold)).toLocaleString('fr-SN')}
                 </td>
-                <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">
                   {formatCurrency(row.revenue)}
                 </td>
                 <td className={`px-4 py-3 text-right font-medium ${row.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
@@ -239,13 +239,13 @@ function StockTab({ data, isLoading }: { data?: StockReport; isLoading: boolean 
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+            <div key={i} className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="mt-3 h-7 w-20" />
             </div>
           ))}
         </div>
-        <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100 space-y-3">
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 space-y-3">
           {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
         </div>
       </div>
@@ -292,18 +292,18 @@ function StockTab({ data, isLoading }: { data?: StockReport; isLoading: boolean 
       {/* Table */}
       {data.data.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-            <CubeIcon className="h-7 w-7 text-slate-400" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 dark:bg-gray-700">
+            <CubeIcon className="h-7 w-7 text-slate-400 dark:text-gray-500" />
           </div>
-          <p className="text-sm font-semibold text-slate-700">{t('reports.no_stock_movements')}</p>
-          <p className="mt-1.5 max-w-xs text-xs text-slate-400 leading-relaxed">{t('reports.no_stock_movements_desc')}</p>
+          <p className="text-sm font-semibold text-slate-700 dark:text-gray-300">{t('reports.no_stock_movements')}</p>
+          <p className="mt-1.5 max-w-xs text-xs text-slate-400 dark:text-gray-500 leading-relaxed">{t('reports.no_stock_movements_desc')}</p>
         </div>
       ) : (
-        <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
+        <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+                <tr className="border-b border-gray-100 dark:border-gray-700/60 text-left text-xs text-gray-500 dark:text-gray-400">
                   <th className="px-4 py-3 font-medium">{t('common.product')}</th>
                   <th className="px-4 py-3 text-right font-medium">{t('reports.stock_col_in')}</th>
                   <th className="px-4 py-3 text-right font-medium">{t('reports.stock_col_out')}</th>
@@ -313,10 +313,10 @@ function StockTab({ data, isLoading }: { data?: StockReport; isLoading: boolean 
                   <th className="px-4 py-3 text-right font-medium">{t('reports.stock_col_value')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700/40">
                 {data.data.map((row) => (
-                  <tr key={row.product_id} className="hover:bg-gray-50/50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{row.name}</td>
+                  <tr key={row.product_id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/40">
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{row.name}</td>
                     <td className="px-4 py-3 text-right text-emerald-600 font-medium">
                       {row.total_in > 0 ? `+${row.total_in.toLocaleString('fr-SN')}` : '—'}
                     </td>
@@ -329,10 +329,10 @@ function StockTab({ data, isLoading }: { data?: StockReport; isLoading: boolean 
                     <td className="px-4 py-3 text-right text-amber-600 font-medium">
                       {row.total_adjustment > 0 ? row.total_adjustment.toLocaleString('fr-SN') : '—'}
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                    <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">
                       {row.current_stock.toLocaleString('fr-SN')}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-700">
+                    <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
                       {formatCurrency(row.stock_value)}
                     </td>
                   </tr>
@@ -403,7 +403,7 @@ export default function ReportsPage() {
     <div className="space-y-5 p-4 sm:p-6">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">{t('reports.title')}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">{t('reports.title')}</h1>
         <Button
           variant="outline"
           icon={<ArrowDownTrayIcon className="h-4 w-4" />}
@@ -459,7 +459,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Onglets */}
-      <div className="flex gap-1 rounded-xl bg-gray-100 p-1">
+      <div className="flex gap-1 rounded-xl bg-gray-100 dark:bg-gray-700 p-1">
         {(Object.keys(TAB_LABELS) as Tab[]).map((tabKey) => (
           <button
             key={tabKey}
@@ -467,8 +467,8 @@ export default function ReportsPage() {
             onClick={() => setTab(tabKey)}
             className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
               tab === tabKey
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
+                ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
           >
             {TAB_LABELS[tabKey]}

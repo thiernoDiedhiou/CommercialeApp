@@ -102,6 +102,13 @@
     </script>
   </head>
   <body>
+    <!-- Anti-flash dark mode : applique la classe avant le premier rendu React -->
+    <script>
+      try {
+        var s = JSON.parse(localStorage.getItem('theme-preference') || '{}')
+        if (s.state && s.state.theme === 'dark') document.documentElement.classList.add('dark')
+      } catch (e) {}
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

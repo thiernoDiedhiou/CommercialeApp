@@ -49,11 +49,11 @@ function SidebarContent({ onClose }: SidebarContentProps) {
   }, [location.pathname])
 
   return (
-    <div className="flex h-full flex-col bg-white border-r border-gray-200">
+    <div className="flex h-full flex-col bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-colors duration-200">
       {/* En-tête tenant */}
       <NavLink
         to={homePath}
-        className="flex h-16 shrink-0 items-center gap-3 px-4 border-b border-gray-200 hover:bg-gray-50 transition-colors"
+        className="flex h-16 shrink-0 items-center gap-3 px-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         onClick={onClose}
       >
         {tenant?.logo_url ? (
@@ -84,7 +84,7 @@ function SidebarContent({ onClose }: SidebarContentProps) {
               <div
                 key={item.path}
                 title={t('nav.not_in_plan')}
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-300 cursor-not-allowed select-none"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-300 dark:text-gray-600 cursor-not-allowed select-none"
               >
                 <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
                 <span className="flex-1">{t(item.labelKey)}</span>
@@ -111,7 +111,7 @@ function SidebarContent({ onClose }: SidebarContentProps) {
                     'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                     (!hasChildren && isActive) || (hasChildren && isExpanded)
                       ? 'bg-brand-primary/10 text-brand-primary'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100',
                   )
                 }
               >
@@ -135,7 +135,7 @@ function SidebarContent({ onClose }: SidebarContentProps) {
                         <div
                           key={child.path}
                           title={t('nav.not_in_plan')}
-                          className="flex items-center rounded-lg px-3 py-1.5 text-sm font-medium text-gray-300 cursor-not-allowed select-none"
+                          className="flex items-center rounded-lg px-3 py-1.5 text-sm font-medium text-gray-300 dark:text-gray-600 cursor-not-allowed select-none"
                         >
                           {t(child.labelKey)}
                         </div>
@@ -152,7 +152,7 @@ function SidebarContent({ onClose }: SidebarContentProps) {
                             'flex items-center rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
                             isActive
                               ? 'bg-brand-primary/10 text-brand-primary font-semibold'
-                              : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900',
+                              : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100',
                           )
                         }
                       >
@@ -203,7 +203,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <button
               type="button"
               onClick={onClose}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-white shadow text-gray-600"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white dark:bg-gray-700 shadow text-gray-600 dark:text-gray-300"
               aria-label="Fermer le menu"
             >
               <X className="h-5 w-5" />

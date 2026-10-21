@@ -61,12 +61,12 @@ function MovementsTab() {
       {/* Filters */}
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <label className="block text-xs text-gray-500 mb-1">{t('stock.filter_type')}</label>
+          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('stock.filter_type')}</label>
           <select
             title={t('stock.filter_movements')}
             value={type}
             onChange={(e) => setType(e.target.value)}
-            className="rounded-lg border border-gray-200 py-2 px-3 text-sm bg-white"
+            className="rounded-lg border border-gray-200 dark:border-gray-600 py-2 px-3 text-sm bg-white dark:bg-gray-700 dark:text-gray-200"
           >
             <option value="">{t('common.all')}</option>
             <option value="in">{t('stock.in')}</option>
@@ -76,25 +76,25 @@ function MovementsTab() {
           </select>
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1">{t('stock.filter_from')}</label>
+          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('stock.filter_from')}</label>
           <input
             type="date"
             title={t('stock.filter_date_from')}
             placeholder="jj/mm/aaaa"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            className="rounded-lg border border-gray-200 py-2 px-3 text-sm"
+            className="rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 py-2 px-3 text-sm"
           />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1">{t('stock.filter_to')}</label>
+          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('stock.filter_to')}</label>
           <input
             type="date"
             title={t('stock.filter_date_to')}
             placeholder="jj/mm/aaaa"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="rounded-lg border border-gray-200 py-2 px-3 text-sm"
+            className="rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 py-2 px-3 text-sm"
           />
         </div>
         {(type || from || to) && (
@@ -109,18 +109,18 @@ function MovementsTab() {
       </div>
 
       {/* ── Vue tableau (sm+) ───────────────────────────────────────────── */}
-      <div className="hidden sm:block overflow-x-auto rounded-xl border border-gray-200 bg-white">
-        <table className="min-w-full divide-y divide-gray-100 text-sm">
-          <thead className="bg-gray-50">
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-700/60 text-sm">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr>
               {[t('stock.date'), t('stock.product'), t('stock.type'), t('stock.quantity'), t('stock.title'), t('stock.col_operator'), t('stock.source')].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-gray-50 dark:divide-gray-700/40">
             {isLoading ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <tr key={i}>
@@ -135,11 +135,11 @@ function MovementsTab() {
               <tr>
                 <td colSpan={7}>
                   <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-                      <ArrowsUpDownIcon className="h-7 w-7 text-slate-400" />
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 dark:bg-gray-700">
+                      <ArrowsUpDownIcon className="h-7 w-7 text-slate-400 dark:text-gray-500" />
                     </div>
-                    <p className="text-sm font-semibold text-slate-700">{t('stock.empty_title')}</p>
-                    <p className="mt-1 text-xs text-slate-400">{t('stock.empty_movements')}</p>
+                    <p className="text-sm font-semibold text-slate-700 dark:text-gray-300">{t('stock.empty_title')}</p>
+                    <p className="mt-1 text-xs text-slate-400 dark:text-gray-500">{t('stock.empty_movements')}</p>
                   </div>
                 </td>
               </tr>
@@ -147,13 +147,13 @@ function MovementsTab() {
               data?.data.map((m) => {
                 const badge = TYPE_BADGE[m.type] ?? { variant: 'default' as const, label: m.type }
                 const qtySign = m.type === 'out' ? '-' : m.type === 'in' ? '+' : ''
-                const qtyColor = m.type === 'in' ? 'text-green-600' : m.type === 'out' ? 'text-red-600' : 'text-gray-700'
+                const qtyColor = m.type === 'in' ? 'text-green-600' : m.type === 'out' ? 'text-red-600' : 'text-gray-700 dark:text-gray-300'
                 return (
-                  <tr key={m.id} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDateTime(m.created_at)}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900 max-w-[200px]">
+                  <tr key={m.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDateTime(m.created_at)}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 max-w-[200px]">
                       <p className="truncate">{movementDesignation(m)}</p>
-                      {m.lot && <p className="text-xs text-gray-400">{t('stock.lot_prefix')} {m.lot.lot_number}</p>}
+                      {m.lot && <p className="text-xs text-gray-400 dark:text-gray-500">{t('stock.lot_prefix')} {m.lot.lot_number}</p>}
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={badge.variant}>{badge.label}</Badge>
@@ -161,13 +161,13 @@ function MovementsTab() {
                     <td className={`px-4 py-3 font-semibold tabular-nums ${qtyColor}`}>
                       {qtySign}{m.quantity}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 tabular-nums whitespace-nowrap">
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">
                       {m.stock_before} → {m.stock_after}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
                       {m.user?.name ?? '—'}
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs">
+                    <td className="px-4 py-3 text-gray-400 dark:text-gray-500 text-xs">
                       {SOURCE_LABEL[m.source] ?? m.source}
                       {m.unit_cost && (
                         <span className="ml-1">· {formatCurrency(m.unit_cost)}/u</span>
@@ -185,7 +185,7 @@ function MovementsTab() {
       <div className="sm:hidden space-y-2">
         {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
+            <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-2">
               <Skeleton className="h-4 w-36" />
               <Skeleton className="h-3 w-24" />
               <Skeleton className="h-3 w-20" />
@@ -193,32 +193,32 @@ function MovementsTab() {
           ))
         ) : (data?.data ?? []).length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
-              <ArrowsUpDownIcon className="h-7 w-7 text-slate-400" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 dark:bg-gray-700">
+              <ArrowsUpDownIcon className="h-7 w-7 text-slate-400 dark:text-gray-500" />
             </div>
-            <p className="text-sm font-semibold text-slate-700">{t('stock.empty_title')}</p>
-            <p className="mt-1 text-xs text-slate-400">{t('stock.empty_movements')}</p>
+            <p className="text-sm font-semibold text-slate-700 dark:text-gray-300">{t('stock.empty_title')}</p>
+            <p className="mt-1 text-xs text-slate-400 dark:text-gray-500">{t('stock.empty_movements')}</p>
           </div>
         ) : (
           data?.data.map((m) => {
             const badge = TYPE_BADGE[m.type] ?? { variant: 'default' as const, label: m.type }
             const qtySign = m.type === 'out' ? '-' : m.type === 'in' ? '+' : ''
-            const qtyColor = m.type === 'in' ? 'text-green-600' : m.type === 'out' ? 'text-red-600' : 'text-gray-700'
+            const qtyColor = m.type === 'in' ? 'text-green-600' : m.type === 'out' ? 'text-red-600' : 'text-gray-700 dark:text-gray-300'
             return (
-              <div key={m.id} className="rounded-xl border border-gray-200 bg-white p-4">
+              <div key={m.id} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
                 <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <p className="font-medium text-sm text-gray-900 truncate flex-1">{movementDesignation(m)}</p>
+                  <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate flex-1">{movementDesignation(m)}</p>
                   <Badge variant={badge.variant}>{badge.label}</Badge>
                 </div>
                 <div className="flex items-center justify-between mb-1">
                   <span className={`text-lg font-bold tabular-nums ${qtyColor}`}>{qtySign}{m.quantity}</span>
-                  <span className="text-xs text-gray-400 tabular-nums">{m.stock_before} → {m.stock_after}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">{m.stock_before} → {m.stock_after}</span>
                 </div>
-                <div className="flex items-center justify-between text-xs text-gray-400">
+                <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500">
                   <span>{formatDateTime(m.created_at)}</span>
                   <span>{SOURCE_LABEL[m.source] ?? m.source}{m.unit_cost ? ` · ${formatCurrency(m.unit_cost)}/u` : ''}</span>
                 </div>
-                {m.user && <p className="text-xs text-gray-400 mt-0.5">{m.user.name}</p>}
+                {m.user && <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{m.user.name}</p>}
               </div>
             )
           })
@@ -262,22 +262,22 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder={t('stock.search')}
-        className="w-full max-w-xs rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition"
+        className="w-full max-w-xs rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder:text-gray-500 px-3 py-2 text-sm outline-none focus:border-brand-primary transition"
       />
 
       {/* ── Vue tableau (sm+) ───────────────────────────────────────────── */}
-      <div className="hidden sm:block overflow-x-auto rounded-xl border border-gray-200 bg-white">
-        <table className="min-w-full divide-y divide-gray-100 text-sm">
-          <thead className="bg-gray-50">
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-700/60 text-sm">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr>
               {[t('stock.product'), t('stock.variant'), t('common.category'), t('stock.current_stock'), t('stock.threshold'), t('stock.state'), ''].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-gray-50 dark:divide-gray-700/40">
             {isLoading ? (
               Array.from({ length: 6 }).map((_, i) => (
                 <tr key={i}>
@@ -294,15 +294,15 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
               </tr>
             ) : (
               data?.data.map((alert: StockAlert) => (
-                <tr key={`${alert.product_id}-${alert.variant_id ?? 'base'}`} className="hover:bg-gray-50 transition">
-                  <td className="px-4 py-3 font-medium text-gray-900">{alert.product_name}</td>
-                  <td className="px-4 py-3 text-gray-500">{alert.variant_summary ?? '—'}</td>
-                  <td className="px-4 py-3 text-gray-400">{alert.category_name ?? '—'}</td>
-                  <td className="px-4 py-3 font-semibold tabular-nums text-gray-900">
+                <tr key={`${alert.product_id}-${alert.variant_id ?? 'base'}`} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{alert.product_name}</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{alert.variant_summary ?? '—'}</td>
+                  <td className="px-4 py-3 text-gray-400 dark:text-gray-500">{alert.category_name ?? '—'}</td>
+                  <td className="px-4 py-3 font-semibold tabular-nums text-gray-900 dark:text-gray-100">
                     {alert.current_stock}
-                    {alert.unit && <span className="ml-1 text-xs text-gray-400">{alert.unit}</span>}
+                    {alert.unit && <span className="ml-1 text-xs text-gray-400 dark:text-gray-500">{alert.unit}</span>}
                   </td>
-                  <td className="px-4 py-3 text-gray-400 tabular-nums">{alert.threshold}</td>
+                  <td className="px-4 py-3 text-gray-400 dark:text-gray-500 tabular-nums">{alert.threshold}</td>
                   <td className="px-4 py-3">
                     <Badge variant={alert.current_stock <= 0 ? 'danger' : 'warning'}>
                       {alert.current_stock <= 0 ? t('stock.out_of_stock') : t('stock.low_stock')}
@@ -336,7 +336,7 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
       <div className="sm:hidden space-y-2">
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
+            <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-2">
               <Skeleton className="h-4 w-40" />
               <Skeleton className="h-3 w-24" />
             </div>
@@ -345,20 +345,20 @@ function AlertsTab({ onAdjust }: { onAdjust: (prefill: StockAdjustPrefill) => vo
           <p className="py-8 text-center text-sm text-gray-400">{t('stock.no_alerts')}</p>
         ) : (
           data?.data.map((alert: StockAlert) => (
-            <div key={`${alert.product_id}-${alert.variant_id ?? 'base'}`} className="rounded-xl border border-gray-200 bg-white p-4">
+            <div key={`${alert.product_id}-${alert.variant_id ?? 'base'}`} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
               <div className="flex items-start justify-between gap-2 mb-1.5">
                 <div className="min-w-0">
-                  <p className="font-medium text-sm text-gray-900 truncate">{alert.product_name}</p>
-                  {alert.variant_summary && <p className="text-xs text-gray-400">{alert.variant_summary}</p>}
+                  <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{alert.product_name}</p>
+                  {alert.variant_summary && <p className="text-xs text-gray-400 dark:text-gray-500">{alert.variant_summary}</p>}
                 </div>
                 <Badge variant={alert.current_stock <= 0 ? 'danger' : 'warning'}>
                   {alert.current_stock <= 0 ? t('stock.out_of_stock') : t('stock.low_stock')}
                 </Badge>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="font-bold tabular-nums text-gray-900">
+                <span className="font-bold tabular-nums text-gray-900 dark:text-gray-100">
                   {alert.current_stock}{alert.unit ? ` ${alert.unit}` : ''}
-                  <span className="text-xs font-normal text-gray-400 ml-1">/ {t('stock.threshold')} {alert.threshold}</span>
+                  <span className="text-xs font-normal text-gray-400 dark:text-gray-500 ml-1">/ {t('stock.threshold')} {alert.threshold}</span>
                 </span>
                 <CanDo permission="stock.adjust">
                   <button
@@ -431,16 +431,16 @@ function ExpiringTab() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('stock.search')}
-          className="rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary transition w-full max-w-xs"
+          className="rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder:text-gray-500 px-3 py-2 text-sm outline-none focus:border-brand-primary transition w-full max-w-xs"
         />
         <div>
-          <label htmlFor="expiring-days" className="block text-xs text-gray-500 mb-1">{t('stock.window_label')}</label>
+          <label htmlFor="expiring-days" className="block text-xs text-gray-500 dark:text-gray-400 mb-1">{t('stock.window_label')}</label>
           <select
             id="expiring-days"
             title={t('stock.filter_days')}
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
-            className="rounded-lg border border-gray-200 py-2 px-3 text-sm bg-white"
+            className="rounded-lg border border-gray-200 dark:border-gray-600 py-2 px-3 text-sm bg-white dark:bg-gray-700 dark:text-gray-200"
           >
             {DAYS_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -459,18 +459,18 @@ function ExpiringTab() {
       </div>
 
       {/* ── Vue tableau (sm+) ───────────────────────────────────────────── */}
-      <div className="hidden sm:block overflow-x-auto rounded-xl border border-gray-200 bg-white">
-        <table className="min-w-full divide-y divide-gray-100 text-sm">
-          <thead className="bg-gray-50">
+      <div className="hidden sm:block overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-700/60 text-sm">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr>
               {[t('stock.product'), t('stock.variant'), t('stock.lot_prefix'), t('stock.expiry_date_col'), t('stock.days_remaining'), t('common.quantity')].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-gray-50 dark:divide-gray-700/40">
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
@@ -492,17 +492,17 @@ function ExpiringTab() {
                 const expired = lot.days_remaining < 0
                 const urgent  = lot.days_remaining <= 7
                 return (
-                  <tr key={`${lot.product_id}-${lot.lot_number}`} className="hover:bg-gray-50 transition">
-                    <td className="px-4 py-3 font-medium text-gray-900">{lot.product_name}</td>
-                    <td className="px-4 py-3 text-gray-500">{lot.variant_summary ?? '—'}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{lot.lot_number}</td>
-                    <td className="px-4 py-3 text-gray-700">{formatDate(lot.expiry_date)}</td>
+                  <tr key={`${lot.product_id}-${lot.lot_number}`} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
+                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{lot.product_name}</td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{lot.variant_summary ?? '—'}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-600 dark:text-gray-400">{lot.lot_number}</td>
+                    <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{formatDate(lot.expiry_date)}</td>
                     <td className="px-4 py-3">
                       <Badge variant={expired || urgent ? 'danger' : 'warning'}>
                         {expired ? t('stock.expired') : lot.days_remaining === 0 ? t('stock.today') : `${lot.days_remaining} j`}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 font-semibold tabular-nums text-gray-900">
+                    <td className="px-4 py-3 font-semibold tabular-nums text-gray-900 dark:text-gray-100">
                       {lot.quantity_remaining}
                     </td>
                   </tr>
@@ -517,7 +517,7 @@ function ExpiringTab() {
       <div className="sm:hidden space-y-2">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
+            <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-2">
               <Skeleton className="h-4 w-40" />
               <Skeleton className="h-3 w-28" />
             </div>
@@ -533,19 +533,19 @@ function ExpiringTab() {
             const expired = lot.days_remaining < 0
             const urgent  = lot.days_remaining <= 7
             return (
-              <div key={`${lot.product_id}-${lot.lot_number}`} className="rounded-xl border border-gray-200 bg-white p-4">
+              <div key={`${lot.product_id}-${lot.lot_number}`} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
                 <div className="flex items-start justify-between gap-2 mb-1.5">
                   <div className="min-w-0">
-                    <p className="font-medium text-sm text-gray-900 truncate">{lot.product_name}</p>
-                    {lot.variant_summary && <p className="text-xs text-gray-400">{lot.variant_summary}</p>}
+                    <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{lot.product_name}</p>
+                    {lot.variant_summary && <p className="text-xs text-gray-400 dark:text-gray-500">{lot.variant_summary}</p>}
                   </div>
                   <Badge variant={expired || urgent ? 'danger' : 'warning'}>
                     {expired ? t('stock.expired') : lot.days_remaining === 0 ? t('stock.today') : `${lot.days_remaining} j`}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>{t('stock.lot_prefix')} <span className="font-mono text-gray-700">{lot.lot_number}</span> · expire le {formatDate(lot.expiry_date)}</span>
-                  <span className="font-semibold text-gray-900 tabular-nums">{lot.quantity_remaining}</span>
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>{t('stock.lot_prefix')} <span className="font-mono text-gray-700 dark:text-gray-300">{lot.lot_number}</span> · expire le {formatDate(lot.expiry_date)}</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{lot.quantity_remaining}</span>
                 </div>
               </div>
             )
@@ -607,7 +607,7 @@ function InventaireTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           {t('stock.inventory_desc')}
         </p>
         <CanDo permission="stock.adjust">
@@ -622,16 +622,16 @@ function InventaireTab() {
       </div>
 
       {/* ── Vue tableau (sm+) ── */}
-      <div className="hidden sm:block rounded-xl border border-gray-200 bg-white overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-100 text-sm">
-          <thead className="bg-gray-50">
+      <div className="hidden sm:block rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-700/60 text-sm">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr>
               {[t('common.reference'), t('common.date'), t('stock.created_by'), t('products.title'), t('common.status'), ''].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">{h}</th>
+                <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700/60">
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
@@ -648,13 +648,13 @@ function InventaireTab() {
               data?.data.map((s) => (
                 <tr
                   key={s.id}
-                  className="hover:bg-gray-50 cursor-pointer transition"
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/40 cursor-pointer transition"
                   onClick={() => navigate(`/stock/inventory/${s.uid}`)}
                 >
-                  <td className="px-4 py-3 font-mono text-sm font-semibold text-gray-900">{s.reference}</td>
-                  <td className="px-4 py-3 text-gray-600">{formatDate(s.created_at)}</td>
-                  <td className="px-4 py-3 text-gray-600">{s.creator?.name ?? '—'}</td>
-                  <td className="px-4 py-3 text-gray-600">{s.items_count ?? 0}</td>
+                  <td className="px-4 py-3 font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">{s.reference}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{formatDate(s.created_at)}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{s.creator?.name ?? '—'}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{s.items_count ?? 0}</td>
                   <td className="px-4 py-3">
                     <Badge variant={s.status === 'confirmed' ? 'success' : 'warning'}>
                       {s.status === 'confirmed' ? t('stock.confirmed') : t('purchases.draft')}
@@ -666,7 +666,7 @@ function InventaireTab() {
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); setDeleteTarget(s) }}
-                          className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                          className="rounded p-1.5 text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600"
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
@@ -684,7 +684,7 @@ function InventaireTab() {
       <div className="sm:hidden space-y-2">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-gray-200 bg-white p-4 space-y-2">
+            <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 space-y-2">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-3 w-24" />
             </div>
@@ -696,15 +696,15 @@ function InventaireTab() {
             <div
               key={s.id}
               onClick={() => navigate(`/stock/inventory/${s.uid}`)}
-              className="rounded-xl border border-gray-200 bg-white p-4 active:bg-gray-50 cursor-pointer"
+              className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 active:bg-gray-50 dark:active:bg-gray-700/40 cursor-pointer"
             >
               <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="font-mono text-sm font-semibold text-gray-900">{s.reference}</span>
+                <span className="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">{s.reference}</span>
                 <Badge variant={s.status === 'confirmed' ? 'success' : 'warning'}>
                   {s.status === 'confirmed' ? t('stock.confirmed') : t('purchases.draft')}
                 </Badge>
               </div>
-              <p className="text-xs text-gray-400">{formatDate(s.created_at)} · {s.items_count ?? 0} produit{(s.items_count ?? 0) > 1 ? 's' : ''}</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">{formatDate(s.created_at)} · {s.items_count ?? 0} produit{(s.items_count ?? 0) > 1 ? 's' : ''}</p>
             </div>
           ))
         )}
@@ -734,17 +734,17 @@ function InventaireTab() {
         }
       >
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {t('stock.new_inventory_desc')}
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('stock.notes_optional')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('stock.notes_optional')}</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
               placeholder={t('stock.notes_placeholder')}
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-primary resize-none"
+              className="w-full rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder:text-gray-500 px-3 py-2 text-sm outline-none focus:border-brand-primary resize-none"
             />
           </div>
         </div>
@@ -769,8 +769,8 @@ function InventaireTab() {
           </>
         }
       >
-        <p className="text-sm text-gray-600">
-          {t('stock.delete_inventory_confirm')} <strong>{deleteTarget?.reference}</strong> ? {t('stock.delete_inventory_no_adjust')}
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {t('stock.delete_inventory_confirm')} <strong className="dark:text-gray-200">{deleteTarget?.reference}</strong> ? {t('stock.delete_inventory_no_adjust')}
         </p>
       </Modal>
     </div>
@@ -798,7 +798,7 @@ export default function StockPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t('stock.title')}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('stock.title')}</h1>
         <CanDo permission="stock.adjust">
           <Button onClick={() => openAdjust()} icon={<PlusIcon className="h-4 w-4" />}>
             {t('stock.adjust')}
@@ -807,7 +807,7 @@ export default function StockPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex gap-6 -mb-px">
           {(['movements', 'alerts', 'expiring', 'inventaire'] as Tab[]).map((tabKey) => (
             <button
@@ -818,7 +818,7 @@ export default function StockPage() {
                 'pb-3 text-sm font-medium border-b-2 transition',
                 tab === tabKey
                   ? 'border-brand-primary text-brand-primary'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600',
               ].join(' ')}
             >
               {t(`stock.tab_${tabKey === 'inventaire' ? 'inventory' : tabKey}`)}

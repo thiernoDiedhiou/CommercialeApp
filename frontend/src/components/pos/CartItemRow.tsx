@@ -21,9 +21,9 @@ export function CartItemRow({ item, index, onRemove, onUpdateQty, onUpdateDiscou
     .join(' — ')
 
   return (
-    <div className="py-2.5 border-b border-gray-100 last:border-0">
+    <div className="py-2.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-medium text-gray-800 leading-tight flex-1 min-w-0 truncate">
+        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 leading-tight flex-1 min-w-0 truncate">
           {designation}
         </p>
         <button
@@ -38,7 +38,7 @@ export function CartItemRow({ item, index, onRemove, onUpdateQty, onUpdateDiscou
 
       <div className="mt-1.5 flex items-center gap-2 flex-wrap">
         {item.unit_weight !== null ? (
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-gray-500 dark:text-gray-400">
             {item.unit_weight} {item.product.unit ?? 'kg'} × {formatCurrency(item.unit_price)}
           </span>
         ) : (
@@ -47,7 +47,7 @@ export function CartItemRow({ item, index, onRemove, onUpdateQty, onUpdateDiscou
               type="button"
               onClick={() => onUpdateQty(index, item.quantity - 1)}
               aria-label="Diminuer la quantité"
-              className="h-6 w-6 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition"
+              className="h-6 w-6 rounded border border-gray-200 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             >
               <MinusIcon className="h-3 w-3" />
             </button>
@@ -57,26 +57,26 @@ export function CartItemRow({ item, index, onRemove, onUpdateQty, onUpdateDiscou
               value={item.quantity}
               aria-label="Quantité"
               onChange={(e) => onUpdateQty(index, parseInt(e.target.value) || 1)}
-              className="w-10 rounded border border-gray-200 text-center text-sm py-0.5"
+              className="w-10 rounded border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 text-center text-sm py-0.5"
             />
             <button
               type="button"
               onClick={() => onUpdateQty(index, item.quantity + 1)}
               aria-label="Augmenter la quantité"
-              className="h-6 w-6 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition"
+              className="h-6 w-6 rounded border border-gray-200 dark:border-gray-600 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             >
               <PlusIcon className="h-3 w-3" />
             </button>
-            <span className="text-xs text-gray-400 ml-1">× {formatCurrency(item.unit_price)}</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500 ml-1">× {formatCurrency(item.unit_price)}</span>
           </div>
         )}
-        <span className="ml-auto text-sm font-semibold text-gray-900">
+        <span className="ml-auto text-sm font-semibold text-gray-900 dark:text-gray-100">
           {formatCurrency(lineTotal)}
         </span>
       </div>
 
       <div className="mt-1 flex items-center gap-1.5">
-        <span className="text-[11px] text-gray-400">Remise</span>
+        <span className="text-[11px] text-gray-400 dark:text-gray-500">Remise</span>
         <PriceInput
           value={item.discount || null}
           onChange={(v) => onUpdateDiscount(index, v ?? 0)}

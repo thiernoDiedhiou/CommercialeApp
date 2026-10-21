@@ -120,14 +120,14 @@ export default function ProductsPage() {
       header: t('common.name'),
       render: (p) => (
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 shrink-0 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-xs overflow-hidden">
+          <div className="h-10 w-10 shrink-0 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400 dark:text-gray-500 text-xs overflow-hidden">
             {p.image_url
               ? <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
               : <span>{p.name.charAt(0).toUpperCase()}</span>
             }
           </div>
           <div>
-            <p className="font-medium text-gray-900">{p.name}</p>
+            <p className="font-medium text-gray-900 dark:text-gray-100">{p.name}</p>
             {p.brand && (
               <p className="text-xs text-gray-400 leading-none mt-0.5">{p.brand.name}</p>
             )}
@@ -145,14 +145,14 @@ export default function ProductsPage() {
       key: 'sku',
       header: 'SKU',
       render: (p) => (
-        <span className="font-mono text-xs text-gray-500">{p.sku ?? '—'}</span>
+        <span className="font-mono text-xs text-gray-500 dark:text-gray-400">{p.sku ?? '—'}</span>
       ),
     },
     {
       key: 'category',
       header: t('common.category'),
       render: (p) => (
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-gray-600 dark:text-gray-400">
           {flatCats.find((c) => c.id === p.category_id)?.name ?? '—'}
         </span>
       ),
@@ -162,7 +162,7 @@ export default function ProductsPage() {
       header: t('common.price'),
       align: 'right',
       render: (p) => (
-        <span className="font-medium text-gray-900">{formatCurrency(p.price)}</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(p.price)}</span>
       ),
     },
     {
@@ -192,7 +192,7 @@ export default function ProductsPage() {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); navigate(`/products/${p.uid}/edit`) }}
-              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300"
               title={t('common.edit')}
             >
               <PencilSquareIcon className="h-4 w-4" />
@@ -202,7 +202,7 @@ export default function ProductsPage() {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setDeleteTarget(p) }}
-              className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+              className="rounded p-1.5 text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600"
               title={t('common.delete')}
             >
               <TrashIcon className="h-4 w-4" />
@@ -217,7 +217,7 @@ export default function ProductsPage() {
     <div className="space-y-4 p-4 sm:p-6">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">{t('products.title')}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">{t('products.title')}</h1>
         <div className="flex gap-2">
           <CanDo permission="products.import">
             <Button
@@ -285,21 +285,21 @@ export default function ProductsPage() {
           const low = !p.has_variants && p.alert_threshold !== null && p.stock_quantity <= p.alert_threshold
           return (
             <div className="flex items-start gap-3 px-4 py-3">
-              <div className="h-10 w-10 shrink-0 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
+              <div className="h-10 w-10 shrink-0 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
                 {p.image_url
                   ? <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
-                  : <span className="text-xs font-semibold text-gray-400">{p.name.charAt(0).toUpperCase()}</span>
+                  : <span className="text-xs font-semibold text-gray-400 dark:text-gray-500">{p.name.charAt(0).toUpperCase()}</span>
                 }
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-medium text-gray-900 truncate">{p.name}</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100 truncate">{p.name}</p>
                     {p.sku && <p className="text-xs font-mono text-gray-400">{p.sku}</p>}
                     {cat && <p className="text-xs text-gray-400">{cat.name}</p>}
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className="font-medium text-gray-900">{formatCurrency(p.price)}</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(p.price)}</span>
                     {!p.has_variants && (
                       <span className={`text-xs font-semibold ${low ? 'text-red-600' : 'text-emerald-600'}`}>
                         {t('stock.title')} : {p.stock_quantity}
@@ -364,9 +364,9 @@ export default function ProductsPage() {
                 <p className="text-2xl font-bold text-blue-700">{importResult.updated}</p>
                 <p className="text-xs text-blue-600">{t('products.import_updated')}</p>
               </div>
-              <div className="rounded-lg bg-gray-100 p-3">
-                <p className="text-2xl font-bold text-gray-600">{importResult.skipped}</p>
-                <p className="text-xs text-gray-500">{t('products.import_skipped')}</p>
+              <div className="rounded-lg bg-gray-100 dark:bg-gray-700 p-3">
+                <p className="text-2xl font-bold text-gray-600 dark:text-gray-300">{importResult.skipped}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('products.import_skipped')}</p>
               </div>
             </div>
 
@@ -404,7 +404,7 @@ export default function ProductsPage() {
                 className={`w-full rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors ${
                   importFile
                     ? 'border-brand-primary bg-brand-primary/5 text-brand-primary'
-                    : 'border-gray-300 text-gray-400 hover:border-brand-primary hover:text-brand-primary'
+                    : 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:border-brand-primary hover:text-brand-primary'
                 }`}
               >
                 <ArrowUpTrayIcon className="mx-auto mb-2 h-8 w-8" aria-hidden="true" />
@@ -427,15 +427,15 @@ export default function ProductsPage() {
                 onChange={(e) => setUpdateExisting(e.target.checked)}
                 className="h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-700 dark:text-gray-300">
                 {t('products.update_existing')}
               </span>
             </label>
 
             {/* Télécharger le modèle */}
-            <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2.5">
+            <div className="flex items-center gap-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 px-3 py-2.5">
               <ArrowDownTrayIcon className="h-4 w-4 shrink-0 text-gray-400" />
-              <span className="text-xs text-gray-500">{t('products.import_need_format')}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{t('products.import_need_format')}</span>
               <button
                 type="button"
                 onClick={handleDownloadTemplate}
@@ -478,9 +478,9 @@ export default function ProductsPage() {
           </>
         }
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t('common.confirm_delete')}{' '}
-          <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ?{' '}
+          <span className="font-semibold text-gray-900 dark:text-gray-100">«{deleteTarget?.name}»</span> ?{' '}
           {t('products.delete_warning')}
         </p>
       </Modal>

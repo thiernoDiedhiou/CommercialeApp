@@ -99,25 +99,25 @@ export default function ShopOrdersPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-gray-900">{t('shop_orders.title')}</h1>
-        <span className="text-sm text-gray-500">{t('shop_orders.order_count', { count: total })}</span>
+        <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{t('shop_orders.title')}</h1>
+        <span className="text-sm text-gray-500 dark:text-gray-400">{t('shop_orders.order_count', { count: total })}</span>
       </div>
 
       {/* ── Filtres ─────────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-wrap gap-3">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 flex flex-wrap gap-3">
         <input
           type="text"
           placeholder={t('shop_orders.search_placeholder')}
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          className="flex-1 min-w-48 px-4 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-gray-900 transition-colors"
+          className="flex-1 min-w-48 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder:text-gray-500 text-sm outline-none focus:border-gray-900 transition-colors"
         />
 
         <select
           aria-label={t('shop_orders.filter_status_label')}
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-gray-900 bg-white"
+          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm outline-none focus:border-gray-900 bg-white"
         >
           <option value="">{t('shop_orders.all_statuses')}</option>
           {Object.keys(STATUS_CSS).map((k) => (
@@ -126,16 +126,16 @@ export default function ShopOrdersPage() {
         </select>
 
         <input type="date" aria-label="Date de début" value={fromDate} onChange={(e) => setFromDate(e.target.value)}
-          className="px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-gray-900" />
+          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm outline-none focus:border-gray-900" />
         <input type="date" aria-label="Date de fin" value={toDate} onChange={(e) => setToDate(e.target.value)}
-          className="px-3 py-2 rounded-xl border border-gray-200 text-sm outline-none focus:border-gray-900" />
+          className="px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm outline-none focus:border-gray-900" />
       </div>
 
       {/* ── Table ───────────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-40">
-            <div className="w-7 h-7 rounded-full border-4 border-gray-200 border-t-gray-500 animate-spin" />
+            <div className="w-7 h-7 rounded-full border-4 border-gray-200 dark:border-gray-600 border-t-gray-500 dark:border-t-gray-300 animate-spin" />
           </div>
         ) : orders.length === 0 ? (
           <EmptyState icon={<ShoppingBagIcon className="h-7 w-7" />} title={t('shop_orders.empty_title')} description={t('shop_orders.empty_desc')} />
@@ -143,7 +143,7 @@ export default function ShopOrdersPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
+                <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                   {([
                     t('shop_orders.col_ref'),
                     t('shop_orders.col_customer'),
@@ -154,13 +154,13 @@ export default function ShopOrdersPage() {
                     t('common.date'),
                     t('common.actions'),
                   ]).map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide whitespace-nowrap">
+                    <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide whitespace-nowrap">
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700/60">
                 {orders.map((order) => (
                   <OrderRow
                     key={order.uid}
@@ -180,12 +180,12 @@ export default function ShopOrdersPage() {
       {lastPage > 1 && (
         <div className="flex items-center justify-center gap-2">
           <button type="button" disabled={page <= 1} onClick={() => setPage(page - 1)}
-            className="px-4 py-2 rounded-xl border border-gray-200 text-sm disabled:opacity-40 hover:bg-gray-50">
+            className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 text-sm dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700">
             ←
           </button>
-          <span className="text-sm text-gray-600">{page} / {lastPage}</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">{page} / {lastPage}</span>
           <button type="button" disabled={page >= lastPage} onClick={() => setPage(page + 1)}
-            className="px-4 py-2 rounded-xl border border-gray-200 text-sm disabled:opacity-40 hover:bg-gray-50">
+            className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 text-sm dark:text-gray-300 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700">
             →
           </button>
         </div>
@@ -244,33 +244,33 @@ function OrderRow({
   const cancel  = () => setPending(null)
 
   return (
-    <tr className="hover:bg-gray-50 transition-colors">
-      <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">{order.reference}</td>
-      <td className="px-4 py-3 text-gray-900 whitespace-nowrap">{order.customer_name}</td>
-      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{order.customer_phone}</td>
-      <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">
+    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
+      <td className="px-4 py-3 font-mono text-xs text-gray-700 dark:text-gray-300 whitespace-nowrap">{order.reference}</td>
+      <td className="px-4 py-3 text-gray-900 dark:text-gray-100 whitespace-nowrap">{order.customer_name}</td>
+      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{order.customer_phone}</td>
+      <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
         {Math.round(order.total).toLocaleString('fr-FR')} F
       </td>
-      <td className="px-4 py-3 text-gray-500 whitespace-nowrap capitalize">
+      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap capitalize">
         {order.payment_method === 'cod' ? t('shop_orders.payment_cod') : 'WhatsApp'}
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
         <StatusBadge status={order.status} />
       </td>
-      <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
+      <td className="px-4 py-3 text-gray-400 dark:text-gray-500 text-xs whitespace-nowrap">
         {formatDateTime(order.created_at)}
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
         {pending ? (
           /* ── Confirmation inline ── */
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-gray-600">{pending.label} ?</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400">{pending.label} ?</span>
             <button type="button" disabled={isUpdating} onClick={confirm}
-              className="px-2.5 py-1 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-700 disabled:opacity-50">
+              className="px-2.5 py-1 rounded-lg bg-gray-900 dark:bg-gray-100 dark:text-gray-900 text-white text-xs font-medium hover:bg-gray-700 dark:hover:bg-gray-200 disabled:opacity-50">
               {t('common.yes')}
             </button>
             <button type="button" onClick={cancel}
-              className="px-2.5 py-1 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50">
+              className="px-2.5 py-1 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-700">
               {t('common.no')}
             </button>
           </div>
@@ -291,7 +291,7 @@ function OrderRow({
               </button>
             )}
             <button type="button" onClick={onDetail}
-              className="px-3 py-1 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50">
+              className="px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-xs font-medium hover:bg-gray-50 dark:hover:bg-gray-700">
               {t('common.details')}
             </button>
           </div>
@@ -329,9 +329,9 @@ function OrderDetailModal({
   if (!order) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="bg-white rounded-2xl p-8 flex items-center gap-3">
-          <div className="w-6 h-6 rounded-full border-4 border-gray-200 border-t-gray-500 animate-spin" />
-          <span className="text-sm text-gray-500">{t('common.loading')}</span>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 flex items-center gap-3">
+          <div className="w-6 h-6 rounded-full border-4 border-gray-200 dark:border-gray-600 border-t-gray-500 dark:border-t-gray-300 animate-spin" />
+          <span className="text-sm text-gray-500 dark:text-gray-400">{t('common.loading')}</span>
         </div>
       </div>
     )
@@ -343,18 +343,18 @@ function OrderDetailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60" onClick={onClose}>
       <div
-        className="bg-white w-full sm:max-w-lg sm:rounded-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-white dark:bg-gray-800 w-full sm:max-w-lg sm:rounded-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white flex items-center justify-between px-5 py-4 border-b border-gray-100 z-10">
+        <div className="sticky top-0 bg-white dark:bg-gray-800 flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-700 z-10">
           <div>
-            <h2 className="font-semibold text-gray-900">{order.reference}</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{formatDateTime(order.created_at)}</p>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">{order.reference}</h2>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{formatDateTime(order.created_at)}</p>
           </div>
           <div className="flex items-center gap-2">
             <StatusBadge status={order.status} />
-            <button type="button" onClick={onClose} aria-label="Fermer" className="p-1 rounded-full hover:bg-gray-100 text-gray-400">
+            <button type="button" onClick={onClose} aria-label="Fermer" className="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500">
               <XMarkIcon className="h-5 w-5" aria-hidden="true" />
             </button>
           </div>
@@ -377,12 +377,12 @@ function OrderDetailModal({
               <div className="space-y-2">
                 {order.items.map((item: ShopOrderAdminItem) => (
                   <div key={item.id} className="flex justify-between text-sm">
-                    <span className="text-gray-700">
+                    <span className="text-gray-700 dark:text-gray-300">
                       {item.product_name}
-                      {item.variant_name && <span className="text-gray-400"> · {item.variant_name}</span>}
-                      <span className="text-gray-400"> × {item.quantity}</span>
+                      {item.variant_name && <span className="text-gray-400 dark:text-gray-500"> · {item.variant_name}</span>}
+                      <span className="text-gray-400 dark:text-gray-500"> × {item.quantity}</span>
                     </span>
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
                       {Math.round(item.total).toLocaleString('fr-FR')} F
                     </span>
                   </div>
@@ -404,16 +404,16 @@ function OrderDetailModal({
           {/* Actions */}
           {pending ? (
             /* ── Confirmation inline ── */
-            <div className="flex items-center gap-3 pt-1 p-3 rounded-xl bg-gray-50 border border-gray-200">
-              <p className="text-sm text-gray-700 flex-1">
+            <div className="flex items-center gap-3 pt-1 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600">
+              <p className="text-sm text-gray-700 dark:text-gray-300 flex-1">
                 {t('shop_orders.confirm_action', { label: pending.label })}
               </p>
               <button type="button" disabled={isUpdating} onClick={confirm}
-                className="px-4 py-2 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 disabled:opacity-50">
+                className="px-4 py-2 rounded-xl bg-gray-900 dark:bg-gray-100 dark:text-gray-900 text-white text-sm font-medium hover:bg-gray-700 dark:hover:bg-gray-200 disabled:opacity-50">
                 {t('common.yes')}
               </button>
               <button type="button" onClick={cancel}
-                className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-100">
+                className="px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700">
                 {t('common.no')}
               </button>
             </div>
@@ -452,7 +452,7 @@ function OrderDetailModal({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{title}</p>
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">{title}</p>
       <div className="space-y-1.5">{children}</div>
     </div>
   )
@@ -461,8 +461,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-gray-500">{label}</span>
-      <span className={bold ? 'font-bold text-gray-900' : 'text-gray-700'}>{value}</span>
+      <span className="text-gray-500 dark:text-gray-400">{label}</span>
+      <span className={bold ? 'font-bold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}>{value}</span>
     </div>
   )
 }

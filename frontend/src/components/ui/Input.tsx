@@ -17,7 +17,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="mb-1 block text-sm font-medium text-gray-700"
+            className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
           >
             {label}
             {required && <span className="ml-0.5 text-red-500" aria-hidden="true">*</span>}
@@ -27,12 +27,12 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           ref={ref}
           id={inputId}
           className={cn(
-            'block w-full rounded-lg border px-3 py-2.5 text-sm transition-colors',
-            'placeholder:text-gray-400',
+            'block w-full rounded-lg border px-3 py-2.5 text-sm transition-colors text-gray-900 dark:text-gray-100',
+            'placeholder:text-gray-400 dark:placeholder:text-gray-500',
             'focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent',
             error
-              ? 'border-red-300 bg-red-50'
-              : 'border-gray-300 bg-white hover:border-gray-400',
+              ? 'border-red-300 bg-red-50 dark:bg-red-900/20'
+              : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500',
             className,
           )}
           aria-invalid={error ? true : undefined}
@@ -45,7 +45,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           </p>
         )}
         {hint && !error && (
-          <p id={`${inputId}-hint`} className="mt-1 text-xs text-gray-500">
+          <p id={`${inputId}-hint`} className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             {hint}
           </p>
         )}
@@ -74,7 +74,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div>
         {label && (
-          <label htmlFor={selectId} className="mb-1 block text-sm font-medium text-gray-700">
+          <label htmlFor={selectId} className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
             {label}
             {required && <span className="ml-0.5 text-red-500" aria-hidden="true">*</span>}
           </label>
@@ -83,9 +83,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           id={selectId}
           className={cn(
-            'block w-full rounded-lg border px-3 py-2.5 text-sm bg-white transition-colors',
+            'block w-full rounded-lg border px-3 py-2.5 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors',
             'focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent',
-            error ? 'border-red-300' : 'border-gray-300 hover:border-gray-400',
+            error ? 'border-red-300' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500',
             className,
           )}
           aria-invalid={error ? true : undefined}
@@ -94,7 +94,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           {children}
         </select>
         {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-        {hint && !error && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
+        {hint && !error && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{hint}</p>}
       </div>
     )
   },
@@ -119,7 +119,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div>
         {label && (
-          <label htmlFor={textareaId} className="mb-1 block text-sm font-medium text-gray-700">
+          <label htmlFor={textareaId} className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
             {label}
             {required && <span className="ml-0.5 text-red-500" aria-hidden="true">*</span>}
           </label>
@@ -129,10 +129,10 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={textareaId}
           rows={3}
           className={cn(
-            'block w-full rounded-lg border px-3 py-2.5 text-sm transition-colors resize-y',
-            'placeholder:text-gray-400',
+            'block w-full rounded-lg border px-3 py-2.5 text-sm transition-colors resize-y text-gray-900 dark:text-gray-100',
+            'placeholder:text-gray-400 dark:placeholder:text-gray-500',
             'focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent',
-            error ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-white hover:border-gray-400',
+            error ? 'border-red-300 bg-red-50 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500',
             className,
           )}
           aria-invalid={error ? true : undefined}

@@ -26,7 +26,7 @@ function SkeletonRow() {
     <tr>
       {Array.from({ length: 6 }).map((_, i) => (
         <td key={i} className="px-4 py-3">
-          <div className="h-4 bg-gray-200 rounded animate-pulse" />
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
         </td>
       ))}
     </tr>
@@ -35,13 +35,13 @@ function SkeletonRow() {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-lg border border-gray-200 p-4 space-y-2 animate-pulse">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 space-y-2 animate-pulse">
       <div className="flex items-center justify-between">
-        <div className="h-5 w-20 bg-gray-200 rounded-full" />
-        <div className="h-4 w-24 bg-gray-100 rounded" />
+        <div className="h-5 w-20 bg-gray-200 dark:bg-gray-700 rounded-full" />
+        <div className="h-4 w-24 bg-gray-100 dark:bg-gray-700 rounded" />
       </div>
-      <div className="h-4 w-32 bg-gray-200 rounded" />
-      <div className="h-4 w-full bg-gray-100 rounded" />
+      <div className="h-4 w-32 bg-gray-200 dark:bg-gray-700 rounded" />
+      <div className="h-4 w-full bg-gray-100 dark:bg-gray-700 rounded" />
     </div>
   )
 }
@@ -131,7 +131,7 @@ export default function ActivityLogPage() {
     const config = MODULE_CONFIG[mod] ?? { label: mod, Icon: CogIcon }
     const { Icon, label } = config
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium uppercase text-gray-500">
+      <span className="inline-flex items-center gap-1 text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
         <Icon className="h-3.5 w-3.5" aria-hidden="true" />
         {label}
       </span>
@@ -155,14 +155,14 @@ export default function ActivityLogPage() {
           <div>
             <div className="flex items-center gap-2">
               <BoltIcon className="h-6 w-6 text-brand-primary" aria-hidden="true" />
-              <h1 className="text-xl font-bold text-gray-900">{t('activityLog.title')}</h1>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('activityLog.title')}</h1>
               {data && (
-                <span className="ml-2 rounded-full bg-gray-100 px-2.5 py-0.5 text-sm font-medium text-gray-600">
+                <span className="ml-2 rounded-full bg-gray-100 dark:bg-gray-700 px-2.5 py-0.5 text-sm font-medium text-gray-600 dark:text-gray-400">
                   {data.total}
                 </span>
               )}
             </div>
-            <p className="mt-0.5 text-sm text-gray-500">
+            <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
               {t('activityLog.subtitle')}
             </p>
           </div>
@@ -173,7 +173,7 @@ export default function ActivityLogPage() {
           <select
             value={action}
             onChange={(e) => { setAction(e.target.value); setPage(1) }}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 px-3 py-2 text-sm shadow-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
           >
             {ACTIONS.map((a) => (
               <option key={a.value} value={a.value}>{a.label}</option>
@@ -183,7 +183,7 @@ export default function ActivityLogPage() {
           <select
             value={module}
             onChange={(e) => { setModule(e.target.value); setPage(1) }}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 px-3 py-2 text-sm shadow-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
           >
             {MODULES.map((m) => (
               <option key={m.value} value={m.value}>{m.label}</option>
@@ -191,54 +191,54 @@ export default function ActivityLogPage() {
           </select>
 
           <div className="flex items-center gap-2">
-            <label htmlFor="al-from" className="text-sm text-gray-600 whitespace-nowrap">{t('activityLog.from_label')}</label>
+            <label htmlFor="al-from" className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{t('activityLog.from_label')}</label>
             <input
               id="al-from"
               type="date"
               value={from}
               onChange={(e) => { setFrom(e.target.value); setPage(1) }}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 px-3 py-2 text-sm shadow-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
             />
           </div>
 
           <div className="flex items-center gap-2">
-            <label htmlFor="al-to" className="text-sm text-gray-600 whitespace-nowrap">{t('activityLog.to_label')}</label>
+            <label htmlFor="al-to" className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">{t('activityLog.to_label')}</label>
             <input
               id="al-to"
               type="date"
               value={to}
               onChange={(e) => { setTo(e.target.value); setPage(1) }}
-              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+              className="rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 px-3 py-2 text-sm shadow-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
             />
           </div>
         </div>
 
         {/* Tableau desktop */}
-        <div className="hidden md:block overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="hidden md:block overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
               <tr>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   {t('activityLog.col_datetime')}
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   {t('activityLog.col_agent')}
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   {t('activityLog.col_action')}
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   {t('activityLog.col_module')}
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   {t('activityLog.col_description')}
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   {t('activityLog.col_ip')}
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 bg-white">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700/60 bg-white dark:bg-gray-800">
               {isLoading
                 ? Array.from({ length: 8 }).map((_, i) => <SkeletonRow key={i} />)
                 : entries.length === 0
@@ -250,12 +250,12 @@ export default function ActivityLogPage() {
                     </tr>
                   )
                   : entries.map((entry) => (
-                    <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                    <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
                         {formatDateTime(entry.created_at)}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-sm font-medium text-gray-900">{entry.user_name}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{entry.user_name}</span>
                       </td>
                       <td className="px-4 py-3">
                         {actionBadge(entry.action)}
@@ -263,10 +263,10 @@ export default function ActivityLogPage() {
                       <td className="px-4 py-3">
                         <ModuleBadge module={entry.module} />
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate">
+                      <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 max-w-xs truncate">
                         {entry.description}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-400">
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-400 dark:text-gray-500">
                         {entry.ip_address ?? '—'}
                       </td>
                     </tr>
@@ -285,23 +285,23 @@ export default function ActivityLogPage() {
                 <EmptyState icon={<MagnifyingGlassIcon className="h-7 w-7" />} title={t('activityLog.empty_title')} description={t('activityLog.empty_desc')} />
               )
               : entries.map((entry) => (
-                <div key={entry.id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm space-y-2">
+                <div key={entry.id} className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 shadow-sm space-y-2">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2 flex-wrap">
                       {actionBadge(entry.action)}
                       <ModuleBadge module={entry.module} />
                     </div>
-                    <span className="text-xs text-gray-400">{formatDateTime(entry.created_at)}</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{formatDateTime(entry.created_at)}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">{entry.user_name}</span>
-                    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500">
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{entry.user_name}</span>
+                    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                       {entry.user_role}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-700">{entry.description}</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">{entry.description}</p>
                   {entry.ip_address && (
-                    <p className="text-xs text-gray-400">{entry.ip_address}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{entry.ip_address}</p>
                   )}
                 </div>
               ))

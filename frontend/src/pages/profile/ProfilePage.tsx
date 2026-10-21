@@ -11,6 +11,7 @@ import {
   EyeSlashIcon,
   LockClosedIcon,
   UserCircleIcon,
+  GlobeAltIcon,
 } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/store/authStore'
@@ -18,7 +19,13 @@ import { updateProfile, uploadAvatar, deleteAvatar } from '@/services/api/profil
 import { getApiErrorMessage } from '@/lib/errors'
 import { toast } from '@/store/toastStore'
 import Input from '@/components/ui/Input'
+import { Select } from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
+
+const LOCALE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'fr', label: 'Français' },
+  { value: 'en', label: 'English' },
+]
 
 function compressAvatar(file: File): Promise<File> {
   return new Promise((resolve, reject) => {
@@ -48,7 +55,8 @@ function compressAvatar(file: File): Promise<File> {
 }
 
 const infoSchema = z.object({
-  name: z.string().min(2),
+  name:   z.string().min(2),
+  locale: z.enum(['fr', 'en']),
 })
 type InfoValues = z.infer<typeof infoSchema>
 
@@ -63,10 +71,10 @@ type PasswordValues = z.infer<typeof passwordSchema>
 
 function Card({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-6 shadow-sm">
       <div className="flex items-center gap-2 mb-5">
-        <span className="text-gray-500">{icon}</span>
-        <h2 className="text-base font-semibold text-gray-800">{title}</h2>
+        <span className="text-gray-500 dark:text-gray-400">{icon}</span>
+        <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">{title}</h2>
       </div>
       {children}
     </div>
@@ -88,13 +96,13 @@ function PasswordField({
   const [visible, setVisible] = useState(false)
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
       <div className="relative">
         <input
           {...registration}
           type={visible ? 'text' : 'password'}
           autoComplete={autoComplete}
-          className="w-full rounded-lg border border-gray-200 px-3 py-2 pr-10 text-sm outline-none focus:border-indigo-400 transition"
+          className="w-full rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 pr-10 text-sm outline-none focus:border-indigo-400 transition"
         />
         <button
           type="button"
@@ -115,7 +123,7 @@ function PasswordField({
 }
 
 export default function ProfilePage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const qc           = useQueryClient()
   const me           = useAuthStore((s) => s.user)
   const setAuth      = useAuthStore((s) => s.setAuth)
@@ -169,19 +177,25 @@ export default function ProfilePage() {
 
   const infoForm = useForm<InfoValues>({
     resolver: zodResolver(infoSchema),
-    defaultValues: { name: me?.name ?? '' },
+    defaultValues: {
+      name:   me?.name ?? '',
+      locale: (me?.locale ?? 'fr') as 'fr' | 'en',
+    },
   })
 
   const infoMutation = useMutation({
-    mutationFn: (v: InfoValues) => updateProfile({ name: v.name }),
+    mutationFn: (v: InfoValues) => updateProfile({ name: v.name, locale: v.locale }),
     onSuccess: (updated) => {
       if (token && tenant) {
-        setAuth(token, { ...me!, name: updated.name }, perms, tenant, subscription, planFeatures)
+        setAuth(token, { ...me!, name: updated.name, locale: updated.locale }, perms, tenant, subscription, planFeatures)
+      }
+      if (updated.locale) {
+        i18n.changeLanguage(updated.locale)
       }
       qc.invalidateQueries({ queryKey: ['users'] })
       setInfoError(null)
       toast.success(t('profile.name_updated'))
-      infoForm.reset({ name: updated.name })
+      infoForm.reset({ name: updated.name, locale: (updated.locale ?? 'fr') as 'fr' | 'en' })
     },
     onError: (err) => setInfoError(getApiErrorMessage(err)),
   })
@@ -245,7 +259,7 @@ export default function ProfilePage() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={avatarMutation.isPending || deleteAvatarMutation.isPending}
-            className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-600 shadow-sm hover:bg-gray-50 hover:text-gray-900 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 hover:text-gray-900 dark:hover:text-gray-100 transition-colors disabled:opacity-50"
           >
             <CameraIcon className="h-4 w-4" />
             {t('profile.change_avatar')}
@@ -264,7 +278,7 @@ export default function ProfilePage() {
           )}
         </div>
 
-        <p className="text-sm text-gray-400">{me?.email}</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500">{me?.email}</p>
       </div>
 
       {/* Informations personnelles */}
@@ -279,14 +293,26 @@ export default function ProfilePage() {
             {...infoForm.register('name')}
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('profile.email_address')}
             </label>
-            <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 px-3 py-2 text-sm text-gray-500 dark:text-gray-400">
               <span className="flex-1">{me?.email}</span>
-              <LockClosedIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+              <LockClosedIcon className="h-3.5 w-3.5 shrink-0 text-gray-400 dark:text-gray-500" />
             </div>
-            <p className="mt-1 text-xs text-gray-400">{t('profile.email_readonly')}</p>
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">{t('profile.email_readonly')}</p>
+          </div>
+          <div>
+            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-1">
+              <GlobeAltIcon className="h-4 w-4 text-gray-400" />
+              {t('profile.interface_language')}
+            </label>
+            <Select {...infoForm.register('locale')}>
+              {LOCALE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </Select>
+            <p className="mt-1 text-xs text-gray-400">{t('profile.interface_language_hint')}</p>
           </div>
           <div className="flex justify-end">
             <Button

@@ -27,32 +27,54 @@ function useBrandColors(): { primary: string; secondary: string } {
   return colors
 }
 
+function fmtXDate(dateStr: string, totalPoints: number): string {
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  if (totalPoints <= 7) {
+    // Affiche "12 Oct"
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+      .replace('.', '')
+  }
+  if (totalPoints <= 31) {
+    // Affiche "12/10"
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`
+  }
+  // 90 jours → affiche "Oct '24"
+  return d.toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }).replace('.', '')
+}
+
 export default function WeekChart({ data }: WeekChartProps) {
   const { primary, secondary } = useBrandColors()
-  const lastIndex = data.length - 1
+  const lastIndex   = data.length - 1
+  const totalPoints = data.length
+
+  // Pour 30/90 jours, n'afficher qu'un tick sur N pour éviter l'encombrement
+  const tickInterval = totalPoints <= 7 ? 0 : totalPoints <= 31 ? 4 : 14
 
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <BarChart data={data} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+      <BarChart data={data} margin={{ top: 4, right: 4, left: 10, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
         <XAxis
-          dataKey="label"
-          tick={{ fontSize: 12, fill: '#6b7280' }}
+          dataKey="date"
+          tick={{ fontSize: 11, fill: '#9ca3af' }}
           axisLine={false}
           tickLine={false}
+          interval={tickInterval}
+          tickFormatter={(v: string) => fmtXDate(v, totalPoints)}
         />
         <YAxis
-          tick={{ fontSize: 12, fill: '#6b7280' }}
+          tick={{ fontSize: 11, fill: '#9ca3af' }}
           axisLine={false}
           tickLine={false}
           tickFormatter={(v: number) =>
             v >= 1_000_000
               ? `${(v / 1_000_000).toFixed(1)}M`
               : v >= 1_000
-                ? `${(v / 1_000).toFixed(0)}k`
+                ? `${Math.round(v / 1_000)}k`
                 : String(v)
           }
-          width={48}
+          width={52}
         />
         <Tooltip
           formatter={(value: number) => [formatCurrency(value), 'CA']}

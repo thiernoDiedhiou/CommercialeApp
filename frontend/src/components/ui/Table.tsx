@@ -43,7 +43,7 @@ export function Table<T>({
   return (
     <>
       {mobileCard && (
-        <div className="sm:hidden divide-y divide-gray-100 bg-white rounded-xl border border-slate-200">
+        <div className="sm:hidden divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800 rounded-xl border border-slate-200 dark:border-gray-700">
           {loading ? (
             Array.from({ length: skeletonRows }).map((_, i) => (
               <div key={i} className="px-4 py-3 space-y-2">
@@ -54,7 +54,7 @@ export function Table<T>({
             ))
           ) : data.length === 0 ? (
             typeof emptyMessage === 'string' ? (
-              <p className="py-12 text-center text-sm text-slate-400">{emptyMessage}</p>
+              <p className="py-12 text-center text-sm text-slate-400 dark:text-gray-500">{emptyMessage}</p>
             ) : (
               emptyMessage
             )
@@ -63,7 +63,7 @@ export function Table<T>({
               <div
                 key={keyExtractor(row)}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
-                className={cn('transition-colors', onRowClick && 'cursor-pointer hover:bg-gray-50')}
+                className={cn('transition-colors', onRowClick && 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/40')}
               >
                 {mobileCard(row)}
               </div>
@@ -72,17 +72,17 @@ export function Table<T>({
         </div>
       )}
 
-      <div className={cn(mobileCard ? 'hidden sm:block' : '', 'overflow-x-auto rounded-xl border border-slate-200 bg-white', className)}>
-        <table className="min-w-full divide-y divide-slate-200">
+      <div className={cn(mobileCard ? 'hidden sm:block' : '', 'overflow-x-auto rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-800', className)}>
+        <table className="min-w-full divide-y divide-slate-200 dark:divide-gray-700">
           {/* En-tête */}
-          <thead className="bg-slate-50">
+          <thead className="bg-slate-50 dark:bg-gray-700/50">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
                   scope="col"
                   className={cn(
-                    'px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400',
+                    'px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-gray-500',
                     alignClasses[col.align ?? 'left'],
                     col.headerClassName,
                   )}
@@ -94,7 +94,7 @@ export function Table<T>({
           </thead>
 
           {/* Corps */}
-          <tbody className="divide-y divide-slate-100 bg-white">
+          <tbody className="divide-y divide-slate-100 dark:divide-gray-700/60 bg-white dark:bg-gray-800">
             {loading ? (
               Array.from({ length: skeletonRows }).map((_, i) => (
                 <SkeletonRow key={i} cols={columns.length} />
@@ -103,7 +103,7 @@ export function Table<T>({
               <tr>
                 <td colSpan={columns.length}>
                   {typeof emptyMessage === 'string' ? (
-                    <p className="py-12 text-center text-sm text-slate-400">{emptyMessage}</p>
+                    <p className="py-12 text-center text-sm text-slate-400 dark:text-gray-500">{emptyMessage}</p>
                   ) : (
                     emptyMessage
                   )}
@@ -116,14 +116,14 @@ export function Table<T>({
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   className={cn(
                     'transition-colors',
-                    onRowClick && 'cursor-pointer hover:bg-slate-50',
+                    onRowClick && 'cursor-pointer hover:bg-slate-50 dark:hover:bg-gray-700/40',
                   )}
                 >
                   {columns.map((col) => (
                     <td
                       key={col.key}
                       className={cn(
-                        'px-4 py-3 text-sm text-slate-700',
+                        'px-4 py-3 text-sm text-slate-700 dark:text-gray-300',
                         alignClasses[col.align ?? 'left'],
                         col.className,
                       )}

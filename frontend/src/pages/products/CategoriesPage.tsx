@@ -80,7 +80,7 @@ function ImagePicker({ currentUrl, onChange, onRemove }: ImagePickerProps) {
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{t('categories.image_label')}</label>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('categories.image_label')}</label>
       {preview ? (
         <div className="relative inline-block">
           <img
@@ -101,7 +101,7 @@ function ImagePicker({ currentUrl, onChange, onRemove }: ImagePickerProps) {
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="flex items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
+          className="flex items-center gap-2 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 px-4 py-3 text-sm text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         >
           <PhotoIcon className="h-5 w-5" />
           {t('categories.add_image')}
@@ -209,19 +209,19 @@ export default function CategoriesPage() {
       header: t('common.name'),
       render: (c) => (
         <div className={`flex items-center gap-3${c.depth > 0 ? ' pl-5' : ''}`}>
-          {c.depth > 0 && <span className="text-gray-300 text-xs select-none">└</span>}
+          {c.depth > 0 && <span className="text-gray-300 dark:text-gray-600 text-xs select-none">└</span>}
           {c.image_url ? (
             <img
               src={c.image_url}
               alt={c.name}
-              className="h-8 w-8 rounded-lg object-cover shrink-0 border border-gray-100"
+              className="h-8 w-8 rounded-lg object-cover shrink-0 border border-gray-100 dark:border-gray-700"
             />
           ) : (
-            <div className="h-8 w-8 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-              <span className="text-xs font-semibold text-gray-400">{c.name.charAt(0).toUpperCase()}</span>
+            <div className="h-8 w-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0">
+              <span className="text-xs font-semibold text-gray-400 dark:text-gray-500">{c.name.charAt(0).toUpperCase()}</span>
             </div>
           )}
-          <span className="font-medium text-gray-900">{c.name}</span>
+          <span className="font-medium text-gray-900 dark:text-gray-100">{c.name}</span>
         </div>
       ),
     },
@@ -229,7 +229,7 @@ export default function CategoriesPage() {
       key   : 'description',
       header: t('common.description'),
       render: (c) => (
-        <span className="text-sm text-gray-500 line-clamp-1">{c.description ?? '—'}</span>
+        <span className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">{c.description ?? '—'}</span>
       ),
     },
     {
@@ -252,7 +252,7 @@ export default function CategoriesPage() {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setModal({ mode: 'edit', category: c }) }}
-              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300"
               title={t('common.edit')}
             >
               <PencilSquareIcon className="h-4 w-4" />
@@ -276,7 +276,7 @@ export default function CategoriesPage() {
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">{t('categories.title')}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">{t('categories.title')}</h1>
         <CanDo permission="categories.create">
           <Button icon={<PlusIcon className="h-4 w-4" />} onClick={() => setModal({ mode: 'create' })}>
             {t('categories.new')}
@@ -294,23 +294,23 @@ export default function CategoriesPage() {
         mobileCard={(c) => (
           <div className="flex items-center gap-3 px-4 py-3">
             {c.image_url ? (
-              <img src={c.image_url} alt={c.name} className="h-10 w-10 rounded-lg object-cover shrink-0 border border-gray-100" />
+              <img src={c.image_url} alt={c.name} className="h-10 w-10 rounded-lg object-cover shrink-0 border border-gray-100 dark:border-gray-700" />
             ) : (
-              <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-                <span className="text-xs font-semibold text-gray-400">{c.name.charAt(0).toUpperCase()}</span>
+              <div className="h-10 w-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0">
+                <span className="text-xs font-semibold text-gray-400 dark:text-gray-500">{c.name.charAt(0).toUpperCase()}</span>
               </div>
             )}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <span className={`font-medium text-gray-900${c.depth > 0 ? ' pl-2' : ''}`}>{c.name}</span>
+                <span className={`font-medium text-gray-900 dark:text-gray-100${c.depth > 0 ? ' pl-2' : ''}`}>{c.name}</span>
                 <Badge variant={(c.products_count ?? 0) > 0 ? 'info' : 'default'}>{c.products_count ?? 0}</Badge>
               </div>
-              {c.description && <p className="text-xs text-gray-400 line-clamp-1">{c.description}</p>}
+              {c.description && <p className="text-xs text-gray-400 dark:text-gray-500 line-clamp-1">{c.description}</p>}
             </div>
             <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
               <CanDo permission="categories.edit">
                 <button type="button" onClick={() => setModal({ mode: 'edit', category: c })}
-                  className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+                  className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300">
                   <PencilSquareIcon className="h-4 w-4" />
                 </button>
               </CanDo>
@@ -344,12 +344,12 @@ export default function CategoriesPage() {
           <Input label={t('common.name')} required error={errors.name?.message} {...register('name')} />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {t('categories.parent')}
             </label>
             <select
               {...register('parent_id')}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-primary"
             >
               <option value="">{t('categories.no_parent')}</option>
               {availableParents.map((c) => (
@@ -387,10 +387,10 @@ export default function CategoriesPage() {
           </>
         }
       >
-        <div className="space-y-2 text-sm text-gray-600">
+        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
           <p>
             {t('categories.delete_confirm_text')}{' '}
-            <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ?
+            <span className="font-semibold text-gray-900 dark:text-gray-100">«{deleteTarget?.name}»</span> ?
           </p>
           {(deleteTarget?.products_count ?? 0) > 0 && (
             <p className="text-amber-600">

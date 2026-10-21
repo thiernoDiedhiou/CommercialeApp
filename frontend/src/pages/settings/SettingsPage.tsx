@@ -164,8 +164,8 @@ function SmtpSection() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-sm font-semibold text-gray-800">{t('settings.smtp_title')}</h2>
-        <p className="mt-0.5 text-xs text-gray-500">{t('settings.smtp_desc')}</p>
+        <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('settings.smtp_title')}</h2>
+        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{t('settings.smtp_desc')}</p>
       </div>
 
       <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
@@ -176,7 +176,7 @@ function SmtpSection() {
               <Input label={t('settings.smtp_port')} type="number" placeholder="587" {...register('smtp_port')} />
             </div>
             <div>
-              <label htmlFor="smtp-enc" className="mb-1.5 block text-sm font-medium text-gray-700">{t('settings.smtp_encryption')}</label>
+              <label htmlFor="smtp-enc" className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('settings.smtp_encryption')}</label>
               <Select id="smtp-enc" {...register('smtp_encryption')}>
                 <option value="tls">TLS</option>
                 <option value="ssl">SSL</option>
@@ -185,14 +185,14 @@ function SmtpSection() {
           </div>
           <Input label={t('settings.smtp_username')} placeholder="contact@ma-boutique.sn" {...register('smtp_username')} />
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('settings.smtp_password')}</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('settings.smtp_password')}</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
                 aria-label={t('settings.smtp_password')}
                 {...register('smtp_password')}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 pr-9 text-sm outline-none focus:border-brand-primary transition"
+                className="w-full rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 pr-9 text-sm outline-none focus:border-brand-primary transition"
               />
               <button
                 type="button"
@@ -241,7 +241,6 @@ function SmtpSection() {
 const boutiqueSchema = z.object({
   name:                 z.string().min(2, 'Nom requis'),
   sector:               z.enum(['general', 'food', 'fashion', 'cosmetic', 'pharmacy', 'electronics', 'services', 'ecommerce']),
-  locale:               z.enum(['fr', 'en']).default('fr'),
   timezone:             z.string().default('Africa/Dakar'),
   country:              z.string().length(2).default('SN'),
   phone_country:        z.string().length(2).default('SN'),
@@ -264,11 +263,6 @@ const SECTOR_LABELS: Record<string, string> = {
   electronics: 'High-tech / Électronique',
   services:    'Prestations de services',
   ecommerce:   'E-commerce',
-}
-
-const LOCALE_LABELS: Record<string, string> = {
-  fr: 'Français',
-  en: 'English',
 }
 
 const TIMEZONE_OPTIONS = [
@@ -327,7 +321,6 @@ function BoutiqueTab() {
       reset({
         name:                 data.name,
         sector:               data.sector as BoutiqueValues['sector'],
-        locale:               (data.locale ?? 'fr') as BoutiqueValues['locale'],
         timezone:             data.timezone ?? 'Africa/Dakar',
         country:              data.country  ?? 'SN',
         phone_country:        'SN',
@@ -373,7 +366,6 @@ function BoutiqueTab() {
       {
         name:                 vals.name,
         sector:               vals.sector,
-        locale:               vals.locale,
         timezone:             vals.timezone,
         country:              vals.country,
         phone:                normalizePhone(vals.phone),
@@ -400,7 +392,8 @@ function BoutiqueTab() {
           secondary_color: updated.secondary_color,
           logo_url:        updated.logo_url ?? null,
           slug:            tenant?.slug ?? '',
-          locale:          updated.locale ?? tenant?.locale ?? 'fr',
+          locale:          tenant?.locale ?? 'fr',
+          timezone:        updated.timezone ?? tenant?.timezone ?? 'Africa/Dakar',
         }, subscription, planFeatures)
       }
       setLogoFile(null)
@@ -422,14 +415,14 @@ function BoutiqueTab() {
     <form onSubmit={handleSubmit((v) => { if (!logoError) mutation.mutate(v) })} className="space-y-6">
       {/* Logo */}
       <div>
-        <p className="mb-2 text-sm font-medium text-gray-700">{t('settings.shop_logo')}</p>
+        <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">{t('settings.shop_logo')}</p>
         <div className="flex items-center gap-4">
           {logoPreview ? (
             <div className="relative">
               <img
                 src={logoPreview}
                 alt="Logo"
-                className="h-20 w-20 rounded-xl object-contain ring-1 ring-gray-200 bg-gray-50 p-1"
+                className="h-20 w-20 rounded-xl object-contain ring-1 ring-gray-200 dark:ring-gray-600 bg-gray-50 dark:bg-gray-700 p-1"
               />
               <button
                 type="button"
@@ -444,7 +437,7 @@ function BoutiqueTab() {
             <button
               type="button"
               onClick={() => logoInputRef.current?.click()}
-              className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-gray-300 text-gray-400 hover:border-brand-primary hover:text-brand-primary transition"
+              className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:border-brand-primary hover:text-brand-primary transition"
             >
               <PhotoIcon className="h-7 w-7" />
               <span className="text-xs font-medium">Logo</span>
@@ -475,7 +468,7 @@ function BoutiqueTab() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input label={t('settings.shop_name')} error={errors.name?.message} {...register('name')} />
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('settings.sector')}</label>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('settings.sector')}</label>
           <Select {...register('sector')}>
             {Object.entries(SECTOR_LABELS).map(([val, label]) => (
               <option key={val} value={val}>{label}</option>
@@ -483,15 +476,7 @@ function BoutiqueTab() {
           </Select>
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('settings.language')}</label>
-          <Select {...register('locale')}>
-            {Object.entries(LOCALE_LABELS).map(([val, label]) => (
-              <option key={val} value={val}>{label}</option>
-            ))}
-          </Select>
-        </div>
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('settings.timezone')}</label>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('settings.timezone')}</label>
           <Select {...register('timezone')}>
             {TIMEZONE_OPTIONS.map((tz) => (
               <option key={tz} value={tz}>{tz}</option>
@@ -499,7 +484,7 @@ function BoutiqueTab() {
           </Select>
         </div>
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('settings.country')}</label>
+          <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('settings.country')}</label>
           <Select {...register('country')}>
             {COUNTRY_OPTIONS.map((c) => (
               <option key={c.code} value={c.code}>{c.label} ({c.code})</option>
@@ -540,7 +525,7 @@ function BoutiqueTab() {
       </div>
 
       <div>
-        <p className="mb-3 text-sm font-medium text-gray-700">{t('settings.legal_info')} <span className="text-xs font-normal text-gray-400">{t('settings.legal_info_hint')}</span></p>
+        <p className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">{t('settings.legal_info')} <span className="text-xs font-normal text-gray-400 dark:text-gray-500">{t('settings.legal_info_hint')}</span></p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input
             label="RCCM"
@@ -558,15 +543,15 @@ function BoutiqueTab() {
       </div>
 
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">
+        <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
           {t('settings.business_desc')}
-          <span className="ml-1 text-xs font-normal text-gray-400">({t('common.optional').toLowerCase()})</span>
+          <span className="ml-1 text-xs font-normal text-gray-400 dark:text-gray-500">({t('common.optional').toLowerCase()})</span>
         </label>
         <textarea
           rows={3}
           maxLength={500}
           placeholder={t('settings.business_desc_placeholder')}
-          className="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+          className="w-full resize-none rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
           {...register('business_description')}
         />
         <p className="mt-1 text-xs text-gray-400">{t('settings.business_desc_hint')}</p>
@@ -681,7 +666,7 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
         }
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">{t('settings.user_created_info')}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{t('settings.user_created_info')}</p>
 
           <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
             <p className="text-xs font-medium text-indigo-500 mb-1">{t('settings.field_password')}</p>
@@ -724,30 +709,30 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
     >
       <form id="user-form" onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.field_name_required')}</label>
-          <input {...register('name')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('settings.field_name_required')}</label>
+          <input {...register('name')} className="w-full rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
           {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.field_email_required')}</label>
-          <input type="email" {...register('email')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('settings.field_email_required')}</label>
+          <input type="email" {...register('email')} className="w-full rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
           {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>}
         </div>
 
         {editing && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('settings.field_password')}
-                <span className="font-normal text-gray-400 ml-1">{t('settings.field_password_note')}</span>
+                <span className="font-normal text-gray-400 dark:text-gray-500 ml-1">{t('settings.field_password_note')}</span>
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   {...register('password' as keyof UserCreateValues)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 pr-10 text-sm outline-none focus:border-indigo-400 transition"
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 pr-10 text-sm outline-none focus:border-indigo-400 transition"
                 />
                 <button
                   type="button"
@@ -765,7 +750,7 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('settings.field_password_confirm')}
               </label>
               <div className="relative">
@@ -773,7 +758,7 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   {...register('password_confirmation' as keyof UserCreateValues)}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 pr-10 text-sm outline-none focus:border-indigo-400 transition"
+                  className="w-full rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 pr-10 text-sm outline-none focus:border-indigo-400 transition"
                 />
               </div>
               {'password_confirmation' in errors && errors.password_confirmation && (
@@ -791,12 +776,12 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
 
         <div className="flex items-center gap-3">
           <input type="checkbox" id="is_active_u" {...register('is_active')} className="h-4 w-4 rounded border-gray-300 text-indigo-600" />
-          <label htmlFor="is_active_u" className="text-sm text-gray-700">{t('settings.field_active')}</label>
+          <label htmlFor="is_active_u" className="text-sm text-gray-700 dark:text-gray-300">{t('settings.field_active')}</label>
         </div>
 
         {groups.length > 0 && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t('settings.col_groups')}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('settings.col_groups')}</label>
             <div className="flex flex-wrap gap-2">
               {groups.map((g) => {
                 const active = selectedGroupIds.includes(g.id)
@@ -806,7 +791,7 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
                     type="button"
                     onClick={() => toggleGroup(g.id)}
                     className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                      active ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      active ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
                     {g.name}
@@ -862,7 +847,7 @@ function UsersTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold text-gray-800">{t('settings.users_title')}</h2>
+        <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">{t('settings.users_title')}</h2>
         <Button size="sm" icon={<PlusIcon className="h-4 w-4" />} onClick={openCreate}>
           {t('settings.new_user')}
         </Button>
@@ -881,9 +866,9 @@ function UsersTab() {
           ))}
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-100">
+        <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
           <table className="w-full min-w-[480px] text-sm">
-            <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+            <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
               <tr>
                 <th className="px-4 py-3 text-left">{t('settings.col_name')}</th>
                 <th className="px-4 py-3 text-left hidden sm:table-cell">{t('settings.col_email')}</th>
@@ -892,15 +877,15 @@ function UsersTab() {
                 <th className="px-4 py-3 sr-only">{t('common.actions')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50 bg-white">
+            <tbody className="divide-y divide-gray-50 dark:divide-gray-700/60 bg-white dark:bg-gray-800">
               {users.map((u) => (
-                <tr key={u.id} className="hover:bg-gray-50/50 transition">
-                  <td className="px-4 py-3 font-medium text-gray-800">
+                <tr key={u.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition">
+                  <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-200">
                     {u.name}
                     {u.id === me?.id && <span className="ml-2 text-xs text-indigo-500">{t('settings.you')}</span>}
-                    <p className="text-xs text-gray-400 sm:hidden">{u.email}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 sm:hidden">{u.email}</p>
                   </td>
-                  <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{u.email}</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-gray-400 hidden sm:table-cell">{u.email}</td>
                   <td className="px-4 py-3 hidden md:table-cell">
                     <div className="flex flex-wrap gap-1">
                       {(u.groups ?? []).map((g) => (
@@ -919,7 +904,7 @@ function UsersTab() {
                       <button
                         type="button"
                         onClick={() => openEdit(u)}
-                        className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600 transition"
+                        className="rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-indigo-600 transition"
                         title={t('common.edit')}
                       >
                         <PencilSquareIcon className="h-4 w-4" />
@@ -929,7 +914,7 @@ function UsersTab() {
                           type="button"
                           onClick={() => setDeleteTarget(u)}
                           disabled={deletingId === u.uid}
-                          className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 transition disabled:opacity-40"
+                          className="rounded p-1 text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition disabled:opacity-40"
                           title={t('common.delete')}
                         >
                           <TrashIcon className="h-4 w-4" />
@@ -974,9 +959,9 @@ function UsersTab() {
           </>
         }
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t('settings.delete_user_confirm')}{' '}
-          <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ?
+          <span className="font-semibold text-gray-900 dark:text-gray-100">«{deleteTarget?.name}»</span> ?
           {' '}{t('common.action_irreversible')}
         </p>
       </Modal>
@@ -1072,16 +1057,16 @@ function PermissionsModal({ group, isOpen, onClose }: PermissionsModalProps) {
           const checkedCount = ids.filter((id) => checked.includes(id)).length
 
           return (
-            <div key={module} className="rounded-lg border border-gray-100 overflow-hidden">
+            <div key={module} className="rounded-lg border border-gray-100 dark:border-gray-700 overflow-hidden">
               <button
                 type="button"
                 onClick={() => toggleModule(perms as Permission[])}
-                className="flex w-full items-center justify-between bg-gray-50 px-4 py-2.5 text-left hover:bg-gray-100 transition"
+                className="flex w-full items-center justify-between bg-gray-50 dark:bg-gray-700/50 px-4 py-2.5 text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition"
               >
-                <span className="text-sm font-semibold text-gray-700">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   {MODULE_LABELS[module] ?? module}
                 </span>
-                <span className="text-xs text-gray-400">{checkedCount}/{ids.length}</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">{checkedCount}/{ids.length}</span>
               </button>
               <div className="grid grid-cols-2 gap-x-6 gap-y-2 px-4 py-3">
                 {(perms as Permission[]).map((p) => (
@@ -1092,7 +1077,7 @@ function PermissionsModal({ group, isOpen, onClose }: PermissionsModalProps) {
                       onChange={() => toggle(p.id)}
                       className="h-4 w-4 rounded border-gray-300 text-indigo-600"
                     />
-                    <span className="text-sm text-gray-600">{p.display_name}</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">{p.display_name}</span>
                   </label>
                 ))}
               </div>
@@ -1160,16 +1145,16 @@ function GroupModal({ isOpen, editing, onClose }: GroupModalProps) {
     >
       <form id="group-form" onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t('settings.field_name_required')}</label>
-          <input {...register('name')} className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('settings.field_name_required')}</label>
+          <input {...register('name')} className="w-full rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
           {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t('settings.field_description')} <span className="font-normal text-gray-400">({t('common.optional').toLowerCase()})</span>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {t('settings.field_description')} <span className="font-normal text-gray-400 dark:text-gray-500">({t('common.optional').toLowerCase()})</span>
           </label>
-          <textarea {...register('description')} rows={2} className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
+          <textarea {...register('description')} rows={2} className="w-full resize-none rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm outline-none focus:border-indigo-400 transition" />
         </div>
 
         {apiError && (
@@ -1213,7 +1198,7 @@ function GroupsTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold text-gray-800">{t('settings.groups_title')}</h2>
+        <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">{t('settings.groups_title')}</h2>
         <Button size="sm" icon={<PlusIcon className="h-4 w-4" />} onClick={openCreate}>
           {t('settings.new_group')}
         </Button>
@@ -1226,10 +1211,10 @@ function GroupsTab() {
       ) : (
         <div className="space-y-3">
           {groups.map((g) => (
-            <div key={g.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
+            <div key={g.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-700/40 px-4 py-3 shadow-sm">
               <div>
-                <p className="font-medium text-gray-800">{g.name}</p>
-                <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-gray-400">
+                <p className="font-medium text-gray-800 dark:text-gray-200">{g.name}</p>
+                <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
                   <span>{g.users_count ?? 0} {(g.users_count ?? 0) > 1 ? t('settings.user_plural') : t('settings.user_singular')}</span>
                   <span>·</span>
                   <span>{g.permissions?.length ?? 0} {(g.permissions?.length ?? 0) > 1 ? t('settings.perm_plural') : t('settings.perm_singular')}</span>
@@ -1241,14 +1226,14 @@ function GroupsTab() {
                 <button
                   type="button"
                   onClick={() => openPerms(g)}
-                  className="rounded px-2.5 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 transition"
+                  className="rounded px-2.5 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition"
                 >
                   {t('settings.permissions_btn')}
                 </button>
                 <button
                   type="button"
                   onClick={() => openEdit(g)}
-                  className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600 transition"
+                  className="rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-indigo-600 transition"
                   title={t('settings.rename')}
                 >
                   <PencilSquareIcon className="h-4 w-4" />
@@ -1257,7 +1242,7 @@ function GroupsTab() {
                   type="button"
                   onClick={() => setDeleteGroupTarget(g)}
                   disabled={deletingId === g.uid}
-                  className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 transition disabled:opacity-40"
+                  className="rounded p-1 text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition disabled:opacity-40"
                   title={t('common.delete')}
                 >
                   <TrashIcon className="h-4 w-4" />
@@ -1294,9 +1279,9 @@ function GroupsTab() {
           </>
         }
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t('settings.delete_group_confirm')}{' '}
-          <span className="font-semibold text-gray-900">«{deleteGroupTarget?.name}»</span> ?
+          <span className="font-semibold text-gray-900 dark:text-gray-100">«{deleteGroupTarget?.name}»</span> ?
           {' '}{t('settings.delete_group_effect')}
         </p>
       </Modal>
@@ -1313,8 +1298,8 @@ function SubscriptionLockedNotice() {
       <div className="rounded-full bg-amber-50 p-4">
         <CreditCardIcon className="h-7 w-7 text-amber-500" />
       </div>
-      <h3 className="text-sm font-semibold text-gray-900">{t('settings.locked_title')}</h3>
-      <p className="text-sm text-gray-500 max-w-xs leading-relaxed">
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('settings.locked_title')}</h3>
+      <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs leading-relaxed">
         {t('settings.locked_desc')}
       </p>
     </div>
@@ -1354,24 +1339,22 @@ function SubscriptionInfoCard() {
   const isExpired      = subscriptionExpired
     || subscription?.status === 'expired'
     || subscription?.status === 'cancelled'
-  const canRenew = isExpiringSoon || isExpired
-
-  const [showRenew, setShowRenew] = useState(
+  const [showPlanModal, setShowPlanModal] = useState(
     () => searchParams.get('renouveler') === '1' || isExpired,
   )
   const [selectedPlan,  setSelectedPlan]  = useState<string>('')
   const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'yearly'>('monthly')
 
-  // Nettoie le param ?renouveler=1 de l'URL une fois le formulaire ouvert
+  // Nettoie le param ?renouveler=1 de l'URL une fois le modal ouvert
   useEffect(() => {
     if (searchParams.get('renouveler') === '1') {
       setSearchParams((p) => { p.delete('renouveler'); return p }, { replace: true })
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-ouvrir le formulaire de renouvellement dès que l'abonnement expire
+  // Auto-ouvrir le modal dès que l'abonnement expire
   useEffect(() => {
-    if (isExpired) setShowRenew(true)
+    if (isExpired) setShowPlanModal(true)
   }, [isExpired])
 
   const { data: plans = [] } = useQuery({
@@ -1400,26 +1383,24 @@ function SubscriptionInfoCard() {
   if (!subscription && !subscriptionExpired) return null
 
   return (
-    <div className="rounded-xl bg-white p-4 sm:p-5 shadow-sm ring-1 ring-gray-100">
+    <div className="rounded-xl bg-white dark:bg-gray-800 p-4 sm:p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
-          <CreditCardIcon className="h-4 w-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-800">{t('settings.my_subscription')}</h2>
+          <CreditCardIcon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+          <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('settings.my_subscription')}</h2>
         </div>
-        {canRenew && !showRenew && !isExpired && (
-          <button
-            type="button"
-            onClick={() => setShowRenew(true)}
-            className="text-xs font-semibold text-brand-primary hover:underline"
-          >
-            {t('settings.renew')}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => setShowPlanModal(true)}
+          className="text-xs font-semibold text-brand-primary hover:underline"
+        >
+          {isExpired ? t('settings.renew') : t('settings.manage_subscription')}
+        </button>
       </div>
 
       {subscription ? (
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm font-medium text-gray-900">
+          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
             {subscription.plan_name ?? '—'}
           </span>
           <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${STATUS_COLOR[subscription.status] ?? 'bg-gray-100 text-gray-500'}`}>
@@ -1445,13 +1426,17 @@ function SubscriptionInfoCard() {
         </p>
       )}
 
-      {/* ── Renouvellement — design premium ──────────────────────────────── */}
-      {showRenew && (
-        <div className="mt-5 space-y-5">
+      <Modal
+        isOpen={showPlanModal}
+        onClose={() => setShowPlanModal(false)}
+        title={t('settings.change_plan_title')}
+        size="xl"
+      >
+        <div className="space-y-6 pb-2">
 
           {/* Toggle mensuel / annuel */}
           <div className="flex items-center justify-center">
-            <div className="inline-flex items-center gap-1 rounded-full bg-gray-100 p-1">
+            <div className="inline-flex items-center gap-1 rounded-full bg-gray-100 dark:bg-gray-700 p-1">
               {(['monthly', 'yearly'] as const).map((c) => {
                 const discountPct = plans.find(p => p.yearly_discount_pct)?.yearly_discount_pct
                 return (
@@ -1461,8 +1446,8 @@ function SubscriptionInfoCard() {
                     onClick={() => setSelectedCycle(c)}
                     className={`relative flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition-all ${
                       selectedCycle === c
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                     }`}
                   >
                     {c === 'monthly' ? t('settings.cycle_monthly') : t('settings.cycle_yearly')}
@@ -1478,13 +1463,14 @@ function SubscriptionInfoCard() {
           </div>
 
           {/* Grille de plans */}
-          <div className={`grid gap-3 ${plans.length === 2 ? 'grid-cols-2' : plans.length >= 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1'}`}>
+          <div className={`grid gap-4 ${plans.length === 2 ? 'grid-cols-2' : plans.length >= 3 ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1'}`}>
             {plans.map((p) => {
-              const monthlyPrice = parseInt(p.price_monthly)
-              const yearlyPrice  = p.price_yearly ? Math.round(parseInt(p.price_yearly) / 12) : null
-              const displayPrice = selectedCycle === 'yearly' && yearlyPrice ? yearlyPrice : monthlyPrice
-              const isSelected   = selectedPlan === p.uid
-              const isPopular    = !!p.badge
+              const monthlyPrice   = parseInt(p.price_monthly)
+              const yearlyPrice    = p.price_yearly ? Math.round(parseInt(p.price_yearly) / 12) : null
+              const displayPrice   = selectedCycle === 'yearly' && yearlyPrice ? yearlyPrice : monthlyPrice
+              const isSelected     = selectedPlan === p.uid
+              const isCurrentPlan  = subscription?.plan_slug === p.slug
+              const isPopular      = !!p.badge
 
               return (
                 <button
@@ -1494,7 +1480,7 @@ function SubscriptionInfoCard() {
                   className={`relative flex flex-col rounded-xl border-2 p-4 text-left transition-all ${
                     isSelected
                       ? 'border-brand-primary bg-brand-primary/5 shadow-md'
-                      : 'border-gray-200 bg-white hover:border-brand-primary/50 hover:shadow-sm'
+                      : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700/50 hover:border-brand-primary/50 hover:shadow-sm'
                   }`}
                 >
                   {isPopular && (
@@ -1505,9 +1491,16 @@ function SubscriptionInfoCard() {
 
                   {/* Nom + tagline */}
                   <div className="mb-3">
-                    <p className={`text-sm font-bold ${isSelected ? 'text-brand-primary' : 'text-gray-900'}`}>
-                      {p.name}
-                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className={`text-sm font-bold ${isSelected ? 'text-brand-primary' : 'text-gray-900 dark:text-gray-100'}`}>
+                        {p.name}
+                      </p>
+                      {isCurrentPlan && (
+                        <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                          {t('settings.current_plan')}
+                        </span>
+                      )}
+                    </div>
                     {p.tagline && (
                       <p className="mt-0.5 text-xs text-gray-500">{p.tagline}</p>
                     )}
@@ -1516,7 +1509,7 @@ function SubscriptionInfoCard() {
                   {/* Prix */}
                   <div className="mb-3">
                     <div className="flex items-baseline gap-1">
-                      <span className={`text-2xl font-extrabold ${isSelected ? 'text-brand-primary' : 'text-gray-900'}`}>
+                      <span className={`text-2xl font-extrabold ${isSelected ? 'text-brand-primary' : 'text-gray-900 dark:text-gray-100'}`}>
                         {displayPrice.toLocaleString('fr-FR')}
                       </span>
                       <span className="text-xs text-gray-400">XOF/mois</span>
@@ -1533,6 +1526,20 @@ function SubscriptionInfoCard() {
                     <p>{p.max_users === 0 ? '∞' : p.max_users} utilisateur{p.max_users !== 1 ? 's' : ''}</p>
                     <p>{p.max_products === 0 ? '∞' : p.max_products.toLocaleString('fr-FR')} produits</p>
                   </div>
+
+                  {/* Features principales */}
+                  {p.features && p.features.length > 0 && (
+                    <ul className="mt-3 space-y-1">
+                      {p.features.slice(0, 4).map((f, i) => (
+                        <li key={i} className="flex items-center gap-1.5 text-[11px] text-gray-600">
+                          <svg className="h-3 w-3 shrink-0 text-emerald-500" viewBox="0 0 12 12" fill="none">
+                            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                          {f}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
 
                   {/* Coche sélection */}
                   {isSelected && (
@@ -1563,7 +1570,7 @@ function SubscriptionInfoCard() {
             </button>
             <button
               type="button"
-              onClick={() => { setShowRenew(false); setSelectedPlan('') }}
+              onClick={() => setShowPlanModal(false)}
               className="w-full rounded-xl py-2.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
             >
               {t('common.cancel')}
@@ -1574,7 +1581,7 @@ function SubscriptionInfoCard() {
             {t('settings.secure_payment')}
           </p>
         </div>
-      )}
+      </Modal>
     </div>
   )
 }
@@ -1609,10 +1616,10 @@ function InvoiceHistory() {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-gray-800">{t('settings.payment_history')}</h3>
-      <div className="overflow-hidden rounded-xl border border-gray-100">
+      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('settings.payment_history')}</h3>
+      <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-700">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+          <thead className="bg-gray-50 dark:bg-gray-700/50 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             <tr>
               <th className="px-4 py-2.5 text-left">{t('settings.tx_date')}</th>
               <th className="px-4 py-2.5 text-left hidden sm:table-cell">{t('settings.tx_plan')}</th>
@@ -1621,7 +1628,7 @@ function InvoiceHistory() {
               <th className="px-4 py-2.5 text-center">{t('settings.tx_status')}</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50 bg-white">
+          <tbody className="divide-y divide-gray-50 dark:divide-gray-700/60 bg-white dark:bg-gray-800">
             {isLoading
               ? Array.from({ length: 3 }).map((_, i) => (
                 <tr key={i}>
@@ -1636,15 +1643,15 @@ function InvoiceHistory() {
                 const statusCfg = TX_STATUS[tx.status] ?? { label: tx.status, className: 'bg-gray-100 text-gray-500' }
                 const cycleLabel = tx.billing_cycle === 'yearly' ? t('settings.tx_yearly') : t('settings.tx_monthly')
                 return (
-                  <tr key={tx.id} className="hover:bg-gray-50/50">
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                  <tr key={tx.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
                       {formatDate(tx.created_at)}
                     </td>
-                    <td className="px-4 py-3 font-medium text-gray-800 hidden sm:table-cell">
+                    <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-200 hidden sm:table-cell">
                       {tx.plan?.name ?? '—'}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{cycleLabel}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-800 whitespace-nowrap">
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 hidden sm:table-cell">{cycleLabel}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">
                       {tx.amount.toLocaleString('fr-FR')} {tx.currency}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -1704,37 +1711,37 @@ function FacturationTab() {
   return (
     <div className="space-y-8">
     <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="max-w-xl space-y-5">
-      <h2 className="text-base font-semibold text-gray-800">{t('settings.billing_title')}</h2>
+      <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200">{t('settings.billing_title')}</h2>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {t('settings.invoice_footer')}
         </label>
         <textarea
           rows={3}
           placeholder={t('settings.invoice_footer_placeholder')}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary resize-none"
+          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary resize-none"
           {...register('invoice_footer')}
         />
         <p className="mt-1 text-xs text-gray-400">{t('settings.invoice_footer_hint')}</p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
           {t('settings.invoice_prefix')}
         </label>
         <input
           type="text"
           maxLength={10}
           placeholder={t('settings.invoice_prefix_placeholder')}
-          className="w-48 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary font-mono"
+          className="w-48 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary font-mono"
           {...register('invoice_prefix')}
         />
         <p className="mt-1 text-xs text-gray-400">{t('settings.invoice_prefix_hint')}</p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">{t('settings.pdf_template')}</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">{t('settings.pdf_template')}</label>
         <div className="grid grid-cols-2 gap-3">
           {([
             {
@@ -1796,7 +1803,7 @@ function FacturationTab() {
               <input type="radio" value={value} {...register('pdf_template')} className="sr-only" />
               {preview}
               <div>
-                <p className="text-xs font-semibold text-gray-800">{label}</p>
+                <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">{label}</p>
                 <p className="text-[10px] text-gray-400 leading-tight">{desc}</p>
               </div>
             </label>
@@ -1811,7 +1818,7 @@ function FacturationTab() {
       </div>
     </form>
 
-    <hr className="border-gray-100" />
+    <hr className="border-gray-100 dark:border-gray-700" />
     <InvoiceHistory />
     </div>
   )
@@ -1909,7 +1916,8 @@ function VenteTab() {
           secondary_color: updated.secondary_color,
           logo_url:        updated.logo_url ?? null,
           slug:            tenant?.slug ?? '',
-          locale:          updated.locale ?? tenant?.locale ?? 'fr',
+          locale:          tenant?.locale ?? 'fr',
+          timezone:        tenant?.timezone ?? 'Africa/Dakar',
         }, subscription, planFeatures)
       }
       setSaved(true)
@@ -1929,8 +1937,8 @@ function VenteTab() {
       {/* Devise */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <CurrencyDollarIcon className="h-4 w-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-800">{t('settings.currency')}</h2>
+          <CurrencyDollarIcon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+          <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('settings.currency')}</h2>
         </div>
         <div className="max-w-xs">
           <Select {...register('currency')}>
@@ -1944,24 +1952,24 @@ function VenteTab() {
         </div>
       </div>
 
-      <hr className="border-gray-100" />
+      <hr className="border-gray-100 dark:border-gray-700" />
 
       {/* TVA */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <ReceiptPercentIcon className="h-4 w-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-800">{t('settings.vat_section')}</h2>
+          <ReceiptPercentIcon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+          <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('settings.vat_section')}</h2>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-md">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('settings.vat_rate')}</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('settings.vat_rate')}</label>
             <input
               type="number"
               min={0}
               max={100}
               step={0.1}
               {...register('default_vat_rate', { valueAsNumber: true })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
             />
             <p className="mt-1 text-xs text-gray-400">{t('settings.vat_rate_hint')}</p>
           </div>
@@ -1974,13 +1982,13 @@ function VenteTab() {
         </div>
       </div>
 
-      <hr className="border-gray-100" />
+      <hr className="border-gray-100 dark:border-gray-700" />
 
       {/* Modes de paiement POS */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <DevicePhoneMobileIcon className="h-4 w-4 text-gray-400" />
-          <h2 className="text-sm font-semibold text-gray-800">{t('settings.pos_payment')}</h2>
+          <DevicePhoneMobileIcon className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+          <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t('settings.pos_payment')}</h2>
         </div>
         <p className="mb-3 text-xs text-gray-500">{t('settings.pos_payment_hint')}</p>
         <div className="flex flex-wrap gap-2">
@@ -1994,7 +2002,7 @@ function VenteTab() {
                 className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
                   active
                     ? 'border-brand-primary bg-brand-primary/10 text-brand-primary'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                    : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'
                 }`}
               >
                 {label}
@@ -2004,7 +2012,7 @@ function VenteTab() {
         </div>
       </div>
 
-      <hr className="border-gray-100" />
+      <hr className="border-gray-100 dark:border-gray-700" />
 
       {/* Impression automatique */}
       <div>
@@ -2017,7 +2025,7 @@ function VenteTab() {
             className="mt-0.5 h-4 w-4 rounded border-gray-300 text-brand-primary"
           />
           <div>
-            <span className="text-sm font-medium text-gray-700">{t('settings.auto_print')}</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('settings.auto_print')}</span>
             <p className="text-xs text-gray-400 mt-0.5">{t('settings.auto_print_hint')}</p>
           </div>
         </label>
@@ -2060,13 +2068,13 @@ export default function SettingsPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
-      <h1 className="text-xl font-bold text-slate-900">{t('settings.title')}</h1>
+      <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">{t('settings.title')}</h1>
 
       {/* Carte abonnement — toujours visible en haut */}
       <SubscriptionInfoCard />
 
       <div className="overflow-x-auto">
-        <div className="flex gap-1 rounded-xl bg-gray-100 p-1 min-w-fit">
+        <div className="flex gap-1 rounded-xl bg-gray-100 dark:bg-gray-700 p-1 min-w-fit">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -2074,8 +2082,8 @@ export default function SettingsPage() {
               onClick={() => setActiveTab(t.id)}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-2 sm:px-4 text-sm font-medium transition whitespace-nowrap ${
                 activeTab === t.id
-                  ? 'bg-white text-gray-800 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 shadow-sm'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >
               {t.icon}
@@ -2085,7 +2093,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="rounded-xl bg-white p-4 sm:p-5 shadow-sm ring-1 ring-gray-100">
+      <div className="rounded-xl bg-white dark:bg-gray-800 p-4 sm:p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
         {activeTab === 'boutique'    && <BoutiqueTab />}
         {activeTab === 'vente'       && <VenteTab />}
         {activeTab === 'facturation' && <FacturationTab />}

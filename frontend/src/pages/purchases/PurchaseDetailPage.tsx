@@ -114,10 +114,10 @@ export default function PurchaseDetailPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="font-mono text-xl font-bold text-slate-900">{order.reference}</h1>
+            <h1 className="font-mono text-xl font-bold text-slate-900 dark:text-gray-100">{order.reference}</h1>
             <Badge variant={STATUS_VARIANT[order.status]}>{STATUS_LABEL[order.status]}</Badge>
           </div>
-          <p className="mt-0.5 text-sm text-gray-500">
+          <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
             {order.supplier ? order.supplier.name : t('purchases.no_supplier')}
             {' · '}
             {formatDate(order.created_at)}
@@ -152,28 +152,28 @@ export default function PurchaseDetailPage() {
 
       {/* Récapitulatif */}
       <div className="grid grid-cols-3 gap-3 sm:gap-4">
-        <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-100 text-center">
-          <p className="text-xs text-gray-500">{t('purchases.articles_count')}</p>
-          <p className="mt-0.5 text-lg font-bold text-gray-900">{(order.items ?? []).length}</p>
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-3 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 text-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('purchases.articles_count')}</p>
+          <p className="mt-0.5 text-lg font-bold text-gray-900 dark:text-gray-100">{(order.items ?? []).length}</p>
         </div>
-        <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-100 text-center">
-          <p className="text-xs text-gray-500">{t('purchases.total_amount_label')}</p>
-          <p className="mt-0.5 text-base font-bold text-gray-900">{formatCurrency(itemsTotal)}</p>
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-3 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 text-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('purchases.total_amount_label')}</p>
+          <p className="mt-0.5 text-base font-bold text-gray-900 dark:text-gray-100">{formatCurrency(itemsTotal)}</p>
         </div>
-        <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-100 text-center">
-          <p className="text-xs text-gray-500">{t('purchases.delivery_label')}</p>
-          <p className="mt-0.5 text-base font-bold text-gray-900">
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-3 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 text-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t('purchases.delivery_label')}</p>
+          <p className="mt-0.5 text-base font-bold text-gray-900 dark:text-gray-100">
             {order.expected_at ? formatDate(order.expected_at) : '—'}
           </p>
         </div>
       </div>
 
       {/* Table articles */}
-      <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
+      <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+              <tr className="border-b border-gray-100 dark:border-gray-700/60 text-left text-xs text-gray-500 dark:text-gray-400">
                 <th className="px-4 py-3 font-medium">{t('purchases.col_product')}</th>
                 <th className="px-4 py-3 text-right font-medium">{t('purchases.col_ordered')}</th>
                 <th className="px-4 py-3 text-right font-medium">{t('purchases.col_received')}</th>
@@ -182,31 +182,31 @@ export default function PurchaseDetailPage() {
                 <th className="px-4 py-3 text-right font-medium">{t('common.total')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-50 dark:divide-gray-700/40">
               {(order.items ?? []).map((item) => {
                 const remaining  = parseFloat(item.quantity_ordered) - parseFloat(item.quantity_received)
                 const lineTotal  = parseFloat(item.quantity_ordered) * parseFloat(item.unit_cost)
                 return (
-                  <tr key={item.id} className="hover:bg-gray-50/50">
+                  <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/40">
                     <td className="px-4 py-3">
-                      <p className="font-medium text-gray-900">{item.product?.name ?? `Produit #${item.product_id}`}</p>
-                      {item.variant && <p className="text-xs text-gray-500">{item.variant.attribute_summary}</p>}
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{item.product?.name ?? `Produit #${item.product_id}`}</p>
+                      {item.variant && <p className="text-xs text-gray-500 dark:text-gray-400">{item.variant.attribute_summary}</p>}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-700">{item.quantity_ordered}</td>
+                    <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{item.quantity_ordered}</td>
                     <td className="px-4 py-3 text-right font-medium text-emerald-600">{item.quantity_received}</td>
                     <td className={`px-4 py-3 text-right font-medium ${remaining > 0 ? 'text-amber-600' : 'text-gray-400'}`}>
                       {remaining > 0 ? String(parseFloat(remaining.toFixed(3))) : '—'}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-700">{formatCurrency(item.unit_cost)}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-900">{formatCurrency(lineTotal)}</td>
+                    <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{formatCurrency(item.unit_cost)}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(lineTotal)}</td>
                   </tr>
                 )
               })}
             </tbody>
             <tfoot>
-              <tr className="border-t border-gray-100">
-                <td colSpan={5} className="px-4 py-3 text-right text-sm font-semibold text-gray-700">{t('common.total')}</td>
-                <td className="px-4 py-3 text-right text-base font-bold text-gray-900">{formatCurrency(itemsTotal)}</td>
+              <tr className="border-t border-gray-100 dark:border-gray-700/60">
+                <td colSpan={5} className="px-4 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-300">{t('common.total')}</td>
+                <td className="px-4 py-3 text-right text-base font-bold text-gray-900 dark:text-gray-100">{formatCurrency(itemsTotal)}</td>
               </tr>
             </tfoot>
           </table>
@@ -215,9 +215,9 @@ export default function PurchaseDetailPage() {
 
       {/* Notes */}
       {order.notes && (
-        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.notes')}</p>
-          <p className="mt-1 text-sm text-gray-700">{order.notes}</p>
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.notes')}</p>
+          <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{order.notes}</p>
         </div>
       )}
 
@@ -228,7 +228,7 @@ export default function PurchaseDetailPage() {
           <Button loading={confirmMutation.isPending} onClick={() => confirmMutation.mutate()}>{t('common.confirm')}</Button>
         </>}
       >
-        <p className="text-sm text-gray-600">{t('purchases.confirm_text')}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400">{t('purchases.confirm_text')}</p>
       </Modal>
 
       {/* Modal annuler */}
@@ -238,7 +238,7 @@ export default function PurchaseDetailPage() {
           <Button variant="danger" loading={cancelMutation.isPending} onClick={() => cancelMutation.mutate()}>{t('purchases.cancel_action')}</Button>
         </>}
       >
-        <p className="text-sm text-gray-600">{t('purchases.cancel_text')}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400">{t('purchases.cancel_text')}</p>
       </Modal>
 
       {/* Modal réception */}
@@ -255,8 +255,8 @@ export default function PurchaseDetailPage() {
         </>}
       >
         <div className="space-y-3">
-          <p className="text-sm text-gray-500">{t('purchases.receive_instructions')}</p>
-          <div className="divide-y divide-gray-100">
+          <p className="text-sm text-gray-500 dark:text-gray-400">{t('purchases.receive_instructions')}</p>
+          <div className="divide-y divide-gray-100 dark:divide-gray-700/60">
             {receivableItems.map((item) => {
               const remaining  = parseFloat(item.quantity_ordered) - parseFloat(item.quantity_received)
               const hasExpiry  = item.product?.has_expiry === true
@@ -264,8 +264,8 @@ export default function PurchaseDetailPage() {
                 <div key={item.id} className="py-3 space-y-2">
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">{item.product?.name ?? `Produit #${item.product_id}`}</p>
-                      <p className="text-xs text-gray-500">{t('purchases.remaining_label')} : {String(parseFloat(remaining.toFixed(3)))}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.product?.name ?? `Produit #${item.product_id}`}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{t('purchases.remaining_label')} : {String(parseFloat(remaining.toFixed(3)))}</p>
                     </div>
                     <input
                       type="number"
@@ -275,30 +275,30 @@ export default function PurchaseDetailPage() {
                       value={receivedQtys[item.id] ?? ''}
                       onChange={(e) => setReceivedQtys((prev) => ({ ...prev, [item.id]: e.target.value }))}
                       placeholder={`Max ${parseFloat(remaining.toFixed(3))}`}
-                      className="w-28 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                      className="w-28 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                     />
                   </div>
                   {hasExpiry && (
                     <div className="ml-0 flex flex-wrap gap-3 pl-0">
                       <div className="flex-1 min-w-[160px]">
-                        <label className="block text-xs text-gray-500 mb-0.5">{t('purchases.lot_number')}</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t('purchases.lot_number')}</label>
                         <input
                           type="text"
                           title={t('purchases.lot_number')}
                           placeholder="LOT-2024-001"
                           value={lotNumbers[item.id] ?? ''}
                           onChange={(e) => setLotNumbers((prev) => ({ ...prev, [item.id]: e.target.value }))}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500 px-3 py-1.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                         />
                       </div>
                       <div className="flex-1 min-w-[160px]">
-                        <label className="block text-xs text-gray-500 mb-0.5">{t('purchases.expiry_date')}</label>
+                        <label className="block text-xs text-gray-500 dark:text-gray-400 mb-0.5">{t('purchases.expiry_date')}</label>
                         <input
                           type="date"
                           title={t('purchases.expiry_date')}
                           value={expiryDates[item.id] ?? ''}
                           onChange={(e) => setExpiryDates((prev) => ({ ...prev, [item.id]: e.target.value }))}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-1.5 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                         />
                       </div>
                     </div>

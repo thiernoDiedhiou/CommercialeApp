@@ -48,7 +48,7 @@ export default function SubscriptionBanner({ subscription }: Props) {
     const renewalUrl = siteSettings?.renewal_url
 
     return (
-      <div className="border-b border-red-200 bg-red-50 px-4 py-3 lg:px-6">
+      <div className="border-b border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-900/20 px-4 py-3 lg:px-6">
         <div className="flex flex-col gap-2 max-w-screen-xl mx-auto sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-2.5">
             <ExclamationTriangleIcon className="h-5 w-5 mt-0.5 shrink-0 text-red-500" aria-hidden="true" />
@@ -128,7 +128,7 @@ export default function SubscriptionBanner({ subscription }: Props) {
   const isUrgent  = days_remaining <= 1
   const isTrial   = billing_cycle === 'trial'
 
-  const bgColor   = isUrgent ? 'bg-red-50 border-red-200'   : 'bg-amber-50 border-amber-200'
+  const bgColor   = isUrgent ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-900'   : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-900'
   const iconColor = isUrgent ? 'text-red-500'                : 'text-amber-500'
   const textColor = isUrgent ? 'text-red-800'                : 'text-amber-800'
   const subColor  = isUrgent ? 'text-red-600'                : 'text-amber-600'

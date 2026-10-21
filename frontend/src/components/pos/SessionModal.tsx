@@ -107,30 +107,30 @@ export function SessionModal({ isOpen, mode, session, currency = 'XOF', onOpened
 
           {/* Ventilation par mode de paiement */}
           {Object.keys(summary.by_payment_method).length > 0 && (
-            <div className="rounded-xl bg-gray-50 p-3 space-y-1.5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Par mode de paiement</p>
+            <div className="rounded-xl bg-gray-50 dark:bg-gray-700/50 p-3 space-y-1.5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">Par mode de paiement</p>
               {Object.entries(summary.by_payment_method).map(([method, amount]) => (
                 <div key={method} className="flex justify-between text-sm">
-                  <span className="text-gray-600">{METHOD_LABELS[method] ?? method}</span>
-                  <span className="font-medium text-gray-800">{formatCurrency(amount)}</span>
+                  <span className="text-gray-600 dark:text-gray-400">{METHOD_LABELS[method] ?? method}</span>
+                  <span className="font-medium text-gray-800 dark:text-gray-200">{formatCurrency(amount)}</span>
                 </div>
               ))}
             </div>
           )}
 
           {/* Caisse */}
-          <div className="rounded-xl border border-gray-200 p-3 space-y-1.5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Récapitulatif de caisse</p>
+          <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-3 space-y-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-2">Récapitulatif de caisse</p>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Mise de caisse initiale</span>
-              <span className="text-gray-700">{formatCurrency(summary.opening_cash)}</span>
+              <span className="text-gray-500 dark:text-gray-400">Mise de caisse initiale</span>
+              <span className="text-gray-700 dark:text-gray-300">{formatCurrency(summary.opening_cash)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">Fond de caisse final</span>
-              <span className="text-gray-700">{formatCurrency(summary.closing_cash)}</span>
+              <span className="text-gray-500 dark:text-gray-400">Fond de caisse final</span>
+              <span className="text-gray-700 dark:text-gray-300">{formatCurrency(summary.closing_cash)}</span>
             </div>
-            <div className="flex justify-between text-sm font-semibold border-t border-gray-100 pt-1.5">
-              <span className="text-gray-700">Écart</span>
+            <div className="flex justify-between text-sm font-semibold border-t border-gray-100 dark:border-gray-700 pt-1.5">
+              <span className="text-gray-700 dark:text-gray-300">Écart</span>
               <span className={diff >= 0 ? 'text-emerald-600' : 'text-red-500'}>
                 {diff >= 0 ? '+' : ''}{formatCurrency(diff)}
               </span>
@@ -169,11 +169,11 @@ export function SessionModal({ isOpen, mode, session, currency = 'XOF', onOpened
       <div className="space-y-4">
         {isOpenMode ? (
           <>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Saisissez le montant en espèces présent dans le tiroir-caisse au démarrage.
             </p>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                 Mise de caisse initiale
               </label>
               <PriceInput
@@ -186,11 +186,11 @@ export function SessionModal({ isOpen, mode, session, currency = 'XOF', onOpened
           </>
         ) : (
           <>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               Comptez les espèces dans le tiroir et saisissez le montant. L'écart sera calculé automatiquement.
             </p>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                 Fond de caisse final (espèces comptées)
               </label>
               <PriceInput
@@ -203,13 +203,13 @@ export function SessionModal({ isOpen, mode, session, currency = 'XOF', onOpened
           </>
         )}
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">Notes (optionnel)</label>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Notes (optionnel)</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
             placeholder={isOpenMode ? "Observations à l'ouverture…" : "Observations à la clôture…"}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm resize-none focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500 px-3 py-2 text-sm resize-none focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
           />
         </div>
       </div>

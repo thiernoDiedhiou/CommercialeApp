@@ -31,18 +31,18 @@ export function VariantModal({ product, onSelect, onClose }: Props) {
               className={[
                 'w-full flex items-center justify-between rounded-lg border px-4 py-3 text-left transition',
                 outOfStock
-                  ? 'cursor-not-allowed border-gray-200 bg-gray-50 opacity-50'
-                  : 'border-gray-200 hover:border-brand-primary hover:bg-brand-primary/10 cursor-pointer',
+                  ? 'cursor-not-allowed border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 opacity-50'
+                  : 'border-gray-200 dark:border-gray-600 hover:border-brand-primary hover:bg-brand-primary/10 cursor-pointer',
               ].join(' ')}
             >
               <div>
-                <p className="font-medium text-gray-900">{v.attribute_summary}</p>
-                {v.sku && <p className="text-xs text-gray-400">SKU : {v.sku}</p>}
+                <p className="font-medium text-gray-900 dark:text-gray-100">{v.attribute_summary}</p>
+                {v.sku && <p className="text-xs text-gray-400 dark:text-gray-500">SKU : {v.sku}</p>}
               </div>
               <div className="text-right shrink-0 ml-4">
                 <p className="font-bold text-brand-primary">{formatCurrency(Number(v.price))}</p>
                 <p
-                  className={`text-xs ${outOfStock ? 'text-red-500 font-medium' : 'text-gray-400'}`}
+                  className={`text-xs ${outOfStock ? 'text-red-500 font-medium' : 'text-gray-400 dark:text-gray-500'}`}
                 >
                   {outOfStock ? 'Rupture' : `Stock : ${v.stock_quantity}`}
                 </p>

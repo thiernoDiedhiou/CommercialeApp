@@ -57,11 +57,11 @@ export default function BillingSuccessPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-8 text-center">
-          <div className="h-16 w-16 mx-auto mb-4 rounded-full bg-gray-100 animate-pulse" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Vérification en cours…</h1>
-          <p className="text-gray-500">Confirmation de votre paiement.</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 p-8 text-center">
+          <div className="h-16 w-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-700 animate-pulse" />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Vérification en cours…</h1>
+          <p className="text-gray-500 dark:text-gray-400">Confirmation de votre paiement.</p>
         </div>
       </div>
     )
@@ -69,11 +69,11 @@ export default function BillingSuccessPage() {
 
   if (status === 'error') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-8 text-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 p-8 text-center">
           <ExclamationCircleIcon className="h-16 w-16 text-yellow-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Vérification incomplète</h1>
-          <p className="text-gray-500 mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Vérification incomplète</h1>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">
             Votre paiement est en cours de traitement. Si l'accès n'est pas encore disponible,
             rafraîchissez la page dans quelques instants.
           </p>
@@ -90,13 +90,13 @@ export default function BillingSuccessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-8 text-center">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 p-8 text-center">
         <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           Paiement confirmé !
         </h1>
-        <p className="text-gray-500 mb-6">
+        <p className="text-gray-500 dark:text-gray-400 mb-6">
           Votre abonnement a été activé avec succès.
           Vous avez maintenant accès à toutes les fonctionnalités de votre plan.
         </p>

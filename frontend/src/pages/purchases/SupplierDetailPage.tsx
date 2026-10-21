@@ -133,13 +133,13 @@ export default function SupplierDetailPage() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-slate-900">{supplier.name}</h1>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">{supplier.name}</h1>
               <Badge variant={supplier.is_active ? 'success' : 'default'}>
                 {supplier.is_active ? t('common.active') : t('common.inactive')}
               </Badge>
             </div>
             {supplier.phone && (
-              <p className="text-sm text-gray-500">{supplier.phone}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{supplier.phone}</p>
             )}
           </div>
         </div>
@@ -161,63 +161,63 @@ export default function SupplierDetailPage() {
       {/* Infos + stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {/* Coordonnées */}
-        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100 space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t('suppliers.contact_info')}</p>
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('suppliers.contact_info')}</p>
 
           {supplier.phone ? (
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <PhoneIcon className="h-4 w-4 shrink-0 text-gray-400" />
+            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <PhoneIcon className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
               <span>{supplier.phone}</span>
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-sm text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500">
               <PhoneIcon className="h-4 w-4 shrink-0" />
               <span>{t('suppliers.phone_missing')}</span>
             </div>
           )}
 
           {supplier.email ? (
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <EnvelopeIcon className="h-4 w-4 shrink-0 text-gray-400" />
+            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <EnvelopeIcon className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
               <a href={`mailto:${supplier.email}`} className="hover:underline">{supplier.email}</a>
             </div>
           ) : (
-            <div className="flex items-center gap-2 text-sm text-gray-400">
+            <div className="flex items-center gap-2 text-sm text-gray-400 dark:text-gray-500">
               <EnvelopeIcon className="h-4 w-4 shrink-0" />
               <span>{t('suppliers.email_missing')}</span>
             </div>
           )}
 
           {supplier.address && (
-            <div className="flex items-start gap-2 text-sm text-gray-700">
-              <MapPinIcon className="h-4 w-4 shrink-0 text-gray-400 mt-0.5" />
+            <div className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <MapPinIcon className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500 mt-0.5" />
               <span className="whitespace-pre-line">{supplier.address}</span>
             </div>
           )}
 
           {supplier.notes && (
-            <div className="flex items-start gap-2 text-sm text-gray-700">
-              <DocumentTextIcon className="h-4 w-4 shrink-0 text-gray-400 mt-0.5" />
+            <div className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <DocumentTextIcon className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500 mt-0.5" />
               <span className="whitespace-pre-line">{supplier.notes}</span>
             </div>
           )}
         </div>
 
         {/* Statistiques */}
-        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-gray-100 space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t('suppliers.stats_section')}</p>
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-4 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('suppliers.stats_section')}</p>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">{t('suppliers.total_orders_label')}</span>
-              <span className="text-sm font-semibold text-gray-900">{totalOrders}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{t('suppliers.total_orders_label')}</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{totalOrders}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">{t('suppliers.total_amount_label')}</span>
-              <span className="text-sm font-semibold text-gray-900">{formatCurrency(totalAmount)}</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">{t('suppliers.total_amount_label')}</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(totalAmount)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">{t('suppliers.last_order_label')}</span>
-              <span className="text-sm font-semibold text-gray-900">
+              <span className="text-sm text-gray-500 dark:text-gray-400">{t('suppliers.last_order_label')}</span>
+              <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                 {lastOrderDate ? formatDate(lastOrderDate) : '—'}
               </span>
             </div>
@@ -226,15 +226,15 @@ export default function SupplierDetailPage() {
       </div>
 
       {/* Historique des bons de commande */}
-      <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
-        <div className="border-b border-gray-100 px-4 py-3">
-          <h2 className="text-sm font-semibold text-gray-900">{t('suppliers.purchase_history')}</h2>
+      <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+        <div className="border-b border-gray-100 dark:border-gray-700 px-4 py-3">
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{t('suppliers.purchase_history')}</h2>
         </div>
 
         {loadingPurchases ? (
-          <div className="p-6 text-sm text-gray-400">{t('common.loading')}</div>
+          <div className="p-6 text-sm text-gray-400 dark:text-gray-500">{t('common.loading')}</div>
         ) : orders.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400">
+          <div className="flex flex-col items-center gap-2 py-10 text-center text-gray-400 dark:text-gray-500">
             <ShoppingBagIcon className="h-8 w-8" />
             <p className="text-sm">{t('suppliers.no_purchases_for_supplier')}</p>
             <CanDo permission="purchases.create">
@@ -247,7 +247,7 @@ export default function SupplierDetailPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+                <tr className="border-b border-gray-100 dark:border-gray-700 text-left text-xs text-gray-500 dark:text-gray-400">
                   <th className="px-4 py-3 font-medium">{t('common.reference')}</th>
                   <th className="px-4 py-3 font-medium">{t('common.date')}</th>
                   <th className="px-4 py-3 font-medium">{t('purchases.delivery_label')}</th>
@@ -256,24 +256,24 @@ export default function SupplierDetailPage() {
                   <th className="px-4 py-3 text-center font-medium">{t('common.status')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700/60">
                 {orders.map((order) => (
                   <tr
                     key={order.id}
-                    className="cursor-pointer hover:bg-gray-50/70 transition-colors"
+                    className="cursor-pointer hover:bg-gray-50/70 dark:hover:bg-gray-700/30 transition-colors"
                     onClick={() => navigate(`/purchases/${order.uid}`)}
                   >
                     <td className="px-4 py-3">
-                      <span className="font-mono font-medium text-gray-900">{order.reference}</span>
+                      <span className="font-mono font-medium text-gray-900 dark:text-gray-100">{order.reference}</span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{formatDate(order.created_at)}</td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{formatDate(order.created_at)}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
                       {order.expected_at ? formatDate(order.expected_at) : '—'}
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-700">
+                    <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
                       {order.items_count ?? order.items?.length ?? '—'}
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                    <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">
                       {order.total_amount != null ? formatCurrency(Number(order.total_amount)) : '—'}
                     </td>
                     <td className="px-4 py-3 text-center">

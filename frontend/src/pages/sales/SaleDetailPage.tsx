@@ -48,7 +48,7 @@ function SummaryRow({
   color?: string
 }) {
   return (
-    <div className={`flex justify-between gap-8 text-sm ${bold ? 'font-bold text-base' : ''} ${color ?? 'text-gray-700'}`}>
+    <div className={`flex justify-between gap-8 text-sm ${bold ? 'font-bold text-base' : ''} ${color ?? 'text-gray-700 dark:text-gray-300'}`}>
       <span>{label}</span>
       <span>{value}</span>
     </div>
@@ -141,7 +141,7 @@ export default function SaleDetailPage() {
           <SkeletonCard />
           <SkeletonCard />
         </div>
-        <div className="space-y-3 rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+        <div className="space-y-3 rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-4 animate-pulse rounded bg-gray-200" />
           ))}
@@ -226,11 +226,11 @@ export default function SaleDetailPage() {
       </div>
 
       {/* En-tête vente */}
-      <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+      <div className="rounded-xl bg-white dark:bg-gray-800 p-6 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="font-mono text-2xl font-bold text-gray-900">{sale.reference}</p>
-            <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+            <p className="font-mono text-2xl font-bold text-gray-900 dark:text-gray-100">{sale.reference}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
               <span>{formatDateTime(sale.confirmed_at ?? sale.created_at)}</span>
               {sale.user && <span>· {t('sales.vendor_label')} {sale.user.name}</span>}
             </div>
@@ -256,22 +256,22 @@ export default function SaleDetailPage() {
       </div>
 
       {/* Lignes de vente */}
-      <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="text-sm font-semibold text-gray-700">{t('sales.items_title')}</h2>
+      <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
+          <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('sales.items_title')}</h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-100 text-sm">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-700/60 text-sm">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('sales.col_designation')}</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('sales.col_qty')}</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.unit_price')}</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.discount')}</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.total')}</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('sales.col_designation')}</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('sales.col_qty')}</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.unit_price')}</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.discount')}</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.total')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-50 dark:divide-gray-700/40">
               {(sale.items ?? []).map((item) => {
                 const designation = [
                   item.product?.name ?? t('sales.deleted_product'),
@@ -287,17 +287,17 @@ export default function SaleDetailPage() {
 
                 return (
                   <tr key={item.id}>
-                    <td className="px-4 py-3 text-gray-800">{designation}</td>
-                    <td className="px-4 py-3 text-right text-gray-600">{qty}</td>
-                    <td className="px-4 py-3 text-right text-gray-700">{formatCurrency(item.unit_price)}</td>
+                    <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{designation}</td>
+                    <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400">{qty}</td>
+                    <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{formatCurrency(item.unit_price)}</td>
                     <td className="px-4 py-3 text-right">
                       {hasDiscount ? (
                         <span className="text-orange-500">−{formatCurrency(item.discount)}</span>
                       ) : (
-                        <span className="text-gray-300">—</span>
+                        <span className="text-gray-300 dark:text-gray-600">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900">
+                    <td className="px-4 py-3 text-right font-medium text-gray-900 dark:text-gray-100">
                       {formatCurrency(item.total)}
                     </td>
                   </tr>
@@ -311,8 +311,8 @@ export default function SaleDetailPage() {
       {/* Résumé financier + Paiements */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
-        <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('sales.summary_title')}</h2>
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+          <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('sales.summary_title')}</h2>
           <div className="space-y-2">
             <SummaryRow label={t('common.subtotal')} value={formatCurrency(sale.subtotal)} />
             {parseFloat(sale.discount_amount) > 0 && (
@@ -325,7 +325,7 @@ export default function SaleDetailPage() {
             {parseFloat(sale.tax_amount) > 0 && (
               <SummaryRow label={t('common.tax')} value={formatCurrency(sale.tax_amount)} />
             )}
-            <div className="border-t border-gray-100 pt-2">
+            <div className="border-t border-gray-100 dark:border-gray-700/60 pt-2">
               <SummaryRow
                 label={t('common.total').toUpperCase()}
                 value={formatCurrency(sale.total)}
@@ -336,32 +336,32 @@ export default function SaleDetailPage() {
           </div>
         </div>
 
-        <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('sales.payments_title')}</h2>
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+          <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('sales.payments_title')}</h2>
 
           {(sale.payments ?? []).length === 0 ? (
             <p className="text-sm text-gray-400">{t('sales.no_payments')}</p>
           ) : (
-            <ul className="divide-y divide-gray-50">
+            <ul className="divide-y divide-gray-50 dark:divide-gray-700/40">
               {(sale.payments ?? []).map((p) => (
                 <li key={p.id} className="flex items-center justify-between py-2 text-sm">
                   <div>
-                    <p className="font-medium text-gray-800">{PAYMENT_METHOD_LABEL[p.method] ?? p.method}</p>
-                    <p className="text-xs text-gray-400">{formatDateTime(p.paid_at)}</p>
+                    <p className="font-medium text-gray-800 dark:text-gray-200">{PAYMENT_METHOD_LABEL[p.method] ?? p.method}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">{formatDateTime(p.paid_at)}</p>
                   </div>
-                  <span className="font-medium text-gray-900">{formatCurrency(p.amount)}</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(p.amount)}</span>
                 </li>
               ))}
             </ul>
           )}
 
-          <div className="mt-4 space-y-1.5 border-t border-gray-100 pt-3">
+          <div className="mt-4 space-y-1.5 border-t border-gray-100 dark:border-gray-700/60 pt-3">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500">{t('sales.total_paid')}</span>
+              <span className="text-gray-500 dark:text-gray-400">{t('sales.total_paid')}</span>
               <span className="font-semibold text-emerald-600">{formatCurrency(totalPaid)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">{t('sales.due')}</span>
+              <span className="text-gray-500 dark:text-gray-400">{t('sales.due')}</span>
               {due > 0 ? (
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-red-600">{formatCurrency(due)}</span>
@@ -408,11 +408,11 @@ export default function SaleDetailPage() {
         }
       >
         <div className="space-y-4">
-          <div className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-600">
+          <div className="rounded-lg bg-gray-50 dark:bg-gray-700/50 px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
             {t('sales.due')} : <span className="font-bold text-red-600">{formatCurrency(due)}</span>
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('common.payment_method')}</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('common.payment_method')}</label>
             <Select value={payMethod} onChange={(e) => setPayMethod(e.target.value)}>
               <option value="cash">{t('sales.method_cash')}</option>
               <option value="mobile_money">{t('sales.method_mobile_money')}</option>
@@ -439,26 +439,26 @@ export default function SaleDetailPage() {
 
       {/* Retours associés */}
       {saleReturns.length > 0 && (
-        <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-2">
+        <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60 flex items-center gap-2">
             <Undo2 className="h-4 w-4 text-gray-400" />
-            <h2 className="text-sm font-semibold text-gray-700">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               {t('sales.returns_section')} ({saleReturns.length})
             </h2>
           </div>
-          <ul className="divide-y divide-gray-50">
+          <ul className="divide-y divide-gray-50 dark:divide-gray-700/40">
             {saleReturns.map((ret) => (
               <li key={ret.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm">
                 <div className="flex items-center gap-3">
-                  <span className="font-mono font-semibold text-gray-900">{ret.reference}</span>
+                  <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">{ret.reference}</span>
                   <Badge variant={REFUND_BADGE[ret.refund_method]}>
                     {REFUND_LABEL[ret.refund_method]}
                   </Badge>
-                  <span className="text-gray-400 text-xs">{formatDateTime(ret.created_at)}</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-xs">{formatDateTime(ret.created_at)}</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="text-gray-500 text-xs">{ret.items_count} {t('sales.articles_count')}</span>
-                  <span className="font-semibold text-gray-900">{formatCurrency(ret.total)}</span>
+                  <span className="text-gray-500 dark:text-gray-400 text-xs">{ret.items_count} {t('sales.articles_count')}</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(ret.total)}</span>
                 </div>
               </li>
             ))}
@@ -494,9 +494,9 @@ export default function SaleDetailPage() {
           </>
         }
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t('sales.cancel_title')}{' '}
-          <span className="font-mono font-semibold text-gray-900">{sale.reference}</span> ?{' '}
+          <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">{sale.reference}</span> ?{' '}
           {t('sales.cancel_confirm_text')}
         </p>
       </Modal>

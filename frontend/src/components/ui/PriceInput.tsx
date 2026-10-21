@@ -113,9 +113,9 @@ const PriceInput = forwardRef<HTMLInputElement, PriceInputProps>(({
           error
             ? 'border-red-400 focus:border-red-400 focus:ring-red-400'
             : compact
-              ? 'border-gray-200 text-gray-600 focus:border-brand-primary'
-              : 'border-gray-300 focus:border-brand-primary focus:ring-brand-primary',
-          disabled && 'cursor-not-allowed bg-gray-50 text-gray-400',
+              ? 'border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-gray-600 focus:border-brand-primary'
+              : 'border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-500 focus:border-brand-primary focus:ring-brand-primary',
+          disabled && 'cursor-not-allowed bg-gray-50 dark:bg-gray-800 text-gray-400',
         ],
         className,
       )}

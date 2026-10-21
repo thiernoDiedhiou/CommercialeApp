@@ -139,17 +139,17 @@ export default function SuppliersPage() {
     {
       key: 'name',
       header: t('common.name'),
-      render: (s) => <span className="font-medium text-gray-900">{s.name}</span>,
+      render: (s) => <span className="font-medium text-gray-900 dark:text-gray-100">{s.name}</span>,
     },
     {
       key: 'phone',
       header: t('common.phone'),
-      render: (s) => <span className={s.phone ? 'text-sm text-gray-700' : 'text-sm text-gray-300'}>{s.phone ?? '—'}</span>,
+      render: (s) => <span className={s.phone ? 'text-sm text-gray-700 dark:text-gray-300' : 'text-sm text-gray-300 dark:text-gray-600'}>{s.phone ?? '—'}</span>,
     },
     {
       key: 'email',
       header: t('common.email'),
-      render: (s) => <span className={s.email ? 'text-sm text-gray-700' : 'text-sm text-gray-300'}>{s.email ?? '—'}</span>,
+      render: (s) => <span className={s.email ? 'text-sm text-gray-700 dark:text-gray-300' : 'text-sm text-gray-300 dark:text-gray-600'}>{s.email ?? '—'}</span>,
     },
     {
       key: 'is_active',
@@ -169,7 +169,7 @@ export default function SuppliersPage() {
         <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           <CanDo permission="suppliers.edit">
             <button type="button" onClick={() => setModal({ mode: 'edit', supplier: s })}
-              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title={t('common.edit')}>
+              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300" title={t('common.edit')}>
               <PencilSquareIcon className="h-4 w-4" />
             </button>
           </CanDo>
@@ -194,7 +194,7 @@ export default function SuppliersPage() {
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">{t('suppliers.title')}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">{t('suppliers.title')}</h1>
         <CanDo permission="suppliers.create">
           <Button icon={<PlusIcon className="h-4 w-4" />} onClick={() => setModal({ mode: 'create' })}>
             {t('suppliers.new')}
@@ -218,16 +218,16 @@ export default function SuppliersPage() {
           <div className="flex items-start justify-between gap-3 px-4 py-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="font-medium text-gray-900">{s.name}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">{s.name}</span>
                 <Badge variant={s.is_active ? 'success' : 'default'}>{t(s.is_active ? 'common.active' : 'common.inactive')}</Badge>
               </div>
-              {s.phone && <p className="text-xs text-gray-500">{s.phone}</p>}
-              {s.email && <p className="text-xs text-gray-400 truncate">{s.email}</p>}
+              {s.phone && <p className="text-xs text-gray-500 dark:text-gray-400">{s.phone}</p>}
+              {s.email && <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{s.email}</p>}
             </div>
             <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
               <CanDo permission="suppliers.edit">
                 <button type="button" onClick={() => setModal({ mode: 'edit', supplier: s })}
-                  className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+                  className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300">
                   <PencilSquareIcon className="h-4 w-4" />
                 </button>
               </CanDo>
@@ -265,7 +265,7 @@ export default function SuppliersPage() {
           <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{t('common.error_generic')}</p>
         )}
         <form id={FORM_ID} onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
             {t('common.required_fields')}
           </p>
           <Input label={t('common.name')} error={errors.name?.message} required {...register('name')} />
@@ -314,8 +314,8 @@ export default function SuppliersPage() {
           </>
         }
       >
-        <p className="text-sm text-gray-600">
-          {t('suppliers.delete_confirm')} <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ? {t('common.action_irreversible')}
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {t('suppliers.delete_confirm')} <span className="font-semibold text-gray-900 dark:text-gray-100">«{deleteTarget?.name}»</span> ? {t('common.action_irreversible')}
         </p>
       </Modal>
 
@@ -338,9 +338,9 @@ export default function SuppliersPage() {
           </>
         }
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t(toggleTarget?.is_active ? 'suppliers.deactivate_confirm' : 'suppliers.activate_confirm')}{' '}
-          <span className="font-semibold text-gray-900">«{toggleTarget?.name}»</span> ?
+          <span className="font-semibold text-gray-900 dark:text-gray-100">«{toggleTarget?.name}»</span> ?
         </p>
       </Modal>
     </div>

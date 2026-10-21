@@ -3,10 +3,10 @@ import type { Toast, ToastType } from '@/store/toastStore'
 import { XMarkIcon, CheckCircleIcon, ExclamationTriangleIcon, InformationCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
 
 const CONFIG: Record<ToastType, { bg: string; icon: React.ReactNode }> = {
-  success: { bg: 'bg-emerald-50 border-emerald-200 text-emerald-800', icon: <CheckCircleIcon className="h-5 w-5 text-emerald-500" /> },
-  error:   { bg: 'bg-red-50 border-red-200 text-red-800',             icon: <XCircleIcon className="h-5 w-5 text-red-500" /> },
-  warning: { bg: 'bg-amber-50 border-amber-200 text-amber-800',       icon: <ExclamationTriangleIcon className="h-5 w-5 text-amber-500" /> },
-  info:    { bg: 'bg-blue-50 border-blue-200 text-blue-800',           icon: <InformationCircleIcon className="h-5 w-5 text-blue-500" /> },
+  success: { bg: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300', icon: <CheckCircleIcon className="h-5 w-5 text-emerald-500" /> },
+  error:   { bg: 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800 text-red-800 dark:text-red-300',                         icon: <XCircleIcon className="h-5 w-5 text-red-500" /> },
+  warning: { bg: 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300',             icon: <ExclamationTriangleIcon className="h-5 w-5 text-amber-500" /> },
+  info:    { bg: 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300',                   icon: <InformationCircleIcon className="h-5 w-5 text-blue-500" /> },
 }
 
 function ToastItem({ toast }: { toast: Toast }) {

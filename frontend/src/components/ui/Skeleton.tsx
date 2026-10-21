@@ -7,7 +7,7 @@ interface SkeletonProps {
 /** Bloc animé générique — composer pour obtenir la forme voulue. */
 export function Skeleton({ className }: SkeletonProps) {
   return (
-    <div className={cn('animate-pulse rounded bg-gray-200', className)} />
+    <div className={cn('animate-pulse rounded bg-gray-200 dark:bg-gray-700', className)} />
   )
 }
 
@@ -28,7 +28,7 @@ export function SkeletonText({ lines = 3, className }: { lines?: number; classNa
 /** Carte skeleton pour les KPI / résumés. */
 export function SkeletonCard({ className }: { className?: string }) {
   return (
-    <div className={cn('rounded-xl border border-gray-200 bg-white p-5 space-y-3', className)}>
+    <div className={cn('rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 space-y-3', className)}>
       <Skeleton className="h-4 w-1/3" />
       <Skeleton className="h-8 w-1/2" />
       <Skeleton className="h-3 w-2/3" />

@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { useCartStore } from '@/store/cartStore'
 import { useAuthStore } from '@/store/authStore'
 import { useTenantStore } from '@/store/tenantStore'
+import { useThemeStore } from '@/store/themeStore'
 import { useExitPosPath } from '@/hooks/useHomePath'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import type { Product, ProductVariant, Customer } from '@/types'
@@ -63,11 +64,13 @@ export default function PosPage() {
   const tenant           = useAuthStore((s) => s.tenant)
   const user             = useAuthStore((s) => s.user)
   const applyBrandColors = useTenantStore((s) => s.applyBrandColors)
+  const applyTheme       = useThemeStore((s) => s.applyTheme)
 
-  // Réapplique les variables CSS brand au rechargement direct sur /pos (hors Layout)
+  // Réapplique les variables CSS brand et le thème au rechargement direct sur /pos (hors Layout)
   useEffect(() => {
+    applyTheme()
     if (tenant) applyBrandColors(tenant.primary_color, tenant.secondary_color)
-  }, [tenant, applyBrandColors])
+  }, [tenant, applyBrandColors, applyTheme])
 
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products')
   const [sessionModal, setSessionModal] = useState<'open' | 'close' | null>(null)
@@ -257,23 +260,23 @@ export default function PosPage() {
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-screen flex-col bg-gray-100 overflow-hidden">
+    <div className="flex h-screen flex-col bg-gray-100 dark:bg-gray-900 overflow-hidden">
       <OfflineBanner />
 
       {/* Header */}
-      <header className="flex items-center justify-between bg-white border-b border-gray-200 px-4 py-3 shrink-0">
+      <header className="flex items-center justify-between bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 shrink-0">
         <div className="flex items-center gap-3">
           {exitPosPath && (
             <button
               type="button"
               onClick={() => navigate(exitPosPath)}
               aria-label="Retour"
-              className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+              className="rounded-lg p-1.5 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition"
             >
               <ArrowLeftIcon className="h-5 w-5" aria-hidden="true" />
             </button>
           )}
-          <h1 className="text-base font-semibold text-gray-800">{t('pos.title')}</h1>
+          <h1 className="text-base font-semibold text-gray-800 dark:text-gray-200">{t('pos.title')}</h1>
           {session ? (
             <button
               type="button"
@@ -299,7 +302,7 @@ export default function PosPage() {
             <button
               type="button"
               onClick={() => setClearOpen(true)}
-              className="hidden md:flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-gray-500 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition"
+              className="hidden md:flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition"
             >
               <TrashIcon className="h-3.5 w-3.5" />
               {t('pos.clear_cart_btn')}
@@ -310,7 +313,7 @@ export default function PosPage() {
             type="button"
             onClick={() => setMobileView(mobileView === 'cart' ? 'products' : 'cart')}
             aria-label={mobileView === 'cart' ? t('pos.see_products') : t('pos.see_cart')}
-            className="relative md:hidden rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 transition"
+            className="relative md:hidden rounded-lg p-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
           >
             <ShoppingCartIcon className="h-5 w-5" />
             {items.length > 0 && (
@@ -327,7 +330,7 @@ export default function PosPage() {
         {/* ── Left: Product browser ────────────────────────────────────── */}
         <div className={`overflow-hidden ${mobileView === 'cart' ? 'hidden md:flex md:flex-col md:flex-1' : 'flex flex-col flex-1'}`}>
           {/* Search + categories */}
-          <div className="shrink-0 bg-white border-b border-gray-200 px-4 py-3 space-y-2">
+          <div className="shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 space-y-2">
             <div className="flex items-center gap-2">
               <input
                 ref={searchRef}
@@ -342,14 +345,14 @@ export default function PosPage() {
                   }
                 }}
                 placeholder={t('pos.search_scanner_placeholder')}
-                className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-brand-primary focus:bg-white transition"
+                className="flex-1 rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 dark:text-gray-200 dark:placeholder:text-gray-500 px-4 py-2 text-sm outline-none focus:border-brand-primary focus:bg-white dark:focus:bg-gray-700 transition"
                 autoFocus={!isMobile}
               />
               <button
                 type="button"
                 onClick={() => setScannerOpen(true)}
                 aria-label="Scanner un code-barres"
-                className="shrink-0 flex items-center justify-center rounded-xl border border-gray-200 bg-gray-50 p-2 text-gray-500 hover:border-brand-primary hover:text-brand-primary transition"
+                className="shrink-0 flex items-center justify-center rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 p-2 text-gray-500 dark:text-gray-400 hover:border-brand-primary hover:text-brand-primary transition"
               >
                 <CameraIcon className="h-5 w-5" />
               </button>
@@ -361,7 +364,7 @@ export default function PosPage() {
                 className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
                   categoryId === null
                     ? 'bg-brand-primary text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
                 {t('pos.all_categories_filter')}
@@ -374,7 +377,7 @@ export default function PosPage() {
                   className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
                     categoryId === cat.id
                       ? 'bg-brand-primary text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
                   {cat.name}
@@ -388,7 +391,7 @@ export default function PosPage() {
             {productsLoading ? (
               <div className="grid grid-cols-3 xl:grid-cols-4 gap-3">
                 {Array.from({ length: 12 }).map((_, i) => (
-                  <div key={i} className="h-44 animate-pulse rounded-xl bg-gray-200" />
+                  <div key={i} className="h-44 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />
                 ))}
               </div>
             ) : products.length === 0 ? (
@@ -406,9 +409,9 @@ export default function PosPage() {
         </div>
 
         {/* ── Right: Cart panel ────────────────────────────────────────── */}
-        <div className={`bg-white border-l border-gray-200 overflow-hidden ${mobileView === 'cart' ? 'flex flex-col flex-1 md:flex-none md:w-[380px] md:shrink-0' : 'hidden md:flex md:flex-col md:w-[380px] md:shrink-0'}`}>
+        <div className={`bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 overflow-hidden ${mobileView === 'cart' ? 'flex flex-col flex-1 md:flex-none md:w-[380px] md:shrink-0' : 'hidden md:flex md:flex-col md:w-[380px] md:shrink-0'}`}>
           {/* Mobile back button */}
-          <div className="md:hidden shrink-0 flex items-center justify-between border-b border-gray-100 px-4 py-2">
+          <div className="md:hidden shrink-0 flex items-center justify-between border-b border-gray-100 dark:border-gray-700 px-4 py-2">
             <button
               type="button"
               onClick={() => setMobileView('products')}
@@ -429,13 +432,13 @@ export default function PosPage() {
             )}
           </div>
           {/* Customer selector */}
-          <div className="shrink-0 border-b border-gray-100 px-4 py-3" ref={customerRef}>
+          <div className="shrink-0 border-b border-gray-100 dark:border-gray-700 px-4 py-3" ref={customerRef}>
             <div className="relative">
-              <div className="flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2">
+              <div className="flex items-center gap-2 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 px-3 py-2">
                 <UserIcon className="h-4 w-4 text-gray-400 shrink-0" />
                 {selectedCustomer ? (
                   <div className="flex flex-1 items-center justify-between">
-                    <span className="text-sm font-medium text-gray-800">{selectedCustomer.name}</span>
+                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{selectedCustomer.name}</span>
                     <button
                       type="button"
                       onClick={() => {
@@ -453,13 +456,13 @@ export default function PosPage() {
                     value={customerSearch}
                     onChange={(e) => setCustomerSearch(e.target.value)}
                     placeholder={t('pos.search_customer')}
-                    className="flex-1 text-sm outline-none bg-transparent placeholder-gray-400"
+                    className="flex-1 text-sm outline-none bg-transparent placeholder-gray-400 dark:placeholder-gray-500 dark:text-gray-200"
                   />
                 )}
               </div>
 
               {customerSearch.length >= 2 && !selectedCustomer && (
-                <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden">
+                <div className="absolute left-0 right-0 top-full z-20 mt-1 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg overflow-hidden">
                   {customerResults.length > 0 ? (
                     customerResults.slice(0, 5).map((c) => (
                       <button
@@ -469,17 +472,17 @@ export default function PosPage() {
                           setSelectedCustomer(c)
                           setCustomerSearch('')
                         }}
-                        className="w-full px-4 py-2.5 text-left hover:bg-gray-50 flex items-center gap-2 border-b border-gray-50 last:border-0"
+                        className="w-full px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700/40 flex items-center gap-2 border-b border-gray-50 dark:border-gray-700 last:border-0"
                       >
                         <UserIcon className="h-4 w-4 text-gray-400 shrink-0" />
                         <div>
-                          <p className="text-sm font-medium text-gray-800">{c.name}</p>
-                          {c.phone && <p className="text-xs text-gray-400">{c.phone}</p>}
+                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{c.name}</p>
+                          {c.phone && <p className="text-xs text-gray-400 dark:text-gray-500">{c.phone}</p>}
                         </div>
                       </button>
                     ))
                   ) : (
-                    <div className="px-4 py-3 text-sm text-gray-400 text-center">
+                    <div className="px-4 py-3 text-sm text-gray-400 dark:text-gray-500 text-center">
                       {t('pos.no_customer_found')}
                     </div>
                   )}
@@ -511,19 +514,19 @@ export default function PosPage() {
 
           {/* Discount + totals + encaisser */}
           {items.length > 0 && (
-            <div className="shrink-0 border-t border-gray-100 px-4 py-3 space-y-3">
+            <div className="shrink-0 border-t border-gray-100 dark:border-gray-700 px-4 py-3 space-y-3">
               {/* Global discount */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs text-gray-500">{t('pos.global_discount')}</span>
-                  <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+                  <div className="flex rounded-lg border border-gray-200 dark:border-gray-600 overflow-hidden text-xs">
                     <button
                       type="button"
                       onClick={() => setGlobalDiscount('percent', discountValue)}
                       className={`px-2 py-1 transition ${
                         discountType === 'percent'
                           ? 'bg-brand-primary text-white'
-                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                          : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'
                       }`}
                     >
                       %
@@ -534,7 +537,7 @@ export default function PosPage() {
                       className={`px-2 py-1 transition ${
                         discountType === 'fixed'
                           ? 'bg-brand-primary text-white'
-                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                          : 'bg-white dark:bg-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'
                       }`}
                     >
                       FCFA
@@ -556,7 +559,7 @@ export default function PosPage() {
                     value={discountValue || ''}
                     placeholder="0"
                     onChange={(e) => setGlobalDiscount('percent', parseFloat(e.target.value) || 0)}
-                    className="w-full rounded-lg border border-gray-200 px-2 py-1 text-sm text-right outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+                    className="w-full rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 text-sm text-right outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
                   />
                 )}
               </div>
@@ -567,12 +570,12 @@ export default function PosPage() {
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder={t('pos.note_placeholder')}
-                className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-xs outline-none focus:border-brand-primary transition"
+                className="w-full rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder:text-gray-500 px-3 py-1.5 text-xs outline-none focus:border-brand-primary transition"
               />
 
               {/* Totals */}
               <div className="space-y-1">
-                <div className="flex justify-between text-sm text-gray-500">
+                <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                   <span>{t('pos.subtotal')}</span>
                   <span>{formatCurrency(subtotal())}</span>
                 </div>
@@ -582,7 +585,7 @@ export default function PosPage() {
                     <span>− {formatCurrency(discountAmount())}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-base font-bold text-gray-900 border-t border-gray-100 pt-1.5">
+                <div className="flex justify-between text-base font-bold text-gray-900 dark:text-gray-100 border-t border-gray-100 dark:border-gray-700 pt-1.5">
                   <span>{t('pos.total')}</span>
                   <span className="text-brand-primary">{formatCurrency(total())}</span>
                 </div>
@@ -661,7 +664,7 @@ export default function PosPage() {
           </>
         }
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t('pos.clear_cart_text')}
         </p>
       </Modal>

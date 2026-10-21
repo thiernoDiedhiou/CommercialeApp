@@ -103,8 +103,8 @@ function Toggle({
         />
       </div>
       <div>
-        <p className="text-sm font-medium text-gray-700">{label}</p>
-        {hint && <p className="text-xs text-gray-500">{hint}</p>}
+        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</p>
+        {hint && <p className="text-xs text-gray-500 dark:text-gray-400">{hint}</p>}
       </div>
     </label>
   )
@@ -114,8 +114,8 @@ function Toggle({
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-      <h2 className="mb-4 text-sm font-semibold text-gray-700">{title}</h2>
+    <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+      <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{title}</h2>
       <div className="space-y-4">{children}</div>
     </div>
   )
@@ -159,7 +159,7 @@ function ImageUpload({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="mt-2 block w-32 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-center text-xs text-gray-600 hover:bg-gray-50"
+          className="mt-2 block w-32 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-1.5 text-center text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600"
         >
           {t('products.image_change_btn')}
         </button>
@@ -380,7 +380,7 @@ export default function ProductFormPage() {
     <div className="mx-auto max-w-3xl space-y-5 p-4 sm:p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">
             {isEdit ? t('products.form_edit_title') : t('products.form_new_title')}
           </h1>
           <p className="mt-0.5 text-xs text-gray-400">
@@ -463,7 +463,7 @@ export default function ProductFormPage() {
         <Section title={t('products.section_price_stock')}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {t('products.selling_price_label', { currency })}
               </label>
               <Controller
@@ -482,7 +482,7 @@ export default function ProductFormPage() {
               {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price.message}</p>}
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {t('products.compare_price_label', { currency })}
               </label>
               <Controller
@@ -502,7 +502,7 @@ export default function ProductFormPage() {
               {errors.compare_at_price && <p className="mt-1 text-xs text-red-500">{errors.compare_at_price.message}</p>}
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {t('products.cost_price_label', { currency })}
               </label>
               <Controller
@@ -537,8 +537,8 @@ export default function ProductFormPage() {
             />
           </div>
           {!isEdit && !hasVariants && (
-            <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            <div className="rounded-lg border border-blue-100 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 p-3">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {t('products.initial_stock_label')}
                 <span className="ml-1.5 text-xs font-normal text-gray-400">{t('products.initial_stock_optional')}</span>
               </label>

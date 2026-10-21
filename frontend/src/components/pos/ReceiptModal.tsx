@@ -162,17 +162,17 @@ export function ReceiptModal({ receipt, onClose }: Props) {
         </div>
 
         <div className="text-center">
-          <p className="text-base font-semibold text-gray-900">Vente enregistrée</p>
-          <p className="text-sm text-gray-400 mt-0.5">{receipt.reference}</p>
+          <p className="text-base font-semibold text-gray-900 dark:text-gray-100">Vente enregistrée</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500 mt-0.5">{receipt.reference}</p>
           {receipt.customer && (
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Client : <span className="font-medium">{receipt.customer.name}</span>
             </p>
           )}
         </div>
 
         {/* Résumé articles */}
-        <div className="w-full rounded-xl bg-gray-50 px-4 py-3 space-y-1.5">
+        <div className="w-full rounded-xl bg-gray-50 dark:bg-gray-700/50 px-4 py-3 space-y-1.5">
           {receipt.items.map((item, i) => {
             const label = item.variant
               ? `${item.product.name} — ${item.variant.attribute_summary}`
@@ -182,26 +182,26 @@ export function ReceiptModal({ receipt, onClose }: Props) {
                 ? item.unit_price * item.unit_weight - item.discount
                 : item.unit_price * item.quantity - item.discount
             return (
-              <div key={i} className="flex justify-between text-sm text-gray-600">
+              <div key={i} className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
                 <span className="truncate max-w-[190px]">
                   {label}{' '}
-                  <span className="text-gray-400 text-xs">
+                  <span className="text-gray-400 dark:text-gray-500 text-xs">
                     ×{item.unit_weight != null ? `${item.unit_weight}kg` : item.quantity}
                   </span>
                 </span>
-                <span className="font-medium text-gray-800 shrink-0 pl-2">
+                <span className="font-medium text-gray-800 dark:text-gray-200 shrink-0 pl-2">
                   {formatCurrency(lineTotal)}
                 </span>
               </div>
             )
           })}
           {receipt.discountAmount > 0 && (
-            <div className="flex justify-between text-sm text-green-600 border-t border-gray-200 pt-1.5">
+            <div className="flex justify-between text-sm text-green-600 border-t border-gray-200 dark:border-gray-700 pt-1.5">
               <span>Remise</span>
               <span>− {formatCurrency(receipt.discountAmount)}</span>
             </div>
           )}
-          <div className="flex justify-between text-sm font-bold text-gray-900 border-t border-gray-200 pt-1.5">
+          <div className="flex justify-between text-sm font-bold text-gray-900 dark:text-gray-100 border-t border-gray-200 dark:border-gray-700 pt-1.5">
             <span>Total</span>
             <span>{formatCurrency(receipt.total)}</span>
           </div>
@@ -210,7 +210,7 @@ export function ReceiptModal({ receipt, onClose }: Props) {
         {/* Moyens de paiement */}
         <div className="w-full space-y-1">
           {receipt.payments.map((p, i) => (
-            <div key={i} className="flex justify-between text-xs text-gray-500">
+            <div key={i} className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
               <span>{PAYMENT_LABELS[p.method] ?? p.method}</span>
               <span>{formatCurrency(p.amount)}</span>
             </div>

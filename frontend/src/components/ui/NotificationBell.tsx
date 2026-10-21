@@ -92,17 +92,17 @@ export default function NotificationBell({ queryKey, fetchFn, markReadFn, markAl
 
   const btnBase = dark
     ? 'relative p-2 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors'
-    : 'relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors'
+    : 'relative p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors'
 
   const dropdownBase = dark
     ? 'fixed inset-x-2 top-16 rounded-xl border border-gray-700 bg-gray-900 shadow-2xl z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80'
-    : 'fixed inset-x-2 top-16 rounded-xl border border-gray-200 bg-white shadow-2xl z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80'
+    : 'fixed inset-x-2 top-16 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-2xl z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80'
 
-  const headerText  = dark ? 'text-white'      : 'text-gray-900'
-  const subText     = dark ? 'text-gray-400'   : 'text-gray-500'
-  const itemHover   = dark ? 'hover:bg-gray-800' : 'hover:bg-gray-50'
-  const divider     = dark ? 'border-gray-800'   : 'border-gray-100'
-  const emptyText   = dark ? 'text-gray-500'   : 'text-gray-400'
+  const headerText  = dark ? 'text-white'      : 'text-gray-900 dark:text-gray-100'
+  const subText     = dark ? 'text-gray-400'   : 'text-gray-500 dark:text-gray-400'
+  const itemHover   = dark ? 'hover:bg-gray-800' : 'hover:bg-gray-50 dark:hover:bg-gray-700/40'
+  const divider     = dark ? 'border-gray-800'   : 'border-gray-100 dark:border-gray-700/60'
+  const emptyText   = dark ? 'text-gray-500'   : 'text-gray-400 dark:text-gray-500'
 
   return (
     <div className="relative" ref={dropdownRef}>

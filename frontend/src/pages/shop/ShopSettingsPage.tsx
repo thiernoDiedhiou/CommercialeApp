@@ -191,10 +191,10 @@ export default function ShopSettingsPage() {
     <div className="max-w-3xl mx-auto space-y-6">
 
       {/* ── Header ────────────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 p-5 flex items-center justify-between flex-wrap gap-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-5 flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Ma boutique en ligne</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Gérez l'apparence et les paramètres de votre boutique</p>
+          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Ma boutique en ligne</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">Gérez l'apparence et les paramètres de votre boutique</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -205,7 +205,7 @@ export default function ShopSettingsPage() {
               En ligne
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
               Hors ligne
             </span>
@@ -213,7 +213,7 @@ export default function ShopSettingsPage() {
 
           {/* Toggle activé */}
           <label className="flex items-center gap-2 cursor-pointer">
-            <span className="text-sm text-gray-700 font-medium">
+            <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">
               {settings?.is_active ? 'Désactiver' : 'Activer'}
             </span>
             <input
@@ -226,7 +226,7 @@ export default function ShopSettingsPage() {
             />
             <div
               className={`relative w-11 h-6 rounded-full transition-colors ${
-                settings?.is_active ? 'bg-green-500' : 'bg-gray-300'
+                settings?.is_active ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
               } ${toggleMutation.isPending ? 'opacity-50 pointer-events-none' : ''}`}
             >
               <span
@@ -251,8 +251,8 @@ export default function ShopSettingsPage() {
       </div>
 
       {/* ── Onglets ───────────────────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <div className="flex border-b border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div className="flex border-b border-gray-100 dark:border-gray-700">
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -260,8 +260,8 @@ export default function ShopSettingsPage() {
               onClick={() => setTab(t.key)}
               className={`flex-1 py-3 text-sm font-medium transition-colors ${
                 tab === t.key
-                  ? 'text-gray-900 border-b-2 border-gray-900'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'text-gray-900 dark:text-gray-100 border-b-2 border-gray-900 dark:border-gray-100'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
               {t.label}
@@ -308,7 +308,7 @@ export default function ShopSettingsPage() {
               </Field>
 
               <Field label="Favicon">
-                <p className="text-xs text-gray-400">Icône affichée dans l'onglet du navigateur (32×32px recommandé)</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Icône affichée dans l'onglet du navigateur (32×32px recommandé)</p>
                 {faviconPreview && (
                   <img src={faviconPreview} alt="Favicon" className="h-10 w-10 mb-2 rounded-lg object-contain border border-gray-100 p-1" />
                 )}
@@ -354,7 +354,7 @@ export default function ShopSettingsPage() {
                   className={INPUT_CLS}
                   placeholder="0"
                 />
-                <p className="text-xs text-gray-400">Laisser à 0 pour aucun minimum</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Laisser à 0 pour aucun minimum</p>
               </Field>
             </>
           )}
@@ -382,7 +382,7 @@ export default function ShopSettingsPage() {
                         aria-label={labels[key]}
                         className="h-10 w-16 rounded-lg border border-gray-200 p-1 cursor-pointer"
                       />
-                      <span className="text-sm font-mono text-gray-700">{fields[key] ?? ''}</span>
+                      <span className="text-sm font-mono text-gray-700 dark:text-gray-300">{fields[key] ?? ''}</span>
                     </div>
                   </Field>
                 )
@@ -435,7 +435,7 @@ export default function ShopSettingsPage() {
                     onChange={(e) => set('announcement_bar_active', e.target.checked)}
                     className="w-4 h-4 rounded accent-gray-900"
                   />
-                  <span className="text-sm text-gray-700">Afficher la barre d'annonce</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Afficher la barre d'annonce</span>
                 </label>
               </Field>
             </>
@@ -465,13 +465,13 @@ export default function ShopSettingsPage() {
             return (
               <>
                 {/* ── Aperçu Google ──────────────────────────────────────── */}
-                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Aperçu dans Google</p>
+                <div className="rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 p-4 space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-2">Aperçu dans Google</p>
                   <p className="text-[#1a0dab] text-lg font-medium leading-snug truncate">
                     {previewTitle.length > 60 ? previewTitle.slice(0, 57) + '…' : previewTitle}
                   </p>
                   <p className="text-[#006621] text-sm">{previewUrl}</p>
-                  <p className="text-sm text-gray-600 leading-relaxed line-clamp-2">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2">
                     {previewDesc.length > 160 ? previewDesc.slice(0, 157) + '…' : previewDesc}
                   </p>
                 </div>
@@ -479,13 +479,13 @@ export default function ShopSettingsPage() {
                 {/* ── Meta title ─────────────────────────────────────────── */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-sm font-medium text-gray-700">Meta title</label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Meta title</label>
                     <span className={`text-xs font-medium ${titleColor}`}>{titleLen}/60</span>
                   </div>
                   <input type="text" value={fields.meta_title ?? ''} maxLength={60}
                     onChange={(e) => set('meta_title', e.target.value)}
                     className={INPUT_CLS} placeholder="Ma boutique — Dakar, Sénégal" />
-                  <p className="mt-1.5 text-xs text-gray-400">
+                  <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
                     Le titre affiché dans les résultats Google et les onglets de navigateur.
                     Idéal entre <strong>40 et 60 caractères</strong>. Incluez le nom de votre boutique et votre ville.
                   </p>
@@ -494,14 +494,14 @@ export default function ShopSettingsPage() {
                 {/* ── Meta description ───────────────────────────────────── */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-sm font-medium text-gray-700">Meta description</label>
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Meta description</label>
                     <span className={`text-xs font-medium ${descColor}`}>{descLen}/160</span>
                   </div>
                   <textarea rows={3} value={fields.meta_description ?? ''} maxLength={160}
                     onChange={(e) => set('meta_description', e.target.value)}
                     className={`${INPUT_CLS} resize-none`}
                     placeholder="Découvrez nos produits de qualité livrés rapidement à Dakar. Vêtements, alimentation, cosmétiques…" />
-                  <p className="mt-1.5 text-xs text-gray-400">
+                  <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
                     Le texte affiché sous votre titre dans Google. Il doit donner envie de cliquer.
                     Idéal entre <strong>120 et 160 caractères</strong>. Décrivez ce que vous vendez et votre zone de livraison.
                   </p>
@@ -509,7 +509,7 @@ export default function ShopSettingsPage() {
 
                 {/* ── Google Analytics ───────────────────────────────────── */}
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Google Analytics ID</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Google Analytics ID</label>
                   <input type="text" value={fields.google_analytics_id ?? ''}
                     onChange={(e) => set('google_analytics_id', e.target.value.toUpperCase())}
                     className={`${INPUT_CLS} ${!gaValid ? 'border-red-400 focus:border-red-400 focus:ring-red-400' : ''}`}
@@ -517,7 +517,7 @@ export default function ShopSettingsPage() {
                   {!gaValid && (
                     <p className="mt-1 text-xs text-red-500">Format invalide — doit ressembler à G-AB12CD34EF</p>
                   )}
-                  <p className="mt-1.5 text-xs text-gray-400">
+                  <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
                     Permet de suivre les visiteurs de votre boutique dans Google Analytics.
                     Trouvez votre ID dans{' '}
                     <a href="https://analytics.google.com" target="_blank" rel="noopener noreferrer"
@@ -530,11 +530,11 @@ export default function ShopSettingsPage() {
 
                 {/* ── Pied de page ───────────────────────────────────────── */}
                 <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Texte de pied de page</label>
+                  <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">Texte de pied de page</label>
                   <input type="text" value={fields.footer_text ?? ''}
                     onChange={(e) => set('footer_text', e.target.value)}
                     className={INPUT_CLS} placeholder={`© ${new Date().getFullYear()} ${fields.shop_name || 'Ma boutique'}. Tous droits réservés.`} />
-                  <p className="mt-1.5 text-xs text-gray-400">
+                  <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
                     Affiché en bas de votre boutique. Généralement vos mentions légales ou copyright.
                   </p>
                 </div>
@@ -545,12 +545,12 @@ export default function ShopSettingsPage() {
           {/* ── Confiance ────────────────────────────────────────────── */}
           {tab === 'trust' && (
             <div className="space-y-4">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 Ces badges s'affichent sur la page d'accueil de votre boutique.
                 Personnalisez le texte selon votre offre et votre pays.
               </p>
               {badges.map((badge, i) => (
-                <div key={badge.icon} className="flex items-start gap-3 rounded-xl border border-gray-200 p-4">
+                <div key={badge.icon} className="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
                   {/* Toggle actif */}
                   <label className="mt-1 relative inline-flex items-center cursor-pointer shrink-0">
                     <input
@@ -561,7 +561,7 @@ export default function ShopSettingsPage() {
                       onChange={(e) => setBadges((prev) => prev.map((b, idx) => idx === i ? { ...b, active: e.target.checked } : b))}
                       className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-gray-200 peer-checked:bg-gray-900 rounded-full transition-colors peer-focus:ring-2 peer-focus:ring-gray-900" />
+                    <div className="w-9 h-5 bg-gray-200 dark:bg-gray-600 peer-checked:bg-gray-900 dark:peer-checked:bg-gray-300 rounded-full transition-colors peer-focus:ring-2 peer-focus:ring-gray-900" />
                     <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-4" />
                   </label>
 
@@ -617,12 +617,12 @@ export default function ShopSettingsPage() {
 
 // ── Helpers UI ────────────────────────────────────────────────────────────────
 
-const INPUT_CLS = 'w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors'
+const INPUT_CLS = 'w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder:text-gray-500 text-sm outline-none focus:border-gray-900 focus:ring-1 focus:ring-gray-900 transition-colors'
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
       {children}
     </div>
   )

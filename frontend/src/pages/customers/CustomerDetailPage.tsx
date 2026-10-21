@@ -69,14 +69,14 @@ function KpiCard({
   sub?: string
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+    <div className="flex items-center gap-4 rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary">
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-gray-500">{label}</p>
-        <p className="truncate text-lg font-bold text-gray-900">{value}</p>
-        {sub && <p className="text-xs text-gray-400">{sub}</p>}
+        <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
+        <p className="truncate text-lg font-bold text-gray-900 dark:text-gray-100">{value}</p>
+        {sub && <p className="text-xs text-gray-400 dark:text-gray-500">{sub}</p>}
       </div>
     </div>
   )
@@ -165,14 +165,14 @@ export default function CustomerDetailPage() {
       key: 'reference',
       header: t('common.reference'),
       render: (s) => (
-        <span className="font-mono text-sm font-semibold text-gray-900">{s.reference}</span>
+        <span className="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">{s.reference}</span>
       ),
     },
     {
       key: 'confirmed_at',
       header: t('common.date'),
       render: (s) => (
-        <span className="text-sm text-gray-600">{formatDate(s.confirmed_at ?? s.created_at)}</span>
+        <span className="text-sm text-gray-600 dark:text-gray-400">{formatDate(s.confirmed_at ?? s.created_at)}</span>
       ),
     },
     {
@@ -180,7 +180,7 @@ export default function CustomerDetailPage() {
       header: t('common.amount'),
       align: 'right',
       render: (s) => (
-        <span className="font-medium text-gray-900">{formatCurrency(s.total)}</span>
+        <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(s.total)}</span>
       ),
     },
     {
@@ -196,7 +196,7 @@ export default function CustomerDetailPage() {
       header: t('sales.paid'),
       align: 'right',
       render: (s) => (
-        <span className="text-sm text-gray-700">{formatCurrency(s.paid_amount)}</span>
+        <span className="text-sm text-gray-700 dark:text-gray-300">{formatCurrency(s.paid_amount)}</span>
       ),
     },
     {
@@ -217,13 +217,13 @@ export default function CustomerDetailPage() {
   if (customerLoading) {
     return (
       <div className="space-y-4 p-4 sm:p-6">
-        <div className="h-6 w-24 animate-pulse rounded bg-gray-100" />
+        <div className="h-6 w-24 animate-pulse rounded bg-gray-100 dark:bg-gray-700" />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <SkeletonCard />
           <SkeletonCard />
           <SkeletonCard />
         </div>
-        <div className="space-y-2 rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+        <div className="space-y-2 rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
           {Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} />)}
         </div>
       </div>
@@ -249,7 +249,7 @@ export default function CustomerDetailPage() {
         <button
           type="button"
           onClick={() => navigate('/customers')}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
         >
           <ArrowLeftIcon className="h-4 w-4" />
           {t('customers.title')}
@@ -266,7 +266,7 @@ export default function CustomerDetailPage() {
       </div>
 
       {/* Profil */}
-      <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+      <div className="rounded-xl bg-white dark:bg-gray-800 p-6 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
         <div className="flex flex-wrap items-start gap-4">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-primary/10 text-2xl font-bold text-brand-primary select-none">
             {customer.name.charAt(0).toUpperCase()}
@@ -274,7 +274,7 @@ export default function CustomerDetailPage() {
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl font-bold text-slate-900">{customer.name}</h1>
+              <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">{customer.name}</h1>
               <Badge variant={customer.is_active ? 'success' : 'default'}>
                 {customer.is_active ? t('common.active') : t('common.inactive')}
               </Badge>
@@ -282,27 +282,27 @@ export default function CustomerDetailPage() {
 
             <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1.5">
               {customer.phone && (
-                <span className="flex items-center gap-1.5 text-sm text-gray-600">
-                  <PhoneIcon className="h-4 w-4 shrink-0 text-gray-400" />
+                <span className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+                  <PhoneIcon className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
                   {customer.phone}
                 </span>
               )}
               {customer.email && (
-                <span className="flex items-center gap-1.5 text-sm text-gray-600">
-                  <EnvelopeIcon className="h-4 w-4 shrink-0 text-gray-400" />
+                <span className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+                  <EnvelopeIcon className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
                   {customer.email}
                 </span>
               )}
               {customer.address && (
-                <span className="flex items-center gap-1.5 text-sm text-gray-600">
-                  <MapPinIcon className="h-4 w-4 shrink-0 text-gray-400" />
+                <span className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+                  <MapPinIcon className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" />
                   {customer.address}
                 </span>
               )}
             </div>
 
             {customer.notes && (
-              <p className="mt-3 rounded-lg bg-gray-50 px-4 py-2.5 text-sm text-gray-500 italic">
+              <p className="mt-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 px-4 py-2.5 text-sm text-gray-500 dark:text-gray-400 italic">
                 {customer.notes}
               </p>
             )}
@@ -352,8 +352,8 @@ export default function CustomerDetailPage() {
 
       {/* Section Créances */}
       {customer.outstanding_balance > 0 && (
-        <div className="rounded-xl bg-white shadow-sm ring-1 ring-red-100 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-red-100 bg-red-50">
+        <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-red-100 dark:ring-red-900/40 overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-red-100 dark:border-red-900/40 bg-red-50 dark:bg-red-900/20">
             <div className="flex items-center gap-2">
               <ExclamationCircleIcon className="h-4 w-4 text-red-500" />
               <h2 className="text-sm font-semibold text-red-700">
@@ -362,27 +362,27 @@ export default function CustomerDetailPage() {
             </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-100 text-sm">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-700/60 text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-700/50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.reference')}</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.date')}</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.total')}</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('sales.paid')}</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('sales.due')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.reference')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.date')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.total')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('sales.paid')}</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('sales.due')}</th>
                   <th className="sr-only">{t('common.actions')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700/40">
                 {(allSalesData?.data ?? salesData?.data ?? [])
                   .filter((s) => s.status === 'confirmed' && parseFloat(s.total) > parseFloat(s.paid_amount))
                   .map((sale) => {
                     const due = parseFloat(sale.total) - parseFloat(sale.paid_amount)
                     return (
-                      <tr key={sale.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-mono font-semibold text-gray-900">{sale.reference}</td>
-                        <td className="px-4 py-3 text-gray-500">{formatDateTime(sale.confirmed_at ?? sale.created_at)}</td>
-                        <td className="px-4 py-3 text-right text-gray-700">{formatCurrency(sale.total)}</td>
+                      <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                        <td className="px-4 py-3 font-mono font-semibold text-gray-900 dark:text-gray-100">{sale.reference}</td>
+                        <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{formatDateTime(sale.confirmed_at ?? sale.created_at)}</td>
+                        <td className="px-4 py-3 text-right text-gray-700 dark:text-gray-300">{formatCurrency(sale.total)}</td>
                         <td className="px-4 py-3 text-right text-emerald-600">{formatCurrency(sale.paid_amount)}</td>
                         <td className="px-4 py-3 text-right font-bold text-red-600">{formatCurrency(due)}</td>
                         <td className="px-4 py-3 text-right">
@@ -406,8 +406,8 @@ export default function CustomerDetailPage() {
       )}
 
       {/* Historique des ventes */}
-      <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-        <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('customers.sales_history')}</h2>
+      <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+        <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('customers.sales_history')}</h2>
 
         <Table<Sale>
           columns={saleColumns}
@@ -453,7 +453,7 @@ export default function CustomerDetailPage() {
       >
         {payingSale && (
           <div className="space-y-4">
-            <div className="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-600">
+            <div className="rounded-lg bg-gray-50 dark:bg-gray-700/50 px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
               {t('customers.sale_reference', { ref: payingSale.reference })}
               {' — '}{t('sales.due')} :{' '}
               <span className="font-bold text-red-600">
@@ -461,7 +461,7 @@ export default function CustomerDetailPage() {
               </span>
             </div>
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('common.payment_method')}</label>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('common.payment_method')}</label>
               <Select value={payMethod} onChange={(e) => setPayMethod(e.target.value)}>
                 <option value="cash">{t('sales.method_cash')}</option>
                 <option value="mobile_money">{t('sales.method_mobile_money')}</option>

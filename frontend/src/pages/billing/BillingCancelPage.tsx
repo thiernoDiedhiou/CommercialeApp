@@ -5,13 +5,13 @@ export default function BillingCancelPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-8 text-center">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 p-8 text-center">
         <XCircleIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
           Paiement annulé
         </h1>
-        <p className="text-gray-500 mb-6">
+        <p className="text-gray-500 dark:text-gray-400 mb-6">
           Votre paiement a été annulé. Votre abonnement n'a pas été modifié.
           Vous pouvez réessayer à tout moment.
         </p>

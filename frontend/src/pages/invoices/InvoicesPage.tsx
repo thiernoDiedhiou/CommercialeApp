@@ -121,25 +121,25 @@ export default function InvoicesPage() {
     {
       key: 'reference',
       header: t('invoices.reference'),
-      render: (i) => <span className="font-mono text-sm font-semibold text-gray-900">{i.reference}</span>,
+      render: (i) => <span className="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">{i.reference}</span>,
     },
     {
       key: 'customer',
       header: t('invoices.customer'),
       render: (i) => i.customer
-        ? <span className="text-sm text-gray-700">{i.customer.name}</span>
-        : <span className="text-sm text-gray-300">—</span>,
+        ? <span className="text-sm text-gray-700 dark:text-gray-300">{i.customer.name}</span>
+        : <span className="text-sm text-gray-300 dark:text-gray-600">—</span>,
     },
     {
       key: 'issue_date',
       header: t('invoices.issue_date'),
-      render: (i) => <span className="text-sm text-gray-600">{formatDate(i.issue_date)}</span>,
+      render: (i) => <span className="text-sm text-gray-600 dark:text-gray-400">{formatDate(i.issue_date)}</span>,
     },
     {
       key: 'due_date',
       header: t('invoices.due_date'),
       render: (i) => (
-        <span className={`text-sm ${i.status === 'overdue' ? 'font-semibold text-red-600' : 'text-gray-600'}`}>
+        <span className={`text-sm ${i.status === 'overdue' ? 'font-semibold text-red-600' : 'text-gray-600 dark:text-gray-400'}`}>
           {formatDate(i.due_date)}
         </span>
       ),
@@ -148,7 +148,7 @@ export default function InvoicesPage() {
       key: 'total',
       header: t('common.total'),
       align: 'right',
-      render: (i) => <span className="font-medium text-gray-900">{formatCurrency(i.total)}</span>,
+      render: (i) => <span className="font-medium text-gray-900 dark:text-gray-100">{formatCurrency(i.total)}</span>,
     },
     {
       key: 'paid_amount',
@@ -158,7 +158,7 @@ export default function InvoicesPage() {
         const due = Math.max(0, parseFloat(i.total) - parseFloat(i.paid_amount))
         return due > 0 && parseFloat(i.paid_amount) > 0
           ? <span className="text-sm text-emerald-600">{formatCurrency(i.paid_amount)}</span>
-          : <span className="text-sm text-gray-300">—</span>
+          : <span className="text-sm text-gray-300 dark:text-gray-600">—</span>
       },
     },
     {
@@ -186,14 +186,14 @@ export default function InvoicesPage() {
       render: (i) => (
         <div className="flex items-center justify-end gap-1">
           <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/invoices/${i.uid}`) }}
-            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700" title={t('common.view')}>
+            className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300" title={t('common.view')}>
             <EyeIcon className="h-4 w-4" />
           </button>
 
           <CanDo permission="invoices.pdf">
             <button type="button" onClick={(e) => { e.stopPropagation(); handlePdf(i.uid, i.reference) }}
               disabled={pdfLoading === i.uid}
-              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 disabled:opacity-40" title={t('invoices.download_pdf')}>
+              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-40" title={t('invoices.download_pdf')}>
               {pdfLoading === i.uid ? (
                 <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -208,7 +208,7 @@ export default function InvoicesPage() {
           {i.status === 'draft' && (
             <CanDo permission="invoices.edit">
               <button type="button" onClick={(e) => { e.stopPropagation(); setSendTarget(i) }}
-                className="rounded p-1.5 text-gray-400 hover:bg-blue-50 hover:text-blue-600" title={t('common.send')}>
+                className="rounded p-1.5 text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400" title={t('common.send')}>
                 <PaperAirplaneIcon className="h-4 w-4" />
               </button>
             </CanDo>
@@ -217,7 +217,7 @@ export default function InvoicesPage() {
           {(i.status === 'draft' || i.status === 'sent') && (
             <CanDo permission="invoices.edit">
               <button type="button" onClick={(e) => { e.stopPropagation(); setCancelTarget(i) }}
-                className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title={t('common.cancel')}>
+                className="rounded p-1.5 text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400" title={t('common.cancel')}>
                 <XCircleIcon className="h-4 w-4" />
               </button>
             </CanDo>
@@ -226,7 +226,7 @@ export default function InvoicesPage() {
           {i.status === 'draft' && (
             <CanDo permission="invoices.delete">
               <button type="button" onClick={(e) => { e.stopPropagation(); setDeleteTarget(i) }}
-                className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600" title={t('common.delete')}>
+                className="rounded p-1.5 text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400" title={t('common.delete')}>
                 <TrashIcon className="h-4 w-4" />
               </button>
             </CanDo>
@@ -240,7 +240,7 @@ export default function InvoicesPage() {
     <div className="space-y-4 p-4 sm:p-6">
       {/* En-tête */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">{t('invoices.title')}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">{t('invoices.title')}</h1>
         <CanDo permission="invoices.create">
           <div className="relative">
             <div className="flex rounded-lg overflow-hidden ring-1 ring-brand-primary shadow-sm">
@@ -257,16 +257,16 @@ export default function InvoicesPage() {
               </button>
             </div>
             {newOpen && (
-              <div className="absolute right-0 top-full mt-1 w-48 rounded-xl bg-white shadow-lg ring-1 ring-gray-200 z-10 py-1"
+              <div className="absolute right-0 top-full mt-1 w-48 rounded-xl bg-white dark:bg-gray-800 shadow-lg ring-1 ring-gray-200 dark:ring-gray-700 z-10 py-1"
                 onBlur={() => setNewOpen(false)}>
                 <button type="button"
                   onClick={() => { navigate('/invoices/new'); setNewOpen(false) }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40">
                   📄 {t('invoices.new')}
                 </button>
                 <button type="button"
                   onClick={() => { navigate('/invoices/new?type=quote'); setNewOpen(false) }}
-                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50">
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/40">
                   📋 {t('invoices.new_quote')}
                 </button>
               </div>
@@ -276,14 +276,14 @@ export default function InvoicesPage() {
       </div>
 
       {/* Onglets Tous / Factures / Devis */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 dark:border-gray-700">
         {([['' , t('invoices.filter_all')], ['invoice', t('invoices.type_invoice')], ['quote', t('invoices.type_quote')]] as [InvoiceType | '', string][]).map(([val, label]) => (
           <button key={val} type="button"
             onClick={() => { setDocType(val); setPage(1) }}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition ${
               docType === val
                 ? 'border-brand-primary text-brand-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}>
             {label}
           </button>
@@ -323,7 +323,7 @@ export default function InvoicesPage() {
         mobileCard={(inv) => (
           <div className="px-4 py-4">
             <div className="flex items-start justify-between gap-2 mb-1.5">
-              <span className="font-mono text-sm font-semibold text-gray-900">{inv.reference}</span>
+              <span className="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">{inv.reference}</span>
               <div className="flex items-center gap-1 flex-wrap justify-end">
                 {inv.type === 'quote' && (
                   <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700">{t('invoices.type_quote')}</span>
@@ -336,19 +336,19 @@ export default function InvoicesPage() {
                 </Badge>
               </div>
             </div>
-            <p className="text-sm text-gray-600 truncate mb-1">{inv.customer?.name ?? '—'}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 truncate mb-1">{inv.customer?.name ?? '—'}</p>
             <div className="flex items-center justify-between mb-3 text-xs text-gray-400">
               <span>{formatDate(inv.issue_date)}</span>
-              <span className="text-sm font-bold text-gray-900">{formatCurrency(inv.total)}</span>
+              <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatCurrency(inv.total)}</span>
             </div>
-            <div className="flex items-center gap-1 pt-2 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-1 pt-2 border-t border-gray-100 dark:border-gray-700/60" onClick={(e) => e.stopPropagation()}>
               <button type="button" onClick={() => navigate(`/invoices/${inv.uid}`)}
-                className="flex-1 flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs text-gray-500 hover:bg-gray-100">
+                className="flex-1 flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/40">
                 <EyeIcon className="h-3.5 w-3.5" /> {t('common.view')}
               </button>
               <CanDo permission="invoices.pdf">
                 <button type="button" onClick={() => handlePdf(inv.uid, inv.reference)} disabled={pdfLoading === inv.uid}
-                  className="flex-1 flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs text-gray-500 hover:bg-gray-100 disabled:opacity-40">
+                  className="flex-1 flex items-center justify-center gap-1 rounded-lg py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700/40 disabled:opacity-40">
                   {pdfLoading === inv.uid ? (
                     <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -385,8 +385,8 @@ export default function InvoicesPage() {
           </Button>
         </>}
       >
-        <p className="text-sm text-gray-600">
-          {t('invoices.send_confirm')} <span className="font-mono font-semibold text-gray-900">{sendTarget?.reference}</span> ?
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {t('invoices.send_confirm')} <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">{sendTarget?.reference}</span> ?
         </p>
       </Modal>
 
@@ -399,8 +399,8 @@ export default function InvoicesPage() {
           </Button>
         </>}
       >
-        <p className="text-sm text-gray-600">
-          {t('invoices.cancel_confirm')} <span className="font-mono font-semibold text-gray-900">{cancelTarget?.reference}</span> ?
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {t('invoices.cancel_confirm')} <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">{cancelTarget?.reference}</span> ?
         </p>
       </Modal>
 
@@ -413,8 +413,8 @@ export default function InvoicesPage() {
           </Button>
         </>}
       >
-        <p className="text-sm text-gray-600">
-          {t('invoices.delete_confirm')} <span className="font-mono font-semibold text-gray-900">{deleteTarget?.reference}</span> ?
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {t('invoices.delete_confirm')} <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">{deleteTarget?.reference}</span> ?
         </p>
       </Modal>
     </div>

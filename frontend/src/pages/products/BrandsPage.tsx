@@ -77,7 +77,7 @@ export default function BrandsPage() {
     {
       key   : 'name',
       header: t('common.name'),
-      render: (b) => <span className="font-medium text-gray-900">{b.name}</span>,
+      render: (b) => <span className="font-medium text-gray-900 dark:text-gray-100">{b.name}</span>,
     },
     {
       key   : 'actions',
@@ -89,7 +89,7 @@ export default function BrandsPage() {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); setModal({ mode: 'edit', brand: b }) }}
-              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+              className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300"
               title={t('common.edit')}
             >
               <PencilSquareIcon className="h-4 w-4" />
@@ -113,7 +113,7 @@ export default function BrandsPage() {
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-bold text-slate-900">{t('brands.title')}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">{t('brands.title')}</h1>
         <CanDo permission="products.create">
           <Button icon={<PlusIcon className="h-4 w-4" />} onClick={() => setModal({ mode: 'create' })}>
             {t('brands.new')}
@@ -130,11 +130,11 @@ export default function BrandsPage() {
         emptyMessage={<EmptyState icon={<TagIcon className="h-7 w-7" />} title={t('brands.empty_title')} description={t('brands.empty_desc')} />}
         mobileCard={(b) => (
           <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <span className="font-medium text-gray-900">{b.name}</span>
+            <span className="font-medium text-gray-900 dark:text-gray-100">{b.name}</span>
             <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
               <CanDo permission="products.edit">
                 <button type="button" onClick={() => setModal({ mode: 'edit', brand: b })}
-                  className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700">
+                  className="rounded p-1.5 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300">
                   <PencilSquareIcon className="h-4 w-4" />
                 </button>
               </CanDo>
@@ -188,9 +188,9 @@ export default function BrandsPage() {
           </>
         }
       >
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {t('brands.delete_confirm')}{' '}
-          <span className="font-semibold text-gray-900">«{deleteTarget?.name}»</span> ?{' '}
+          <span className="font-semibold text-gray-900 dark:text-gray-100">«{deleteTarget?.name}»</span> ?{' '}
           {t('common.action_irreversible')}
         </p>
       </Modal>

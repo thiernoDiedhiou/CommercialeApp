@@ -156,7 +156,7 @@ export default function VariantManager({ productPrice, productSku, onChange }: V
       {/* Étape 1 — Sélection des attributs */}
       {step === 1 && (
         <div className="space-y-3">
-          <p className="text-sm font-medium text-gray-700">Sélectionner les attributs</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Sélectionner les attributs</p>
           <div className="flex flex-wrap gap-2">
             {attributes.map((attr) => (
               <button
@@ -166,7 +166,7 @@ export default function VariantManager({ productPrice, productSku, onChange }: V
                 className={`rounded-full border px-3 py-1 text-sm transition-colors ${
                   selectedAttrIds.includes(attr.id)
                     ? 'border-brand-primary bg-brand-primary text-white'
-                    : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                    : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                 }`}
               >
                 {attr.name}
@@ -208,7 +208,7 @@ export default function VariantManager({ productPrice, productSku, onChange }: V
       {/* Étape 2 — Sélection des valeurs par attribut */}
       {step === 2 && (
         <div className="space-y-4">
-          <p className="text-sm font-medium text-gray-700">Sélectionner les valeurs</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Sélectionner les valeurs</p>
           {attributes
             .filter((a) => selectedAttrIds.includes(a.id))
             .map((attr) => (
@@ -225,7 +225,7 @@ export default function VariantManager({ productPrice, productSku, onChange }: V
                       className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
                         (selectedValueIds[attr.id] ?? []).includes(v.id)
                           ? 'border-brand-primary bg-brand-primary text-white'
-                          : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400'
+                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                     >
                       {v.value}
@@ -292,39 +292,39 @@ export default function VariantManager({ productPrice, productSku, onChange }: V
       {/* Étape 3 — Tableau des combinaisons */}
       {step === 3 && (
         <div className="space-y-3">
-          <p className="text-sm font-medium text-gray-700">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
             {combinations.length} combinaison{combinations.length !== 1 ? 's' : ''} générée
             {combinations.length !== 1 ? 's' : ''}
           </p>
 
           {combinations.length > 0 && (
-            <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-              <table className="min-w-full divide-y divide-gray-100 text-sm">
-                <thead className="bg-gray-50">
+            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+              <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-700 text-sm">
+                <thead className="bg-gray-50 dark:bg-gray-700/50">
                   <tr>
-                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-gray-500">
+                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
                       Combinaison
                     </th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-gray-500">
-                      SKU <span className="text-gray-400 normal-case font-normal">(modifiable)</span>
+                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
+                      SKU <span className="text-gray-400 dark:text-gray-500 normal-case font-normal">(modifiable)</span>
                     </th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-gray-500">
+                    <th className="px-3 py-2 text-left text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
                       Prix (FCFA)
                     </th>
                     <th className="w-8" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                   {combinations.map((row) => (
                     <tr key={row.key}>
-                      <td className="px-3 py-2 text-gray-800">{row.label}</td>
+                      <td className="px-3 py-2 text-gray-800 dark:text-gray-200">{row.label}</td>
                       <td className="px-3 py-2">
                         <input
                           type="text"
                           value={row.sku}
                           onChange={(e) => updateCombination(row.key, 'sku', e.target.value)}
                           placeholder="SKU-001"
-                          className="w-32 rounded border border-gray-200 px-2 py-1 text-xs focus:border-brand-primary focus:outline-none"
+                          className="w-32 rounded border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 text-xs focus:border-brand-primary focus:outline-none"
                         />
                       </td>
                       <td className="px-3 py-2">
@@ -334,7 +334,7 @@ export default function VariantManager({ productPrice, productSku, onChange }: V
                           onChange={(e) => updateCombination(row.key, 'price', e.target.value)}
                           placeholder={String(productPrice)}
                           min={0}
-                          className="w-28 rounded border border-gray-200 px-2 py-1 text-xs focus:border-brand-primary focus:outline-none"
+                          className="w-28 rounded border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-2 py-1 text-xs focus:border-brand-primary focus:outline-none"
                         />
                       </td>
                       <td className="px-3 py-2">

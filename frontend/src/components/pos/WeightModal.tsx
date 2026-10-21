@@ -60,13 +60,13 @@ export function WeightModal({ product, onConfirm, onClose }: Props) {
       }
     >
       <div className="flex flex-col items-center gap-4">
-        <div className="w-full rounded-xl bg-gray-50 border border-gray-200 px-6 py-4 text-right">
-          <span className="text-4xl font-bold text-gray-900 tabular-nums">{value}</span>
-          <span className="ml-2 text-xl text-gray-400">{unit}</span>
+        <div className="w-full rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 px-6 py-4 text-right">
+          <span className="text-4xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{value}</span>
+          <span className="ml-2 text-xl text-gray-400 dark:text-gray-500">{unit}</span>
         </div>
 
         {weight > 0 && (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             {value} {unit} × {formatCurrency(Number(product.price))} ={' '}
             <strong>{formatCurrency(total)}</strong>
           </p>
@@ -82,7 +82,7 @@ export function WeightModal({ product, onConfirm, onClose }: Props) {
                 'h-14 rounded-xl border text-lg font-semibold transition active:scale-95',
                 k === '⌫'
                   ? 'border-red-200 bg-red-50 text-red-500 hover:bg-red-100'
-                  : 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50',
+                  : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600',
               ].join(' ')}
             >
               {k === '⌫' ? <BackspaceIcon className="h-5 w-5 mx-auto" /> : k}

@@ -8,6 +8,7 @@ import ToastContainer from '@/components/ui/ToastContainer'
 import SubscriptionBanner from '@/components/ui/SubscriptionBanner'
 import { useAuthStore } from '@/store/authStore'
 import { useTenantStore } from '@/store/tenantStore'
+import { useThemeStore } from '@/store/themeStore'
 import apiClient from '@/lib/axios'
 import type { LoginResponse } from '@/types'
 
@@ -21,6 +22,7 @@ export default function Layout() {
   const token            = useAuthStore((s) => s.token)
   const user             = useAuthStore((s) => s.user)
   const applyBrandColors = useTenantStore((s) => s.applyBrandColors)
+  const applyTheme       = useThemeStore((s) => s.applyTheme)
 
   // Swipe depuis le bord gauche (≤ 24px) pour ouvrir la sidebar sur mobile
   useEffect(() => {
@@ -42,6 +44,12 @@ export default function Layout() {
     }
   }, [])
 
+  // Applique le thème (dark/light) dès le montage pour éviter le flash
+  useEffect(() => {
+    applyTheme()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Applique les couleurs du cache immédiatement (pas de flash)
   useEffect(() => {
     if (tenant) {
@@ -49,12 +57,13 @@ export default function Layout() {
     }
   }, [tenant, applyBrandColors])
 
-  // Synchronise la langue dès que tenant.locale change (après sauvegarde des paramètres)
+  // La préférence utilisateur prime sur le locale du tenant
+  const effectiveLocale = user?.locale ?? tenant?.locale
   useEffect(() => {
-    if (tenant?.locale) {
-      i18n.changeLanguage(tenant.locale)
+    if (effectiveLocale) {
+      i18n.changeLanguage(effectiveLocale)
     }
-  }, [tenant?.locale, i18n])
+  }, [effectiveLocale, i18n])
 
   // Au montage : rafraîchit les données depuis /auth/me qui retourne l'api_key.
   // Couvre aussi la restauration après F5 (tenantApiKey non persisté).
@@ -67,8 +76,9 @@ export default function Layout() {
       const { user: freshUser, permissions: freshPerms, tenant: freshTenant, subscription: freshSub, plan_features } = response.data
       setAuth(currentToken, freshUser, freshPerms, freshTenant, freshSub, plan_features)
       applyBrandColors(freshTenant.primary_color, freshTenant.secondary_color)
-      if (freshTenant.locale) {
-        i18n.changeLanguage(freshTenant.locale)
+      const lang = freshUser.locale ?? freshTenant.locale
+      if (lang) {
+        i18n.changeLanguage(lang)
       }
     }).catch(() => {
       // Silencieux — le cache localStorage reste valide si l'appel échoue
@@ -77,7 +87,7 @@ export default function Layout() {
   }, []) // Uniquement au montage
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}

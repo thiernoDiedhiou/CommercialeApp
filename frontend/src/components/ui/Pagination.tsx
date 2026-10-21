@@ -41,7 +41,7 @@ export default function Pagination({
   return (
     <div className={cn('flex items-center justify-between gap-4', className)}>
       {/* Résumé */}
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-gray-500 dark:text-gray-400">
         {from}–{to} sur {total} résultats
       </p>
 
@@ -52,7 +52,7 @@ export default function Pagination({
           type="button"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           aria-label="Page précédente"
         >
           <ChevronLeftIcon className="h-4 w-4" />
@@ -61,7 +61,7 @@ export default function Pagination({
         {/* Pages */}
         {pages.map((page, i) =>
           page === '...' ? (
-            <span key={`ellipsis-${i}`} className="flex h-8 w-8 items-center justify-center text-sm text-gray-400">
+            <span key={`ellipsis-${i}`} className="flex h-8 w-8 items-center justify-center text-sm text-gray-400 dark:text-gray-500">
               …
             </span>
           ) : (
@@ -74,7 +74,7 @@ export default function Pagination({
                 'flex h-8 w-8 items-center justify-center rounded-md text-sm font-medium transition-colors',
                 page === currentPage
                   ? 'bg-brand-primary text-white'
-                  : 'border border-gray-300 text-gray-600 hover:bg-gray-50',
+                  : 'border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
               )}
             >
               {page}
@@ -87,7 +87,7 @@ export default function Pagination({
           type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === lastPage}
-          className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           aria-label="Page suivante"
         >
           <ChevronRightIcon className="h-4 w-4" />

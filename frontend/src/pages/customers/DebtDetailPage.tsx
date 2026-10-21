@@ -100,25 +100,25 @@ export default function DebtDetailPage() {
         <button
           type="button"
           onClick={() => navigate('/debts')}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
         >
           <ArrowLeftIcon className="h-4 w-4" />
           {t('nav.debts')}
         </button>
-        <span className="text-gray-300">/</span>
-        <span className="text-sm font-medium text-gray-800">{customer.name}</span>
+        <span className="text-gray-300 dark:text-gray-600">/</span>
+        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{customer.name}</span>
       </div>
 
       {/* Carte client + solde */}
-      <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100 p-6">
+      <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-red-100 text-xl font-bold text-red-600 select-none">
               {customer.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{customer.name}</h1>
-              <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{customer.name}</h1>
+              <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
                 {customer.phone && (
                   <span className="flex items-center gap-1">
                     <PhoneIcon className="h-3.5 w-3.5" />
@@ -163,22 +163,22 @@ export default function DebtDetailPage() {
             <p className="text-xs text-red-400 uppercase tracking-wide">{t('customers.total_due')}</p>
             <p className="mt-1 text-2xl font-bold text-red-600">{formatCurrency(total_outstanding)}</p>
           </div>
-          <div className="rounded-lg bg-gray-50 p-4">
-            <p className="text-xs text-gray-400 uppercase tracking-wide">{t('customers.unpaid_sales')}</p>
-            <p className="mt-1 text-2xl font-bold text-gray-700">{unpaid_count}</p>
+          <div className="rounded-lg bg-gray-50 dark:bg-gray-700/50 p-4">
+            <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide">{t('customers.unpaid_sales')}</p>
+            <p className="mt-1 text-2xl font-bold text-gray-700 dark:text-gray-200">{unpaid_count}</p>
           </div>
         </div>
       </div>
 
       {/* Liste des ventes impayées */}
-      <div className="rounded-xl bg-white shadow-sm ring-1 ring-gray-100 overflow-hidden">
-        <div className="flex items-center gap-2 border-b border-gray-100 px-5 py-4">
+      <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 overflow-hidden">
+        <div className="flex items-center gap-2 border-b border-gray-100 dark:border-gray-700 px-5 py-4">
           <ExclamationCircleIcon className="h-5 w-5 text-red-400" />
-          <h2 className="font-semibold text-gray-900">{t('customers.unpaid_sales_section')}</h2>
+          <h2 className="font-semibold text-gray-900 dark:text-gray-100">{t('customers.unpaid_sales_section')}</h2>
         </div>
 
         {/* ── Cartes mobiles ── */}
-        <div className="sm:hidden divide-y divide-gray-100">
+        <div className="sm:hidden divide-y divide-gray-100 dark:divide-gray-700/60">
           {sales.map((sale) => (
             <div key={sale.uid} className="px-4 py-4 space-y-3">
               <div className="flex items-start justify-between gap-2">
@@ -189,16 +189,16 @@ export default function DebtDetailPage() {
                   >
                     {sale.reference}
                   </Link>
-                  <p className="text-xs text-gray-400 mt-0.5">{formatDate(sale.sale_date)}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{formatDate(sale.sale_date)}</p>
                 </div>
                 <span className="shrink-0 text-base font-bold text-red-600">
                   {formatCurrency(sale.remaining)}
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="rounded-lg bg-gray-50 px-3 py-2">
-                  <p className="text-gray-400 uppercase tracking-wide">{t('customers.sale_total')}</p>
-                  <p className="font-semibold text-gray-700 mt-0.5">{formatCurrency(sale.total)}</p>
+                <div className="rounded-lg bg-gray-50 dark:bg-gray-700/50 px-3 py-2">
+                  <p className="text-gray-400 dark:text-gray-500 uppercase tracking-wide">{t('customers.sale_total')}</p>
+                  <p className="font-semibold text-gray-700 dark:text-gray-200 mt-0.5">{formatCurrency(sale.total)}</p>
                 </div>
                 <div className="rounded-lg bg-emerald-50 px-3 py-2">
                   <p className="text-emerald-400 uppercase tracking-wide">{t('customers.already_paid')}</p>
@@ -218,8 +218,8 @@ export default function DebtDetailPage() {
             </div>
           ))}
           {/* Total mobile */}
-          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t-2 border-gray-200">
-            <span className="text-sm font-semibold text-gray-700">{t('customers.total_remaining_due')}</span>
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-t-2 border-gray-200 dark:border-gray-600">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('customers.total_remaining_due')}</span>
             <span className="font-bold text-red-600 text-base">{formatCurrency(total_outstanding)}</span>
           </div>
         </div>
@@ -227,19 +227,19 @@ export default function DebtDetailPage() {
         {/* ── Tableau desktop ── */}
         <div className="hidden sm:block overflow-x-auto">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-50">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
               <tr>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.reference')}</th>
-                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.date')}</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('common.total')}</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('sales.paid')}</th>
-                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500">{t('customers.remaining_due')}</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.reference')}</th>
+                <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.date')}</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('common.total')}</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('sales.paid')}</th>
+                <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{t('customers.remaining_due')}</th>
                 <th className="sr-only">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-gray-50 dark:divide-gray-700/60">
               {sales.map((sale) => (
-                <tr key={sale.uid} className="hover:bg-gray-50 transition-colors">
+                <tr key={sale.uid} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
                   <td className="px-5 py-3">
                     <Link
                       to={`/sales/${sale.uid}`}
@@ -249,8 +249,8 @@ export default function DebtDetailPage() {
                       {sale.reference}
                     </Link>
                   </td>
-                  <td className="px-5 py-3 text-gray-500">{formatDate(sale.sale_date)}</td>
-                  <td className="px-5 py-3 text-right text-gray-700">{formatCurrency(sale.total)}</td>
+                  <td className="px-5 py-3 text-gray-500 dark:text-gray-400">{formatDate(sale.sale_date)}</td>
+                  <td className="px-5 py-3 text-right text-gray-700 dark:text-gray-300">{formatCurrency(sale.total)}</td>
                   <td className="px-5 py-3 text-right text-emerald-600 font-medium">{formatCurrency(sale.paid_amount)}</td>
                   <td className="px-5 py-3 text-right font-bold text-red-600">{formatCurrency(sale.remaining)}</td>
                   <td className="px-5 py-3 text-right">
@@ -269,8 +269,8 @@ export default function DebtDetailPage() {
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-gray-200 bg-gray-50">
-                <td colSpan={4} className="px-5 py-3 text-right text-sm font-semibold text-gray-700">
+              <tr className="border-t-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
+                <td colSpan={4} className="px-5 py-3 text-right text-sm font-semibold text-gray-700 dark:text-gray-200">
                   {t('customers.total_remaining_due')}
                 </td>
                 <td className="px-5 py-3 text-right font-bold text-red-600 text-base">
@@ -304,26 +304,26 @@ export default function DebtDetailPage() {
       >
         {payingSale && (
           <div className="space-y-4">
-            <div className="rounded-lg bg-gray-50 p-3 text-sm">
-              <p className="font-medium text-gray-800">{payingSale.reference}</p>
-              <p className="text-gray-500 mt-0.5">{t('customers.remaining_due')} : <span className="font-bold text-red-600">{formatCurrency(payingSale.remaining)}</span></p>
+            <div className="rounded-lg bg-gray-50 dark:bg-gray-700/50 p-3 text-sm">
+              <p className="font-medium text-gray-800 dark:text-gray-100">{payingSale.reference}</p>
+              <p className="text-gray-500 dark:text-gray-400 mt-0.5">{t('customers.remaining_due')} : <span className="font-bold text-red-600">{formatCurrency(payingSale.remaining)}</span></p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.amount_collected')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('customers.amount_collected')}</label>
               <input
                 type="number"
                 min="1"
                 max={payingSale.remaining}
                 value={payAmount}
                 onChange={(e) => setPayAmount(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
                 placeholder={t('common.amount')}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('common.payment_method')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('common.payment_method')}</label>
               <Select value={payMethod} onChange={(e) => setPayMethod(e.target.value)}>
                 {PAYMENT_METHODS.map(m => (
                   <option key={m.value} value={m.value}>{m.label}</option>
@@ -332,12 +332,12 @@ export default function DebtDetailPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('customers.reference_optional')}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('customers.reference_optional')}</label>
               <input
                 type="text"
                 value={payRef}
                 onChange={(e) => setPayRef(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
                 placeholder={t('customers.reference_placeholder')}
               />
             </div>

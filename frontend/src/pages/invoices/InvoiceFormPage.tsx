@@ -86,10 +86,10 @@ function ProductPicker({ onSelect }: { onSelect: (p: Product) => void }) {
         onFocus={() => setOpen(true)}
         placeholder={t('invoices.picker_product_placeholder')}
         aria-label={t('invoices.picker_product_placeholder')}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
       />
       {open && deb.length >= 1 && (data?.data.length ?? 0) > 0 && (
-        <ul className="absolute top-full left-0 z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+        <ul className="absolute top-full left-0 z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
           {data!.data.map((p) => (
             <li key={p.id}>
               <button type="button"
@@ -149,10 +149,10 @@ function CustomerPicker({ initialName = '', onChange }: { initialName?: string; 
         onFocus={() => setOpen(true)}
         placeholder={t('invoices.picker_customer_placeholder')}
         aria-label={t('invoices.picker_customer_placeholder')}
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:placeholder-gray-400 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
       />
       {open && (
-        <ul className="absolute top-full left-0 z-20 mt-1 max-h-52 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+        <ul className="absolute top-full left-0 z-20 mt-1 max-h-52 w-full overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg">
           <li>
             <button type="button"
               onClick={() => { onChange(null); setText(''); setOpen(false) }}
@@ -307,14 +307,14 @@ export default function InvoiceFormPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
-      <h1 className="text-xl font-bold text-slate-900">
+      <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100">
         {isEdit ? t('invoices.form_edit_title', { type: docLabel }) : t('invoices.form_new_title', { type: docLabel })}
       </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Informations générales */}
-        <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('invoices.section_info')}</h2>
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+          <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('invoices.section_info')}</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-gray-700">{t('invoices.label_client')}</label>
@@ -357,7 +357,7 @@ export default function InvoiceFormPage() {
                   <input
                     type="number" min={0} max={100}
                     {...register('discount_value', { valueAsNumber: true })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                   />
                 )}
               </div>
@@ -368,8 +368,8 @@ export default function InvoiceFormPage() {
         </div>
 
         {/* Lignes */}
-        <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('invoices.section_lines')}</h2>
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+          <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('invoices.section_lines')}</h2>
 
           {/* Sélecteur rapide produit */}
           <div className="mb-4">
@@ -388,14 +388,14 @@ export default function InvoiceFormPage() {
             {items.map((item) => {
               const lineTotal = item.quantity * item.unit_price - item.discount
               return (
-                <div key={item.uid} className="rounded-lg border border-gray-100 bg-gray-50 p-3 space-y-2">
+                <div key={item.uid} className="rounded-lg border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 p-3 space-y-2">
                   <input
                     type="text"
                     value={item.description}
                     onChange={(e) => updateItem(item.uid, { description: e.target.value })}
                     placeholder={t('invoices.line_placeholder')}
                     aria-label={t('invoices.col_description')}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary dark:placeholder-gray-400"
                   />
                   <div className="flex gap-2">
                     <div className="w-20 shrink-0">
@@ -405,7 +405,7 @@ export default function InvoiceFormPage() {
                         value={item.quantity}
                         onChange={(e) => updateItem(item.uid, { quantity: parseFloat(e.target.value) || 0 })}
                         aria-label={t('invoices.col_qty')}
-                        className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary dark:placeholder-gray-400"
                       />
                     </div>
                     <div className="flex-1">
@@ -445,8 +445,8 @@ export default function InvoiceFormPage() {
                 </div>
               )
             })}
-            <div className="rounded-lg border border-gray-100 p-3 space-y-1 text-sm">
-              <div className="flex justify-between text-gray-500">
+            <div className="rounded-lg border border-gray-100 dark:border-gray-700 p-3 space-y-1 text-sm">
+              <div className="flex justify-between text-gray-500 dark:text-gray-400">
                 <span>{t('common.subtotal')}</span><span>{formatCurrency(subtotal)}</span>
               </div>
               {discountAmt > 0 && (
@@ -459,7 +459,7 @@ export default function InvoiceFormPage() {
                   <span>TVA ({taxRate}%)</span><span>{formatCurrency(taxAmount)}</span>
                 </div>
               )}
-              <div className="flex justify-between border-t border-gray-100 pt-2 font-bold text-gray-900">
+              <div className="flex justify-between border-t border-gray-100 dark:border-gray-700 pt-2 font-bold text-gray-900 dark:text-gray-100">
                 <span>{t('common.total')}</span><span>{formatCurrency(total)}</span>
               </div>
             </div>
@@ -469,7 +469,7 @@ export default function InvoiceFormPage() {
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+                <tr className="border-b border-gray-100 dark:border-gray-700 text-left text-xs text-gray-500 dark:text-gray-400">
                   <th className="pb-2 pr-3 font-medium">{t('invoices.col_description')}</th>
                   <th className="pb-2 pr-3 w-20 font-medium">{t('invoices.col_qty')}</th>
                   <th className="pb-2 pr-3 w-28 font-medium">{t('invoices.col_unit_price')}</th>
@@ -478,7 +478,7 @@ export default function InvoiceFormPage() {
                   <th className="pb-2 w-10"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-50 dark:divide-gray-700/40">
                 {items.map((item) => {
                   const lineTotal = item.quantity * item.unit_price - item.discount
                   return (
@@ -488,14 +488,14 @@ export default function InvoiceFormPage() {
                           onChange={(e) => updateItem(item.uid, { description: e.target.value })}
                           placeholder={t('invoices.line_placeholder')}
                           aria-label={t('invoices.col_description')}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary dark:placeholder-gray-400"
                         />
                       </td>
                       <td className="py-2 pr-3">
                         <input type="number" min="0.001" step="0.001" value={item.quantity}
                           onChange={(e) => updateItem(item.uid, { quantity: parseFloat(e.target.value) || 0 })}
                           aria-label={t('invoices.col_qty')}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
+                          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 text-sm focus:border-brand-primary focus:outline-none focus:ring-1 focus:ring-brand-primary"
                         />
                       </td>
                       <td className="py-2 pr-3">
@@ -515,7 +515,7 @@ export default function InvoiceFormPage() {
                           aria-label={t('common.discount')}
                         />
                       </td>
-                      <td className="py-2 text-right font-medium text-gray-900">
+                      <td className="py-2 text-right font-medium text-gray-900 dark:text-gray-100">
                         {formatCurrency(Math.max(0, lineTotal))}
                       </td>
                       <td className="py-2 pl-2">
@@ -531,10 +531,10 @@ export default function InvoiceFormPage() {
                 })}
               </tbody>
               <tfoot>
-                <tr><td colSpan={4} className="pt-3 text-right text-xs text-gray-500">{t('common.subtotal')}</td><td className="pt-3 text-right text-sm text-gray-700">{formatCurrency(subtotal)}</td><td /></tr>
+                <tr><td colSpan={4} className="pt-3 text-right text-xs text-gray-500 dark:text-gray-400">{t('common.subtotal')}</td><td className="pt-3 text-right text-sm text-gray-700 dark:text-gray-300">{formatCurrency(subtotal)}</td><td /></tr>
                 {discountAmt > 0 && <tr><td colSpan={4} className="text-right text-xs text-red-500">{t('common.discount')}</td><td className="text-right text-sm text-red-500">−{formatCurrency(discountAmt)}</td><td /></tr>}
-                {taxAmount > 0 && <tr><td colSpan={4} className="text-right text-xs text-gray-500">TVA ({taxRate}%)</td><td className="text-right text-sm text-gray-700">{formatCurrency(taxAmount)}</td><td /></tr>}
-                <tr><td colSpan={4} className="pt-2 text-right text-sm font-bold text-gray-900">{t('common.total')}</td><td className="pt-2 text-right text-base font-bold text-gray-900">{formatCurrency(total)}</td><td /></tr>
+                {taxAmount > 0 && <tr><td colSpan={4} className="text-right text-xs text-gray-500 dark:text-gray-400">TVA ({taxRate}%)</td><td className="text-right text-sm text-gray-700 dark:text-gray-300">{formatCurrency(taxAmount)}</td><td /></tr>}
+                <tr><td colSpan={4} className="pt-2 text-right text-sm font-bold text-gray-900 dark:text-gray-100">{t('common.total')}</td><td className="pt-2 text-right text-base font-bold text-gray-900 dark:text-gray-100">{formatCurrency(total)}</td><td /></tr>
               </tfoot>
             </table>
           </div>
@@ -547,8 +547,8 @@ export default function InvoiceFormPage() {
         </div>
 
         {/* Notes & Footer */}
-        <div className="rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
-          <h2 className="mb-4 text-sm font-semibold text-gray-700">{t('invoices.section_notes')}</h2>
+        <div className="rounded-xl bg-white dark:bg-gray-800 p-5 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700">
+          <h2 className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-300">{t('invoices.section_notes')}</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Textarea label={t('invoices.notes_internal')} placeholder={t('invoices.notes_internal_placeholder')} {...register('notes')} />
             <Textarea label={t('invoices.footer_label')} placeholder={t('invoices.footer_placeholder')} {...register('footer')} />
