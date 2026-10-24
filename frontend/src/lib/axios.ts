@@ -13,13 +13,14 @@ const apiClient = axios.create({
   },
 })
 
-// Injecte le Bearer token ET le X-Tenant-ID depuis le store (dynamique).
+// Injecte le Bearer token, X-Tenant-ID et X-Branch-ID depuis le store (dynamique).
 // Fallback sur tenant.api_key persisté en cas de F5 (tenantApiKey non persisté).
 apiClient.interceptors.request.use((config) => {
-  const { token, tenantApiKey, tenant } = useAuthStore.getState()
+  const { token, tenantApiKey, tenant, activeBranch } = useAuthStore.getState()
   if (token) config.headers.Authorization = `Bearer ${token}`
   const key = tenantApiKey || tenant?.api_key || ''
   if (key) config.headers['X-Tenant-ID'] = key
+  if (activeBranch?.uid) config.headers['X-Branch-ID'] = activeBranch.uid
   return config
 })
 

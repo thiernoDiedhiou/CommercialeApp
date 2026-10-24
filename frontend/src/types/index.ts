@@ -31,6 +31,18 @@ export interface PlanFeatures {
   custom_domain:  boolean
 }
 
+export interface Branch {
+  uid: string
+  name: string
+  type: 'principal' | 'sync' | 'warehouse'
+  address: string | null
+  phone: string | null
+  is_active: boolean
+  display_order: number
+  has_pos: boolean
+  created_at: string
+}
+
 export interface TenantInfo {
   api_key: string
   name: string

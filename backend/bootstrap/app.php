@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CheckPermission;
+use App\Http\Middleware\ResolveBranch;
 use App\Http\Middleware\ResolvePublicShop;
 use App\Http\Middleware\ResolveTenant;
 use Illuminate\Foundation\Application;
@@ -17,15 +18,17 @@ $app = Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'tenant'       => ResolveTenant::class,
+            'branch'       => ResolveBranch::class,
             'permission'   => CheckPermission::class,
             'super_admin'  => \App\Http\Middleware\EnsureSuperAdmin::class,
             'shop.public'  => ResolvePublicShop::class,
             'subscription' => \App\Http\Middleware\CheckSubscription::class,
         ]);
 
-        // ResolveTenant s'exécute en premier sur toutes les routes API
+        // ResolveTenant s'exécute en premier, ResolveBranch après (besoin du tenant résolu).
         $middleware->api(prepend: [
             ResolveTenant::class,
+            ResolveBranch::class,
             \App\Http\Middleware\SetSecurityHeaders::class,
         ]);
     })

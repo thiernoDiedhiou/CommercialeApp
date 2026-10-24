@@ -20,6 +20,7 @@ use App\Listeners\LogSaleCancelled;
 use App\Listeners\LogSaleCreated;
 use App\Models\Tenant;
 use App\Observers\TenantObserver;
+use App\Services\BranchService;
 use App\Services\PermissionService;
 use App\Services\TenantService;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -33,6 +34,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // TenantService : singleton de requête — partage l'état du tenant courant
         $this->app->singleton(TenantService::class);
+
+        // BranchService : singleton de requête — partage l'état de la succursale active
+        $this->app->singleton(BranchService::class);
 
         // PermissionService : sans état propre, mais singleton pour éviter les
         // instanciations répétées dans les middlewares et controllers

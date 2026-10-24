@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/authStore'
 import { useHomePath } from '@/hooks/useHomePath'
 import { NAV_ITEMS } from '@/lib/navItems'
 import { cn } from '@/lib/utils'
+import BranchSelector from '@/components/layout/BranchSelector'
 
 interface SidebarContentProps {
   onClose: () => void
@@ -67,6 +68,9 @@ function SidebarContent({ onClose }: SidebarContentProps) {
           {tenant?.name ?? 'Gestion Commerciale'}
         </span>
       </NavLink>
+
+      {/* Sélecteur de succursale (masqué si une seule succursale) */}
+      <BranchSelector />
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">

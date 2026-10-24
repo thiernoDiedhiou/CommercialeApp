@@ -2,19 +2,31 @@
 
 namespace App\Observers;
 
+use App\Models\Branch;
 use App\Models\Tenant;
+use App\Services\TenantService;
 use Database\Seeders\DefaultGroupSeeder;
 
 class TenantObserver
 {
     /**
      * Crée automatiquement les 3 groupes par défaut (Administrateur,
-     * Gestionnaire, Vendeur) dès qu'un nouveau tenant est créé.
-     * Si les permissions n'ont pas encore été seedées, la création
-     * est silencieusement ignorée (DefaultGroupSeeder::createForTenant gère ce cas).
+     * Gestionnaire, Vendeur) ET une succursale "Principal" dès qu'un
+     * nouveau tenant est créé.
      */
     public function created(Tenant $tenant): void
     {
         DefaultGroupSeeder::createForTenant($tenant);
+
+        // Initialisation du contexte tenant pour que BelongsToTenant fonctionne.
+        app(TenantService::class)->setCurrentTenant($tenant);
+
+        Branch::create([
+            'tenant_id'     => $tenant->id,
+            'name'          => 'Principal',
+            'type'          => 'principal',
+            'is_active'     => true,
+            'display_order' => 0,
+        ]);
     }
 }

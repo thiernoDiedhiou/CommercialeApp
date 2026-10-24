@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityLog\ActivityLogController;
 use App\Http\Controllers\Billing\BillingController;
+use App\Http\Controllers\Branch\BranchController;
 use App\Http\Controllers\Brand\BrandController;
 use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Customer\CustomerController;
@@ -64,6 +65,15 @@ Route::middleware('auth:sanctum')->prefix('notifications')->name('notifications.
 
 // ── Routes protégées (Sanctum + abonnement valide requis) ────────────────────
 Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
+
+    // ── Succursales ───────────────────────────────────────────────────────────
+    Route::prefix('branches')->name('branches.')->group(function () {
+        Route::get('/',              [BranchController::class, 'index']) ->middleware('permission:settings.view');
+        Route::post('/',             [BranchController::class, 'store']) ->middleware('permission:settings.edit');
+        Route::get('{branch:uid}',   [BranchController::class, 'show'])  ->middleware('permission:settings.view');
+        Route::put('{branch:uid}',   [BranchController::class, 'update'])->middleware('permission:settings.edit');
+        Route::delete('{branch:uid}',[BranchController::class, 'destroy'])->middleware('permission:settings.edit');
+    });
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
     Route::get('dashboard/summary', [DashboardController::class, 'summary'])
