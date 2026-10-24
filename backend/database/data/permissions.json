@@ -32,7 +32,8 @@
     "display_name": "Stock",
     "permissions": [
       { "name": "stock.view",   "display_name": "Voir le stock",    "action": "view"   },
-      { "name": "stock.adjust", "display_name": "Ajuster le stock", "action": "adjust" }
+      { "name": "stock.adjust",    "display_name": "Ajuster le stock",                     "action": "adjust"    },
+      { "name": "stock.transfer", "display_name": "Transférer le stock entre succursales", "action": "transfer" }
     ]
   },
   {

@@ -766,6 +766,40 @@ export interface StockReport {
   data:    StockReportRow[]
 }
 
+// ── Stock Transfers ───────────────────────────────────────────────────────
+
+export type StockTransferStatus = 'draft' | 'in_transit' | 'received' | 'cancelled'
+
+export interface StockTransferBranch {
+  uid:  string
+  name: string
+  type: 'principal' | 'sync' | 'warehouse'
+}
+
+export interface StockTransferItemType {
+  id:       number
+  quantity: number
+  notes:    string | null
+  product:  { uid: string; name: string; sku: string; unit: string } | null
+  variant:  { uid: string; name: string; sku: string } | null
+}
+
+export interface StockTransfer {
+  uid:          string
+  reference:    string | null
+  status:       StockTransferStatus
+  notes:        string | null
+  sent_at:      string | null
+  received_at:  string | null
+  created_at:   string
+  from_branch:  StockTransferBranch | null
+  to_branch:    StockTransferBranch | null
+  created_by:   string | null
+  received_by:  string | null
+  items:        StockTransferItemType[] | null
+  items_count:  number | null
+}
+
 // ── Sale Returns ──────────────────────────────────────────────────────────
 
 export type RefundMethod = 'cash' | 'credit' | 'none'

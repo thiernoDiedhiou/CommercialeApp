@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\ActivityLog\ActivityLogController;
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Billing\BillingController;
 use App\Http\Controllers\Branch\BranchController;
 use App\Http\Controllers\Brand\BrandController;
@@ -8,11 +10,11 @@ use App\Http\Controllers\Category\CategoryController;
 use App\Http\Controllers\Customer\CustomerController;
 use App\Http\Controllers\Customer\DebtController;
 use App\Http\Controllers\Dashboard\DashboardController;
-use App\Http\Controllers\Invoice\InvoiceController;
 use App\Http\Controllers\Inventory\InventoryController;
+use App\Http\Controllers\Invoice\InvoiceController;
 use App\Http\Controllers\Notification\NotificationController;
-use App\Http\Controllers\Pos\PosDraftController;
 use App\Http\Controllers\Pos\PosController;
+use App\Http\Controllers\Pos\PosDraftController;
 use App\Http\Controllers\Product\AttributeController;
 use App\Http\Controllers\Product\ProductController;
 use App\Http\Controllers\Product\ProductImportController;
@@ -26,41 +28,40 @@ use App\Http\Controllers\Sale\SaleController;
 use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Shop\ShopAdminController;
 use App\Http\Controllers\Stock\StockController;
+use App\Http\Controllers\Stock\StockTransferController;
 use App\Http\Controllers\Users\GroupController;
 use App\Http\Controllers\Users\UserController;
-use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\Auth\PasswordResetController;
 use Illuminate\Support\Facades\Route;
 
 // ── Authentification ──────────────────────────────────────────────────────────
 Route::prefix('auth')->name('auth.')->group(function () {
-    Route::post('login',            [AuthController::class,       'login'])->middleware('throttle:5,1')->name('login');
-    Route::post('forgot-password',  [PasswordResetController::class, 'send'])->middleware('throttle:5,1')->name('password.send');
-    Route::post('reset-password',   [PasswordResetController::class, 'reset'])->middleware('throttle:5,1')->name('password.reset');
+    Route::post('login', [AuthController::class,       'login'])->middleware('throttle:5,1')->name('login');
+    Route::post('forgot-password', [PasswordResetController::class, 'send'])->middleware('throttle:5,1')->name('password.send');
+    Route::post('reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:5,1')->name('password.reset');
 
     Route::middleware('auth:sanctum')->group(function () {
-        Route::post('logout',        [AuthController::class, 'logout'])->name('logout');
-        Route::get('me',             [AuthController::class, 'me'])->name('me');
-        Route::put('profile',        [AuthController::class, 'updateProfile'])->name('profile.update');
-        Route::post('avatar',        [AuthController::class, 'uploadAvatar'])->name('avatar.update');
-        Route::delete('avatar',      [AuthController::class, 'deleteAvatar'])->name('avatar.delete');
+        Route::post('logout', [AuthController::class, 'logout'])->name('logout');
+        Route::get('me', [AuthController::class, 'me'])->name('me');
+        Route::put('profile', [AuthController::class, 'updateProfile'])->name('profile.update');
+        Route::post('avatar', [AuthController::class, 'uploadAvatar'])->name('avatar.update');
+        Route::delete('avatar', [AuthController::class, 'deleteAvatar'])->name('avatar.delete');
     });
 });
 
 // ── Facturation / renouvellement abonnement (Sanctum, sans check_subscription) ──
 // Le tenant dont l'abonnement est expiré doit pouvoir initier un paiement.
 Route::middleware('auth:sanctum')->prefix('billing')->name('billing.')->group(function () {
-    Route::post('initiate',     [BillingController::class, 'initiate'])->name('initiate');
-    Route::get('verify',        [BillingController::class, 'verify'])->name('verify');
-    Route::get('transactions',  [BillingController::class, 'transactions'])->name('transactions');
+    Route::post('initiate', [BillingController::class, 'initiate'])->name('initiate');
+    Route::get('verify', [BillingController::class, 'verify'])->name('verify');
+    Route::get('transactions', [BillingController::class, 'transactions'])->name('transactions');
 });
 
 // ── Notifications tenant (Sanctum uniquement, pas d'abonnement requis) ────────
 Route::middleware('auth:sanctum')->prefix('notifications')->name('notifications.')->group(function () {
-    Route::get('/',          [NotificationController::class, 'index'])->name('index');
-    Route::post('read-all',  [NotificationController::class, 'markAllRead'])->name('read-all');
+    Route::get('/', [NotificationController::class, 'index'])->name('index');
+    Route::post('read-all', [NotificationController::class, 'markAllRead'])->name('read-all');
     Route::post('{id}/read', [NotificationController::class, 'markRead'])->name('read');
-    Route::delete('{id}',    [NotificationController::class, 'destroy'])->name('destroy');
+    Route::delete('{id}', [NotificationController::class, 'destroy'])->name('destroy');
 });
 
 // ── Routes protégées (Sanctum + abonnement valide requis) ────────────────────
@@ -68,11 +69,11 @@ Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
 
     // ── Succursales ───────────────────────────────────────────────────────────
     Route::prefix('branches')->name('branches.')->group(function () {
-        Route::get('/',              [BranchController::class, 'index']) ->middleware('permission:settings.view');
-        Route::post('/',             [BranchController::class, 'store']) ->middleware('permission:settings.edit');
-        Route::get('{branch:uid}',   [BranchController::class, 'show'])  ->middleware('permission:settings.view');
-        Route::put('{branch:uid}',   [BranchController::class, 'update'])->middleware('permission:settings.edit');
-        Route::delete('{branch:uid}',[BranchController::class, 'destroy'])->middleware('permission:settings.edit');
+        Route::get('/', [BranchController::class, 'index'])->middleware('permission:settings.view');
+        Route::post('/', [BranchController::class, 'store'])->middleware('permission:settings.edit');
+        Route::get('{branch:uid}', [BranchController::class, 'show'])->middleware('permission:settings.view');
+        Route::put('{branch:uid}', [BranchController::class, 'update'])->middleware('permission:settings.edit');
+        Route::delete('{branch:uid}', [BranchController::class, 'destroy'])->middleware('permission:settings.edit');
     });
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
@@ -85,9 +86,9 @@ Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
 
     // ── Paramètres tenant ─────────────────────────────────────────────────────
     Route::prefix('settings')->name('settings.')->group(function () {
-        Route::get('/',  [SettingsController::class, 'show'])
+        Route::get('/', [SettingsController::class, 'show'])
             ->middleware('permission:settings.view');
-        Route::put('/',  [SettingsController::class, 'update'])
+        Route::put('/', [SettingsController::class, 'update'])
             ->middleware('permission:settings.edit');
         Route::post('/', [SettingsController::class, 'update'])
             ->middleware('permission:settings.edit');
@@ -97,81 +98,81 @@ Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
     Route::prefix('reports')->name('reports.')
         ->middleware(['permission:reports.view', 'subscription:reports'])
         ->group(function () {
-            Route::get('sales',    [ReportController::class, 'sales']);
+            Route::get('sales', [ReportController::class, 'sales']);
             Route::get('products', [ReportController::class, 'products']);
-            Route::get('stock',    [ReportController::class, 'stock']);
+            Route::get('stock', [ReportController::class, 'stock']);
         });
 
     // ── Marques ───────────────────────────────────────────────────────────────
     Route::prefix('brands')->name('brands.')->group(function () {
-        Route::get('/',              [BrandController::class, 'index'])  ->middleware('permission:products.view');
-        Route::post('/',             [BrandController::class, 'store'])  ->middleware('permission:products.create');
-        Route::put('{brand:uid}',    [BrandController::class, 'update']) ->middleware('permission:products.edit');
+        Route::get('/', [BrandController::class, 'index'])->middleware('permission:products.view');
+        Route::post('/', [BrandController::class, 'store'])->middleware('permission:products.create');
+        Route::put('{brand:uid}', [BrandController::class, 'update'])->middleware('permission:products.edit');
         Route::delete('{brand:uid}', [BrandController::class, 'destroy'])->middleware('permission:products.delete');
     });
 
     // ── Catégories ────────────────────────────────────────────────────────────
     Route::prefix('categories')->name('categories.')->group(function () {
-        Route::get('/',                  [CategoryController::class, 'index'])
+        Route::get('/', [CategoryController::class, 'index'])
             ->middleware('permission:categories.view');
-        Route::post('/',                 [CategoryController::class, 'store'])
+        Route::post('/', [CategoryController::class, 'store'])
             ->middleware('permission:categories.create');
-        Route::put('{category:uid}',     [CategoryController::class, 'update'])
+        Route::put('{category:uid}', [CategoryController::class, 'update'])
             ->middleware('permission:categories.edit');
-        Route::delete('{category:uid}',  [CategoryController::class, 'destroy'])
+        Route::delete('{category:uid}', [CategoryController::class, 'destroy'])
             ->middleware('permission:categories.delete');
     });
 
     // ── Produits ──────────────────────────────────────────────────────────────
     Route::prefix('products')->name('products.')->group(function () {
-        Route::get('import/template',   [ProductImportController::class, 'template'])
+        Route::get('import/template', [ProductImportController::class, 'template'])
             ->middleware(['permission:products.import', 'subscription:import_csv']);
-        Route::post('import',           [ProductImportController::class, 'import'])
+        Route::post('import', [ProductImportController::class, 'import'])
             ->middleware(['permission:products.import', 'subscription:import_csv']);
 
-        Route::get('/',    [ProductController::class, 'index'])
+        Route::get('/', [ProductController::class, 'index'])
             ->middleware('permission:products.view');
-        Route::post('/',   [ProductController::class, 'store'])
+        Route::post('/', [ProductController::class, 'store'])
             ->middleware('permission:products.create');
-        Route::get('{product:uid}',          [ProductController::class, 'show'])
+        Route::get('{product:uid}', [ProductController::class, 'show'])
             ->middleware('permission:products.view');
-        Route::put('{product:uid}',          [ProductController::class, 'update'])
+        Route::put('{product:uid}', [ProductController::class, 'update'])
             ->middleware('permission:products.edit');
-        Route::delete('{product:uid}',       [ProductController::class, 'destroy'])
+        Route::delete('{product:uid}', [ProductController::class, 'destroy'])
             ->middleware('permission:products.delete');
         Route::get('{product:uid}/stock-movements', [ProductController::class, 'stockMovements'])
             ->middleware('permission:stock.view');
 
         // Variantes
-        Route::get('{product:uid}/variants',                      [VariantController::class, 'index'])
+        Route::get('{product:uid}/variants', [VariantController::class, 'index'])
             ->middleware('permission:variants.view');
-        Route::post('{product:uid}/variants',                     [VariantController::class, 'store'])
+        Route::post('{product:uid}/variants', [VariantController::class, 'store'])
             ->middleware('permission:variants.create');
-        Route::put('{product:uid}/variants/{variant:uid}',        [VariantController::class, 'update'])
+        Route::put('{product:uid}/variants/{variant:uid}', [VariantController::class, 'update'])
             ->middleware('permission:variants.edit');
-        Route::delete('{product:uid}/variants/{variant:uid}',     [VariantController::class, 'destroy'])
+        Route::delete('{product:uid}/variants/{variant:uid}', [VariantController::class, 'destroy'])
             ->middleware('permission:variants.delete');
 
         // Lots
-        Route::get('{product:uid}/lots',                   [ProductLotController::class, 'index'])
+        Route::get('{product:uid}/lots', [ProductLotController::class, 'index'])
             ->middleware('permission:stock.view');
-        Route::post('{product:uid}/lots',                  [ProductLotController::class, 'store'])
+        Route::post('{product:uid}/lots', [ProductLotController::class, 'store'])
             ->middleware('permission:stock.adjust');
-        Route::post('{product:uid}/lots/regularize',       [ProductLotController::class, 'regularize'])
+        Route::post('{product:uid}/lots/regularize', [ProductLotController::class, 'regularize'])
             ->middleware('permission:stock.adjust');
-        Route::put('{product:uid}/lots/{lot:uid}',         [ProductLotController::class, 'update'])
+        Route::put('{product:uid}/lots/{lot:uid}', [ProductLotController::class, 'update'])
             ->middleware('permission:stock.adjust');
     });
 
     // ── Attributs ─────────────────────────────────────────────────────────────
     Route::prefix('attributes')->name('attributes.')->group(function () {
-        Route::get('/',    [AttributeController::class, 'index'])
+        Route::get('/', [AttributeController::class, 'index'])
             ->middleware('permission:variants.view');
-        Route::post('/',   [AttributeController::class, 'store'])
+        Route::post('/', [AttributeController::class, 'store'])
             ->middleware('permission:variants.create');
         Route::delete('{attribute}', [AttributeController::class, 'destroy'])
             ->middleware('permission:variants.delete');
-        Route::post('{attribute}/values',           [AttributeController::class, 'storeValue'])
+        Route::post('{attribute}/values', [AttributeController::class, 'storeValue'])
             ->middleware('permission:variants.create');
         Route::delete('{attribute}/values/{value}', [AttributeController::class, 'destroyValue'])
             ->middleware('permission:variants.delete');
@@ -180,49 +181,65 @@ Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
 
     // ── Stock ─────────────────────────────────────────────────────────────────
     Route::prefix('stock')->name('stock.')->group(function () {
-        Route::post('adjust',    [StockController::class, 'adjust'])
+        Route::post('adjust', [StockController::class, 'adjust'])
             ->middleware('permission:stock.adjust');
-        Route::get('movements',  [StockController::class, 'movements'])
+        Route::get('movements', [StockController::class, 'movements'])
             ->middleware('permission:stock.view');
-        Route::get('alerts',     [StockController::class, 'alerts'])
+        Route::get('alerts', [StockController::class, 'alerts'])
             ->middleware('permission:stock.view');
-        Route::get('expiring',   [StockController::class, 'expiring'])
+        Route::get('expiring', [StockController::class, 'expiring'])
             ->middleware('permission:stock.view');
+
+        // ── Transferts inter-succursales ──────────────────────────────────────
+        Route::prefix('transfers')->name('transfers.')->group(function () {
+            Route::get('/', [StockTransferController::class, 'index'])
+                ->middleware('permission:stock.view');
+            Route::post('/', [StockTransferController::class, 'store'])
+                ->middleware('permission:stock.transfer');
+            Route::get('{stockTransfer:uid}', [StockTransferController::class, 'show'])
+                ->middleware('permission:stock.view');
+            Route::post('{stockTransfer:uid}/send', [StockTransferController::class, 'send'])
+                ->middleware('permission:stock.transfer');
+            Route::post('{stockTransfer:uid}/receive', [StockTransferController::class, 'receive'])
+                ->middleware('permission:stock.transfer');
+            Route::post('{stockTransfer:uid}/cancel', [StockTransferController::class, 'cancel'])
+                ->middleware('permission:stock.transfer');
+        });
 
         // ── Inventaires ───────────────────────────────────────────────────────
         Route::prefix('inventories')->name('inventories.')->group(function () {
-            Route::get('/',                                    [InventoryController::class, 'index'])
+            Route::get('/', [InventoryController::class, 'index'])
                 ->middleware('permission:stock.view');
-            Route::post('/',                                   [InventoryController::class, 'store'])
+            Route::post('/', [InventoryController::class, 'store'])
                 ->middleware('permission:stock.adjust');
-            Route::get('{inventorySession:uid}',               [InventoryController::class, 'show'])
+            Route::get('{inventorySession:uid}', [InventoryController::class, 'show'])
                 ->middleware('permission:stock.view');
-            Route::get('{inventorySession:uid}/lines',         [InventoryController::class, 'lines'])
+            Route::get('{inventorySession:uid}/lines', [InventoryController::class, 'lines'])
                 ->middleware('permission:stock.view');
-            Route::put('{inventorySession:uid}/items',         [InventoryController::class, 'updateItem'])
+            Route::put('{inventorySession:uid}/items', [InventoryController::class, 'updateItem'])
                 ->middleware('permission:stock.adjust');
-            Route::post('{inventorySession:uid}/confirm',      [InventoryController::class, 'confirm'])
+            Route::post('{inventorySession:uid}/confirm', [InventoryController::class, 'confirm'])
                 ->middleware('permission:stock.adjust');
-            Route::get('{inventorySession:uid}/export-csv',    [InventoryController::class, 'exportCsv'])
+            Route::get('{inventorySession:uid}/export-csv', [InventoryController::class, 'exportCsv'])
                 ->middleware('permission:stock.view');
-            Route::get('{inventorySession:uid}/export-pdf',    [InventoryController::class, 'exportPdf'])
+            Route::get('{inventorySession:uid}/export-pdf', [InventoryController::class, 'exportPdf'])
                 ->middleware('permission:stock.view');
-            Route::delete('{inventorySession:uid}',            [InventoryController::class, 'destroy'])
+            Route::delete('{inventorySession:uid}', [InventoryController::class, 'destroy'])
                 ->middleware('permission:stock.adjust');
         });
     });
 
     // ── Clients ───────────────────────────────────────────────────────────────
     Route::prefix('customers')->name('customers.')->group(function () {
-        Route::get('/',                    [CustomerController::class, 'index'])
+        Route::get('/', [CustomerController::class, 'index'])
             ->middleware('permission:customers.view');
-        Route::post('/',                   [CustomerController::class, 'store'])
+        Route::post('/', [CustomerController::class, 'store'])
             ->middleware('permission:customers.create');
-        Route::get('{customer:uid}',       [CustomerController::class, 'show'])
+        Route::get('{customer:uid}', [CustomerController::class, 'show'])
             ->middleware('permission:customers.view');
-        Route::put('{customer:uid}',       [CustomerController::class, 'update'])
+        Route::put('{customer:uid}', [CustomerController::class, 'update'])
             ->middleware('permission:customers.edit');
-        Route::delete('{customer:uid}',    [CustomerController::class, 'destroy'])
+        Route::delete('{customer:uid}', [CustomerController::class, 'destroy'])
             ->middleware('permission:customers.delete');
         Route::get('{customer:uid}/sales', [CustomerController::class, 'sales'])
             ->middleware('permission:sales.view');
@@ -236,17 +253,17 @@ Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
 
     // ── Ventes ────────────────────────────────────────────────────────────────
     Route::prefix('sales')->name('sales.')->group(function () {
-        Route::get('/',                   [SaleController::class, 'index'])
+        Route::get('/', [SaleController::class, 'index'])
             ->middleware('permission:sales.view');
-        Route::post('/',                  [SaleController::class, 'store'])
+        Route::post('/', [SaleController::class, 'store'])
             ->middleware('permission:sales.create');
-        Route::get('{sale:uid}',          [SaleController::class, 'show'])
+        Route::get('{sale:uid}', [SaleController::class, 'show'])
             ->middleware('permission:sales.view');
-        Route::post('{sale:uid}/payments',[SaleController::class, 'addPayment'])
+        Route::post('{sale:uid}/payments', [SaleController::class, 'addPayment'])
             ->middleware('permission:sales.create');
-        Route::post('{sale:uid}/cancel',  [SaleController::class, 'cancel'])
+        Route::post('{sale:uid}/cancel', [SaleController::class, 'cancel'])
             ->middleware('permission:sales.edit');
-        Route::get('{sale:uid}/pdf',      [SaleController::class, 'pdf'])
+        Route::get('{sale:uid}/pdf', [SaleController::class, 'pdf'])
             ->middleware('permission:sales.pdf');
         Route::post('{sale:uid}/returns', [ReturnController::class, 'store'])
             ->middleware('permission:returns.create');
@@ -254,116 +271,116 @@ Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
 
     // ── Retours ───────────────────────────────────────────────────────────────
     Route::prefix('returns')->name('returns.')->group(function () {
-        Route::get('/',                [ReturnController::class, 'index'])
+        Route::get('/', [ReturnController::class, 'index'])
             ->middleware('permission:returns.view');
-        Route::get('{return:uid}',     [ReturnController::class, 'show'])
+        Route::get('{return:uid}', [ReturnController::class, 'show'])
             ->middleware('permission:returns.view');
     });
 
     // ── Utilisateurs — feature : multi_user ──────────────────────────────────
     Route::prefix('users')->name('users.')->middleware('subscription:multi_user')->group(function () {
-        Route::get('/',                    [UserController::class, 'index'])
+        Route::get('/', [UserController::class, 'index'])
             ->middleware('permission:users.view');
-        Route::post('/',                   [UserController::class, 'store'])
+        Route::post('/', [UserController::class, 'store'])
             ->middleware('permission:users.create');
-        Route::put('{user:uid}',           [UserController::class, 'update'])
+        Route::put('{user:uid}', [UserController::class, 'update'])
             ->middleware('permission:users.edit');
-        Route::delete('{user:uid}',        [UserController::class, 'destroy'])
+        Route::delete('{user:uid}', [UserController::class, 'destroy'])
             ->middleware('permission:users.delete');
-        Route::post('{user:uid}/groups',   [UserController::class, 'syncGroups'])
+        Route::post('{user:uid}/groups', [UserController::class, 'syncGroups'])
             ->middleware('permission:users.edit');
     });
 
     // ── Groupes — feature : multi_user ───────────────────────────────────────
     Route::prefix('groups')->name('groups.')->middleware('subscription:multi_user')->group(function () {
-        Route::get('/',                          [GroupController::class, 'index'])
+        Route::get('/', [GroupController::class, 'index'])
             ->middleware('permission:groups.view');
-        Route::get('permissions/available',      [GroupController::class, 'availablePermissions'])
+        Route::get('permissions/available', [GroupController::class, 'availablePermissions'])
             ->middleware('permission:groups.view');
-        Route::post('/',                         [GroupController::class, 'store'])
+        Route::post('/', [GroupController::class, 'store'])
             ->middleware('permission:groups.create');
-        Route::put('{group:uid}',                [GroupController::class, 'update'])
+        Route::put('{group:uid}', [GroupController::class, 'update'])
             ->middleware('permission:groups.edit');
-        Route::delete('{group:uid}',             [GroupController::class, 'destroy'])
+        Route::delete('{group:uid}', [GroupController::class, 'destroy'])
             ->middleware('permission:groups.delete');
-        Route::post('{group:uid}/permissions',   [GroupController::class, 'syncPermissions'])
+        Route::post('{group:uid}/permissions', [GroupController::class, 'syncPermissions'])
             ->middleware('permission:groups.edit');
     });
 
     // ── Facturation — feature : invoicing ────────────────────────────────────
     Route::prefix('invoices')->name('invoices.')->middleware('subscription:invoicing')->group(function () {
-        Route::get('/',                                   [InvoiceController::class, 'index'])
+        Route::get('/', [InvoiceController::class, 'index'])
             ->middleware('permission:invoices.view');
-        Route::post('/',                                  [InvoiceController::class, 'store'])
+        Route::post('/', [InvoiceController::class, 'store'])
             ->middleware('permission:invoices.create');
-        Route::get('{invoice:uid}',                       [InvoiceController::class, 'show'])
+        Route::get('{invoice:uid}', [InvoiceController::class, 'show'])
             ->middleware('permission:invoices.view');
-        Route::put('{invoice:uid}',                       [InvoiceController::class, 'update'])
+        Route::put('{invoice:uid}', [InvoiceController::class, 'update'])
             ->middleware('permission:invoices.edit');
-        Route::delete('{invoice:uid}',                    [InvoiceController::class, 'destroy'])
+        Route::delete('{invoice:uid}', [InvoiceController::class, 'destroy'])
             ->middleware('permission:invoices.delete');
-        Route::post('{invoice:uid}/send',                 [InvoiceController::class, 'send'])
+        Route::post('{invoice:uid}/send', [InvoiceController::class, 'send'])
             ->middleware('permission:invoices.edit');
-        Route::post('{invoice:uid}/send-reminder',        [InvoiceController::class, 'sendReminder'])
+        Route::post('{invoice:uid}/send-reminder', [InvoiceController::class, 'sendReminder'])
             ->middleware('permission:invoices.edit');
-        Route::post('{invoice:uid}/payment',              [InvoiceController::class, 'recordPayment'])
+        Route::post('{invoice:uid}/payment', [InvoiceController::class, 'recordPayment'])
             ->middleware('permission:invoices.edit');
-        Route::get('{invoice:uid}/payments',              [InvoiceController::class, 'payments'])
+        Route::get('{invoice:uid}/payments', [InvoiceController::class, 'payments'])
             ->middleware('permission:invoices.view');
-        Route::post('{invoice:uid}/duplicate',            [InvoiceController::class, 'duplicate'])
+        Route::post('{invoice:uid}/duplicate', [InvoiceController::class, 'duplicate'])
             ->middleware('permission:invoices.create');
-        Route::post('{invoice:uid}/convert-to-invoice',   [InvoiceController::class, 'convertToInvoice'])
+        Route::post('{invoice:uid}/convert-to-invoice', [InvoiceController::class, 'convertToInvoice'])
             ->middleware('permission:invoices.create');
-        Route::post('{invoice:uid}/credit-note',          [InvoiceController::class, 'createCreditNote'])
+        Route::post('{invoice:uid}/credit-note', [InvoiceController::class, 'createCreditNote'])
             ->middleware('permission:invoices.create');
-        Route::post('{invoice:uid}/cancel',               [InvoiceController::class, 'cancel'])
+        Route::post('{invoice:uid}/cancel', [InvoiceController::class, 'cancel'])
             ->middleware('permission:invoices.edit');
-        Route::get('{invoice:uid}/pdf',                   [InvoiceController::class, 'pdf'])
+        Route::get('{invoice:uid}/pdf', [InvoiceController::class, 'pdf'])
             ->middleware('permission:invoices.pdf');
     });
 
     // ── Fournisseurs — feature : purchases ───────────────────────────────────
     Route::prefix('suppliers')->name('suppliers.')->middleware('subscription:purchases')->group(function () {
-        Route::get('/',                   [SupplierController::class, 'index'])
+        Route::get('/', [SupplierController::class, 'index'])
             ->middleware('permission:suppliers.view');
-        Route::post('/',                  [SupplierController::class, 'store'])
+        Route::post('/', [SupplierController::class, 'store'])
             ->middleware('permission:suppliers.create');
-        Route::get('{supplier:uid}',      [SupplierController::class, 'show'])
+        Route::get('{supplier:uid}', [SupplierController::class, 'show'])
             ->middleware('permission:suppliers.view');
-        Route::put('{supplier:uid}',      [SupplierController::class, 'update'])
+        Route::put('{supplier:uid}', [SupplierController::class, 'update'])
             ->middleware('permission:suppliers.edit');
-        Route::delete('{supplier:uid}',   [SupplierController::class, 'destroy'])
+        Route::delete('{supplier:uid}', [SupplierController::class, 'destroy'])
             ->middleware('permission:suppliers.delete');
     });
 
     // ── Bons de commande — feature : purchases ───────────────────────────────
     Route::prefix('purchases')->name('purchases.')->middleware('subscription:purchases')->group(function () {
-        Route::get('/',                              [PurchaseOrderController::class, 'index'])
+        Route::get('/', [PurchaseOrderController::class, 'index'])
             ->middleware('permission:purchases.view');
-        Route::post('/',                             [PurchaseOrderController::class, 'store'])
+        Route::post('/', [PurchaseOrderController::class, 'store'])
             ->middleware('permission:purchases.create');
-        Route::get('{purchaseOrder:uid}',            [PurchaseOrderController::class, 'show'])
+        Route::get('{purchaseOrder:uid}', [PurchaseOrderController::class, 'show'])
             ->middleware('permission:purchases.view');
-        Route::put('{purchaseOrder:uid}',            [PurchaseOrderController::class, 'update'])
+        Route::put('{purchaseOrder:uid}', [PurchaseOrderController::class, 'update'])
             ->middleware('permission:purchases.edit');
-        Route::delete('{purchaseOrder:uid}',         [PurchaseOrderController::class, 'destroy'])
+        Route::delete('{purchaseOrder:uid}', [PurchaseOrderController::class, 'destroy'])
             ->middleware('permission:purchases.delete');
-        Route::post('{purchaseOrder:uid}/confirm',   [PurchaseOrderController::class, 'confirm'])
+        Route::post('{purchaseOrder:uid}/confirm', [PurchaseOrderController::class, 'confirm'])
             ->middleware('permission:purchases.edit');
-        Route::post('{purchaseOrder:uid}/receive',   [PurchaseOrderController::class, 'receive'])
+        Route::post('{purchaseOrder:uid}/receive', [PurchaseOrderController::class, 'receive'])
             ->middleware('permission:purchases.receive');
-        Route::post('{purchaseOrder:uid}/cancel',    [PurchaseOrderController::class, 'cancel'])
+        Route::post('{purchaseOrder:uid}/cancel', [PurchaseOrderController::class, 'cancel'])
             ->middleware('permission:purchases.edit');
     });
 
     // ── POS ───────────────────────────────────────────────────────────────────
     Route::prefix('pos')->name('pos.')->middleware('permission:pos.access')->group(function () {
-        Route::get('products',                 [PosController::class, 'products'])->name('products');
-        Route::get('session/current',          [PosController::class, 'currentSession'])->name('session.current');
-        Route::post('session/open',            [PosController::class, 'openSession'])->name('session.open');
+        Route::get('products', [PosController::class, 'products'])->name('products');
+        Route::get('session/current', [PosController::class, 'currentSession'])->name('session.current');
+        Route::post('session/open', [PosController::class, 'openSession'])->name('session.open');
         Route::post('session/{session}/close', [PosController::class, 'closeSession'])->name('session.close');
-        Route::post('sync',                    [PosController::class, 'syncOffline'])->name('sync');
-        Route::apiResource('drafts',           PosDraftController::class)->names('drafts');
+        Route::post('sync', [PosController::class, 'syncOffline'])->name('sync');
+        Route::apiResource('drafts', PosDraftController::class)->names('drafts');
     });
     Route::get('pos/sessions', [PosController::class, 'sessions'])
         ->name('pos.sessions')
@@ -371,17 +388,17 @@ Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
 
     // ── Boutique en ligne (admin) — feature : shop ───────────────────────────
     Route::prefix('shop')->name('shop.')->middleware('subscription:shop')->group(function () {
-        Route::get('settings',                 [ShopAdminController::class, 'settings'])
+        Route::get('settings', [ShopAdminController::class, 'settings'])
             ->middleware('permission:shop.manage');
-        Route::post('settings/update',         [ShopAdminController::class, 'updateSettings'])
+        Route::post('settings/update', [ShopAdminController::class, 'updateSettings'])
             ->middleware('permission:shop.manage');
-        Route::post('settings/toggle-active',  [ShopAdminController::class, 'toggleActive'])
+        Route::post('settings/toggle-active', [ShopAdminController::class, 'toggleActive'])
             ->middleware('permission:shop.manage');
-        Route::get('orders',                        [ShopAdminController::class, 'orders'])
+        Route::get('orders', [ShopAdminController::class, 'orders'])
             ->middleware('permission:shop.orders');
-        Route::get('orders/{order:uid}',            [ShopAdminController::class, 'showOrder'])
+        Route::get('orders/{order:uid}', [ShopAdminController::class, 'showOrder'])
             ->middleware('permission:shop.orders');
-        Route::put('orders/{order:uid}/status',     [ShopAdminController::class, 'updateStatus'])
+        Route::put('orders/{order:uid}/status', [ShopAdminController::class, 'updateStatus'])
             ->middleware('permission:shop.orders');
     });
 });

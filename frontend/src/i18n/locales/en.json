@@ -17,6 +17,7 @@
     "customers": "Customers",
     "debts": "Outstanding",
     "stock": "Inventory",
+    "transfers": "Transfers",
     "reports": "Reports",
     "analytics": "Analytics",
     "pos_sessions": "POS Sessions",

@@ -57,7 +57,13 @@ export const NAV_ITEMS: NavItem[] = [
       { labelKey: 'nav.debts',     path: '/debts', permission: 'debts.view' },
     ],
   },
-  { labelKey: 'nav.stock',         path: '/stock',          icon: Warehouse,       permission: 'stock.view' },
+  {
+    labelKey: 'nav.stock',         path: '/stock',          icon: Warehouse,       permission: 'stock.view',
+    children: [
+      { labelKey: 'nav.stock',       path: '/stock',             permission: 'stock.view'     },
+      { labelKey: 'nav.transfers',   path: '/stock/transfers',   permission: 'stock.view'     },
+    ],
+  },
   {
     labelKey: 'nav.reports',       path: '/reports',        icon: BarChart3,       permission: 'reports.view',   feature: 'reports',
     children: [

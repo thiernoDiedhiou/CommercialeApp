@@ -43,6 +43,7 @@ import PosPage from '@/pages/pos/PosPage'
 import PosSessionsPage from '@/pages/pos/PosSessionsPage'
 import StockPage from '@/pages/stock/StockPage'
 import InventorySessionPage from '@/pages/stock/InventorySessionPage'
+import StockTransfersPage from '@/pages/stock/StockTransfersPage'
 import ReportsPage from '@/pages/reports/ReportsPage'
 import ToastContainer from '@/components/ui/ToastContainer'
 import InvoicesPage from '@/pages/invoices/InvoicesPage'
@@ -152,6 +153,7 @@ export default function App() {
           <Route path="debts"            element={<RequirePermission permission="debts.view"><DebtsPage /></RequirePermission>} />
           <Route path="debts/:uid"       element={<RequirePermission permission="debts.view"><DebtDetailPage /></RequirePermission>} />
           <Route path="stock"                        element={<RequirePermission permission="stock.view"><StockPage /></RequirePermission>} />
+          <Route path="stock/transfers"              element={<RequirePermission permission="stock.view"><StockTransfersPage /></RequirePermission>} />
           <Route path="stock/inventory/:uid"         element={<RequirePermission permission="stock.view"><InventorySessionPage /></RequirePermission>} />
           <Route path="reports"               element={<RequirePermission permission="reports.view"><ReportsPage /></RequirePermission>} />
           <Route path="invoices"             element={<RequirePermission permission="invoices.view"><InvoicesPage /></RequirePermission>} />
