@@ -27,6 +27,7 @@ class Plan extends Model
         'max_users',
         'max_products',
         'max_monthly_sales',
+        'max_branches',
         'feature_pos',
         'feature_invoicing',
         'feature_purchases',
@@ -39,20 +40,20 @@ class Plan extends Model
     ];
 
     protected $casts = [
-        'features'             => 'array',
-        'is_active'            => 'boolean',
-        'is_public'            => 'boolean',
-        'price_monthly'        => 'decimal:2',
-        'price_yearly'         => 'decimal:2',
-        'feature_pos'          => 'boolean',
-        'feature_invoicing'    => 'boolean',
-        'feature_purchases'    => 'boolean',
-        'feature_reports'      => 'boolean',
-        'feature_shop'         => 'boolean',
-        'feature_import_csv'   => 'boolean',
+        'features' => 'array',
+        'is_active' => 'boolean',
+        'is_public' => 'boolean',
+        'price_monthly' => 'decimal:2',
+        'price_yearly' => 'decimal:2',
+        'feature_pos' => 'boolean',
+        'feature_invoicing' => 'boolean',
+        'feature_purchases' => 'boolean',
+        'feature_reports' => 'boolean',
+        'feature_shop' => 'boolean',
+        'feature_import_csv' => 'boolean',
         'feature_stock_alerts' => 'boolean',
-        'feature_multi_user'   => 'boolean',
-        'feature_custom_domain'=> 'boolean',
+        'feature_multi_user' => 'boolean',
+        'feature_custom_domain' => 'boolean',
     ];
 
     // ─── Relations ────────────────────────────────────────────────────────────
@@ -67,7 +68,7 @@ class Plan extends Model
     /** Retourne true si le plan autorise la fonctionnalité demandée. */
     public function hasFeature(string $feature): bool
     {
-        $column = 'feature_' . $feature;
+        $column = 'feature_'.$feature;
 
         return property_exists($this, $column) || isset($this->attributes[$column])
             ? (bool) ($this->attributes[$column] ?? false)
@@ -83,8 +84,8 @@ class Plan extends Model
 
         if ($this->yearly_discount_pct) {
             $discount = bcdiv((string) $this->yearly_discount_pct, '100', 4);
-            $monthly  = bcmul((string) $this->price_monthly, '12', 2);
-            $saving   = bcmul($monthly, $discount, 2);
+            $monthly = bcmul((string) $this->price_monthly, '12', 2);
+            $saving = bcmul($monthly, $discount, 2);
 
             return bcsub($monthly, $saving, 2);
         }

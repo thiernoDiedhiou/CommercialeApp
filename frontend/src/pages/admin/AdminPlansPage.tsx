@@ -29,6 +29,7 @@ const schema = z.object({
   max_users:             z.number().int().min(0).default(0),
   max_products:          z.number().int().min(0).default(0),
   max_monthly_sales:     z.number().int().min(0).default(0),
+  max_branches:          z.number().int().min(1).default(1),
   feature_pos:           z.boolean().default(true),
   feature_invoicing:     z.boolean().default(false),
   feature_purchases:     z.boolean().default(false),
@@ -77,6 +78,7 @@ function planToForm(plan: Plan): FormValues {
     max_users:             plan.max_users,
     max_products:          plan.max_products,
     max_monthly_sales:     plan.max_monthly_sales,
+    max_branches:          plan.max_branches ?? 1,
     feature_pos:           plan.feature_pos,
     feature_invoicing:     plan.feature_invoicing,
     feature_purchases:     plan.feature_purchases,
@@ -319,7 +321,7 @@ function PlanModal({ plan, onClose, onSaved }: { plan: Plan | null; onClose: () 
     name: '', slug: '', tagline: '', badge: '', description: '',
     features: [], sort_order: 0, is_active: true, is_public: true,
     price_monthly: 0, price_yearly: null, yearly_discount_pct: null, trial_days: 21,
-    max_users: 0, max_products: 0, max_monthly_sales: 0,
+    max_users: 0, max_products: 0, max_monthly_sales: 0, max_branches: 1,
     feature_pos: true, feature_invoicing: false, feature_purchases: false,
     feature_reports: false, feature_shop: false, feature_import_csv: false,
     feature_stock_alerts: false, feature_multi_user: false, feature_custom_domain: false,
@@ -470,7 +472,7 @@ function PlanModal({ plan, onClose, onSaved }: { plan: Plan | null; onClose: () 
           {/* ── Limites ── */}
           <section className="space-y-3 pt-2 border-t border-gray-800">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Limites <span className="normal-case font-normal">(0 = illimité)</span></p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               <div>
                 <label className={labelCls}>Utilisateurs</label>
                 <input type="number" {...register('max_users', { valueAsNumber: true })} className={inputCls} min={0} />
@@ -482,6 +484,10 @@ function PlanModal({ plan, onClose, onSaved }: { plan: Plan | null; onClose: () 
               <div>
                 <label className={labelCls}>Ventes / mois</label>
                 <input type="number" {...register('max_monthly_sales', { valueAsNumber: true })} className={inputCls} min={0} />
+              </div>
+              <div>
+                <label className={labelCls}>Succursales max</label>
+                <input type="number" {...register('max_branches', { valueAsNumber: true })} className={inputCls} min={1} />
               </div>
             </div>
           </section>

@@ -17,7 +17,7 @@ class AdminPlanController extends Controller
         // withCount émet 1 requête avec sous-requêtes — au lieu de N requêtes loadCount
         $plans = Plan::withCount([
             'subscriptions as active_subscribers_count' => fn ($q) => $q->where('status', 'active'),
-            'subscriptions as trial_subscribers_count'  => fn ($q) => $q->where('status', 'trial'),
+            'subscriptions as trial_subscribers_count' => fn ($q) => $q->where('status', 'trial'),
         ])
             ->orderBy('sort_order')
             ->orderBy('id')
@@ -69,7 +69,7 @@ class AdminPlanController extends Controller
         if ($activeCount > 0) {
             return response()->json([
                 'message' => "Impossible de supprimer ce plan : {$activeCount} abonnement(s) actif(s) y sont rattachés.",
-                'code'    => 'PLAN_HAS_ACTIVE_SUBSCRIPTIONS',
+                'code' => 'PLAN_HAS_ACTIVE_SUBSCRIPTIONS',
             ], 422);
         }
 
@@ -84,39 +84,40 @@ class AdminPlanController extends Controller
     {
         return [
             // Identité
-            'name'                 => ['required', 'string', 'max:100'],
-            'slug'                 => ['required', 'string', 'max:100', 'alpha_dash',
-                                       Rule::unique('plans', 'slug')->ignore($ignoreId)],
-            'tagline'              => ['nullable', 'string', 'max:255'],
-            'badge'                => ['nullable', 'string', 'max:50'],
-            'description'          => ['nullable', 'string'],
-            'features'             => ['nullable', 'array'],
-            'features.*'           => ['string', 'max:255'],
-            'sort_order'           => ['nullable', 'integer', 'min:0'],
-            'is_active'            => ['boolean'],
-            'is_public'            => ['boolean'],
+            'name' => ['required', 'string', 'max:100'],
+            'slug' => ['required', 'string', 'max:100', 'alpha_dash',
+                Rule::unique('plans', 'slug')->ignore($ignoreId)],
+            'tagline' => ['nullable', 'string', 'max:255'],
+            'badge' => ['nullable', 'string', 'max:50'],
+            'description' => ['nullable', 'string'],
+            'features' => ['nullable', 'array'],
+            'features.*' => ['string', 'max:255'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'is_active' => ['boolean'],
+            'is_public' => ['boolean'],
 
             // Tarification
-            'price_monthly'        => ['required', 'numeric', 'min:0'],
-            'price_yearly'         => ['nullable', 'numeric', 'min:0'],
-            'yearly_discount_pct'  => ['nullable', 'integer', 'min:1', 'max:99'],
-            'trial_days'           => ['nullable', 'integer', 'min:0', 'max:365'],
+            'price_monthly' => ['required', 'numeric', 'min:0'],
+            'price_yearly' => ['nullable', 'numeric', 'min:0'],
+            'yearly_discount_pct' => ['nullable', 'integer', 'min:1', 'max:99'],
+            'trial_days' => ['nullable', 'integer', 'min:0', 'max:365'],
 
             // Limites
-            'max_users'            => ['nullable', 'integer', 'min:0'],
-            'max_products'         => ['nullable', 'integer', 'min:0'],
-            'max_monthly_sales'    => ['nullable', 'integer', 'min:0'],
+            'max_users' => ['nullable', 'integer', 'min:0'],
+            'max_products' => ['nullable', 'integer', 'min:0'],
+            'max_monthly_sales' => ['nullable', 'integer', 'min:0'],
+            'max_branches' => ['nullable', 'integer', 'min:1'],
 
             // Feature flags
-            'feature_pos'          => ['boolean'],
-            'feature_invoicing'    => ['boolean'],
-            'feature_purchases'    => ['boolean'],
-            'feature_reports'      => ['boolean'],
-            'feature_shop'         => ['boolean'],
-            'feature_import_csv'   => ['boolean'],
+            'feature_pos' => ['boolean'],
+            'feature_invoicing' => ['boolean'],
+            'feature_purchases' => ['boolean'],
+            'feature_reports' => ['boolean'],
+            'feature_shop' => ['boolean'],
+            'feature_import_csv' => ['boolean'],
             'feature_stock_alerts' => ['boolean'],
-            'feature_multi_user'   => ['boolean'],
-            'feature_custom_domain'=> ['boolean'],
+            'feature_multi_user' => ['boolean'],
+            'feature_custom_domain' => ['boolean'],
         ];
     }
 }
