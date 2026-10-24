@@ -47,6 +47,7 @@ export default function DashboardPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const subscriptionExpired = useAuthStore((s) => s.subscriptionExpired)
+  const activeBranch        = useAuthStore((s) => s.activeBranch)
 
   // ── Filtre période ────────────────────────────────────────────────────
   const [period,     setPeriod]     = useState<Period>('today')
@@ -115,6 +116,9 @@ export default function DashboardPage() {
   const marginPct      = revenue > 0 ? Math.round((Math.abs(profit) / revenue) * 100) : 0
   const alertCount     = (data?.stock_alerts ?? []).length
   const recentSales    = data?.recent_sales ?? []
+
+  // Label de canal contextuel : succursale active ou "tous canaux"
+  const channelLabel = activeBranch ? activeBranch.name : t('dashboard.all_channels')
 
   return (
     <div className="space-y-6">
@@ -230,8 +234,8 @@ export default function DashboardPage() {
                   {locked ? '—' : (today?.sales_count ?? 0)}
                 </div>
                 <div className="mt-1 sm:mt-2 text-xs">
-                  <span className="font-medium text-slate-500 dark:text-gray-400">{t('dashboard.all_channels')}</span>
-                  {!locked && (today?.shop_orders_count ?? 0) > 0 && (
+                  <span className="font-medium text-slate-500 dark:text-gray-400">{channelLabel}</span>
+                  {!locked && !activeBranch && (today?.shop_orders_count ?? 0) > 0 && (
                     <span className="ml-1 hidden sm:inline rounded-md bg-emerald-50 px-2 py-0.5 font-bold text-emerald-700">
                       +{today!.shop_orders_count} {t('dashboard.online_shop')}
                     </span>
@@ -255,8 +259,8 @@ export default function DashboardPage() {
                   {locked ? '—' : formatCurrency(revenue)}
                 </div>
                 <div className="mt-1 sm:mt-2 text-xs">
-                  <span className="font-medium text-slate-500 dark:text-gray-400">{t('dashboard.all_channels')}</span>
-                  {!locked && (today?.pos_revenue ?? 0) > 0 && (
+                  <span className="font-medium text-slate-500 dark:text-gray-400">{channelLabel}</span>
+                  {!locked && !activeBranch && (today?.pos_revenue ?? 0) > 0 && (
                     <span className="ml-1 hidden sm:inline rounded-md bg-emerald-50 px-2 py-0.5 font-bold text-emerald-700">
                       POS {formatCurrency(today!.pos_revenue)}
                     </span>
@@ -372,7 +376,9 @@ export default function DashboardPage() {
             <div className="mt-4 flex items-center justify-between border-t border-slate-100 dark:border-gray-700/60 pt-3 text-xs text-slate-500 dark:text-gray-400">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block h-2.5 w-2.5 rounded-sm bg-brand-primary" />
-                {t('dashboard.legend_pos_web')}
+                {activeBranch
+                  ? `POS — ${activeBranch.name}`
+                  : t('dashboard.legend_pos_web')}
               </span>
               <span className="font-semibold text-slate-700 dark:text-gray-300">
                 {t('dashboard.avg_day', {
