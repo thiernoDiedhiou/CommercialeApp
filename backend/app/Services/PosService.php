@@ -14,6 +14,7 @@ class PosService
 {
     public function __construct(
         private readonly SaleService $saleService,
+        private readonly BranchService $branchService,
     ) {}
 
     // ─── Catalogue produits ───────────────────────────────────────────────────
@@ -24,18 +25,18 @@ class PosService
             'id', 'name', 'sku', 'barcode', 'image_path', 'unit', 'price',
             'stock_quantity', 'has_variants', 'is_weight_based', 'has_expiry', 'category_id',
         ])
-        ->where('is_active', true)
-        ->with(['variants' => function ($q) {
-            $q->select(['id', 'product_id', 'sku', 'attribute_summary', 'price', 'stock_quantity', 'is_active'])
-              ->where('is_active', true);
-        }])
-        ->when($search, fn($q) => $q->where(function ($inner) use ($search) {
-            $inner->where('name', 'like', "%{$search}%")
-                  ->orWhere('sku', 'like', "%{$search}%")
-                  ->orWhere('barcode', '=', $search);
-        }))
-        ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
-        ->paginate(50);
+            ->where('is_active', true)
+            ->with(['variants' => function ($q) {
+                $q->select(['id', 'product_id', 'sku', 'attribute_summary', 'price', 'stock_quantity', 'is_active'])
+                    ->where('is_active', true);
+            }])
+            ->when($search, fn ($q) => $q->where(function ($inner) use ($search) {
+                $inner->where('name', 'like', "%{$search}%")
+                    ->orWhere('sku', 'like', "%{$search}%")
+                    ->orWhere('barcode', '=', $search);
+            }))
+            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
+            ->paginate(50);
     }
 
     // ─── Sessions ─────────────────────────────────────────────────────────────
@@ -54,12 +55,20 @@ class PosService
             throw new \DomainException('Une session est déjà ouverte pour cet utilisateur.');
         }
 
+        // Vérification que la succursale active supporte le POS
+        if ($this->branchService->hasCurrentBranch() && ! $this->branchService->current()->hasPos()) {
+            throw new \DomainException(
+                "La succursale « {$this->branchService->current()->name} » (entrepôt) ne supporte pas le point de vente.",
+            );
+        }
+
         return PosSession::create([
-            'user_id'      => $user->id,
-            'opened_at'    => now(),
+            'user_id' => $user->id,
+            'branch_id' => $this->branchService->currentId(),
+            'opened_at' => now(),
             'opening_cash' => $openingCash,
-            'status'       => 'open',
-            'notes'        => $notes,
+            'status' => 'open',
+            'notes' => $notes,
         ]);
     }
 
@@ -86,37 +95,37 @@ class PosService
             ->with('payments:sale_id,method,amount')
             ->get();
 
-        $salesCount     = $sales->count();
+        $salesCount = $sales->count();
         $totalConfirmed = (float) $sales->sum('total');
 
         $byPaymentMethod = $sales
-            ->flatMap(fn($s) => $s->payments)
+            ->flatMap(fn ($s) => $s->payments)
             ->groupBy('method')
-            ->map(fn($payments) => round((float) $payments->sum('amount'), 2))
+            ->map(fn ($payments) => round((float) $payments->sum('amount'), 2))
             ->toArray();
 
         // Écart de caisse = clôture − (ouverture + encaissements cash)
-        $cashSales    = $byPaymentMethod['cash'] ?? 0.0;
+        $cashSales = $byPaymentMethod['cash'] ?? 0.0;
         $expectedCash = round((float) $session->opening_cash + $cashSales, 2);
-        $difference   = round($closingCash - $expectedCash, 2);
+        $difference = round($closingCash - $expectedCash, 2);
 
         $session->update([
-            'closing_cash'    => $closingCash,
+            'closing_cash' => $closingCash,
             'cash_difference' => $difference,
-            'closed_at'       => $sessionEnd,
-            'status'          => 'closed',
-            'notes'           => $notes,
+            'closed_at' => $sessionEnd,
+            'status' => 'closed',
+            'notes' => $notes,
         ]);
 
         return [
             'session' => $session->fresh(),
             'summary' => [
-                'sales_count'       => $salesCount,
-                'total_confirmed'   => $totalConfirmed,
+                'sales_count' => $salesCount,
+                'total_confirmed' => $totalConfirmed,
                 'by_payment_method' => $byPaymentMethod,
-                'opening_cash'      => (float) $session->opening_cash,
-                'closing_cash'      => $closingCash,
-                'difference'        => $difference,
+                'opening_cash' => (float) $session->opening_cash,
+                'closing_cash' => $closingCash,
+                'difference' => $difference,
             ],
         ];
     }
@@ -127,7 +136,7 @@ class PosService
      * Liste paginée des sessions de caisse du tenant courant.
      * Les agrégats (ventes, total) sont calculés via sous-requêtes SQL.
      */
-    public function sessions(int $perPage = 25): \Illuminate\Pagination\LengthAwarePaginator
+    public function sessions(int $perPage = 25): LengthAwarePaginator
     {
         return PosSession::with('user:id,name')
             ->addSelect([
@@ -161,8 +170,8 @@ class PosService
     public function syncOffline(array $sales, User $user): array
     {
         $processed = 0;
-        $skipped   = 0;
-        $failed    = [];
+        $skipped = 0;
+        $failed = [];
 
         foreach ($sales as $saleData) {
             $offlineId = $saleData['offline_id'];
@@ -174,6 +183,7 @@ class PosService
 
             if ($alreadySynced) {
                 $skipped++;
+
                 continue;
             }
 

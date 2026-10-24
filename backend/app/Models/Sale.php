@@ -28,16 +28,17 @@ class Sale extends Model
         'note',
         'confirmed_at',
         'cancelled_at',
+        'branch_id',
     ];
 
     protected $casts = [
-        'subtotal'        => 'decimal:2',
-        'discount_value'  => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'discount_value' => 'decimal:2',
         'discount_amount' => 'decimal:2',
-        'tax_amount'      => 'decimal:2',
-        'total'           => 'decimal:2',
-        'confirmed_at'    => 'datetime',
-        'cancelled_at'    => 'datetime',
+        'tax_amount' => 'decimal:2',
+        'total' => 'decimal:2',
+        'confirmed_at' => 'datetime',
+        'cancelled_at' => 'datetime',
     ];
 
     // paid_amount est calculé dynamiquement (withSum ou relation payments)
@@ -128,6 +129,7 @@ class Sale extends Model
     public function isPartiallyPaid(): bool
     {
         $paid = $this->amountPaid();
+
         return $paid > 0 && $paid < (float) $this->total;
     }
 

@@ -20,6 +20,7 @@ class SaleReturn extends Model
         'reason',
         'refund_method',
         'total',
+        'branch_id',
     ];
 
     protected $casts = [
@@ -27,9 +28,9 @@ class SaleReturn extends Model
     ];
 
     public const REFUND_LABELS = [
-        'cash'   => 'Remboursement espèces',
+        'cash' => 'Remboursement espèces',
         'credit' => 'Avoir client',
-        'none'   => 'Aucun remboursement',
+        'none' => 'Aucun remboursement',
     ];
 
     // ─── Relations ────────────────────────────────────────────────────────────

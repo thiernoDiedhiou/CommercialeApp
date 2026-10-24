@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Branch extends Model
 {
-    use HasUuid, BelongsToTenant, SoftDeletes;
+    use BelongsToTenant, HasUuid, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -23,7 +23,7 @@ class Branch extends Model
     ];
 
     protected $casts = [
-        'is_active'     => 'boolean',
+        'is_active' => 'boolean',
         'display_order' => 'integer',
     ];
 

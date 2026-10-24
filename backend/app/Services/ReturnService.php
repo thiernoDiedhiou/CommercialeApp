@@ -12,6 +12,7 @@ use App\Models\SaleReturn;
 use App\Models\SaleReturnItem;
 use App\Models\Tenant;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class ReturnService
@@ -27,6 +28,7 @@ class ReturnService
     public function __construct(
         private readonly TenantService $tenantService,
         private readonly StockService $stockService,
+        private readonly BranchService $branchService,
     ) {}
 
     /**
@@ -44,7 +46,7 @@ class ReturnService
      *   items: array<array{sale_item_id: int, quantity: float}>
      * } $data
      *
-     * @throws SaleException  Vente non confirmée, article hors périmètre, qté excédentaire
+     * @throws SaleException Vente non confirmée, article hors périmètre, qté excédentaire
      */
     public function create(Sale $sale, array $data, User $user): SaleReturn
     {
@@ -72,7 +74,7 @@ class ReturnService
                 ->selectRaw('sale_item_id, SUM(quantity) as qty_returned')
                 ->groupBy('sale_item_id')
                 ->pluck('qty_returned', 'sale_item_id')
-                ->map(fn($v) => (string) $v);
+                ->map(fn ($v) => (string) $v);
 
             // Valider et résoudre chaque ligne de retour
             $resolvedItems = $this->resolveReturnItems(
@@ -92,40 +94,41 @@ class ReturnService
 
             // Création du retour
             $saleReturn = SaleReturn::create([
-                'tenant_id'     => $tenantId,
-                'sale_id'       => $sale->id,
-                'user_id'       => $user->id,
-                'reference'     => $reference,
-                'reason'        => $data['reason'] ?? null,
+                'tenant_id' => $tenantId,
+                'branch_id' => $this->branchService->currentId(),
+                'sale_id' => $sale->id,
+                'user_id' => $user->id,
+                'reference' => $reference,
+                'reason' => $data['reason'] ?? null,
                 'refund_method' => $data['refund_method'],
-                'total'         => $total,
+                'total' => $total,
             ]);
 
             // Lignes de retour + restitution stock
             foreach ($resolvedItems as $item) {
                 $returnItem = SaleReturnItem::create([
-                    'sale_return_id'     => $saleReturn->id,
-                    'sale_item_id'       => $item['sale_item']->id,
-                    'product_id'         => $item['sale_item']->product_id,
+                    'sale_return_id' => $saleReturn->id,
+                    'sale_item_id' => $item['sale_item']->id,
+                    'product_id' => $item['sale_item']->product_id,
                     'product_variant_id' => $item['sale_item']->variant_id,
-                    'lot_id'             => $item['sale_item']->lot_id,
-                    'quantity'           => $item['quantity'],
-                    'unit_weight'        => $item['unit_weight'],
-                    'unit_price'         => $item['sale_item']->unit_price,
-                    'total'              => $item['line_total'],
+                    'lot_id' => $item['sale_item']->lot_id,
+                    'quantity' => $item['quantity'],
+                    'unit_weight' => $item['unit_weight'],
+                    'unit_price' => $item['sale_item']->unit_price,
+                    'total' => $item['line_total'],
                 ]);
 
                 // Restitution stock — ignorée si le produit est signalé non-restockable (ex: défectueux)
                 if ($item['restock']) {
                     $this->stockService->adjust(
-                        product:  $item['product'],
-                        type:     'return',
+                        product: $item['product'],
+                        type: 'return',
                         quantity: $item['stock_qty'],
-                        source:   'sale_return',
+                        source: 'sale_return',
                         sourceId: $returnItem->id,
-                        variant:  $item['variant'],
-                        lot:      $item['lot'],
-                        notes:    "Retour {$reference} — vente {$sale->reference}",
+                        variant: $item['variant'],
+                        lot: $item['lot'],
+                        notes: "Retour {$reference} — vente {$sale->reference}",
                     );
                 }
             }
@@ -137,18 +140,18 @@ class ReturnService
     // ─── Méthodes privées ─────────────────────────────────────────────────────
 
     /**
-     * @throws SaleException  Article inconnu, ou quantité retournée > quantité disponible
+     * @throws SaleException Article inconnu, ou quantité retournée > quantité disponible
      */
     private function resolveReturnItems(
         array $requestedItems,
-        \Illuminate\Support\Collection $saleItems,
-        \Illuminate\Support\Collection $alreadyReturned,
+        Collection $saleItems,
+        Collection $alreadyReturned,
     ): array {
         $resolved = [];
 
         foreach ($requestedItems as $item) {
             $saleItemId = $item['sale_item_id'];
-            $saleItem   = $saleItems->get($saleItemId)
+            $saleItem = $saleItems->get($saleItemId)
                 ?? throw new SaleException(
                     "L'article #{$saleItemId} n'appartient pas à cette vente.",
                     'ITEM_NOT_IN_SALE',
@@ -197,18 +200,18 @@ class ReturnService
                 : null;
 
             $resolved[] = [
-                'sale_item'  => $saleItem,
-                'product'    => $product,
-                'variant'    => $variant,
-                'lot'        => $lot,
+                'sale_item' => $saleItem,
+                'product' => $product,
+                'variant' => $variant,
+                'lot' => $lot,
                 // quantity = montant réel retourné (kg pour poids, pièces sinon)
                 // garantit que SUM(quantity) fonctionne pour tous les types d'articles
-                'quantity'   => $requestedQty,
-                'unit_weight'=> $saleItem->unit_weight ? $requestedQty : null,
-                'stock_qty'  => $stockQty,
+                'quantity' => $requestedQty,
+                'unit_weight' => $saleItem->unit_weight ? $requestedQty : null,
+                'stock_qty' => $stockQty,
                 'line_total' => $lineTotal,
                 // true par défaut — false = produit défectueux, pas de remise en stock
-                'restock'    => $item['restock'] ?? true,
+                'restock' => $item['restock'] ?? true,
             ];
         }
 
@@ -217,7 +220,7 @@ class ReturnService
 
     private function generateReference(int $tenantId): string
     {
-        $year   = now()->format('Y');
+        $year = now()->format('Y');
         $prefix = "RET-{$year}-";
 
         $last = SaleReturn::where('tenant_id', $tenantId)
@@ -226,6 +229,6 @@ class ReturnService
 
         $seq = $last ? ((int) substr($last, -5)) + 1 : 1;
 
-        return $prefix . str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
     }
 }

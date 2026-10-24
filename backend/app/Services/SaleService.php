@@ -16,7 +16,6 @@ use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 
 class SaleService
 {
@@ -32,6 +31,7 @@ class SaleService
     public function __construct(
         private readonly TenantService $tenantService,
         private readonly StockService $stockService,
+        private readonly BranchService $branchService,
     ) {}
 
     // ─── API publique ─────────────────────────────────────────────────────────
@@ -67,8 +67,8 @@ class SaleService
      *   payments?: array<array{method: string, amount: float, reference?: string|null}>
      * } $data
      *
-     * @throws StockInsufficientException  Stock insuffisant sur au moins un article
-     * @throws SaleException               Produit/variante introuvable, lot indisponible
+     * @throws StockInsufficientException Stock insuffisant sur au moins un article
+     * @throws SaleException Produit/variante introuvable, lot indisponible
      */
     public function create(array $data, User $seller): Sale
     {
@@ -118,20 +118,21 @@ class SaleService
 
             // ── 6. Création de la vente ──────────────────────────────────────
             $sale = Sale::create([
-                'tenant_id'       => $tenantId,
-                'customer_id'     => $data['customer_id'] ?? null,
-                'user_id'         => $seller->id,
-                'reference'       => $reference,
-                'offline_id'      => $data['offline_id'] ?? null,
-                'subtotal'        => $subtotal,
-                'discount_type'   => $data['discount_type'] ?? null,
-                'discount_value'  => $data['discount_value'] ?? 0,
+                'tenant_id' => $tenantId,
+                'branch_id' => $this->branchService->currentId(),
+                'customer_id' => $data['customer_id'] ?? null,
+                'user_id' => $seller->id,
+                'reference' => $reference,
+                'offline_id' => $data['offline_id'] ?? null,
+                'subtotal' => $subtotal,
+                'discount_type' => $data['discount_type'] ?? null,
+                'discount_value' => $data['discount_value'] ?? 0,
                 'discount_amount' => $discountAmount,
-                'tax_amount'      => $data['tax_amount'] ?? 0,
-                'total'           => $total,
-                'status'          => 'confirmed',
-                'note'            => $data['note'] ?? null,
-                'confirmed_at'    => now(),
+                'tax_amount' => $data['tax_amount'] ?? 0,
+                'total' => $total,
+                'status' => 'confirmed',
+                'note' => $data['note'] ?? null,
+                'confirmed_at' => now(),
             ]);
 
             // ── 7. Lignes de vente — snapshots prix et coût au moment T ─────
@@ -140,16 +141,16 @@ class SaleService
             // Ces valeurs ne doivent JAMAIS être recalculées a posteriori.
             foreach ($resolvedItems as $item) {
                 SaleItem::create([
-                    'sale_id'     => $sale->id,
-                    'product_id'  => $item['product']->id,
-                    'variant_id'  => $item['variant']?->id,
-                    'lot_id'      => $item['lot']?->id,
-                    'quantity'    => $item['quantity'],
+                    'sale_id' => $sale->id,
+                    'product_id' => $item['product']->id,
+                    'variant_id' => $item['variant']?->id,
+                    'lot_id' => $item['lot']?->id,
+                    'quantity' => $item['quantity'],
                     'unit_weight' => $item['unit_weight'] ?? null,
-                    'unit_price'  => $item['unit_price'],
-                    'cost_price'  => $item['variant']?->cost_price ?? $item['product']->cost_price,
-                    'discount'    => $item['discount'] ?? 0,
-                    'total'       => $item['line_total'],
+                    'unit_price' => $item['unit_price'],
+                    'cost_price' => $item['variant']?->cost_price ?? $item['product']->cost_price,
+                    'discount' => $item['discount'] ?? 0,
+                    'total' => $item['line_total'],
                 ]);
             }
 
@@ -159,13 +160,13 @@ class SaleService
                     ? (float) $item['unit_weight']
                     : (float) $item['quantity'];
                 $this->stockService->adjust(
-                    product:  $item['product'],
-                    type:     'out',
+                    product: $item['product'],
+                    type: 'out',
                     quantity: $stockQty,
-                    source:   'sale',
+                    source: 'sale',
                     sourceId: $sale->id,
-                    variant:  $item['variant'],
-                    lot:      $item['lot'],
+                    variant: $item['variant'],
+                    lot: $item['lot'],
                     unitCost: $item['variant']?->cost_price ?? $item['product']->cost_price,
                 );
             }
@@ -188,7 +189,7 @@ class SaleService
      * Annule une vente confirmée et restitue le stock de chaque ligne.
      * Atomique — rollback complet si la restitution d'un article échoue.
      *
-     * @throws SaleException  La vente n'est pas dans l'état 'confirmed'
+     * @throws SaleException La vente n'est pas dans l'état 'confirmed'
      */
     public function cancel(Sale $sale): Sale
     {
@@ -205,26 +206,26 @@ class SaleService
             foreach ($sale->items as $item) {
                 $product = Product::find($item->product_id);
                 $variant = $item->variant_id ? ProductVariant::find($item->variant_id) : null;
-                $lot     = $item->lot_id ? ProductLot::find($item->lot_id) : null;
+                $lot = $item->lot_id ? ProductLot::find($item->lot_id) : null;
 
                 // source_id = sale.id → idempotent si cancel() est appelé deux fois
                 $restoreQty = $item->unit_weight && (float) $item->unit_weight > 0
                     ? (float) $item->unit_weight
                     : (float) $item->quantity;
                 $this->stockService->adjust(
-                    product:  $product,
-                    type:     'return',
+                    product: $product,
+                    type: 'return',
                     quantity: $restoreQty,
-                    source:   'sale_cancel',
+                    source: 'sale_cancel',
                     sourceId: $sale->id,
-                    variant:  $variant,
-                    lot:      $lot,
-                    notes:    "Annulation vente {$sale->reference}",
+                    variant: $variant,
+                    lot: $lot,
+                    notes: "Annulation vente {$sale->reference}",
                 );
             }
 
             $sale->update([
-                'status'       => 'cancelled',
+                'status' => 'cancelled',
                 'cancelled_at' => now(),
             ]);
 
@@ -238,7 +239,7 @@ class SaleService
      * Ajoute un paiement à une vente confirmée.
      * Tolérance de 1 CFA pour les arrondis sur les montants XOF.
      *
-     * @throws SaleException  La vente n'est pas confirmée, ou le montant dépasse le total
+     * @throws SaleException La vente n'est pas confirmée, ou le montant dépasse le total
      */
     public function addPayment(
         Sale $sale,
@@ -255,8 +256,8 @@ class SaleService
 
         // Tolérance 1 CFA — arrondis fréquents sur les montants XOF sans centimes
         $alreadyPaid = (string) $sale->payments()->sum('amount');
-        $newTotal    = bcadd($alreadyPaid, (string) $amount, 2);
-        $maxAllowed  = bcadd((string) $sale->total, '1.00', 2);
+        $newTotal = bcadd($alreadyPaid, (string) $amount, 2);
+        $maxAllowed = bcadd((string) $sale->total, '1.00', 2);
 
         if (bccomp($newTotal, $maxAllowed, 2) > 0) {
             throw new SaleException(
@@ -267,11 +268,11 @@ class SaleService
 
         return Payment::create([
             'tenant_id' => $sale->tenant_id,
-            'sale_id'   => $sale->id,
-            'method'    => $method,
-            'amount'    => $amount,
+            'sale_id' => $sale->id,
+            'method' => $method,
+            'amount' => $amount,
             'reference' => $reference,
-            'paid_at'   => now(),
+            'paid_at' => now(),
         ]);
     }
 
@@ -290,7 +291,7 @@ class SaleService
             ->pluck('product_id')->unique()->sort()->values()->all();
 
         $variantIds = collect($items)
-            ->filter(fn($i) => ! empty($i['variant_id']))
+            ->filter(fn ($i) => ! empty($i['variant_id']))
             ->pluck('variant_id')->unique()->sort()->values()->all();
 
         $lockedProducts = Product::lockForUpdate()
@@ -350,9 +351,9 @@ class SaleService
 
             $resolved[] = [
                 ...$item,
-                'product'    => $product,
-                'variant'    => $variant,
-                'lot'        => null,  // assigné en passe 3
+                'product' => $product,
+                'variant' => $variant,
+                'lot' => null,  // assigné en passe 3
                 'line_total' => $lineTotal,
             ];
         }
@@ -387,13 +388,13 @@ class SaleService
             $validated[$key] = true;
 
             $stockOwner = $item['variant'] ?? $item['product'];
-            $available  = (string) $stockOwner->stock_quantity;
-            $needed     = $stockNeeds[$key];
+            $available = (string) $stockOwner->stock_quantity;
+            $needed = $stockNeeds[$key];
 
             if (bccomp($needed, $available, 3) > 0) {
                 throw new StockInsufficientException(
-                    product:   $item['product'],
-                    variant:   $item['variant'],
+                    product: $item['product'],
+                    variant: $item['variant'],
                     requested: (float) $needed,
                     available: (float) $available,
                 );
@@ -431,8 +432,8 @@ class SaleService
 
         $discountAmount = match ($discountType) {
             'percent' => bcmul($subtotal, bcdiv($discountValue, '100', 6), 2),
-            'fixed'   => $discountValue,
-            default   => '0.00',
+            'fixed' => $discountValue,
+            default => '0.00',
         };
 
         $total = bcsub($subtotal, $discountAmount, 2);
@@ -452,7 +453,7 @@ class SaleService
      */
     private function generateReference(int $tenantId): string
     {
-        $year   = now()->format('Y');
+        $year = now()->format('Y');
         $prefix = "VNT-{$year}-";
 
         $last = Sale::where('tenant_id', $tenantId)
@@ -462,7 +463,7 @@ class SaleService
         // Extrait les 5 derniers caractères numériques : "VNT-2026-00042" → 42
         $seq = $last ? ((int) substr($last, -5)) + 1 : 1;
 
-        return $prefix . str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -472,7 +473,7 @@ class SaleService
      * Le verrou FOR UPDATE empêche deux transactions de sélectionner le même lot.
      * Retourne null si le produit ne gère pas les lots (has_expiry = false).
      *
-     * @throws SaleException  Aucun lot avec quantité suffisante et non expiré
+     * @throws SaleException Aucun lot avec quantité suffisante et non expiré
      */
     private function selectLot(Product $product, ?ProductVariant $variant, float $qty): ?ProductLot
     {
@@ -482,7 +483,7 @@ class SaleService
 
         $lot = ProductLot::lockForUpdate()
             ->where('product_id', $product->id)
-            ->when($variant, fn($q) => $q->where('product_variant_id', $variant->id))
+            ->when($variant, fn ($q) => $q->where('product_variant_id', $variant->id))
             ->where('is_active', true)
             ->where('quantity_remaining', '>=', $qty)
             ->where('expiry_date', '>', now()->toDateString()) // non expiré
@@ -507,11 +508,11 @@ class SaleService
     {
         Payment::create([
             'tenant_id' => $sale->tenant_id,
-            'sale_id'   => $sale->id,
-            'method'    => $payment['method'],
-            'amount'    => $payment['amount'],
+            'sale_id' => $sale->id,
+            'method' => $payment['method'],
+            'amount' => $payment['amount'],
             'reference' => $payment['reference'] ?? null,
-            'paid_at'   => $payment['paid_at'] ?? now(),
+            'paid_at' => $payment['paid_at'] ?? now(),
         ]);
     }
 }

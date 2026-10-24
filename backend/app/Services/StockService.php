@@ -14,10 +14,14 @@ use InvalidArgumentException;
 
 class StockService
 {
-    private const VALID_TYPES  = ['in', 'out', 'adjustment', 'return'];
+    private const VALID_TYPES = ['in', 'out', 'adjustment', 'return'];
+
     private const OUTBOUND_TYPES = ['out'];
 
-    public function __construct(private readonly TenantService $tenantService) {}
+    public function __construct(
+        private readonly TenantService $tenantService,
+        private readonly BranchService $branchService,
+    ) {}
 
     // ─── API publique ─────────────────────────────────────────────────────────
 
@@ -27,8 +31,8 @@ class StockService
      * - Pour 'in' | 'out' | 'return' : quantity doit être > 0
      * - Pour 'adjustment'            : quantity est un delta signé (+ ou -)
      *
-     * @throws StockInsufficientException  Stock insuffisant pour une sortie
-     * @throws InvalidArgumentException    Type invalide ou quantity ≤ 0 pour in/out/return
+     * @throws StockInsufficientException Stock insuffisant pour une sortie
+     * @throws InvalidArgumentException Type invalide ou quantity ≤ 0 pour in/out/return
      */
     public function adjust(
         Product $product,
@@ -70,7 +74,7 @@ class StockService
             // stock_quantity (dénormalisé) est toujours maintenu en sync par
             // ce service ; on l'utilise en fallback si aucun mouvement n'existe.
             $lastMovement = $this->getLastMovement($product, $variant);
-            $stockBefore  = $lastMovement
+            $stockBefore = $lastMovement
                 ? $lastMovement->stock_after
                 : (float) $locked->stock_quantity;
 
@@ -89,19 +93,20 @@ class StockService
 
             // ── 5. Création du mouvement (append-only) ──────────────────────
             $movement = StockMovement::create([
-                'tenant_id'          => $this->tenantService->currentId(),
-                'product_id'         => $product->id,
+                'tenant_id' => $this->tenantService->currentId(),
+                'branch_id' => $this->branchService->currentId(),
+                'product_id' => $product->id,
                 'product_variant_id' => $variant?->id,
-                'lot_id'             => $lot?->id,
-                'type'               => $type,
-                'quantity'           => abs($quantity),  // toujours positif en base
-                'stock_before'       => $stockBefore,
-                'stock_after'        => $stockAfter,
-                'source'             => $source,
-                'source_id'          => $sourceId,
-                'unit_cost'          => $unitCost,
-                'user_id'            => Auth::id(),
-                'notes'              => $notes,
+                'lot_id' => $lot?->id,
+                'type' => $type,
+                'quantity' => abs($quantity),  // toujours positif en base
+                'stock_before' => $stockBefore,
+                'stock_after' => $stockAfter,
+                'source' => $source,
+                'source_id' => $sourceId,
+                'unit_cost' => $unitCost,
+                'user_id' => Auth::id(),
+                'notes' => $notes,
             ]);
 
             // ── 6. Mise à jour du stock dénormalisé ─────────────────────────
@@ -163,9 +168,9 @@ class StockService
     private function computeStockAfter(float $stockBefore, string $type, float $quantity): float
     {
         return match ($type) {
-            'in'         => $stockBefore + $quantity,
-            'out'        => $stockBefore - $quantity,
-            'return'     => $stockBefore + $quantity,
+            'in' => $stockBefore + $quantity,
+            'out' => $stockBefore - $quantity,
+            'return' => $stockBefore + $quantity,
             // adjustment : quantity est un delta signé (peut être négatif)
             'adjustment' => $stockBefore + $quantity,
         };
@@ -176,8 +181,8 @@ class StockService
         return StockMovement::where('product_id', $product->id)
             ->when(
                 $variant,
-                fn($q) => $q->where('product_variant_id', $variant->id),
-                fn($q) => $q->whereNull('product_variant_id'),
+                fn ($q) => $q->where('product_variant_id', $variant->id),
+                fn ($q) => $q->whereNull('product_variant_id'),
             )
             ->latest('id')
             ->first();
@@ -194,8 +199,8 @@ class StockService
             ->where('product_id', $product->id)
             ->when(
                 $variant,
-                fn($q) => $q->where('product_variant_id', $variant->id),
-                fn($q) => $q->whereNull('product_variant_id'),
+                fn ($q) => $q->where('product_variant_id', $variant->id),
+                fn ($q) => $q->whereNull('product_variant_id'),
             )
             ->first();
     }
@@ -203,10 +208,10 @@ class StockService
     private function updateLotQuantity(ProductLot $lot, string $type, float $quantity): void
     {
         match ($type) {
-            'in'     => $lot->increment('quantity_remaining', abs($quantity)),
-            'out'    => $lot->decrement('quantity_remaining', abs($quantity)),
+            'in' => $lot->increment('quantity_remaining', abs($quantity)),
+            'out' => $lot->decrement('quantity_remaining', abs($quantity)),
             'return' => $lot->increment('quantity_remaining', abs($quantity)),
-            default  => null,  // adjustment : le lot n'est pas impacté automatiquement
+            default => null,  // adjustment : le lot n'est pas impacté automatiquement
         };
     }
 
@@ -224,8 +229,8 @@ class StockService
         }
 
         $threshold = (int) ($variant?->alert_threshold ?? $product->alert_threshold ?? 0);
-        $wasAbove  = $movement->stock_before > $threshold;
-        $isBelow   = $movement->stock_after  <= $threshold;
+        $wasAbove = $movement->stock_before > $threshold;
+        $isBelow = $movement->stock_after <= $threshold;
 
         if ($wasAbove && $isBelow && $this->tenantService->hasCurrentTenant()) {
             SendStockAlertJob::dispatchSync(
@@ -241,7 +246,7 @@ class StockService
         if (! in_array($type, self::VALID_TYPES, true)) {
             throw new InvalidArgumentException(
                 "Type de mouvement invalide : '{$type}'. Valeurs acceptées : "
-                . implode(', ', self::VALID_TYPES)
+                .implode(', ', self::VALID_TYPES)
             );
         }
 

@@ -25,13 +25,14 @@ class StockMovement extends Model
         'unit_cost',
         'user_id',
         'notes',
+        'branch_id',
     ];
 
     protected $casts = [
-        'quantity'     => 'float',
+        'quantity' => 'float',
         'stock_before' => 'float',
-        'stock_after'  => 'float',
-        'unit_cost'    => 'decimal:2',
+        'stock_after' => 'float',
+        'unit_cost' => 'decimal:2',
     ];
 
     // ─── Relations ────────────────────────────────────────────────────────────
