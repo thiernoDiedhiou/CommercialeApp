@@ -9,6 +9,7 @@ use App\Http\Requests\Sale\StorePaymentRequest;
 use App\Http\Requests\Sale\StoreSaleRequest;
 use App\Http\Resources\SaleResource;
 use App\Models\Sale;
+use App\Services\BranchService;
 use App\Services\SaleService;
 use App\Services\TenantService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -23,13 +24,17 @@ class SaleController extends Controller
     public function __construct(
         private readonly SaleService $saleService,
         private readonly TenantService $tenantService,
+        private readonly BranchService $branchService,
     ) {}
 
     public function index(Request $request): JsonResponse
     {
+        $branchId = $this->branchService->currentId();
+
         $sales = Sale::with(['customer:id,name', 'user:id,name'])
             ->withCount(['items', 'returns'])
             ->withSum('payments', 'amount')
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->when($request->search, fn ($q) => $q->where(function ($inner) use ($request) {
                 $inner->where('reference', 'like', "%{$request->search}%")
                     ->orWhereHas('customer', fn ($c) => $c->where('name', 'like', "%{$request->search}%"));

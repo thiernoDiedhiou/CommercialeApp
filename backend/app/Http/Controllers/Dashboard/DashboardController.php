@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\ShopOrder;
+use App\Services\BranchService;
 use App\Services\TenantService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -15,7 +16,10 @@ use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
-    public function __construct(private readonly TenantService $tenantService) {}
+    public function __construct(
+        private readonly TenantService $tenantService,
+        private readonly BranchService $branchService,
+    ) {}
 
     /**
      * Tableau de bord complet en 6 requêtes SQL maximum.
@@ -27,27 +31,33 @@ class DashboardController extends Controller
      * Requête 5 : alertes de stock (UNION produits + variantes)
      * Requête 6 : 5 dernières ventes confirmées
      * + conditionnelle : lots expirant (seulement si has_expiry produits existent)
+     *
+     * En mode succursale (X-Branch-ID), les données POS sont filtrées par branch_id.
+     * Les commandes boutique (shop_orders) ne sont incluses qu'en vue globale.
      */
     public function summary(Request $request): JsonResponse
     {
         $tenantId = $this->tenantService->currentId();
+        $branchId = $this->branchService->currentId();
+        $inBranch = $branchId !== null;
 
         // ── Bornes de période (filtre optionnel date_from / date_to) ────────
-        // date_default_timezone_set() est appliqué par ResolveTenant — Carbon::today()
-        // retourne donc minuit dans le fuseau du tenant, converti en UTC pour MySQL.
-        $dateFrom = $request->input('date_from'); // Y-m-d ou null
-        $dateTo   = $request->input('date_to');   // Y-m-d ou null
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
 
         if ($dateFrom && $dateTo) {
             $periodUtcStart = Carbon::parse($dateFrom)->startOfDay()->utc()->toDateTimeString();
-            $periodUtcEnd   = Carbon::parse($dateTo)->endOfDay()->utc()->toDateTimeString();
+            $periodUtcEnd = Carbon::parse($dateTo)->endOfDay()->utc()->toDateTimeString();
         } else {
             $periodUtcStart = Carbon::today()->utc()->toDateTimeString();
-            $periodUtcEnd   = Carbon::tomorrow()->utc()->toDateTimeString();
+            $periodUtcEnd = Carbon::tomorrow()->utc()->toDateTimeString();
         }
 
-        // Décalage en secondes pour les GROUP BY DATE dans les graphiques (ex: +3600 pour UTC+1)
         $tzOffsetSec = Carbon::now()->getOffset();
+
+        // Clause + binding optionnels pour filtrer les ventes POS par succursale
+        $branchSql = $inBranch ? 'AND s.branch_id = ?' : '';
+        $branchBinding = $inBranch ? [$branchId] : [];
 
         // ── 1a. Stats POS de la période ──────────────────────────────────────
         $posTodayRow = DB::selectOne("
@@ -60,22 +70,26 @@ class DashboardController extends Controller
             WHERE s.tenant_id = ?
               AND s.status    = 'confirmed'
               AND s.confirmed_at >= ? AND s.confirmed_at < ?
-        ", [$tenantId, $periodUtcStart, $periodUtcEnd]);
+              {$branchSql}
+        ", [$tenantId, $periodUtcStart, $periodUtcEnd, ...$branchBinding]);
 
-        // ── 1b. Stats boutique en ligne de la période ────────────────────────
-        $shopTodayRow = DB::selectOne("
-            SELECT
-                COUNT(DISTINCT so.id)                                                                   AS orders_count,
-                COALESCE(SUM(so.total), 0)                                                              AS revenue,
-                COALESCE(SUM(soi.total - COALESCE(pv.cost_price, p.cost_price, 0) * soi.quantity), 0)  AS profit
-            FROM shop_orders so
-            LEFT JOIN shop_order_items soi ON soi.shop_order_id = so.id
-            LEFT JOIN products p           ON p.id  = soi.product_id
-            LEFT JOIN product_variants pv  ON pv.id = soi.variant_id
-            WHERE so.tenant_id = ?
-              AND so.status NOT IN ('cancelled', 'pending')
-              AND so.confirmed_at >= ? AND so.confirmed_at < ?
-        ", [$tenantId, $periodUtcStart, $periodUtcEnd]);
+        // ── 1b. Stats boutique (uniquement en vue globale — pas de branch_id sur shop_orders)
+        $shopTodayRow = null;
+        if (! $inBranch) {
+            $shopTodayRow = DB::selectOne("
+                SELECT
+                    COUNT(DISTINCT so.id)                                                                   AS orders_count,
+                    COALESCE(SUM(so.total), 0)                                                              AS revenue,
+                    COALESCE(SUM(soi.total - COALESCE(pv.cost_price, p.cost_price, 0) * soi.quantity), 0)  AS profit
+                FROM shop_orders so
+                LEFT JOIN shop_order_items soi ON soi.shop_order_id = so.id
+                LEFT JOIN products p           ON p.id  = soi.product_id
+                LEFT JOIN product_variants pv  ON pv.id = soi.variant_id
+                WHERE so.tenant_id = ?
+                  AND so.status NOT IN ('cancelled', 'pending')
+                  AND so.confirmed_at >= ? AND so.confirmed_at < ?
+            ", [$tenantId, $periodUtcStart, $periodUtcEnd]);
+        }
 
         // ── 2. Encaissements de la période par méthode ───────────────────────
         $paymentRows = DB::select("
@@ -85,24 +99,24 @@ class DashboardController extends Controller
             WHERE s.tenant_id = ?
               AND s.status    = 'confirmed'
               AND s.confirmed_at >= ? AND s.confirmed_at < ?
+              {$branchSql}
             GROUP BY p.method
-        ", [$tenantId, $periodUtcStart, $periodUtcEnd]);
+        ", [$tenantId, $periodUtcStart, $periodUtcEnd, ...$branchBinding]);
 
         $paymentsByMethod = collect($paymentRows)->pluck('total', 'method')
-            ->map(fn($v) => (float) $v)
+            ->map(fn ($v) => (float) $v)
             ->toArray();
 
-        // ── 3. Graphique glissant — POS + boutique ──────────────────────────
-        // chart_days : 7 (défaut) | 30 | 90 — paramètre optionnel
-        $chartDays    = min(max((int) $request->input('chart_days', 7), 7), 90);
+        // ── 3. Graphique glissant ────────────────────────────────────────────
+        $chartDays = min(max((int) $request->input('chart_days', 7), 7), 90);
         $chartUtcStart = Carbon::today()->subDays($chartDays - 1)->utc()->toDateTimeString();
 
-        $weekRows = DB::select("
-            SELECT
-                date,
-                SUM(sales_count) AS sales_count,
-                SUM(revenue)     AS revenue
-            FROM (
+        $branchChartSql = $inBranch ? 'AND s.branch_id = ?' : '';
+        $branchChartBinding = $inBranch ? [$branchId] : [];
+
+        if ($inBranch) {
+            // En mode succursale : seulement les ventes POS de cette succursale
+            $weekRows = DB::select("
                 SELECT
                     DATE(DATE_ADD(s.confirmed_at, INTERVAL {$tzOffsetSec} SECOND)) AS date,
                     COUNT(*)                  AS sales_count,
@@ -111,54 +125,68 @@ class DashboardController extends Controller
                 WHERE s.tenant_id = ?
                   AND s.status    = 'confirmed'
                   AND s.confirmed_at >= ?
+                  AND s.branch_id = ?
                 GROUP BY DATE(DATE_ADD(s.confirmed_at, INTERVAL {$tzOffsetSec} SECOND))
-
-                UNION ALL
-
+                ORDER BY date ASC
+            ", [$tenantId, $chartUtcStart, $branchId]);
+        } else {
+            // Vue globale : UNION POS + boutique
+            $weekRows = DB::select("
                 SELECT
-                    DATE(DATE_ADD(so.confirmed_at, INTERVAL {$tzOffsetSec} SECOND)) AS date,
-                    COUNT(*)                   AS sales_count,
-                    COALESCE(SUM(so.total), 0) AS revenue
-                FROM shop_orders so
-                WHERE so.tenant_id = ?
-                  AND so.status NOT IN ('cancelled', 'pending')
-                  AND so.confirmed_at >= ?
-                GROUP BY DATE(DATE_ADD(so.confirmed_at, INTERVAL {$tzOffsetSec} SECOND))
-            ) combined
-            GROUP BY date
-            ORDER BY date ASC
-        ", [$tenantId, $chartUtcStart, $tenantId, $chartUtcStart]);
+                    date,
+                    SUM(sales_count) AS sales_count,
+                    SUM(revenue)     AS revenue
+                FROM (
+                    SELECT
+                        DATE(DATE_ADD(s.confirmed_at, INTERVAL {$tzOffsetSec} SECOND)) AS date,
+                        COUNT(*)                  AS sales_count,
+                        COALESCE(SUM(s.total), 0) AS revenue
+                    FROM sales s
+                    WHERE s.tenant_id = ?
+                      AND s.status    = 'confirmed'
+                      AND s.confirmed_at >= ?
+                    GROUP BY DATE(DATE_ADD(s.confirmed_at, INTERVAL {$tzOffsetSec} SECOND))
 
-        // Remplissage de tous les jours sans ventes avec 0
+                    UNION ALL
+
+                    SELECT
+                        DATE(DATE_ADD(so.confirmed_at, INTERVAL {$tzOffsetSec} SECOND)) AS date,
+                        COUNT(*)                   AS sales_count,
+                        COALESCE(SUM(so.total), 0) AS revenue
+                    FROM shop_orders so
+                    WHERE so.tenant_id = ?
+                      AND so.status NOT IN ('cancelled', 'pending')
+                      AND so.confirmed_at >= ?
+                    GROUP BY DATE(DATE_ADD(so.confirmed_at, INTERVAL {$tzOffsetSec} SECOND))
+                ) combined
+                GROUP BY date
+                ORDER BY date ASC
+            ", [$tenantId, $chartUtcStart, $tenantId, $chartUtcStart]);
+        }
+
         $weekByDate = collect($weekRows)->keyBy('date');
-        $weekChart  = [];
+        $weekChart = [];
         for ($i = $chartDays - 1; $i >= 0; $i--) {
-            $date        = now()->subDays($i)->toDateString();
-            $row         = $weekByDate->get($date);
+            $date = now()->subDays($i)->toDateString();
+            $row = $weekByDate->get($date);
             $weekChart[] = [
-                'date'        => $date,
-                'sales_count' => $row ? (int)   $row->sales_count : 0,
-                'revenue'     => $row ? (float) $row->revenue     : 0.0,
+                'date' => $date,
+                'sales_count' => $row ? (int) $row->sales_count : 0,
+                'revenue' => $row ? (float) $row->revenue : 0.0,
             ];
         }
 
-        // ── [ajout] Montant en attente (factures envoyées/en retard) ────────
+        // ── [ajout] Montant en attente (factures — tenant-wide dans tous les modes) ──
         $pendingRow = DB::selectOne("
             SELECT COALESCE(SUM(total - paid_amount), 0) AS pending_amount
             FROM invoices
             WHERE tenant_id = ? AND status IN ('sent', 'overdue')
         ", [$tenantId]);
 
-        // ── 4. Top 5 produits de la période — POS + boutique ────────────────
-        $topProductRows = DB::select("
-            SELECT
-                product_id,
-                product_uid,
-                name,
-                image_path,
-                SUM(qty_sold) AS qty_sold,
-                SUM(revenue)  AS revenue
-            FROM (
+        // ── 4. Top 5 produits de la période ─────────────────────────────────
+        if ($inBranch) {
+            // Mode succursale : uniquement les ventes POS de cette succursale
+            $topProductRows = DB::select("
                 SELECT
                     si.product_id,
                     p.uid        AS product_uid,
@@ -172,33 +200,62 @@ class DashboardController extends Controller
                 WHERE s.tenant_id = ?
                   AND s.status    = 'confirmed'
                   AND s.confirmed_at >= ?
+                  AND s.branch_id = ?
                 GROUP BY si.product_id, p.uid, p.name, p.image_path
-
-                UNION ALL
-
+                ORDER BY revenue DESC
+                LIMIT 5
+            ", [$tenantId, $periodUtcStart, $branchId]);
+        } else {
+            // Vue globale : UNION POS + boutique
+            $topProductRows = DB::select("
                 SELECT
-                    soi.product_id,
-                    p.uid        AS product_uid,
-                    p.name,
-                    p.image_path,
-                    SUM(soi.quantity)           AS qty_sold,
-                    COALESCE(SUM(soi.total), 0) AS revenue
-                FROM shop_order_items soi
-                JOIN products    p  ON p.id  = soi.product_id
-                JOIN shop_orders so ON so.id = soi.shop_order_id
-                WHERE so.tenant_id = ?
-                  AND so.status NOT IN ('cancelled', 'pending')
-                  AND so.confirmed_at >= ?
-                GROUP BY soi.product_id, p.uid, p.name, p.image_path
-            ) combined
-            GROUP BY product_id, product_uid, name, image_path
-            ORDER BY revenue DESC
-            LIMIT 5
-        ", [$tenantId, $periodUtcStart, $tenantId, $periodUtcStart]);
+                    product_id,
+                    product_uid,
+                    name,
+                    image_path,
+                    SUM(qty_sold) AS qty_sold,
+                    SUM(revenue)  AS revenue
+                FROM (
+                    SELECT
+                        si.product_id,
+                        p.uid        AS product_uid,
+                        p.name,
+                        p.image_path,
+                        SUM(si.quantity)           AS qty_sold,
+                        COALESCE(SUM(si.total), 0) AS revenue
+                    FROM sale_items si
+                    JOIN products p ON p.id = si.product_id
+                    JOIN sales    s ON s.id = si.sale_id
+                    WHERE s.tenant_id = ?
+                      AND s.status    = 'confirmed'
+                      AND s.confirmed_at >= ?
+                    GROUP BY si.product_id, p.uid, p.name, p.image_path
 
-        // ── 5. Alertes de stock (UNION produits simples + variantes) ────────
-        // Limité à 5 en dashboard — "Voir tout" pointe vers /stock
-        $stockAlertRows = DB::select("
+                    UNION ALL
+
+                    SELECT
+                        soi.product_id,
+                        p.uid        AS product_uid,
+                        p.name,
+                        p.image_path,
+                        SUM(soi.quantity)           AS qty_sold,
+                        COALESCE(SUM(soi.total), 0) AS revenue
+                    FROM shop_order_items soi
+                    JOIN products    p  ON p.id  = soi.product_id
+                    JOIN shop_orders so ON so.id = soi.shop_order_id
+                    WHERE so.tenant_id = ?
+                      AND so.status NOT IN ('cancelled', 'pending')
+                      AND so.confirmed_at >= ?
+                    GROUP BY soi.product_id, p.uid, p.name, p.image_path
+                ) combined
+                GROUP BY product_id, product_uid, name, image_path
+                ORDER BY revenue DESC
+                LIMIT 5
+            ", [$tenantId, $periodUtcStart, $tenantId, $periodUtcStart]);
+        }
+
+        // ── 5. Alertes de stock (toujours tenant-wide — stock global sur Product) ──
+        $stockAlertRows = DB::select('
             SELECT
                 p.id         AS product_id,
                 p.uid        AS product_uid,
@@ -235,41 +292,46 @@ class DashboardController extends Controller
 
             ORDER BY current_stock ASC
             LIMIT 5
-        ", [$tenantId, $tenantId]);
+        ', [$tenantId, $tenantId]);
 
-        // ── 6. 5 dernières transactions — POS + boutique ────────────────────
+        // ── 6. 5 dernières transactions ──────────────────────────────────────
         $recentPOS = Sale::confirmed()
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->with(['customer:id,name'])
             ->latest('confirmed_at')
             ->limit(5)
             ->get(['uid', 'reference', 'customer_id', 'total', 'status', 'confirmed_at', 'created_at'])
-            ->map(fn($s) => [
-                'uid'          => $s->uid,
-                'reference'    => $s->reference,
-                'customer'     => $s->customer?->name,
-                'total'        => (float) $s->total,
-                'status'       => $s->status,
-                'channel'      => 'pos',
+            ->map(fn ($s) => [
+                'uid' => $s->uid,
+                'reference' => $s->reference,
+                'customer' => $s->customer?->name,
+                'total' => (float) $s->total,
+                'status' => $s->status,
+                'channel' => 'pos',
                 'confirmed_at' => $s->confirmed_at?->toISOString(),
-                'created_at'   => $s->created_at?->toISOString(),
+                'created_at' => $s->created_at?->toISOString(),
             ]);
 
-        $recentShop = ShopOrder::where('tenant_id', $tenantId)
-            ->whereNotNull('confirmed_at')
-            ->whereNotIn('status', ['cancelled', 'pending'])
-            ->latest('confirmed_at')
-            ->limit(5)
-            ->get(['uid', 'reference', 'customer_name', 'total', 'status', 'confirmed_at', 'created_at'])
-            ->map(fn($o) => [
-                'uid'          => $o->uid,
-                'reference'    => $o->reference,
-                'customer'     => $o->customer_name,
-                'total'        => (float) $o->total,
-                'status'       => $o->status,
-                'channel'      => 'shop',
-                'confirmed_at' => $o->confirmed_at?->toISOString(),
-                'created_at'   => $o->created_at?->toISOString(),
-            ]);
+        // Boutique uniquement en vue globale
+        $recentShop = collect();
+        if (! $inBranch) {
+            $recentShop = ShopOrder::where('tenant_id', $tenantId)
+                ->whereNotNull('confirmed_at')
+                ->whereNotIn('status', ['cancelled', 'pending'])
+                ->latest('confirmed_at')
+                ->limit(5)
+                ->get(['uid', 'reference', 'customer_name', 'total', 'status', 'confirmed_at', 'created_at'])
+                ->map(fn ($o) => [
+                    'uid' => $o->uid,
+                    'reference' => $o->reference,
+                    'customer' => $o->customer_name,
+                    'total' => (float) $o->total,
+                    'status' => $o->status,
+                    'channel' => 'shop',
+                    'confirmed_at' => $o->confirmed_at?->toISOString(),
+                    'created_at' => $o->created_at?->toISOString(),
+                ]);
+        }
 
         $recentSales = $recentPOS->concat($recentShop)
             ->sortByDesc('confirmed_at')
@@ -277,14 +339,13 @@ class DashboardController extends Controller
             ->values();
 
         // ── [Conditionnel] Lots expirant bientôt ────────────────────────────
-        // Requête uniquement si le tenant utilise la traçabilité par lot/expiry.
         $expiringSoon = [];
-        $hasExpiry    = Product::where('tenant_id', $tenantId)->where('has_expiry', true)->exists();
+        $hasExpiry = Product::where('tenant_id', $tenantId)->where('has_expiry', true)->exists();
 
         if ($hasExpiry) {
             $days = (int) ($this->tenantService->setting('expiry_alert_days') ?? 30);
 
-            $expiryRows = DB::select("
+            $expiryRows = DB::select('
                 SELECT
                     p.name                        AS product,
                     pl.lot_number,
@@ -298,57 +359,57 @@ class DashboardController extends Controller
                   AND pl.quantity_remaining > 0
                   AND pl.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
                 ORDER BY pl.expiry_date ASC
-            ", [$tenantId, $days]);
+            ', [$tenantId, $days]);
 
-            $expiringSoon = collect($expiryRows)->map(fn($r) => [
-                'product_name'       => $r->product,
-                'lot_number'         => $r->lot_number,
-                'expiry_date'        => $r->expiry_date,
+            $expiringSoon = collect($expiryRows)->map(fn ($r) => [
+                'product_name' => $r->product,
+                'lot_number' => $r->lot_number,
+                'expiry_date' => $r->expiry_date,
                 'quantity_remaining' => (float) $r->qty_remaining,
-                'days_remaining'     => (int)   $r->days_remaining,
+                'days_remaining' => (int) $r->days_remaining,
             ])->all();
         }
 
-        $posSalesCount  = (int)   ($posTodayRow->sales_count   ?? 0);
-        $posRevenue     = (float) ($posTodayRow->revenue       ?? 0);
-        $posProfit      = (float) ($posTodayRow->profit        ?? 0);
-        $shopOrderCount = (int)   ($shopTodayRow->orders_count ?? 0);
-        $shopRevenue    = (float) ($shopTodayRow->revenue      ?? 0);
-        $shopProfit     = (float) ($shopTodayRow->profit       ?? 0);
+        $posSalesCount = (int) ($posTodayRow->sales_count ?? 0);
+        $posRevenue = (float) ($posTodayRow->revenue ?? 0);
+        $posProfit = (float) ($posTodayRow->profit ?? 0);
+        $shopOrderCount = (int) ($shopTodayRow->orders_count ?? 0);
+        $shopRevenue = (float) ($shopTodayRow->revenue ?? 0);
+        $shopProfit = (float) ($shopTodayRow->profit ?? 0);
 
         return response()->json([
             'today' => [
-                'sales_count'         => $posSalesCount + $shopOrderCount,
-                'revenue'             => $posRevenue    + $shopRevenue,
-                'profit'              => $posProfit     + $shopProfit,
-                'pending_amount'      => (float) ($pendingRow->pending_amount ?? 0),
-                'pos_sales_count'     => $posSalesCount,
-                'pos_revenue'         => $posRevenue,
-                'shop_orders_count'   => $shopOrderCount,
+                'sales_count' => $posSalesCount + $shopOrderCount,
+                'revenue' => $posRevenue + $shopRevenue,
+                'profit' => $posProfit + $shopProfit,
+                'pending_amount' => (float) ($pendingRow->pending_amount ?? 0),
+                'pos_sales_count' => $posSalesCount,
+                'pos_revenue' => $posRevenue,
+                'shop_orders_count' => $shopOrderCount,
                 'shop_orders_revenue' => $shopRevenue,
             ],
             'by_payment_method' => $paymentsByMethod,
-            'week_chart'        => $weekChart,
-            'top_products'      => collect($topProductRows)->map(fn($r) => [
-                'product_id'    => $r->product_id,
-                'product_uid'   => $r->product_uid,
-                'product_name'  => $r->name,
-                'image_url'     => $r->image_path ? Storage::disk('public')->url($r->image_path) : null,
+            'week_chart' => $weekChart,
+            'top_products' => collect($topProductRows)->map(fn ($r) => [
+                'product_id' => $r->product_id,
+                'product_uid' => $r->product_uid,
+                'product_name' => $r->name,
+                'image_url' => $r->image_path ? Storage::disk('public')->url($r->image_path) : null,
                 'quantity_sold' => (float) $r->qty_sold,
-                'revenue'       => (float) $r->revenue,
+                'revenue' => (float) $r->revenue,
             ]),
-            'stock_alerts'  => collect($stockAlertRows)->map(fn($r) => [
-                'product_id'      => $r->product_id,
-                'product_uid'     => $r->product_uid,
-                'product_name'    => $r->name,
-                'image_url'       => $r->image_path ? Storage::disk('public')->url($r->image_path) : null,
-                'variant_id'      => $r->variant_id,
+            'stock_alerts' => collect($stockAlertRows)->map(fn ($r) => [
+                'product_id' => $r->product_id,
+                'product_uid' => $r->product_uid,
+                'product_name' => $r->name,
+                'image_url' => $r->image_path ? Storage::disk('public')->url($r->image_path) : null,
+                'variant_id' => $r->variant_id,
                 'variant_summary' => $r->variant,
-                'current_stock'   => (float) $r->current_stock,
-                'threshold'       => (int)   $r->threshold,
+                'current_stock' => (float) $r->current_stock,
+                'threshold' => (int) $r->threshold,
             ]),
             'expiring_soon' => $expiringSoon,
-            'recent_sales'  => $recentSales,
+            'recent_sales' => $recentSales,
         ]);
     }
 }

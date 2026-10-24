@@ -6,6 +6,7 @@ use App\Exceptions\SaleException;
 use App\Http\Controllers\Controller;
 use App\Models\Sale;
 use App\Models\SaleReturn;
+use App\Services\BranchService;
 use App\Services\ReturnService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ class ReturnController extends Controller
 {
     public function __construct(
         private readonly ReturnService $returnService,
+        private readonly BranchService $branchService,
     ) {}
 
     /**
@@ -22,18 +24,21 @@ class ReturnController extends Controller
     public function index(Request $request): JsonResponse
     {
         $request->validate([
-            'from'          => ['nullable', 'date'],
-            'to'            => ['nullable', 'date', 'after_or_equal:from'],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
             'refund_method' => ['nullable', 'in:cash,credit,none'],
-            'sale_id'       => ['nullable', 'integer'],
+            'sale_id' => ['nullable', 'integer'],
         ]);
+
+        $branchId = $this->branchService->currentId();
 
         $returns = SaleReturn::with(['sale:id,uid,reference', 'user:id,name'])
             ->withCount('items')
-            ->when($request->search, fn($q) => $q->where('reference', 'like', "%{$request->search}%"))
-            ->when($request->sale_id, fn($q) => $q->where('sale_id', $request->sale_id))
-            ->when($request->from && $request->to, fn($q) => $q->whereBetween('created_at', [$request->from, $request->to]))
-            ->when($request->refund_method, fn($q) => $q->where('refund_method', $request->refund_method))
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->when($request->search, fn ($q) => $q->where('reference', 'like', "%{$request->search}%"))
+            ->when($request->sale_id, fn ($q) => $q->where('sale_id', $request->sale_id))
+            ->when($request->from && $request->to, fn ($q) => $q->whereBetween('created_at', [$request->from, $request->to]))
+            ->when($request->refund_method, fn ($q) => $q->where('refund_method', $request->refund_method))
             ->latest('id')
             ->paginate(20);
 
@@ -64,12 +69,12 @@ class ReturnController extends Controller
     public function store(Request $request, Sale $sale): JsonResponse
     {
         $validated = $request->validate([
-            'reason'                   => ['nullable', 'string', 'max:500'],
-            'refund_method'            => ['required', 'in:cash,credit,none'],
-            'items'                    => ['required', 'array', 'min:1'],
-            'items.*.sale_item_id'     => ['required', 'integer'],
-            'items.*.quantity'         => ['required', 'numeric', 'min:0.001'],
-            'items.*.restock'          => ['nullable', 'boolean'],
+            'reason' => ['nullable', 'string', 'max:500'],
+            'refund_method' => ['required', 'in:cash,credit,none'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.sale_item_id' => ['required', 'integer'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
+            'items.*.restock' => ['nullable', 'boolean'],
         ]);
 
         try {
