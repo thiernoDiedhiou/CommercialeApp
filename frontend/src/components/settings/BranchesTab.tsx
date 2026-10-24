@@ -5,12 +5,12 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useTranslation } from 'react-i18next'
 import {
-  PlusIcon,
-  PencilSquareIcon,
-  TrashIcon,
-  Building2Icon as Building2,
-  MapPinIcon,
-  WarehouseIcon,
+  Plus,
+  SquarePen,
+  Trash2,
+  Building2,
+  MapPin,
+  Warehouse,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { getBranches, createBranch, updateBranch, deleteBranch } from '@/services/api/branches'
@@ -27,9 +27,9 @@ import type { Branch } from '@/types'
 // ─── Icons par type ──────────────────────────────────────────────────────────
 
 const TYPE_META = {
-  principal: { label: 'Principal',  icon: Building2,    color: 'text-brand-primary' },
-  sync:      { label: 'Succursale', icon: MapPinIcon,   color: 'text-blue-500' },
-  warehouse: { label: 'Entrepôt',   icon: WarehouseIcon, color: 'text-amber-500' },
+  principal: { label: 'Principal',  icon: Building2, color: 'text-brand-primary' },
+  sync:      { label: 'Succursale', icon: MapPin,    color: 'text-blue-500' },
+  warehouse: { label: 'Entrepôt',   icon: Warehouse, color: 'text-amber-500' },
 } as const
 
 // ─── Schémas Zod ─────────────────────────────────────────────────────────────
@@ -268,7 +268,7 @@ export default function BranchesTab() {
         </div>
         {canEdit && (
           <Button type="button" variant="primary" onClick={() => setCreating(true)}>
-            <PlusIcon className="h-4 w-4 mr-1.5" />
+            <Plus className="h-4 w-4 mr-1.5" />
             Nouvelle succursale
           </Button>
         )}
@@ -319,7 +319,7 @@ export default function BranchesTab() {
                     className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300 transition-colors"
                     aria-label={`Modifier ${branch.name}`}
                   >
-                    <PencilSquareIcon className="h-4 w-4" />
+                    <SquarePen className="h-4 w-4" />
                   </button>
                   {branch.type !== 'principal' && (
                     <button
@@ -328,7 +328,7 @@ export default function BranchesTab() {
                       className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-900/20 dark:hover:text-red-400 transition-colors"
                       aria-label={`Supprimer ${branch.name}`}
                     >
-                      <TrashIcon className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   )}
                 </div>
