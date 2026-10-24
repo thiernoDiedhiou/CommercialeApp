@@ -35,6 +35,11 @@ class ResolveBranch
     {
         $branchUid = $request->header('X-Branch-ID');
 
+        // Étape 2 — Pas de tenant résolu (routes auth/* se résolvent elles-mêmes après) : skip.
+        if (! $this->tenantService->hasCurrentTenant()) {
+            return $next($request);
+        }
+
         // Étape 3 — Header absent : contexte succursale optionnel, on passe.
         if (empty($branchUid)) {
             return $next($request);
@@ -52,14 +57,14 @@ class ResolveBranch
         if (! $branch) {
             return response()->json([
                 'message' => 'Succursale introuvable.',
-                'code'    => 'BRANCH_NOT_FOUND',
+                'code' => 'BRANCH_NOT_FOUND',
             ], 404);
         }
 
         if (! $branch->is_active) {
             return response()->json([
                 'message' => 'Cette succursale est désactivée.',
-                'code'    => 'BRANCH_INACTIVE',
+                'code' => 'BRANCH_INACTIVE',
             ], 403);
         }
 
@@ -80,7 +85,7 @@ class ResolveBranch
                 if (! $hasAccess) {
                     return response()->json([
                         'message' => 'Accès à cette succursale refusé.',
-                        'code'    => 'BRANCH_ACCESS_DENIED',
+                        'code' => 'BRANCH_ACCESS_DENIED',
                     ], 403);
                 }
             }
