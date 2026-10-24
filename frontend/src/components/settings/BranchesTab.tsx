@@ -85,7 +85,7 @@ function CreateBranchModal({ onClose }: { onClose: () => void }) {
   })
 
   return (
-    <Modal title="Nouvelle succursale" onClose={onClose}>
+    <Modal isOpen title="Nouvelle succursale" onClose={onClose}>
       <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom *</label>
@@ -162,7 +162,7 @@ function EditBranchModal({ branch, onClose }: { branch: Branch; onClose: () => v
   })
 
   return (
-    <Modal title={`Modifier — ${branch.name}`} onClose={onClose}>
+    <Modal isOpen title={`Modifier — ${branch.name}`} onClose={onClose}>
       <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nom *</label>
@@ -351,6 +351,7 @@ export default function BranchesTab() {
       {/* Confirmation suppression */}
       {deletingUid && (
         <Modal
+          isOpen
           title="Supprimer cette succursale ?"
           onClose={() => setDeletingUid(null)}
         >
