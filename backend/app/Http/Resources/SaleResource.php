@@ -71,6 +71,7 @@ class SaleResource extends JsonResource
             ),
             // Agrégats index
             'items_count'     => $this->when(isset($this->items_count), $this->items_count),
+            'returns_count'   => $this->when(isset($this->returns_count), $this->returns_count),
         ];
     }
 }

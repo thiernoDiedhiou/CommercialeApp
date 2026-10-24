@@ -115,17 +115,19 @@ class ReturnService
                     'total'              => $item['line_total'],
                 ]);
 
-                // Restitution stock (source 'sale_return', idempotent par returnItem.id)
-                $this->stockService->adjust(
-                    product:  $item['product'],
-                    type:     'return',
-                    quantity: $item['stock_qty'],
-                    source:   'sale_return',
-                    sourceId: $returnItem->id,
-                    variant:  $item['variant'],
-                    lot:      $item['lot'],
-                    notes:    "Retour {$reference} — vente {$sale->reference}",
-                );
+                // Restitution stock — ignorée si le produit est signalé non-restockable (ex: défectueux)
+                if ($item['restock']) {
+                    $this->stockService->adjust(
+                        product:  $item['product'],
+                        type:     'return',
+                        quantity: $item['stock_qty'],
+                        source:   'sale_return',
+                        sourceId: $returnItem->id,
+                        variant:  $item['variant'],
+                        lot:      $item['lot'],
+                        notes:    "Retour {$reference} — vente {$sale->reference}",
+                    );
+                }
             }
 
             return $saleReturn->load(self::EAGER_LOAD);
@@ -205,6 +207,8 @@ class ReturnService
                 'unit_weight'=> $saleItem->unit_weight ? $requestedQty : null,
                 'stock_qty'  => $stockQty,
                 'line_total' => $lineTotal,
+                // true par défaut — false = produit défectueux, pas de remise en stock
+                'restock'    => $item['restock'] ?? true,
             ];
         }
 

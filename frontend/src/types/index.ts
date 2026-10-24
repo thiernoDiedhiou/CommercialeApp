@@ -5,6 +5,7 @@ export interface User {
   uid: string
   name: string
   email: string
+  locale: string | null
   avatar: string | null
   is_active: boolean
 }
@@ -93,6 +94,7 @@ export interface TopProduct {
   product_id: number
   product_uid: string
   product_name: string
+  image_url: string | null
   quantity_sold: number
   revenue: number
 }
@@ -101,6 +103,7 @@ export interface StockAlert {
   product_id: number
   product_uid: string
   product_name: string
+  image_url: string | null
   variant_id: number | null
   variant_summary: string | null
   current_stock: number
@@ -470,6 +473,7 @@ export interface Sale {
   user?: Pick<User, 'id' | 'name'>
   items?: SaleItem[]
   payments?: Payment[]
+  returns_count?: number
 }
 
 export interface SaleItem {
@@ -789,7 +793,7 @@ export interface SaleReturn {
 export interface CreateSaleReturnData {
   reason?: string | null
   refund_method: RefundMethod
-  items: { sale_item_id: number; quantity: number }[]
+  items: { sale_item_id: number; quantity: number; restock?: boolean }[]
 }
 
 // ── Inventory ─────────────────────────────────────────────────────────────

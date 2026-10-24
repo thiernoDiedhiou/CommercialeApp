@@ -9,7 +9,9 @@ use App\Models\ShopOrder;
 use App\Services\TenantService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
@@ -26,19 +28,28 @@ class DashboardController extends Controller
      * Requête 6 : 5 dernières ventes confirmées
      * + conditionnelle : lots expirant (seulement si has_expiry produits existent)
      */
-    public function summary(): JsonResponse
+    public function summary(Request $request): JsonResponse
     {
         $tenantId = $this->tenantService->currentId();
 
-        // Bornes UTC du jour local du tenant.
+        // ── Bornes de période (filtre optionnel date_from / date_to) ────────
         // date_default_timezone_set() est appliqué par ResolveTenant — Carbon::today()
         // retourne donc minuit dans le fuseau du tenant, converti en UTC pour MySQL.
-        $todayUtcStart = Carbon::today()->utc()->toDateTimeString();
-        $todayUtcEnd   = Carbon::tomorrow()->utc()->toDateTimeString();
-        // Décalage en secondes pour les GROUP BY DATE dans les graphiques (ex: +3600 pour UTC+1)
-        $tzOffsetSec   = Carbon::now()->getOffset();
+        $dateFrom = $request->input('date_from'); // Y-m-d ou null
+        $dateTo   = $request->input('date_to');   // Y-m-d ou null
 
-        // ── 1a. Stats POS du jour ────────────────────────────────────────────
+        if ($dateFrom && $dateTo) {
+            $periodUtcStart = Carbon::parse($dateFrom)->startOfDay()->utc()->toDateTimeString();
+            $periodUtcEnd   = Carbon::parse($dateTo)->endOfDay()->utc()->toDateTimeString();
+        } else {
+            $periodUtcStart = Carbon::today()->utc()->toDateTimeString();
+            $periodUtcEnd   = Carbon::tomorrow()->utc()->toDateTimeString();
+        }
+
+        // Décalage en secondes pour les GROUP BY DATE dans les graphiques (ex: +3600 pour UTC+1)
+        $tzOffsetSec = Carbon::now()->getOffset();
+
+        // ── 1a. Stats POS de la période ──────────────────────────────────────
         $posTodayRow = DB::selectOne("
             SELECT
                 COUNT(DISTINCT s.id)                                     AS sales_count,
@@ -49,9 +60,9 @@ class DashboardController extends Controller
             WHERE s.tenant_id = ?
               AND s.status    = 'confirmed'
               AND s.confirmed_at >= ? AND s.confirmed_at < ?
-        ", [$tenantId, $todayUtcStart, $todayUtcEnd]);
+        ", [$tenantId, $periodUtcStart, $periodUtcEnd]);
 
-        // ── 1b. Stats boutique en ligne du jour ──────────────────────────────
+        // ── 1b. Stats boutique en ligne de la période ────────────────────────
         $shopTodayRow = DB::selectOne("
             SELECT
                 COUNT(DISTINCT so.id)                                                                   AS orders_count,
@@ -64,9 +75,9 @@ class DashboardController extends Controller
             WHERE so.tenant_id = ?
               AND so.status NOT IN ('cancelled', 'pending')
               AND so.confirmed_at >= ? AND so.confirmed_at < ?
-        ", [$tenantId, $todayUtcStart, $todayUtcEnd]);
+        ", [$tenantId, $periodUtcStart, $periodUtcEnd]);
 
-        // ── 2. Encaissements du jour par méthode ────────────────────────────
+        // ── 2. Encaissements de la période par méthode ───────────────────────
         $paymentRows = DB::select("
             SELECT p.method, COALESCE(SUM(p.amount), 0) AS total
             FROM payments p
@@ -75,17 +86,16 @@ class DashboardController extends Controller
               AND s.status    = 'confirmed'
               AND s.confirmed_at >= ? AND s.confirmed_at < ?
             GROUP BY p.method
-        ", [$tenantId, $todayUtcStart, $todayUtcEnd]);
+        ", [$tenantId, $periodUtcStart, $periodUtcEnd]);
 
         $paymentsByMethod = collect($paymentRows)->pluck('total', 'method')
             ->map(fn($v) => (float) $v)
             ->toArray();
 
-        // ── 3. Graphique 7 jours glissants — POS + boutique ─────────────────
-        // Borne de début : minuit local il y a 6 jours → converti en UTC pour MySQL.
-        // GROUP BY : DATE(DATE_ADD(confirmed_at, INTERVAL {offset} SECOND))
-        //   → regroupe par date locale du tenant sans dépendre des timezone tables MySQL.
-        $weekUtcStart = Carbon::today()->subDays(6)->utc()->toDateTimeString();
+        // ── 3. Graphique glissant — POS + boutique ──────────────────────────
+        // chart_days : 7 (défaut) | 30 | 90 — paramètre optionnel
+        $chartDays    = min(max((int) $request->input('chart_days', 7), 7), 90);
+        $chartUtcStart = Carbon::today()->subDays($chartDays - 1)->utc()->toDateTimeString();
 
         $weekRows = DB::select("
             SELECT
@@ -117,12 +127,12 @@ class DashboardController extends Controller
             ) combined
             GROUP BY date
             ORDER BY date ASC
-        ", [$tenantId, $weekUtcStart, $tenantId, $weekUtcStart]);
+        ", [$tenantId, $chartUtcStart, $tenantId, $chartUtcStart]);
 
-        // Remplissage des jours sans ventes avec 0 (7 jours garantis)
+        // Remplissage de tous les jours sans ventes avec 0
         $weekByDate = collect($weekRows)->keyBy('date');
         $weekChart  = [];
-        for ($i = 6; $i >= 0; $i--) {
+        for ($i = $chartDays - 1; $i >= 0; $i--) {
             $date        = now()->subDays($i)->toDateString();
             $row         = $weekByDate->get($date);
             $weekChart[] = [
@@ -139,19 +149,21 @@ class DashboardController extends Controller
             WHERE tenant_id = ? AND status IN ('sent', 'overdue')
         ", [$tenantId]);
 
-        // ── 4. Top 5 produits du mois courant — POS + boutique ──────────────
+        // ── 4. Top 5 produits de la période — POS + boutique ────────────────
         $topProductRows = DB::select("
             SELECT
                 product_id,
                 product_uid,
                 name,
+                image_path,
                 SUM(qty_sold) AS qty_sold,
                 SUM(revenue)  AS revenue
             FROM (
                 SELECT
                     si.product_id,
-                    p.uid  AS product_uid,
+                    p.uid        AS product_uid,
                     p.name,
+                    p.image_path,
                     SUM(si.quantity)           AS qty_sold,
                     COALESCE(SUM(si.total), 0) AS revenue
                 FROM sale_items si
@@ -160,14 +172,15 @@ class DashboardController extends Controller
                 WHERE s.tenant_id = ?
                   AND s.status    = 'confirmed'
                   AND s.confirmed_at >= ?
-                GROUP BY si.product_id, p.uid, p.name
+                GROUP BY si.product_id, p.uid, p.name, p.image_path
 
                 UNION ALL
 
                 SELECT
                     soi.product_id,
-                    p.uid  AS product_uid,
+                    p.uid        AS product_uid,
                     p.name,
+                    p.image_path,
                     SUM(soi.quantity)           AS qty_sold,
                     COALESCE(SUM(soi.total), 0) AS revenue
                 FROM shop_order_items soi
@@ -176,22 +189,23 @@ class DashboardController extends Controller
                 WHERE so.tenant_id = ?
                   AND so.status NOT IN ('cancelled', 'pending')
                   AND so.confirmed_at >= ?
-                GROUP BY soi.product_id, p.uid, p.name
+                GROUP BY soi.product_id, p.uid, p.name, p.image_path
             ) combined
-            GROUP BY product_id, product_uid, name
+            GROUP BY product_id, product_uid, name, image_path
             ORDER BY revenue DESC
             LIMIT 5
-        ", [$tenantId, Carbon::now()->startOfMonth()->utc()->toDateTimeString(),
-            $tenantId, Carbon::now()->startOfMonth()->utc()->toDateTimeString()]);
+        ", [$tenantId, $periodUtcStart, $tenantId, $periodUtcStart]);
 
         // ── 5. Alertes de stock (UNION produits simples + variantes) ────────
+        // Limité à 5 en dashboard — "Voir tout" pointe vers /stock
         $stockAlertRows = DB::select("
             SELECT
-                p.id   AS product_id,
-                p.uid  AS product_uid,
+                p.id         AS product_id,
+                p.uid        AS product_uid,
                 p.name,
-                NULL   AS variant_id,
-                NULL   AS variant,
+                p.image_path,
+                NULL         AS variant_id,
+                NULL         AS variant,
                 p.stock_quantity   AS current_stock,
                 p.alert_threshold  AS threshold
             FROM products p
@@ -204,10 +218,11 @@ class DashboardController extends Controller
             UNION ALL
 
             SELECT
-                p.id  AS product_id,
-                p.uid AS product_uid,
+                p.id         AS product_id,
+                p.uid        AS product_uid,
                 p.name,
-                pv.id AS variant_id,
+                p.image_path,
+                pv.id        AS variant_id,
                 pv.attribute_summary AS variant,
                 pv.stock_quantity    AS current_stock,
                 COALESCE(pv.alert_threshold, p.alert_threshold) AS threshold
@@ -219,7 +234,7 @@ class DashboardController extends Controller
               AND pv.stock_quantity <= COALESCE(pv.alert_threshold, p.alert_threshold)
 
             ORDER BY current_stock ASC
-            LIMIT 20
+            LIMIT 5
         ", [$tenantId, $tenantId]);
 
         // ── 6. 5 dernières transactions — POS + boutique ────────────────────
@@ -318,6 +333,7 @@ class DashboardController extends Controller
                 'product_id'    => $r->product_id,
                 'product_uid'   => $r->product_uid,
                 'product_name'  => $r->name,
+                'image_url'     => $r->image_path ? Storage::disk('public')->url($r->image_path) : null,
                 'quantity_sold' => (float) $r->qty_sold,
                 'revenue'       => (float) $r->revenue,
             ]),
@@ -325,6 +341,7 @@ class DashboardController extends Controller
                 'product_id'      => $r->product_id,
                 'product_uid'     => $r->product_uid,
                 'product_name'    => $r->name,
+                'image_url'       => $r->image_path ? Storage::disk('public')->url($r->image_path) : null,
                 'variant_id'      => $r->variant_id,
                 'variant_summary' => $r->variant,
                 'current_stock'   => (float) $r->current_stock,

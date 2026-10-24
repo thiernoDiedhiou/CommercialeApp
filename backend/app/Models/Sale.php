@@ -81,6 +81,11 @@ class Sale extends Model
         return $this->hasMany(Payment::class)->latest('paid_at');
     }
 
+    public function returns(): HasMany
+    {
+        return $this->hasMany(SaleReturn::class);
+    }
+
     // ─── Scopes ───────────────────────────────────────────────────────────────
 
     public function scopeConfirmed($query)

@@ -69,6 +69,7 @@ class ReturnController extends Controller
             'items'                    => ['required', 'array', 'min:1'],
             'items.*.sale_item_id'     => ['required', 'integer'],
             'items.*.quantity'         => ['required', 'numeric', 'min:0.001'],
+            'items.*.restock'          => ['nullable', 'boolean'],
         ]);
 
         try {

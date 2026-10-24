@@ -28,7 +28,7 @@ class SaleController extends Controller
     public function index(Request $request): JsonResponse
     {
         $sales = Sale::with(['customer:id,name', 'user:id,name'])
-            ->withCount('items')
+            ->withCount(['items', 'returns'])
             ->withSum('payments', 'amount')
             ->when($request->search, fn ($q) => $q->where(function ($inner) use ($request) {
                 $inner->where('reference', 'like', "%{$request->search}%")

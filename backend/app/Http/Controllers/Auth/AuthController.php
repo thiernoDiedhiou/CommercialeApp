@@ -75,9 +75,10 @@ class AuthController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'min:2', 'max:255'],
+            'name'             => ['required', 'string', 'min:2', 'max:255'],
+            'locale'           => ['nullable', 'string', 'in:fr,en'],
             'current_password' => ['nullable', 'string'],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
+            'password'         => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
 
         $passwordChange = ! empty($validated['password']);
@@ -92,6 +93,9 @@ class AuthController extends Controller
         }
 
         $user->name = $validated['name'];
+        if (array_key_exists('locale', $validated) && $validated['locale'] !== null) {
+            $user->locale = $validated['locale'];
+        }
         if ($passwordChange) {
             $user->password = Hash::make($validated['password']);
         }
@@ -106,9 +110,10 @@ class AuthController extends Controller
 
         return response()->json([
             'data' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
+                'id'     => $user->id,
+                'name'   => $user->name,
+                'email'  => $user->email,
+                'locale' => $user->locale,
             ],
         ]);
     }
@@ -170,10 +175,11 @@ class AuthController extends Controller
 
         return [
             'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'avatar' => $user->avatar_path
+                'id'        => $user->id,
+                'name'      => $user->name,
+                'email'     => $user->email,
+                'locale'    => $user->locale,
+                'avatar'    => $user->avatar_path
                     ? Storage::disk('public')->url($user->avatar_path)
                     : null,
                 'is_active' => $user->is_active,

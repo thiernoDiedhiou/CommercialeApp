@@ -2,15 +2,17 @@ import apiClient, { API } from '@/lib/axios'
 
 export interface UpdateProfileData {
   name:                   string
+  locale?:                string
   current_password?:      string
   password?:              string
   password_confirmation?: string
 }
 
 export interface ProfileResponse {
-  id:    number
-  name:  string
-  email: string
+  id:     number
+  name:   string
+  email:  string
+  locale: string | null
 }
 
 export async function updateProfile(data: UpdateProfileData): Promise<ProfileResponse> {
