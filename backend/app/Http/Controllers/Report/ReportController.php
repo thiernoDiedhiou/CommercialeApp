@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Report;
 
 use App\Http\Controllers\Controller;
+use App\Models\Branch;
 use App\Services\TenantService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -14,6 +15,25 @@ class ReportController extends Controller
 {
     public function __construct(private readonly TenantService $tenantService) {}
 
+    /**
+     * Résout un branch_uid en branch_id (int) pour les filtres SQL.
+     * Retourne null si le paramètre est absent ou si le slug est invalide.
+     */
+    private function resolveBranchId(Request $request): ?int
+    {
+        $uid = $request->input('branch_uid');
+        if (! $uid) {
+            return null;
+        }
+
+        $branch = Branch::withoutGlobalScopes()
+            ->where('uid', $uid)
+            ->where('tenant_id', $this->tenantService->currentId())
+            ->value('id');
+
+        return $branch ? (int) $branch : null;
+    }
+
     // ── CA par période ────────────────────────────────────────────────────────
 
     /**
@@ -24,16 +44,21 @@ class ReportController extends Controller
     public function sales(Request $request): JsonResponse|StreamedResponse
     {
         $tenantId = $this->tenantService->currentId();
-        [$fromUtc, $toUtc]     = $this->parseDateRange($request);
+        $branchId = $this->resolveBranchId($request);
+        [$fromUtc, $toUtc] = $this->parseDateRange($request);
         [$fromDisplay, $toDisplay] = $this->parseDateRangeDisplay($request);
 
-        $groupBy      = in_array($request->input('group_by'), ['day', 'month'], true)
+        $groupBy = in_array($request->input('group_by'), ['day', 'month'], true)
             ? $request->input('group_by')
             : 'day';
-        $dateFormat   = $groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d';
-        $tzOffsetSec  = Carbon::now()->getOffset();
-        $dateFmt      = $this->dateFormatExpr('confirmed_at',   $dateFormat, $tzOffsetSec);
-        $dateFmtS     = $this->dateFormatExpr('s.confirmed_at', $dateFormat, $tzOffsetSec);
+        $dateFormat = $groupBy === 'month' ? '%Y-%m' : '%Y-%m-%d';
+        $tzOffsetSec = Carbon::now()->getOffset();
+        $dateFmt = $this->dateFormatExpr('confirmed_at', $dateFormat, $tzOffsetSec);
+        $dateFmtS = $this->dateFormatExpr('s.confirmed_at', $dateFormat, $tzOffsetSec);
+
+        $branchFilter = $branchId ? 'AND branch_id = ?' : '';
+        $branchFilterS = $branchId ? 'AND s.branch_id = ?' : '';
+        $bArgs = $branchId ? [$branchId] : [];
 
         // ── Revenue + sales_count depuis sales (sans JOIN — évite la multiplication des lignes)
         $summaryRow = DB::selectOne("
@@ -41,7 +66,8 @@ class ReportController extends Controller
             FROM sales
             WHERE tenant_id = ? AND status = 'confirmed'
               AND confirmed_at BETWEEN ? AND ?
-        ", [$tenantId, $fromUtc, $toUtc]);
+              {$branchFilter}
+        ", [$tenantId, $fromUtc, $toUtc, ...$bArgs]);
 
         // ── Profit depuis sale_items (JOIN nécessaire pour filtrer par tenant/statut)
         $profitRow = DB::selectOne("
@@ -50,7 +76,8 @@ class ReportController extends Controller
             JOIN sales s ON s.id = si.sale_id
             WHERE s.tenant_id = ? AND s.status = 'confirmed'
               AND s.confirmed_at BETWEEN ? AND ?
-        ", [$tenantId, $fromUtc, $toUtc]);
+              {$branchFilterS}
+        ", [$tenantId, $fromUtc, $toUtc, ...$bArgs]);
 
         // ── Graphique revenue par période (depuis sales uniquement, expression driver-aware)
         $revenueRows = DB::select("
@@ -61,9 +88,10 @@ class ReportController extends Controller
             FROM sales
             WHERE tenant_id = ? AND status = 'confirmed'
               AND confirmed_at BETWEEN ? AND ?
+              {$branchFilter}
             GROUP BY {$dateFmt}
             ORDER BY period ASC
-        ", [$tenantId, $fromUtc, $toUtc]);
+        ", [$tenantId, $fromUtc, $toUtc, ...$bArgs]);
 
         // ── Profit par période (depuis sale_items)
         $profitRows = DB::select("
@@ -74,27 +102,28 @@ class ReportController extends Controller
             JOIN sales s ON s.id = si.sale_id
             WHERE s.tenant_id = ? AND s.status = 'confirmed'
               AND s.confirmed_at BETWEEN ? AND ?
+              {$branchFilterS}
             GROUP BY {$dateFmtS}
-        ", [$tenantId, $fromUtc, $toUtc]);
+        ", [$tenantId, $fromUtc, $toUtc, ...$bArgs]);
 
         $profitByPeriod = collect($profitRows)->pluck('profit', 'period');
 
         $chart = collect($revenueRows)->map(fn ($r) => [
-            'period'      => $r->period,
-            'sales_count' => (int)   $r->sales_count,
-            'revenue'     => (float) $r->revenue,
-            'profit'      => (float) ($profitByPeriod->get($r->period) ?? 0),
+            'period' => $r->period,
+            'sales_count' => (int) $r->sales_count,
+            'revenue' => (float) $r->revenue,
+            'profit' => (float) ($profitByPeriod->get($r->period) ?? 0),
         ])->all();
 
-        $salesCount   = (int)   ($summaryRow->sales_count ?? 0);
-        $totalRevenue = (float) ($summaryRow->revenue     ?? 0);
-        $totalProfit  = (float) ($profitRow->profit       ?? 0);
+        $salesCount = (int) ($summaryRow->sales_count ?? 0);
+        $totalRevenue = (float) ($summaryRow->revenue ?? 0);
+        $totalProfit = (float) ($profitRow->profit ?? 0);
 
         if ($request->input('format') === 'csv') {
             return $this->csvResponse(
                 filename: "ventes_{$fromDisplay}_{$toDisplay}.csv",
-                headers:  ['Période', 'Nb ventes', 'CA (FCFA)', 'Bénéfice (FCFA)'],
-                rows:     array_map(
+                headers: ['Période', 'Nb ventes', 'CA (FCFA)', 'Bénéfice (FCFA)'],
+                rows: array_map(
                     fn ($r) => [$r['period'], $r['sales_count'], $r['revenue'], $r['profit']],
                     $chart
                 ),
@@ -102,11 +131,11 @@ class ReportController extends Controller
         }
 
         return response()->json([
-            'period'  => ['from' => $fromDisplay, 'to' => $toDisplay],
+            'period' => ['from' => $fromDisplay, 'to' => $toDisplay],
             'summary' => [
-                'sales_count'    => $salesCount,
-                'revenue'        => $totalRevenue,
-                'profit'         => $totalProfit,
+                'sales_count' => $salesCount,
+                'revenue' => $totalRevenue,
+                'profit' => $totalProfit,
                 'average_basket' => $salesCount > 0 ? round($totalRevenue / $salesCount) : 0,
             ],
             'chart' => $chart,
@@ -123,9 +152,13 @@ class ReportController extends Controller
     public function products(Request $request): JsonResponse|StreamedResponse
     {
         $tenantId = $this->tenantService->currentId();
-        [$fromUtc, $toUtc]         = $this->parseDateRange($request);
+        $branchId = $this->resolveBranchId($request);
+        [$fromUtc, $toUtc] = $this->parseDateRange($request);
         [$fromDisplay, $toDisplay] = $this->parseDateRangeDisplay($request);
         $limit = min((int) $request->input('limit', 50), 200);
+
+        $branchFilterS = $branchId ? 'AND s.branch_id = ?' : '';
+        $bArgs = $branchId ? [$branchId] : [];
 
         $rows = DB::select("
             SELECT
@@ -152,28 +185,29 @@ class ReportController extends Controller
                 WHERE s.tenant_id = ?
                   AND s.status    = 'confirmed'
                   AND s.confirmed_at BETWEEN ? AND ?
+                  {$branchFilterS}
                 GROUP BY si.product_id
             ) agg ON agg.product_id = p.id
             WHERE p.tenant_id = ? AND p.deleted_at IS NULL
             ORDER BY revenue DESC, p.name ASC
             LIMIT ?
-        ", [$tenantId, $fromUtc, $toUtc, $tenantId, $limit]);
+        ", [$tenantId, $fromUtc, $toUtc, ...$bArgs, $tenantId, $limit]);
 
         $data = collect($rows)->map(fn ($r) => [
-            'product_id'  => (int)   $r->product_id,
-            'name'        => $r->name,
-            'category'    => $r->category,
-            'qty_sold'    => (float) $r->qty_sold,
-            'revenue'     => (float) $r->revenue,
-            'profit'      => (float) $r->profit,
+            'product_id' => (int) $r->product_id,
+            'name' => $r->name,
+            'category' => $r->category,
+            'qty_sold' => (float) $r->qty_sold,
+            'revenue' => (float) $r->revenue,
+            'profit' => (float) $r->profit,
             'margin_rate' => (float) $r->margin_rate,
         ])->all();
 
         if ($request->input('format') === 'csv') {
             return $this->csvResponse(
                 filename: "top_produits_{$fromDisplay}_{$toDisplay}.csv",
-                headers:  ['Produit', 'Catégorie', 'Qté vendue', 'CA (FCFA)', 'Bénéfice (FCFA)', 'Marge (%)'],
-                rows:     array_map(
+                headers: ['Produit', 'Catégorie', 'Qté vendue', 'CA (FCFA)', 'Bénéfice (FCFA)', 'Marge (%)'],
+                rows: array_map(
                     fn ($r) => [$r['name'], $r['category'] ?? '', $r['qty_sold'], $r['revenue'], $r['profit'], $r['margin_rate']],
                     $data
                 ),
@@ -182,7 +216,7 @@ class ReportController extends Controller
 
         return response()->json([
             'period' => ['from' => $fromDisplay, 'to' => $toDisplay],
-            'data'   => $data,
+            'data' => $data,
         ]);
     }
 
@@ -196,8 +230,12 @@ class ReportController extends Controller
     public function stock(Request $request): JsonResponse|StreamedResponse
     {
         $tenantId = $this->tenantService->currentId();
-        [$fromUtc, $toUtc]         = $this->parseDateRange($request);
+        $branchId = $this->resolveBranchId($request);
+        [$fromUtc, $toUtc] = $this->parseDateRange($request);
         [$fromDisplay, $toDisplay] = $this->parseDateRangeDisplay($request);
+
+        $branchFilter = $branchId ? 'AND branch_id = ?' : '';
+        $bArgs = $branchId ? [$branchId] : [];
 
         // Totaux par type
         $summaryRows = DB::select("
@@ -205,19 +243,20 @@ class ReportController extends Controller
             FROM stock_movements
             WHERE tenant_id = ?
               AND created_at BETWEEN ? AND ?
+              {$branchFilter}
             GROUP BY type
-        ", [$tenantId, $fromUtc, $toUtc]);
+        ", [$tenantId, $fromUtc, $toUtc, ...$bArgs]);
 
         $summary = collect($summaryRows)->pluck('total', 'type')
             ->map(fn ($v) => (float) $v)
             ->toArray();
 
-        // Valeur totale du stock actuel (indépendante de la période)
-        $stockValueRow = DB::selectOne("
+        // Valeur totale du stock actuel (indépendante de la période et de la succursale)
+        $stockValueRow = DB::selectOne('
             SELECT COALESCE(SUM(stock_quantity * cost_price), 0) AS total
             FROM products
             WHERE tenant_id = ? AND deleted_at IS NULL
-        ", [$tenantId]);
+        ', [$tenantId]);
 
         // Tous les produits du tenant, avec leurs mouvements sur la période (LEFT JOIN)
         $rows = DB::select("
@@ -241,29 +280,30 @@ class ReportController extends Controller
                 FROM stock_movements sm
                 WHERE sm.tenant_id = ?
                   AND sm.created_at BETWEEN ? AND ?
+                  {$branchFilter}
                 GROUP BY sm.product_id
             ) agg ON agg.product_id = p.id
             WHERE p.tenant_id = ? AND p.deleted_at IS NULL
             ORDER BY (COALESCE(agg.total_in, 0) + COALESCE(agg.total_out, 0)) DESC, p.name ASC
             LIMIT 1000
-        ", [$tenantId, $fromUtc, $toUtc, $tenantId]);
+        ", [$tenantId, $fromUtc, $toUtc, ...$bArgs, $tenantId]);
 
         $data = collect($rows)->map(fn ($r) => [
-            'product_id'       => (int)   $r->product_id,
-            'name'             => $r->name,
-            'total_in'         => (float) $r->total_in,
-            'total_out'        => (float) $r->total_out,
-            'total_return'     => (float) $r->total_return,
+            'product_id' => (int) $r->product_id,
+            'name' => $r->name,
+            'total_in' => (float) $r->total_in,
+            'total_out' => (float) $r->total_out,
+            'total_return' => (float) $r->total_return,
             'total_adjustment' => (float) $r->total_adjustment,
-            'current_stock'    => (float) $r->current_stock,
-            'stock_value'      => (float) $r->stock_value,
+            'current_stock' => (float) $r->current_stock,
+            'stock_value' => (float) $r->stock_value,
         ])->all();
 
         if ($request->input('format') === 'csv') {
             return $this->csvResponse(
                 filename: "stock_{$fromDisplay}_{$toDisplay}.csv",
-                headers:  ['Produit', 'Entrées', 'Sorties', 'Retours', 'Ajustements', 'Stock actuel', 'Valeur (FCFA)'],
-                rows:     array_map(
+                headers: ['Produit', 'Entrées', 'Sorties', 'Retours', 'Ajustements', 'Stock actuel', 'Valeur (FCFA)'],
+                rows: array_map(
                     fn ($r) => [$r['name'], $r['total_in'], $r['total_out'], $r['total_return'], $r['total_adjustment'], $r['current_stock'], $r['stock_value']],
                     $data
                 ),
@@ -271,12 +311,12 @@ class ReportController extends Controller
         }
 
         return response()->json([
-            'period'  => ['from' => $fromDisplay, 'to' => $toDisplay],
+            'period' => ['from' => $fromDisplay, 'to' => $toDisplay],
             'summary' => [
-                'total_in'          => $summary['in']         ?? 0,
-                'total_out'         => $summary['out']        ?? 0,
-                'total_return'      => $summary['return']     ?? 0,
-                'total_adjustment'  => $summary['adjustment'] ?? 0,
+                'total_in' => $summary['in'] ?? 0,
+                'total_out' => $summary['out'] ?? 0,
+                'total_return' => $summary['return'] ?? 0,
+                'total_adjustment' => $summary['adjustment'] ?? 0,
                 'total_stock_value' => (float) ($stockValueRow->total ?? 0),
             ],
             'data' => $data,
@@ -297,15 +337,18 @@ class ReportController extends Controller
         if (DB::getDriverName() === 'sqlite') {
             if ($tzOffsetSec !== 0) {
                 $sign = $tzOffsetSec >= 0 ? '+' : '-';
-                $abs  = abs($tzOffsetSec);
+                $abs = abs($tzOffsetSec);
+
                 return "strftime('{$format}', {$column}, '{$sign}{$abs} seconds')";
             }
+
             return "strftime('{$format}', {$column})";
         }
 
         if ($tzOffsetSec !== 0) {
             return "DATE_FORMAT(DATE_ADD({$column}, INTERVAL {$tzOffsetSec} SECOND), '{$format}')";
         }
+
         return "DATE_FORMAT({$column}, '{$format}')";
     }
 
@@ -319,11 +362,11 @@ class ReportController extends Controller
     private function parseDateRange(Request $request): array
     {
         $from = $request->input('from', now()->startOfMonth()->toDateString());
-        $to   = $request->input('to',   now()->toDateString());
+        $to = $request->input('to', now()->toDateString());
 
         // Accepter uniquement YYYY-MM-DD pour éviter les injections de format
         $from = preg_match('/^\d{4}-\d{2}-\d{2}$/', $from) ? $from : now()->startOfMonth()->toDateString();
-        $to   = preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)   ? $to   : now()->toDateString();
+        $to = preg_match('/^\d{4}-\d{2}-\d{2}$/', $to) ? $to : now()->toDateString();
 
         // Garantir from <= to
         if ($from > $to) {
@@ -333,7 +376,7 @@ class ReportController extends Controller
         // Convertit les dates locales en bornes UTC pour les comparaisons MySQL.
         // Carbon::parse($from) interprète la date dans le timezone PHP courant (tenant).
         $fromUtc = Carbon::parse($from)->startOfDay()->utc()->toDateTimeString();
-        $toUtc   = Carbon::parse($to)->endOfDay()->utc()->toDateTimeString();
+        $toUtc = Carbon::parse($to)->endOfDay()->utc()->toDateTimeString();
 
         return [$fromUtc, $toUtc];
     }
@@ -344,10 +387,13 @@ class ReportController extends Controller
     private function parseDateRangeDisplay(Request $request): array
     {
         $from = $request->input('from', now()->startOfMonth()->toDateString());
-        $to   = $request->input('to',   now()->toDateString());
+        $to = $request->input('to', now()->toDateString());
         $from = preg_match('/^\d{4}-\d{2}-\d{2}$/', $from) ? $from : now()->startOfMonth()->toDateString();
-        $to   = preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)   ? $to   : now()->toDateString();
-        if ($from > $to) { [$from, $to] = [$to, $from]; }
+        $to = preg_match('/^\d{4}-\d{2}-\d{2}$/', $to) ? $to : now()->toDateString();
+        if ($from > $to) {
+            [$from, $to] = [$to, $from];
+        }
+
         return [$from, $to];
     }
 
@@ -362,7 +408,7 @@ class ReportController extends Controller
             }
             fclose($out);
         }, $filename, [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }

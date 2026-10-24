@@ -4,6 +4,7 @@ import type { SalesReport, ProductsReport, StockReport } from '@/types'
 export interface ReportParams {
   from?: string
   to?: string
+  branch_uid?: string
 }
 
 // ── CA par période ────────────────────────────────────────────────────────

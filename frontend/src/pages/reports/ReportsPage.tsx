@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { useAuthStore } from '@/store/authStore'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
@@ -352,30 +353,34 @@ type Tab = 'sales' | 'products' | 'stock'
 
 export default function ReportsPage() {
   const { t } = useTranslation()
-  const [tab, setTab]         = useState<Tab>('sales')
-  const [from, setFrom]       = useState(startOfMonth)
-  const [to, setTo]           = useState(today)
-  const [groupBy, setGroupBy] = useState<'day' | 'month'>('day')
-  const [limit, setLimit]     = useState(50)
+  const availableBranches = useAuthStore((s) => s.availableBranches)
+  const [tab, setTab]           = useState<Tab>('sales')
+  const [from, setFrom]         = useState(startOfMonth)
+  const [to, setTo]             = useState(today)
+  const [groupBy, setGroupBy]   = useState<'day' | 'month'>('day')
+  const [limit, setLimit]       = useState(50)
+  const [branchUid, setBranchUid] = useState<string>('')
   const [exporting, setExporting] = useState(false)
 
+  const bParams = branchUid ? { branch_uid: branchUid } : {}
+
   const salesQuery = useQuery({
-    queryKey: ['report-sales', from, to, groupBy],
-    queryFn:  () => getSalesReport({ from, to, group_by: groupBy }),
+    queryKey: ['report-sales', from, to, groupBy, branchUid],
+    queryFn:  () => getSalesReport({ from, to, group_by: groupBy, ...bParams }),
     enabled:  tab === 'sales',
     staleTime: 60_000,
   })
 
   const productsQuery = useQuery({
-    queryKey: ['report-products', from, to, limit],
-    queryFn:  () => getProductsReport({ from, to, limit }),
+    queryKey: ['report-products', from, to, limit, branchUid],
+    queryFn:  () => getProductsReport({ from, to, limit, ...bParams }),
     enabled:  tab === 'products',
     staleTime: 60_000,
   })
 
   const stockQuery = useQuery({
-    queryKey: ['report-stock', from, to],
-    queryFn:  () => getStockReport({ from, to }),
+    queryKey: ['report-stock', from, to, branchUid],
+    queryFn:  () => getStockReport({ from, to, ...bParams }),
     enabled:  tab === 'stock',
     staleTime: 60_000,
   })
@@ -389,9 +394,9 @@ export default function ReportsPage() {
   const handleExport = async () => {
     setExporting(true)
     try {
-      if (tab === 'sales')    await exportSalesCsv({ from, to, group_by: groupBy })
-      if (tab === 'products') await exportProductsCsv({ from, to, limit })
-      if (tab === 'stock')    await exportStockCsv({ from, to })
+      if (tab === 'sales')    await exportSalesCsv({ from, to, group_by: groupBy, ...bParams })
+      if (tab === 'products') await exportProductsCsv({ from, to, limit, ...bParams })
+      if (tab === 'stock')    await exportStockCsv({ from, to, ...bParams })
     } catch {
       alert(t('reports.export_error'))
     } finally {
@@ -453,6 +458,19 @@ export default function ReportsPage() {
               <option value={50}>Top 50</option>
               <option value={100}>Top 100</option>
               <option value={200}>Top 200</option>
+            </Select>
+          </div>
+        )}
+        {availableBranches.length > 1 && (
+          <div className="w-44">
+            <Select
+              value={branchUid}
+              onChange={(e) => setBranchUid(e.target.value)}
+            >
+              <option value="">Toutes les succursales</option>
+              {availableBranches.map((b) => (
+                <option key={b.uid} value={b.uid}>{b.name}</option>
+              ))}
             </Select>
           </div>
         )}

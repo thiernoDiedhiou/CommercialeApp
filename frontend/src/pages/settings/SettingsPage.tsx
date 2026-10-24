@@ -54,10 +54,11 @@ import {
   syncGroupPermissions,
 } from '@/services/api/groups'
 import type { UserWithGroups, Group, Permission, CreateGroupData } from '@/types'
+import BranchesTab from '@/components/settings/BranchesTab'
 
 // ─── Tab IDs ──────────────────────────────────────────────────────────────────
 
-type Tab = 'boutique' | 'vente' | 'facturation' | 'email' | 'users' | 'groups'
+type Tab = 'boutique' | 'vente' | 'facturation' | 'email' | 'users' | 'groups' | 'branches'
 
 // ─── Schemas ─────────────────────────────────────────────────────────────────
 
@@ -2058,12 +2059,13 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('boutique')
 
   const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
-    { id: 'boutique',    label: t('settings.shop_tab'),    icon: <BuildingStorefrontIcon className="h-4 w-4" /> },
-    { id: 'vente',       label: t('settings.sales_tab'),   icon: <CreditCardIcon className="h-4 w-4" /> },
-    { id: 'facturation', label: t('settings.billing_tab'), icon: <DocumentTextIcon className="h-4 w-4" /> },
-    { id: 'email',       label: t('settings.email_tab'),   icon: <EnvelopeSmtpIcon className="h-4 w-4" /> },
-    { id: 'users',       label: t('settings.users_tab'),   icon: <UsersIcon className="h-4 w-4" /> },
-    { id: 'groups',      label: t('settings.groups_tab'),  icon: <ShieldCheckIcon className="h-4 w-4" /> },
+    { id: 'boutique',    label: t('settings.shop_tab'),      icon: <BuildingStorefrontIcon className="h-4 w-4" /> },
+    { id: 'vente',       label: t('settings.sales_tab'),     icon: <CreditCardIcon className="h-4 w-4" /> },
+    { id: 'facturation', label: t('settings.billing_tab'),   icon: <DocumentTextIcon className="h-4 w-4" /> },
+    { id: 'email',       label: t('settings.email_tab'),     icon: <EnvelopeSmtpIcon className="h-4 w-4" /> },
+    { id: 'branches',    label: 'Succursales',               icon: <DevicePhoneMobileIcon className="h-4 w-4" /> },
+    { id: 'users',       label: t('settings.users_tab'),     icon: <UsersIcon className="h-4 w-4" /> },
+    { id: 'groups',      label: t('settings.groups_tab'),    icon: <ShieldCheckIcon className="h-4 w-4" /> },
   ]
 
   return (
@@ -2098,6 +2100,7 @@ export default function SettingsPage() {
         {activeTab === 'vente'       && <VenteTab />}
         {activeTab === 'facturation' && <FacturationTab />}
         {activeTab === 'email'       && <EmailTab />}
+        {activeTab === 'branches'    && <BranchesTab />}
         {activeTab === 'users'       && <UsersTab />}
         {activeTab === 'groups'      && <GroupsTab />}
       </div>
