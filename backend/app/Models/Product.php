@@ -82,6 +82,11 @@ class Product extends Model
         return $this->hasMany(ProductLot::class);
     }
 
+    public function images(): HasMany
+    {
+        return $this->hasMany(ProductImage::class)->orderBy('sort_order');
+    }
+
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class)->latest();
@@ -127,6 +132,11 @@ class Product extends Model
 
     public function getImageUrlAttribute(): ?string
     {
+        // Priorité : première image de la galerie si la relation est chargée
+        if ($this->relationLoaded('images') && $this->images->isNotEmpty()) {
+            return $this->images->first()->url;
+        }
+        // Fallback : colonne legacy image_path (données migrées ou non encore converties)
         return $this->image_path
             ? Storage::disk('public')->url($this->image_path)
             : null;

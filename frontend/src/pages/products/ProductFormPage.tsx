@@ -7,6 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useTranslation } from 'react-i18next'
 import { getProduct, createProduct, updateProduct, createVariant, deleteProduct } from '@/services/api/products'
+import ProductImageGallery from '@/components/products/ProductImageGallery'
 import { adjustStock } from '@/services/api/stock'
 import { getApiErrorMessage } from '@/lib/errors'
 import { toast } from '@/store/toastStore'
@@ -392,9 +393,15 @@ export default function ProductFormPage() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         {/* Section : Informations de base */}
         <Section title={t('products.section_basic')}>
-          {/* Image + champs : colonne sur mobile, ligne sur sm+ */}
-          <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
-            <div className="flex flex-col items-center sm:items-start gap-1.5">
+          {/* Galerie multi-images (mode édition) ou upload simple (mode création) */}
+          {uid && product ? (
+            <ProductImageGallery
+              productUid={uid}
+              images={product.images ?? []}
+              queryKey={['product', uid]}
+            />
+          ) : (
+            <div className="flex flex-col items-start gap-1.5">
               <ImageUpload
                 preview={imagePreview}
                 onFileChange={handleFileChange}
@@ -404,52 +411,54 @@ export default function ProductFormPage() {
                 <p className="w-full sm:w-32 text-xs text-red-500 leading-snug text-center sm:text-left">{imageError}</p>
               )}
             </div>
-            <div className="w-full flex-1 space-y-4">
+          )}
+
+          {/* Champs texte */}
+          <div className="space-y-4">
+            <Input
+              label={t('common.name')}
+              placeholder={t('products.product_name_placeholder')}
+              error={errors.name?.message}
+              required
+              {...register('name')}
+            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
               <Input
-                label={t('common.name')}
-                placeholder={t('products.product_name_placeholder')}
-                error={errors.name?.message}
-                required
-                {...register('name')}
+                label="SKU"
+                placeholder="TSH-001"
+                error={errors.sku?.message}
+                {...register('sku')}
               />
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-                <Input
-                  label="SKU"
-                  placeholder="TSH-001"
-                  error={errors.sku?.message}
-                  {...register('sku')}
-                />
-                <Input
-                  label="Code-barres"
-                  placeholder="3012345678901"
-                  error={errors.barcode?.message}
-                  {...register('barcode')}
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-                <Controller
-                  name="category_id"
-                  control={control}
-                  render={({ field }) => (
-                    <CategorySelect
-                      value={field.value}
-                      onChange={field.onChange}
-                      error={errors.category_id?.message}
-                    />
-                  )}
-                />
-                <Controller
-                  name="brand_id"
-                  control={control}
-                  render={({ field }) => (
-                    <BrandSelect
-                      value={field.value}
-                      onChange={field.onChange}
-                      error={errors.brand_id?.message}
-                    />
-                  )}
-                />
-              </div>
+              <Input
+                label="Code-barres"
+                placeholder="3012345678901"
+                error={errors.barcode?.message}
+                {...register('barcode')}
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+              <Controller
+                name="category_id"
+                control={control}
+                render={({ field }) => (
+                  <CategorySelect
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={errors.category_id?.message}
+                  />
+                )}
+              />
+              <Controller
+                name="brand_id"
+                control={control}
+                render={({ field }) => (
+                  <BrandSelect
+                    value={field.value}
+                    onChange={field.onChange}
+                    error={errors.brand_id?.message}
+                  />
+                )}
+              />
             </div>
           </div>
           <Textarea

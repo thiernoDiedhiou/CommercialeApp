@@ -32,6 +32,12 @@ class ProductResource extends JsonResource
             'is_for_sale' => $this->is_for_sale,
             // Agrégats optionnels (whenLoaded/whenAppended)
             'variants_count' => $this->when(isset($this->variants_count), $this->variants_count),
+            // Galerie d'images (triée par sort_order)
+            'images' => $this->whenLoaded('images', fn () => $this->images->map(fn ($img) => [
+                'uid'        => $img->uid,
+                'url'        => $img->url,
+                'sort_order' => $img->sort_order,
+            ])->values()),
             // Relations eager-loaded
             'category' => $this->whenLoaded('category', fn () => [
                 'id' => $this->category->id,

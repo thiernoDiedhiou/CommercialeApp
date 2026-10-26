@@ -118,7 +118,7 @@ class PublicShopController extends Controller
             ? $request->input('sort')
             : 'name';
 
-        $products = Product::with(['category', 'activeVariants'])
+        $products = Product::with(['category', 'activeVariants', 'images'])
             ->where('is_active', true)
             ->where('is_for_sale', true)
             ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->integer('category_id'))
@@ -145,7 +145,7 @@ class PublicShopController extends Controller
 
     public function product(string $slug, string $uid): JsonResponse
     {
-        $product = Product::with(['category', 'activeVariants'])
+        $product = Product::with(['category', 'activeVariants', 'images'])
             ->where('uid', $uid)
             ->where('is_active', true)
             ->where('is_for_sale', true)
@@ -378,6 +378,9 @@ class PublicShopController extends Controller
             'is_weight_based' => $product->is_weight_based,
             'has_expiry' => $product->has_expiry,
             'image_url' => $product->image_url,
+            'images'    => $product->relationLoaded('images')
+                ? $product->images->map(fn ($img) => ['uid' => $img->uid, 'url' => $img->url])->values()
+                : [],
             'stock_quantity' => $product->has_variants ? null : (float) $product->stock_quantity,
             'alert_threshold' => $product->has_variants ? null : $product->alert_threshold,
             'min_price' => $minPrice,

@@ -211,6 +211,12 @@ export interface CreateBrandData {
   name: string
 }
 
+export interface ProductImage {
+  uid: string
+  url: string
+  sort_order: number
+}
+
 export interface Product {
   id: number
   uid: string
@@ -233,6 +239,7 @@ export interface Product {
   brand_id: number | null
   image_path: string | null
   image_url: string | null
+  images?: ProductImage[]
   category?: Category
   brand?: Brand
   variants?: ProductVariant[]

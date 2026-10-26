@@ -17,6 +17,7 @@ use App\Http\Controllers\Pos\PosController;
 use App\Http\Controllers\Pos\PosDraftController;
 use App\Http\Controllers\Product\AttributeController;
 use App\Http\Controllers\Product\ProductController;
+use App\Http\Controllers\Product\ProductImageController;
 use App\Http\Controllers\Product\ProductImportController;
 use App\Http\Controllers\Product\ProductLotController;
 use App\Http\Controllers\Product\VariantController;
@@ -142,6 +143,14 @@ Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
             ->middleware('permission:products.delete');
         Route::get('{product:uid}/stock-movements', [ProductController::class, 'stockMovements'])
             ->middleware('permission:stock.view');
+
+        // Images galerie (max 10)
+        Route::post('{product:uid}/images', [ProductImageController::class, 'store'])
+            ->middleware('permission:products.edit');
+        Route::delete('{product:uid}/images/{image:uid}', [ProductImageController::class, 'destroy'])
+            ->middleware('permission:products.edit');
+        Route::put('{product:uid}/images/reorder', [ProductImageController::class, 'reorder'])
+            ->middleware('permission:products.edit');
 
         // Variantes
         Route::get('{product:uid}/variants', [VariantController::class, 'index'])

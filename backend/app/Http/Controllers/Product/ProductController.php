@@ -8,6 +8,7 @@ use App\Http\Requests\Product\UpdateProductRequest;
 use App\Http\Resources\ProductResource;
 use App\Models\BranchStock;
 use App\Models\Product;
+use App\Models\ProductImage;
 use App\Models\SaleItem;
 use App\Services\ActivityLogService;
 use App\Services\BranchService;
@@ -72,19 +73,32 @@ class ProductController extends Controller
             $data['alert_threshold'] = 5;
         }
 
+        $imagePath = null;
         if ($request->hasFile('image')) {
-            $data['image_path'] = $request->file('image')->store('products', 'public');
+            $imagePath = $request->file('image')->store('products', 'public');
+            $data['image_path'] = $imagePath;
         }
 
         $product = $this->productService->create($data);
-        $product->load(['category:id,name', 'brand:id,name']);
+
+        // Crée aussi un enregistrement product_images pour la galerie
+        if ($imagePath) {
+            ProductImage::create([
+                'tenant_id'  => $product->tenant_id,
+                'product_id' => $product->id,
+                'disk_path'  => $imagePath,
+                'sort_order' => 0,
+            ]);
+        }
+
+        $product->load(['category:id,name', 'brand:id,name', 'images']);
 
         return response()->json(['data' => new ProductResource($product)], 201);
     }
 
     public function show(Product $product): JsonResponse
     {
-        $product->load(['category:id,name', 'brand:id,name', 'variants.attributeValues.attribute']);
+        $product->load(['category:id,name', 'brand:id,name', 'variants.attributeValues.attribute', 'images']);
 
         // Substitue stock_quantity par le stock de la succursale active
         $branchId = $this->branchService->currentId();
@@ -153,6 +167,12 @@ class ProductController extends Controller
 
         if ($product->image_path) {
             Storage::disk('public')->delete($product->image_path);
+        }
+
+        // Charger et supprimer les images de la galerie du disque avant cascade DB
+        $product->load('images');
+        foreach ($product->images as $image) {
+            Storage::disk('public')->delete($image->disk_path);
         }
 
         $product->forceDelete();

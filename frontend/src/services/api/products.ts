@@ -1,6 +1,7 @@
 import apiClient, { API } from '@/lib/axios'
 import type {
   Product,
+  ProductImage,
   ProductLot,
   ProductLotRegularizeResult,
   ProductVariant,
@@ -169,4 +170,34 @@ export async function regularizeProductLots(
     body,
   )
   return data
+}
+
+// ── Images galerie ────────────────────────────────────────────────────────
+
+export async function uploadProductImage(
+  productUid: string,
+  file: File,
+): Promise<ProductImage> {
+  const form = new FormData()
+  form.append('image', file)
+  const { data } = await apiClient.post<{ data: ProductImage }>(
+    `${API}/products/${productUid}/images`,
+    form,
+    { headers: { 'Content-Type': undefined } },
+  )
+  return data.data
+}
+
+export async function deleteProductImage(
+  productUid: string,
+  imageUid: string,
+): Promise<void> {
+  await apiClient.delete(`${API}/products/${productUid}/images/${imageUid}`)
+}
+
+export async function reorderProductImages(
+  productUid: string,
+  uids: string[],
+): Promise<void> {
+  await apiClient.put(`${API}/products/${productUid}/images/reorder`, { uids })
 }
