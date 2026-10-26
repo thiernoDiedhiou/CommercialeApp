@@ -14,9 +14,9 @@ interface Props {
 
 function SkeletonCard() {
   return (
-    <div className="shrink-0 w-44">
-      <div className="rounded-2xl overflow-hidden bg-white border border-gray-100 shadow-sm">
-        <div className="aspect-square animate-pulse bg-gray-200" />
+    <div className="shrink-0 w-52">
+      <div className="rounded-2xl overflow-hidden bg-white ring-1 ring-black/5">
+        <div className="aspect-[4/3] animate-pulse bg-gray-200" />
         <div className="p-3 space-y-2">
           <div className="h-3 bg-gray-200 rounded animate-pulse w-3/4" />
           <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2" />
@@ -62,7 +62,7 @@ export default function HomeProductSection({ slug, title, sort, limit = 10, seeA
       ) : (
         <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
           {products.map((product) => (
-            <div key={product.id} className="shrink-0 w-44">
+            <div key={product.id} className="shrink-0 w-52">
               <ShopProductCard product={product} slug={slug} />
             </div>
           ))}

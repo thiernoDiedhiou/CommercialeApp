@@ -161,21 +161,20 @@ export default function ShopProductDetailPage() {
         />
 
         {/* ── Colonne droite — Infos ─────────────────────────────────────── */}
-        <div className="flex flex-col pb-24 lg:pb-0">
+        <div className="flex flex-col gap-5 pb-24 lg:pb-0">
 
-          {/* Bloc contenu — reste en haut */}
-          <div className="flex flex-col gap-4">
-
+          {/* ── En-tête produit ────────────────────────────────────────────── */}
+          <div className="space-y-3">
             {/* Catégorie */}
             {product.category && (
-              <span className="text-xs text-gray-400 uppercase tracking-wide">
+              <span className="inline-block text-[11px] font-semibold uppercase tracking-widest text-gray-400">
                 {product.category.name}
               </span>
             )}
 
             {/* Nom + badge promo */}
             <div className="flex items-start gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
                 {product.name}
               </h1>
               {promoPercent !== null && (
@@ -187,12 +186,14 @@ export default function ShopProductDetailPage() {
 
             {/* Description */}
             {product.description && (
-              <p className="text-sm text-gray-600 leading-relaxed">
+              <p className="text-sm text-gray-500 leading-relaxed">
                 {product.description}
               </p>
             )}
+          </div>
 
-            <hr className="border-gray-100" />
+          {/* ── Buy box ────────────────────────────────────────────────────── */}
+          <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-5 space-y-4">
 
             {/* VariantPicker */}
             {product.has_variants && (
@@ -219,34 +220,32 @@ export default function ShopProductDetailPage() {
             {/* Badge stock */}
             {resolvedStock !== null && (
               resolvedStock > 0 ? (
-                <div className="flex flex-col gap-1">
+                <div className="space-y-1">
                   <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
-                    <span className="w-2 h-2 rounded-full bg-green-500" />
+                    <span className="h-2 w-2 rounded-full bg-green-500" />
                     En stock
                   </span>
                   {lowStock && (
-                    <span className="text-sm font-medium text-orange-500">
+                    <p className="text-sm font-medium text-orange-500">
                       Plus que {product.stock_quantity} en stock — commandez vite !
-                    </span>
+                    </p>
                   )}
                 </div>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600">
-                  <span className="w-2 h-2 rounded-full bg-red-500" />
+                  <span className="h-2 w-2 rounded-full bg-red-500" />
                   Rupture de stock
                 </span>
               )
             )}
 
             {product.has_variants && !selectedVariantId && (
-              <span className="text-sm text-gray-400 italic">
+              <p className="text-sm text-gray-400 italic">
                 Sélectionnez une option pour voir la disponibilité
-              </span>
+              </p>
             )}
-          </div>
 
-          {/* AddToCartBar ancré en bas de la colonne */}
-          <div className="mt-auto pt-6">
+            {/* Quantité + bouton (inline desktop, sticky mobile) */}
             <AddToCartBar
               product={product}
               selectedVariantId={selectedVariantId}
