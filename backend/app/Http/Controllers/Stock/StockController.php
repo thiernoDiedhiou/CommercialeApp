@@ -122,7 +122,7 @@ class StockController extends Controller
 
         if ($branchId !== null) {
             $productIds = $paginator->pluck('id')->all();
-            $variantIds = $paginator->flatMap->variants->pluck('id')->all();
+            $variantIds = $paginator->getCollection()->flatMap(fn ($p) => $p->variants->pluck('id'))->all();
 
             $branchStocksMap = BranchStock::where('branch_id', $branchId)
                 ->whereIn('product_id', $productIds)

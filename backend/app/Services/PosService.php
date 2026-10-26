@@ -60,7 +60,7 @@ class PosService
                 ->keyBy('product_id');
 
             // branch_stocks pour toutes les variantes de ces produits
-            $variantIds = $paginator->flatMap->variants->pluck('id')->all();
+            $variantIds = $paginator->getCollection()->flatMap(fn ($p) => $p->variants->pluck('id'))->all();
             $variantStocksMap = ! empty($variantIds)
                 ? BranchStock::where('branch_id', $branchId)
                     ->whereIn('product_variant_id', $variantIds)
