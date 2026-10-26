@@ -1,5 +1,5 @@
 import apiClient, { API } from '@/lib/axios'
-import type { StockMovement, StockAlert, ExpiringSoon, PaginatedResponse } from '@/types'
+import type { StockMovement, StockAlert, ExpiringSoon, Product, PaginatedResponse } from '@/types'
 
 function clean(params: Record<string, unknown>): Record<string, unknown> {
   return Object.fromEntries(
@@ -55,6 +55,16 @@ export interface AdjustStockData {
   quantity: number
   note?: string | null
   unit_cost?: number | null
+}
+
+export async function getInventory(
+  params: { search?: string; category_id?: number | null; page?: number } = {},
+): Promise<PaginatedResponse<Product>> {
+  const { data } = await apiClient.get<PaginatedResponse<Product>>(
+    `${API}/stock/inventory`,
+    { params: clean(params as Record<string, unknown>) },
+  )
+  return data
 }
 
 export async function adjustStock(

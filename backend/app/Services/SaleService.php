@@ -6,6 +6,7 @@ use App\Events\SaleCancelled;
 use App\Events\SaleCreated;
 use App\Exceptions\SaleException;
 use App\Exceptions\StockInsufficientException;
+use App\Models\BranchStock;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductLot;
@@ -94,7 +95,7 @@ class SaleService
             // ── 2. Verrous stock — tous les produits/variantes en tri par ID ─
             // L'ordre ascendant prévient les deadlocks entre transactions
             // concurrentes qui pourraient verrouiller dans l'ordre inverse.
-            [$lockedProducts, $lockedVariants] = $this->lockStockEntities($data['items']);
+            [$lockedProducts, $lockedVariants, $lockedBranchStocks] = $this->lockStockEntities($data['items']);
 
             // ── 3. Résolution + validation complète avant toute écriture ────
             // Un seul article en rupture → StockInsufficientException + rollback.
@@ -103,6 +104,7 @@ class SaleService
                 $data['items'],
                 $lockedProducts,
                 $lockedVariants,
+                $lockedBranchStocks,
             );
 
             // ── 4. Calculs financiers (bcmath — jamais de float natif) ───────
@@ -279,11 +281,11 @@ class SaleService
     // ─── Méthodes privées ─────────────────────────────────────────────────────
 
     /**
-     * Charge et verrouille tous les produits et variantes d'une commande
+     * Charge et verrouille tous les produits, variantes et branch_stocks d'une commande
      * en ordre ID ascendant — prévient les deadlocks entre transactions
      * concurrentes qui pourraient acquérir les mêmes verrous en ordre inverse.
      *
-     * @return array{0: Collection, 1: Collection}
+     * @return array{0: Collection, 1: Collection, 2: Collection}
      */
     private function lockStockEntities(array $items): array
     {
@@ -306,7 +308,31 @@ class SaleService
                 ->keyBy('id')
             : collect();
 
-        return [$lockedProducts, $lockedVariants];
+        // ── Branch stocks — source de vérité per-branch ───────────────────────
+        // Verrou FOR UPDATE dans l'ordre ID ASC pour prévenir les deadlocks.
+        $branchId = $this->branchService->currentId();
+
+        $lockedBranchStocks = collect();
+        if ($branchId !== null) {
+            $lockedBranchStocks = BranchStock::lockForUpdate()
+                ->where('branch_id', $branchId)
+                ->where(function ($q) use ($productIds, $variantIds) {
+                    // Produits sans variante (product_variant_id = 0)
+                    $q->where(function ($inner) use ($productIds) {
+                        $inner->whereIn('product_id', $productIds)
+                            ->where('product_variant_id', 0);
+                    });
+                    // Variantes
+                    if (! empty($variantIds)) {
+                        $q->orWhereIn('product_variant_id', $variantIds);
+                    }
+                })
+                ->orderBy('id')
+                ->get()
+                ->keyBy(fn ($bs) => $bs->stockKey());
+        }
+
+        return [$lockedProducts, $lockedVariants, $lockedBranchStocks];
     }
 
     /**
@@ -314,6 +340,8 @@ class SaleService
      *   1. Résolution produit/variante + calcul total ligne
      *   2. Agrégation des besoins stock par entité + validation groupée
      *      (gère le cas où le même produit apparaît sur plusieurs lignes)
+     *      Utilise branch_stocks pour la validation per-branch si disponible,
+     *      sinon stock_quantity global (fallback seeders/Artisan).
      *   3. Sélection des lots (FEFO si has_expiry, verrouillés FOR UPDATE)
      *
      * @throws StockInsufficientException
@@ -323,6 +351,7 @@ class SaleService
         array $items,
         Collection $lockedProducts,
         Collection $lockedVariants,
+        Collection $lockedBranchStocks,
     ): array {
         // ── Passe 1 : résolution + calcul ligne ──────────────────────────────
         $resolved = [];
@@ -387,8 +416,12 @@ class SaleService
             }
             $validated[$key] = true;
 
-            $stockOwner = $item['variant'] ?? $item['product'];
-            $available = (string) $stockOwner->stock_quantity;
+            // Per-branch stock si disponible, sinon global (fallback pour produits
+            // sans ligne branch_stocks — ex: créés après migration dans les tests).
+            $branchStockRow = $lockedBranchStocks->get($key);
+            $available = $branchStockRow !== null
+                ? (string) $branchStockRow->quantity
+                : (string) ($item['variant'] ?? $item['product'])->stock_quantity;
             $needed = $stockNeeds[$key];
 
             if (bccomp($needed, $available, 3) > 0) {

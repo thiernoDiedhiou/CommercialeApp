@@ -19,9 +19,9 @@ beforeEach(function () {
 function salePayload(Product $product, float $qty = 1, float $price = 1000, ?string $offlineId = null): array
 {
     $data = [
-        'items'    => [[
+        'items' => [[
             'product_id' => $product->id,
-            'quantity'   => $qty,
+            'quantity' => $qty,
             'unit_price' => $price,
         ]],
         'payments' => [['method' => 'cash', 'amount' => $qty * $price]],
@@ -38,10 +38,10 @@ function salePayload(Product $product, float $qty = 1, float $price = 1000, ?str
 
 it('generates a reference in VNT-YYYY-XXXXX format', function () {
     $product = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 10,
-        'price'          => 1000,
-        'cost_price'     => 500,
+        'price' => 1000,
+        'cost_price' => 500,
     ]);
 
     $sale = $this->service->create(salePayload($product), $this->user);
@@ -51,10 +51,10 @@ it('generates a reference in VNT-YYYY-XXXXX format', function () {
 
 it('decrements product stock after sale', function () {
     $product = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 20,
-        'price'          => 500,
-        'cost_price'     => 200,
+        'price' => 500,
+        'cost_price' => 200,
     ]);
 
     $this->service->create(salePayload($product, 3, 500), $this->user);
@@ -64,27 +64,28 @@ it('decrements product stock after sale', function () {
 
 it('throws StockInsufficientException when stock is insufficient', function () {
     $product = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 2,
-        'price'          => 1000,
-        'cost_price'     => 500,
+        'price' => 1000,
+        'cost_price' => 500,
     ]);
 
-    expect(fn() => $this->service->create(salePayload($product, 10), $this->user))
+    expect(fn () => $this->service->create(salePayload($product, 10), $this->user))
         ->toThrow(StockInsufficientException::class);
 });
 
 it('rolls back — no sale or stock change when stock is insufficient', function () {
     $product = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 2,
-        'price'          => 1000,
-        'cost_price'     => 500,
+        'price' => 1000,
+        'cost_price' => 500,
     ]);
 
     try {
         $this->service->create(salePayload($product, 10), $this->user);
-    } catch (StockInsufficientException) {}
+    } catch (StockInsufficientException) {
+    }
 
     expect(Sale::count())->toBe(0);
     expect(Product::find($product->id)->stock_quantity)->toBe(2.0);
@@ -92,10 +93,10 @@ it('rolls back — no sale or stock change when stock is insufficient', function
 
 it('is idempotent with offline_id — second call returns the same sale', function () {
     $product = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 20,
-        'price'          => 1000,
-        'cost_price'     => 500,
+        'price' => 1000,
+        'cost_price' => 500,
     ]);
 
     $sale1 = $this->service->create(salePayload($product, 1, 1000, 'offline-abc-123'), $this->user);
@@ -108,10 +109,10 @@ it('is idempotent with offline_id — second call returns the same sale', functi
 
 it('restores stock on cancel', function () {
     $product = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 10,
-        'price'          => 500,
-        'cost_price'     => 200,
+        'price' => 500,
+        'cost_price' => 200,
     ]);
 
     $sale = $this->service->create(salePayload($product, 4, 500), $this->user);
@@ -124,30 +125,30 @@ it('restores stock on cancel', function () {
 
 it('throws SaleException when cancelling an already-cancelled sale', function () {
     $product = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 10,
-        'price'          => 500,
-        'cost_price'     => 200,
+        'price' => 500,
+        'cost_price' => 200,
     ]);
 
-    $sale      = $this->service->create(salePayload($product, 2, 500), $this->user);
+    $sale = $this->service->create(salePayload($product, 2, 500), $this->user);
     $cancelled = $this->service->cancel($sale);
 
-    expect(fn() => $this->service->cancel($cancelled))
+    expect(fn () => $this->service->cancel($cancelled))
         ->toThrow(SaleException::class);
 });
 
 it('refuses a payment that exceeds total by more than 1 CFA', function () {
     $product = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 10,
-        'price'          => 1000,
-        'cost_price'     => 500,
+        'price' => 1000,
+        'cost_price' => 500,
     ]);
 
     // total = 1000, déjà payé 1000 dans salePayload, tentative d'ajout de 2 → 1002 > 1001
     $sale = $this->service->create(salePayload($product, 1, 1000), $this->user);
 
-    expect(fn() => $this->service->addPayment($sale, 'cash', 2.00))
+    expect(fn () => $this->service->addPayment($sale, 'cash', 2.00))
         ->toThrow(SaleException::class);
 });

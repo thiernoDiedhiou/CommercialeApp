@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Stock;
 use App\Exceptions\StockInsufficientException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Stock\StoreStockAdjustmentRequest;
+use App\Models\BranchStock;
 use App\Models\Product;
 use App\Models\ProductLot;
 use App\Models\ProductVariant;
@@ -94,13 +95,73 @@ class StockController extends Controller
         return response()->json($movements);
     }
 
+    // ─── GET /api/v1/stock/inventory ─────────────────────────────────────────
+    // Stock de la succursale active (ou global si pas de contexte branch).
+
+    public function inventory(Request $request): JsonResponse
+    {
+        $branchId = $this->branchService->currentId();
+        $search = $request->input('search');
+        $categoryId = $request->integer('category_id') ?: null;
+
+        $query = Product::select([
+            'products.id', 'products.uid', 'products.name', 'products.sku',
+            'products.unit', 'products.stock_quantity', 'products.alert_threshold',
+            'products.has_variants', 'products.category_id',
+        ])
+            ->with([
+                'variants:id,product_id,uid,attribute_summary,stock_quantity,alert_threshold,is_active',
+                'category:id,name',
+            ])
+            ->where('products.is_active', true)
+            ->when($search, fn ($q) => $q->where('products.name', 'like', "%{$search}%"))
+            ->when($categoryId, fn ($q) => $q->where('products.category_id', $categoryId))
+            ->orderBy('products.name');
+
+        $paginator = $query->paginate(30);
+
+        if ($branchId !== null) {
+            $productIds = $paginator->pluck('id')->all();
+            $variantIds = $paginator->flatMap->variants->pluck('id')->all();
+
+            $branchStocksMap = BranchStock::where('branch_id', $branchId)
+                ->whereIn('product_id', $productIds)
+                ->where('product_variant_id', 0)
+                ->get()
+                ->keyBy('product_id');
+
+            $variantStocksMap = ! empty($variantIds)
+                ? BranchStock::where('branch_id', $branchId)
+                    ->whereIn('product_variant_id', $variantIds)
+                    ->get()
+                    ->keyBy('product_variant_id')
+                : collect();
+
+            foreach ($paginator as $product) {
+                $product->stock_quantity = $branchStocksMap->get($product->id)?->quantity ?? 0;
+                foreach ($product->variants as $variant) {
+                    $variant->stock_quantity = $variantStocksMap->get($variant->id)?->quantity ?? 0;
+                }
+            }
+        }
+
+        return response()->json($paginator);
+    }
+
     // ─── GET /api/v1/stock/alerts ─────────────────────────────────────────────
 
     public function alerts(Request $request): JsonResponse
     {
         $tenantId = $this->tenantService->currentId();
+        $branchId = $this->branchService->currentId();
         $categoryId = $request->integer('category_id') ?: null;
         $search = $request->input('search');
+
+        // Quand un contexte de succursale existe, utiliser branch_stocks.quantity
+        // pour comparer au seuil — sinon fallback sur stock_quantity global.
+        if ($branchId !== null) {
+            return $this->alertsForBranch($request, $tenantId, $branchId, $categoryId, $search);
+        }
 
         // Construction dynamique des WHERE pour éviter les injections
         // tout en restant flexible sur les filtres optionnels
@@ -185,6 +246,113 @@ class StockController extends Controller
             new LengthAwarePaginator(
                 $collection->forPage($page, $perPage)->values(),
                 $total,
+                $perPage,
+                $page,
+                ['path' => $request->url(), 'query' => $request->query()]
+            )
+        );
+    }
+
+    // ─── Alertes per-branch (méthode privée) ─────────────────────────────────
+
+    private function alertsForBranch(
+        Request $request,
+        int $tenantId,
+        int $branchId,
+        ?int $categoryId,
+        ?string $search,
+    ): JsonResponse {
+        $categoryClause = $categoryId ? 'AND p.category_id = ?' : '';
+        $searchClause = $search ? 'AND p.name LIKE ?' : '';
+
+        $bindings1 = [$tenantId, $branchId];
+        $bindings2 = [$tenantId, $branchId];
+
+        if ($categoryId) {
+            $bindings1[] = $categoryId;
+            $bindings2[] = $categoryId;
+        }
+        if ($search) {
+            $bindings1[] = "%{$search}%";
+            $bindings2[] = "%{$search}%";
+        }
+
+        $sql = "
+            SELECT
+                p.id                  AS product_id,
+                p.name                AS product_name,
+                NULL                  AS variant_id,
+                NULL                  AS variant_summary,
+                COALESCE(bs.quantity, 0) AS current_stock,
+                p.alert_threshold     AS threshold,
+                c.name                AS category_name,
+                p.unit
+            FROM products p
+            LEFT JOIN categories c ON c.id = p.category_id
+            LEFT JOIN branch_stocks bs ON bs.product_id = p.id
+                AND bs.branch_id = ? AND bs.product_variant_id = 0
+            WHERE p.tenant_id = ?
+              AND p.has_variants = 0 AND p.is_active = 1
+              AND p.alert_threshold IS NOT NULL
+              AND COALESCE(bs.quantity, 0) <= p.alert_threshold
+              {$categoryClause} {$searchClause}
+
+            UNION ALL
+
+            SELECT
+                p.id                            AS product_id,
+                p.name                          AS product_name,
+                pv.id                           AS variant_id,
+                pv.attribute_summary            AS variant_summary,
+                COALESCE(bs.quantity, 0)        AS current_stock,
+                COALESCE(pv.alert_threshold, p.alert_threshold) AS threshold,
+                c.name                          AS category_name,
+                p.unit
+            FROM product_variants pv
+            JOIN products p ON p.id = pv.product_id
+            LEFT JOIN categories c ON c.id = p.category_id
+            LEFT JOIN branch_stocks bs ON bs.product_variant_id = pv.id
+                AND bs.branch_id = ?
+            WHERE p.tenant_id = ? AND p.is_active = 1
+              AND COALESCE(pv.alert_threshold, p.alert_threshold) IS NOT NULL
+              AND COALESCE(bs.quantity, 0) <= COALESCE(pv.alert_threshold, p.alert_threshold)
+              {$categoryClause} {$searchClause}
+
+            ORDER BY current_stock ASC
+        ";
+
+        // Réorganiser les bindings : branch + tenant pour chaque sous-requête
+        $b1 = [$branchId, $tenantId];
+        $b2 = [$branchId, $tenantId];
+        if ($categoryId) {
+            $b1[] = $categoryId;
+            $b2[] = $categoryId;
+        }
+        if ($search) {
+            $b1[] = "%{$search}%";
+            $b2[] = "%{$search}%";
+        }
+
+        $rows = DB::select($sql, array_merge($b1, $b2));
+
+        $collection = collect($rows)->map(fn ($r) => [
+            'product_id' => $r->product_id,
+            'product_name' => $r->product_name,
+            'variant_id' => $r->variant_id,
+            'variant_summary' => $r->variant_summary,
+            'current_stock' => (float) $r->current_stock,
+            'threshold' => (int) $r->threshold,
+            'category_name' => $r->category_name,
+            'unit' => $r->unit,
+        ]);
+
+        $page = $request->integer('page', 1);
+        $perPage = 20;
+
+        return response()->json(
+            new LengthAwarePaginator(
+                $collection->forPage($page, $perPage)->values(),
+                $collection->count(),
                 $perPage,
                 $page,
                 ['path' => $request->url(), 'query' => $request->query()]

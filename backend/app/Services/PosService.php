@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\SaleException;
+use App\Models\BranchStock;
 use App\Models\PosSession;
 use App\Models\Product;
 use App\Models\Sale;
@@ -19,11 +20,19 @@ class PosService
 
     // ─── Catalogue produits ───────────────────────────────────────────────────
 
+    /**
+     * Retourne les produits du catalogue POS avec le stock de la succursale active.
+     * stock_quantity retourné = stock de la succursale courante (branch_stocks),
+     * ou stock global si aucun contexte de succursale n'est défini.
+     */
     public function getProducts(?string $search = null, ?int $categoryId = null): LengthAwarePaginator
     {
-        return Product::select([
+        $branchId = $this->branchService->currentId();
+
+        $query = Product::select([
             'id', 'name', 'sku', 'barcode', 'image_path', 'unit', 'price',
-            'stock_quantity', 'has_variants', 'is_weight_based', 'has_expiry', 'category_id',
+            'stock_quantity', 'has_variants', 'is_weight_based', 'has_expiry',
+            'category_id', 'alert_threshold',
         ])
             ->where('is_active', true)
             ->with(['variants' => function ($q) {
@@ -35,8 +44,40 @@ class PosService
                     ->orWhere('sku', 'like', "%{$search}%")
                     ->orWhere('barcode', '=', $search);
             }))
-            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
-            ->paginate(50);
+            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId));
+
+        $paginator = $query->paginate(50);
+
+        // Substitue stock_quantity par le stock per-branch si contexte succursale actif
+        if ($branchId !== null) {
+            $productIds = $paginator->pluck('id')->all();
+
+            // branch_stocks pour les produits sans variante (product_variant_id = 0)
+            $branchStocksMap = BranchStock::where('branch_id', $branchId)
+                ->whereIn('product_id', $productIds)
+                ->where('product_variant_id', 0)
+                ->get()
+                ->keyBy('product_id');
+
+            // branch_stocks pour toutes les variantes de ces produits
+            $variantIds = $paginator->flatMap->variants->pluck('id')->all();
+            $variantStocksMap = ! empty($variantIds)
+                ? BranchStock::where('branch_id', $branchId)
+                    ->whereIn('product_variant_id', $variantIds)
+                    ->get()
+                    ->keyBy('product_variant_id')
+                : collect();
+
+            foreach ($paginator as $product) {
+                $product->stock_quantity = $branchStocksMap->get($product->id)?->quantity ?? 0;
+
+                foreach ($product->variants as $variant) {
+                    $variant->stock_quantity = $variantStocksMap->get($variant->id)?->quantity ?? 0;
+                }
+            }
+        }
+
+        return $paginator;
     }
 
     // ─── Sessions ─────────────────────────────────────────────────────────────

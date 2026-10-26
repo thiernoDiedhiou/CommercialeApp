@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Exceptions\StockInsufficientException;
 use App\Jobs\SendStockAlertJob;
+use App\Models\Branch;
+use App\Models\BranchStock;
 use App\Models\Product;
 use App\Models\ProductLot;
 use App\Models\ProductVariant;
@@ -28,8 +30,10 @@ class StockService
     /**
      * Crée un mouvement de stock de manière atomique et idempotente.
      *
-     * - Pour 'in' | 'out' | 'return' : quantity doit être > 0
-     * - Pour 'adjustment'            : quantity est un delta signé (+ ou -)
+     * Model B — per-branch stock :
+     *   - Lit et verrouille branch_stocks pour la succursale courante
+     *   - Met à jour branch_stocks après le mouvement
+     *   - Recalcule stock_quantity = SUM(branch_stocks) — dénormalisé global
      *
      * @throws StockInsufficientException Stock insuffisant pour une sortie
      * @throws InvalidArgumentException Type invalide ou quantity ≤ 0 pour in/out/return
@@ -48,7 +52,6 @@ class StockService
         $this->validateAdjustInput($type, $quantity);
 
         // Idempotence — si le mouvement existe déjà (retour offline, double envoi)
-        // on retourne l'existant sans créer de doublon
         if ($sourceId !== null) {
             $existing = $this->findExistingMovement($source, $sourceId, $product, $variant);
             if ($existing) {
@@ -60,28 +63,49 @@ class StockService
             $product, $type, $quantity, $source, $sourceId,
             $variant, $lot, $unitCost, $notes
         ) {
-            // ── 1. Verrouillage pessimiste ──────────────────────────────────
-            // SELECT FOR UPDATE : bloque les écritures concurrentes sur la ligne.
-            // Garantit que stock_before est cohérent même sous charge parallèle.
+            $branchId = $this->resolveBranchId();
+            $variantKey = $variant ? $variant->id : 0;
+
+            // ── 1. Verrou produit/variante — sérialise la mise à jour du global ─
+            // Garantit que stock_quantity = SUM(branch_stocks) est cohérent
+            // même quand deux succursales ajustent simultanément le même produit.
             if ($variant) {
                 $locked = ProductVariant::lockForUpdate()->findOrFail($variant->id);
             } else {
                 $locked = Product::lockForUpdate()->findOrFail($product->id);
             }
 
-            // ── 2. stock_before depuis le dernier mouvement ─────────────────
-            // Le dernier stock_after est la source de vérité canonique.
-            // stock_quantity (dénormalisé) est toujours maintenu en sync par
-            // ce service ; on l'utilise en fallback si aucun mouvement n'existe.
-            $lastMovement = $this->getLastMovement($product, $variant);
-            $stockBefore = $lastMovement
-                ? $lastMovement->stock_after
-                : (float) $locked->stock_quantity;
+            // ── 2. Verrou branch_stocks — source de vérité per-branch ──────────
+            if ($branchId !== null) {
+                $branchStock = BranchStock::where('branch_id', $branchId)
+                    ->where('product_id', $product->id)
+                    ->where('product_variant_id', $variantKey)
+                    ->lockForUpdate()
+                    ->first();
 
-            // ── 3. stock_after ──────────────────────────────────────────────
+                if ($branchStock !== null) {
+                    $stockBefore = (float) $branchStock->quantity;
+                } else {
+                    // Pas de ligne branch_stocks pour cette succursale/produit.
+                    // Si aucune ligne n'existe pour ce produit (nouveau produit créé après migration),
+                    // on bootstrappe depuis stock_quantity global.
+                    // Si des lignes existent pour d'autres succursales, cette succursale commence à 0.
+                    $hasAnyBranchRow = BranchStock::where('product_id', $product->id)
+                        ->where('product_variant_id', $variantKey)
+                        ->exists();
+
+                    $stockBefore = $hasAnyBranchRow ? 0.0 : (float) $locked->stock_quantity;
+                }
+            } else {
+                // Pas de contexte succursale (Artisan, seeders hors-tenant)
+                $branchStock = null;
+                $stockBefore = (float) $locked->stock_quantity;
+            }
+
+            // ── 3. stock_after ──────────────────────────────────────────────────
             $stockAfter = $this->computeStockAfter($stockBefore, $type, $quantity);
 
-            // ── 4. Vérification stock suffisant ────────────────────────────
+            // ── 4. Vérification stock suffisant ────────────────────────────────
             if (in_array($type, self::OUTBOUND_TYPES, true) && $stockAfter < 0) {
                 throw new StockInsufficientException(
                     product: $product,
@@ -91,15 +115,15 @@ class StockService
                 );
             }
 
-            // ── 5. Création du mouvement (append-only) ──────────────────────
+            // ── 5. Création du mouvement (append-only) ──────────────────────────
             $movement = StockMovement::create([
                 'tenant_id' => $this->tenantService->currentId(),
-                'branch_id' => $this->branchService->currentId(),
+                'branch_id' => $branchId,
                 'product_id' => $product->id,
                 'product_variant_id' => $variant?->id,
                 'lot_id' => $lot?->id,
                 'type' => $type,
-                'quantity' => abs($quantity),  // toujours positif en base
+                'quantity' => abs($quantity),
                 'stock_before' => $stockBefore,
                 'stock_after' => $stockAfter,
                 'source' => $source,
@@ -109,18 +133,40 @@ class StockService
                 'notes' => $notes,
             ]);
 
-            // ── 6. Mise à jour du stock dénormalisé ─────────────────────────
-            // Cache rapide pour lectures POS — toujours en sync avec le journal
-            $locked->update(['stock_quantity' => $stockAfter]);
+            // ── 6. Mise à jour branch_stocks ────────────────────────────────────
+            if ($branchId !== null) {
+                if ($branchStock) {
+                    BranchStock::where('id', $branchStock->id)
+                        ->update(['quantity' => $stockAfter, 'updated_at' => now()]);
+                } else {
+                    BranchStock::create([
+                        'tenant_id' => $this->tenantService->currentId(),
+                        'branch_id' => $branchId,
+                        'product_id' => $product->id,
+                        'product_variant_id' => $variantKey,
+                        'quantity' => $stockAfter,
+                    ]);
+                }
+            }
+
+            // ── 7. Mise à jour stock_quantity global = SUM(branch_stocks) ───────
+            // Cache dénormalisé pour les requêtes POS globales et les rapports.
+            $globalStock = $branchId !== null
+                ? (float) BranchStock::where('product_id', $product->id)
+                    ->where('product_variant_id', $variantKey)
+                    ->sum('quantity')
+                : $stockAfter;
+
+            $locked->update(['stock_quantity' => $globalStock]);
 
             // Sync de l'objet en mémoire pour l'appelant
             if ($variant) {
-                $variant->stock_quantity = $stockAfter;
+                $variant->stock_quantity = $globalStock;
             } else {
-                $product->stock_quantity = $stockAfter;
+                $product->stock_quantity = $globalStock;
             }
 
-            // ── 7. Mise à jour du lot si applicable ─────────────────────────
+            // ── 8. Mise à jour du lot si applicable ─────────────────────────────
             if ($lot !== null) {
                 $this->updateLotQuantity($lot, $type, $quantity);
             }
@@ -135,11 +181,23 @@ class StockService
     }
 
     /**
-     * Retourne le stock actuel d'un produit ou d'une variante.
-     * Lecture depuis la colonne dénormalisée (mise à jour atomique par adjust()).
+     * Stock de la succursale courante pour un produit/variante donné.
+     * Retourne la valeur depuis branch_stocks si un contexte succursale existe,
+     * sinon la valeur dénormalisée globale (stock_quantity).
      */
     public function getCurrentStock(Product $product, ?ProductVariant $variant = null): float
     {
+        $branchId = $this->branchService->currentId();
+
+        if ($branchId !== null) {
+            $variantKey = $variant ? $variant->id : 0;
+
+            return (float) BranchStock::where('branch_id', $branchId)
+                ->where('product_id', $product->id)
+                ->where('product_variant_id', $variantKey)
+                ->value('quantity') ?? 0.0;
+        }
+
         if ($variant) {
             return (float) ProductVariant::query()
                 ->where('id', $variant->id)
@@ -152,33 +210,36 @@ class StockService
     }
 
     /**
+     * Retourne le stock de toutes les succursales pour un produit/variante.
+     * Utilisé par StockController pour afficher l'inventaire par succursale.
+     *
+     * @return array<int, array{branch_id: int, branch_name: string, quantity: float}>
+     */
+    public function getStockByBranch(Product $product, ?ProductVariant $variant = null): array
+    {
+        $variantKey = $variant ? $variant->id : 0;
+
+        return BranchStock::with('branch:id,name,type')
+            ->where('product_id', $product->id)
+            ->where('product_variant_id', $variantKey)
+            ->get()
+            ->map(fn ($bs) => [
+                'branch_id' => $bs->branch_id,
+                'branch_name' => $bs->branch?->name ?? '—',
+                'branch_type' => $bs->branch?->type ?? 'sync',
+                'quantity' => $bs->quantity,
+            ])
+            ->all();
+    }
+
+    /**
      * Recalcule le stock depuis l'historique complet des mouvements.
      * Usage : vérification d'intégrité, réparation de données.
      * NE PAS appeler sur le chemin critique (lent sur long historique).
      */
     public function recomputeFromHistory(Product $product, ?ProductVariant $variant = null): float
     {
-        $lastMovement = $this->getLastMovement($product, $variant);
-
-        return $lastMovement?->stock_after ?? 0.0;
-    }
-
-    // ─── Méthodes privées ─────────────────────────────────────────────────────
-
-    private function computeStockAfter(float $stockBefore, string $type, float $quantity): float
-    {
-        return match ($type) {
-            'in' => $stockBefore + $quantity,
-            'out' => $stockBefore - $quantity,
-            'return' => $stockBefore + $quantity,
-            // adjustment : quantity est un delta signé (peut être négatif)
-            'adjustment' => $stockBefore + $quantity,
-        };
-    }
-
-    private function getLastMovement(Product $product, ?ProductVariant $variant): ?StockMovement
-    {
-        return StockMovement::where('product_id', $product->id)
+        $lastMovement = StockMovement::where('product_id', $product->id)
             ->when(
                 $variant,
                 fn ($q) => $q->where('product_variant_id', $variant->id),
@@ -186,6 +247,37 @@ class StockService
             )
             ->latest('id')
             ->first();
+
+        return $lastMovement?->stock_after ?? 0.0;
+    }
+
+    // ─── Méthodes privées ─────────────────────────────────────────────────────
+
+    /**
+     * Résout la succursale courante.
+     * Si aucune n'est définie (seeders, Artisan), auto-résout la succursale principale.
+     */
+    private function resolveBranchId(): ?int
+    {
+        $branchId = $this->branchService->currentId();
+
+        if ($branchId === null && $this->tenantService->hasCurrentTenant()) {
+            $branchId = Branch::where('tenant_id', $this->tenantService->currentId())
+                ->where('type', 'principal')
+                ->value('id');
+        }
+
+        return $branchId;
+    }
+
+    private function computeStockAfter(float $stockBefore, string $type, float $quantity): float
+    {
+        return match ($type) {
+            'in' => $stockBefore + $quantity,
+            'out' => $stockBefore - $quantity,
+            'return' => $stockBefore + $quantity,
+            'adjustment' => $stockBefore + $quantity,
+        };
     }
 
     private function findExistingMovement(
@@ -211,7 +303,7 @@ class StockService
             'in' => $lot->increment('quantity_remaining', abs($quantity)),
             'out' => $lot->decrement('quantity_remaining', abs($quantity)),
             'return' => $lot->increment('quantity_remaining', abs($quantity)),
-            default => null,  // adjustment : le lot n'est pas impacté automatiquement
+            default => null,
         };
     }
 
@@ -222,7 +314,6 @@ class StockService
         string $type,
         float $quantity,
     ): void {
-        // Seuls les mouvements sortants peuvent déclencher une alerte
         $isOutbound = $type === 'out' || ($type === 'adjustment' && $quantity < 0);
         if (! $isOutbound) {
             return;
@@ -250,7 +341,6 @@ class StockService
             );
         }
 
-        // Pour in/out/return, la quantité doit être strictement positive
         if ($type !== 'adjustment' && $quantity <= 0) {
             throw new InvalidArgumentException(
                 "La quantité doit être strictement positive pour le type '{$type}'."

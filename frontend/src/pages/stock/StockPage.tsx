@@ -10,16 +10,17 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import CanDo from '@/components/ui/CanDo'
 import Modal from '@/components/ui/Modal'
 import { StockAdjustModal, type StockAdjustPrefill } from '@/components/stock/StockAdjustModal'
-import { getMovements, getAlerts, getExpiring } from '@/services/api/stock'
+import { getMovements, getAlerts, getExpiring, getInventory } from '@/services/api/stock'
 import { getInventorySessions, createInventorySession, deleteInventorySession } from '@/services/api/inventory'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
 import { formatDate, formatDateTime, formatCurrency } from '@/lib/utils'
+import { useAuthStore } from '@/store/authStore'
 import type { StockMovement, StockAlert, InventorySession } from '@/types'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-type Tab = 'movements' | 'alerts' | 'expiring' | 'inventaire'
+type Tab = 'movements' | 'alerts' | 'expiring' | 'inventaire' | 'branches'
 
 function movementDesignation(m: StockMovement): string {
   return [m.product?.name, m.variant?.attribute_summary].filter(Boolean).join(' — ')
@@ -566,6 +567,138 @@ function ExpiringTab() {
   )
 }
 
+// ── BranchStockTab ────────────────────────────────────────────────────────
+
+function BranchStockTab() {
+  const { t } = useTranslation()
+  const activeBranch = useAuthStore((s) => s.activeBranch)
+  const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+
+  useEffect(() => setPage(1), [search])
+
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(id)
+  }, [search])
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['stock', 'branches', debouncedSearch, page],
+    queryFn: () => getInventory({ search: debouncedSearch || undefined, page }),
+    placeholderData: (prev) => prev,
+  })
+
+  return (
+    <div className="space-y-4">
+      {/* Contexte de succursale */}
+      {activeBranch && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-brand-primary/10 border border-brand-primary/20 text-sm text-brand-primary">
+          <ArrowsUpDownIcon className="h-4 w-4 shrink-0" />
+          <span>{t('stock.branch_stock_current')} : <strong>{activeBranch.name}</strong></span>
+        </div>
+      )}
+
+      {/* Recherche */}
+      <div className="flex items-center gap-3">
+        <input
+          type="text"
+          placeholder={t('products.search_placeholder')}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full max-w-xs rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:placeholder:text-gray-500 py-2 px-3 text-sm outline-none focus:border-brand-primary"
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          >
+            {t('stock.reset_filters')}
+          </button>
+        )}
+      </div>
+
+      {/* Tableau */}
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-100 dark:divide-gray-700/60 text-sm">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
+            <tr>
+              {[t('products.name'), t('products.sku'), t('products.category'), t('stock.quantity')].map((h) => (
+                <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-700/60">
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <tr key={i}>
+                  {[...Array(4)].map((_, j) => <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-full" /></td>)}
+                </tr>
+              ))
+            ) : data?.data.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-4 py-8 text-center text-sm text-gray-400">
+                  {t('stock.branch_stock_empty')}
+                </td>
+              </tr>
+            ) : (
+              data?.data.map((product) => (
+                product.has_variants ? (
+                  product.variants?.map((variant, vi) => (
+                    <tr key={`${product.id}-v${variant.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
+                      {vi === 0 ? (
+                        <td
+                          className="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium align-top"
+                          rowSpan={product.variants?.length ?? 1}
+                        >
+                          {product.name}
+                        </td>
+                      ) : null}
+                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 font-mono text-xs">{variant.sku}</td>
+                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                        {vi === 0 ? (product.category?.name ?? '—') : ''}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={[
+                          'font-semibold tabular-nums',
+                          variant.stock_quantity <= 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100',
+                        ].join(' ')}>
+                          {variant.stock_quantity}
+                        </span>
+                        {product.unit ? <span className="ml-1 text-xs text-gray-400">{product.unit}</span> : null}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
+                    <td className="px-4 py-3 text-gray-900 dark:text-gray-100 font-medium">{product.name}</td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400 font-mono text-xs">{product.sku ?? '—'}</td>
+                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">{product.category?.name ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <span className={[
+                        'font-semibold tabular-nums',
+                        product.stock_quantity <= 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100',
+                      ].join(' ')}>
+                        {product.stock_quantity}
+                      </span>
+                      {product.unit ? <span className="ml-1 text-xs text-gray-400">{product.unit}</span> : null}
+                    </td>
+                  </tr>
+                )
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {data && data.last_page > 1 && (
+        <Pagination currentPage={data.current_page} lastPage={data.last_page} total={data.total} perPage={data.per_page} onPageChange={setPage} />
+      )}
+    </div>
+  )
+}
+
 // ── InventaireTab ─────────────────────────────────────────────────────────
 
 function InventaireTab() {
@@ -809,13 +942,13 @@ export default function StockPage() {
       {/* Tabs */}
       <div className="border-b border-gray-200 dark:border-gray-700">
         <nav className="flex gap-6 -mb-px">
-          {(['movements', 'alerts', 'expiring', 'inventaire'] as Tab[]).map((tabKey) => (
+          {(['movements', 'alerts', 'expiring', 'inventaire', 'branches'] as Tab[]).map((tabKey) => (
             <button
               key={tabKey}
               type="button"
               onClick={() => setTab(tabKey)}
               className={[
-                'pb-3 text-sm font-medium border-b-2 transition',
+                'pb-3 text-sm font-medium border-b-2 transition whitespace-nowrap',
                 tab === tabKey
                   ? 'border-brand-primary text-brand-primary'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600',
@@ -832,6 +965,7 @@ export default function StockPage() {
       {tab === 'alerts'     && <AlertsTab onAdjust={(p) => openAdjust(p)} />}
       {tab === 'expiring'   && <ExpiringTab />}
       {tab === 'inventaire' && <InventaireTab />}
+      {tab === 'branches'   && <BranchStockTab />}
 
       <StockAdjustModal
         isOpen={adjustOpen}
