@@ -4,7 +4,6 @@ namespace App\Observers;
 
 use App\Models\Branch;
 use App\Models\Tenant;
-use App\Services\TenantService;
 use Database\Seeders\DefaultGroupSeeder;
 
 class TenantObserver
@@ -18,14 +17,11 @@ class TenantObserver
     {
         DefaultGroupSeeder::createForTenant($tenant);
 
-        // Initialisation du contexte tenant pour que BelongsToTenant fonctionne.
-        app(TenantService::class)->setCurrentTenant($tenant);
-
         Branch::create([
-            'tenant_id'     => $tenant->id,
-            'name'          => 'Principal',
-            'type'          => 'principal',
-            'is_active'     => true,
+            'tenant_id' => $tenant->id,
+            'name' => 'Principal',
+            'type' => 'principal',
+            'is_active' => true,
             'display_order' => 0,
         ]);
     }

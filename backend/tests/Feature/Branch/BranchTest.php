@@ -160,7 +160,7 @@ it('refuse de supprimer la succursale principale', function () {
 
 it('isole les succursales entre tenants', function () {
     [$otherTenant] = $this->createTenantWithUser();
-    $otherBranch = Branch::where('tenant_id', $otherTenant->id)->first();
+    $otherBranch = Branch::withoutGlobalScopes()->where('tenant_id', $otherTenant->id)->first();
 
     // L'utilisateur du tenant A ne doit pas voir la succursale du tenant B
     $response = $this->actingAs($this->user, 'sanctum')

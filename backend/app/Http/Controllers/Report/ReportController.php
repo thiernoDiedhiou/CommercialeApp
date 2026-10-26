@@ -188,7 +188,7 @@ class ReportController extends Controller
                   {$branchFilterS}
                 GROUP BY si.product_id
             ) agg ON agg.product_id = p.id
-            WHERE p.tenant_id = ? AND p.deleted_at IS NULL
+            WHERE p.tenant_id = ? AND p.deleted_at IS NULL AND agg.product_id IS NOT NULL
             ORDER BY revenue DESC, p.name ASC
             LIMIT ?
         ", [$tenantId, $fromUtc, $toUtc, ...$bArgs, $tenantId, $limit]);
