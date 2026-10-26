@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm, useFieldArray, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useTranslation } from 'react-i18next'
 import {
   PlusIcon,
   ArrowRightIcon,
@@ -17,6 +16,7 @@ import { useAuthStore } from '@/store/authStore'
 import { getBranches } from '@/services/api/branches'
 import {
   getStockTransfers,
+  getStockTransfer,
   createStockTransfer,
   sendStockTransfer,
   receiveStockTransfer,
@@ -76,7 +76,7 @@ function CreateTransferModal({ onClose }: { onClose: () => void }) {
 
   const { data: productsRes } = useQuery({
     queryKey: ['products', 'transfer-search', productSearch],
-    queryFn: () => getProducts({ search: productSearch, per_page: 50 }),
+    queryFn: () => getProducts({ search: productSearch }),
     enabled: true,
   })
 
@@ -110,7 +110,7 @@ function CreateTransferModal({ onClose }: { onClose: () => void }) {
   })
 
   return (
-    <Modal title="Nouveau transfert de stock" onClose={onClose} size="lg">
+    <Modal isOpen title="Nouveau transfert de stock" onClose={onClose} size="lg">
       <form onSubmit={handleSubmit((v) => mutation.mutate(v))} className="space-y-4">
 
         {/* Source / Destination */}
@@ -270,37 +270,37 @@ function TransferDetailModal({ transfer, onClose }: { transfer: StockTransfer; o
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
 
-  const t = full ?? transfer
-  const meta = STATUS_META[t.status]
+  const tf: StockTransfer = full ?? transfer
+  const statusMeta = STATUS_META[tf.status]
   const isPending = sendMutation.isPending || receiveMutation.isPending || cancelMutation.isPending
 
   return (
-    <Modal title={`Transfert ${t.reference ?? ''}`} onClose={onClose}>
+    <Modal isOpen title={`Transfert ${tf.reference ?? ''}`} onClose={onClose}>
       <div className="space-y-4">
 
         {/* En-tête */}
         <div className="flex items-center justify-between">
-          <Badge variant={meta.variant}>{meta.label}</Badge>
-          <span className="text-xs text-gray-400">{formatDateTime(t.created_at)}</span>
+          <Badge variant={statusMeta.variant}>{statusMeta.label}</Badge>
+          <span className="text-xs text-gray-400">{formatDateTime(tf.created_at)}</span>
         </div>
 
         {/* Branches */}
         <div className="flex items-center gap-3 rounded-xl bg-gray-50 dark:bg-gray-700/40 px-4 py-3">
           <div className="flex-1 text-center">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Source</p>
-            <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{t.from_branch?.name ?? '—'}</p>
+            <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{tf.from_branch?.name ?? '—'}</p>
           </div>
           <ArrowRightIcon className="h-4 w-4 text-gray-400 shrink-0" />
           <div className="flex-1 text-center">
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Destination</p>
-            <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{t.to_branch?.name ?? '—'}</p>
+            <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{tf.to_branch?.name ?? '—'}</p>
           </div>
         </div>
 
         {/* Articles */}
-        {t.items && t.items.length > 0 && (
+        {tf.items && tf.items.length > 0 && (
           <div className="divide-y divide-gray-100 dark:divide-gray-700 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            {t.items.map((item) => (
+            {tf.items.map((item) => (
               <div key={item.id} className="flex items-center justify-between px-4 py-2.5">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
@@ -320,30 +320,30 @@ function TransferDetailModal({ transfer, onClose }: { transfer: StockTransfer; o
         )}
 
         {/* Notes */}
-        {t.notes && (
-          <p className="text-sm text-gray-600 dark:text-gray-300 italic">{t.notes}</p>
+        {tf.notes && (
+          <p className="text-sm text-gray-600 dark:text-gray-300 italic">{tf.notes}</p>
         )}
 
         {/* Dates */}
         <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400">
-          {t.sent_at && (
-            <div><span className="font-medium">Expédié :</span> {formatDateTime(t.sent_at)}</div>
+          {tf.sent_at && (
+            <div><span className="font-medium">Expédié :</span> {formatDateTime(tf.sent_at)}</div>
           )}
-          {t.received_at && (
-            <div><span className="font-medium">Reçu :</span> {formatDateTime(t.received_at)}</div>
+          {tf.received_at && (
+            <div><span className="font-medium">Reçu :</span> {formatDateTime(tf.received_at)}</div>
           )}
-          {t.created_by && (
-            <div><span className="font-medium">Créé par :</span> {t.created_by}</div>
+          {tf.created_by && (
+            <div><span className="font-medium">Créé par :</span> {tf.created_by}</div>
           )}
-          {t.received_by && (
-            <div><span className="font-medium">Réceptionné par :</span> {t.received_by}</div>
+          {tf.received_by && (
+            <div><span className="font-medium">Réceptionné par :</span> {tf.received_by}</div>
           )}
         </div>
 
         {/* Actions */}
         <CanDo permission="stock.transfer">
           <div className="flex flex-wrap gap-2 pt-1">
-            {t.status === 'draft' && (
+            {tf.status === 'draft' && (
               <>
                 <Button
                   type="button"
@@ -365,7 +365,7 @@ function TransferDetailModal({ transfer, onClose }: { transfer: StockTransfer; o
                 </Button>
               </>
             )}
-            {t.status === 'in_transit' && (
+            {tf.status === 'in_transit' && (
               <>
                 <Button
                   type="button"
@@ -526,10 +526,12 @@ export default function StockTransfersPage() {
         </div>
       )}
 
-      {meta && (meta as { last_page?: number }).last_page && (meta as { last_page: number }).last_page > 1 && (
+      {meta && (meta as { last_page?: number; total?: number; per_page?: number }).last_page && (meta as { last_page: number }).last_page > 1 && (
         <Pagination
           currentPage={page}
-          totalPages={(meta as { last_page: number }).last_page}
+          lastPage={(meta as { last_page: number }).last_page}
+          total={(meta as { total?: number }).total ?? 0}
+          perPage={(meta as { per_page?: number }).per_page ?? 15}
           onPageChange={setPage}
         />
       )}

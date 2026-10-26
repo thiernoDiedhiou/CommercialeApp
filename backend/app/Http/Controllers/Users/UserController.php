@@ -7,10 +7,13 @@ use App\Http\Requests\Users\StoreUserRequest;
 use App\Http\Requests\Users\SyncGroupsRequest;
 use App\Http\Requests\Users\UpdateUserRequest;
 use App\Jobs\SendUserWelcomeJob;
+use App\Models\Branch;
 use App\Models\User;
 use App\Services\PermissionService;
 use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class UserController extends Controller
@@ -75,7 +78,7 @@ class UserController extends Controller
         if ($user->id === request()->user()->id) {
             return response()->json([
                 'message' => 'Vous ne pouvez pas supprimer votre propre compte.',
-                'code'    => 'SELF_DELETE_FORBIDDEN',
+                'code' => 'SELF_DELETE_FORBIDDEN',
             ], 422);
         }
 
@@ -93,5 +96,41 @@ class UserController extends Controller
         $this->permissionService->flushUser($user);
 
         return response()->json($user->fresh('groups:id,name'));
+    }
+
+    // ─── GET /api/v1/users/{user}/branches ────────────────────────────────────
+
+    public function getBranches(User $user): JsonResponse
+    {
+        $branches = Branch::whereIn('id', function ($q) use ($user) {
+            $q->select('branch_id')
+                ->from('user_branches')
+                ->where('user_id', $user->id);
+        })->get(['id', 'uid', 'name', 'type', 'is_active']);
+
+        return response()->json(['data' => $branches]);
+    }
+
+    // ─── POST /api/v1/users/{user}/branches ───────────────────────────────────
+
+    public function syncBranches(Request $request, User $user): JsonResponse
+    {
+        $validated = $request->validate([
+            'branch_uids' => ['present', 'array'],
+            'branch_uids.*' => ['string', 'exists:branches,uid'],
+        ]);
+
+        $branchIds = Branch::whereIn('uid', $validated['branch_uids'])->pluck('id');
+
+        DB::table('user_branches')
+            ->where('user_id', $user->id)
+            ->delete();
+
+        if ($branchIds->isNotEmpty()) {
+            $rows = $branchIds->map(fn ($id) => ['user_id' => $user->id, 'branch_id' => $id])->all();
+            DB::table('user_branches')->insert($rows);
+        }
+
+        return response()->json(['data' => $branchIds->values()]);
     }
 }

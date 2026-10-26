@@ -41,3 +41,12 @@ export async function updateBranch(uid: string, data: UpdateBranchData): Promise
 export async function deleteBranch(uid: string): Promise<void> {
   await apiClient.delete(`${API}/branches/${uid}`)
 }
+
+export async function getUserBranches(userUid: string): Promise<Branch[]> {
+  const res = await apiClient.get<{ data: Branch[] }>(`${API}/users/${userUid}/branches`)
+  return res.data.data
+}
+
+export async function syncUserBranches(userUid: string, branchUids: string[]): Promise<void> {
+  await apiClient.post(`${API}/users/${userUid}/branches`, { branch_uids: branchUids })
+}

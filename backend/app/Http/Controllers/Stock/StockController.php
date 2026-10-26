@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\ProductLot;
 use App\Models\ProductVariant;
 use App\Models\StockMovement;
+use App\Services\BranchService;
 use App\Services\StockService;
 use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
@@ -22,6 +23,7 @@ class StockController extends Controller
     public function __construct(
         private readonly StockService $stockService,
         private readonly TenantService $tenantService,
+        private readonly BranchService $branchService,
     ) {}
 
     // ─── POST /api/v1/stock/adjust ────────────────────────────────────────────
@@ -30,23 +32,23 @@ class StockController extends Controller
     {
         $product = Product::findOrFail($request->input('product_id'));
         $variant = $request->input('variant_id') ? ProductVariant::find($request->input('variant_id')) : null;
-        $lot     = $request->input('lot_id') ? ProductLot::find($request->input('lot_id')) : null;
+        $lot = $request->input('lot_id') ? ProductLot::find($request->input('lot_id')) : null;
 
         try {
             $movement = $this->stockService->adjust(
-                product:  $product,
-                type:     $request->input('type'),
+                product: $product,
+                type: $request->input('type'),
                 quantity: (float) $request->input('quantity'),
-                source:   'manual',
+                source: 'manual',
                 sourceId: null,
-                variant:  $variant,
-                lot:      $lot,
+                variant: $variant,
+                lot: $lot,
                 unitCost: $request->input('unit_cost') !== null ? (float) $request->input('unit_cost') : null,
-                notes:    $request->input('note'),
+                notes: $request->input('note'),
             );
 
             return response()->json([
-                'data'        => $movement->load(['product:id,name', 'variant:id,attribute_summary']),
+                'data' => $movement->load(['product:id,name', 'variant:id,attribute_summary']),
                 'stock_after' => $movement->stock_after,
             ], 201);
         } catch (StockInsufficientException $e) {
@@ -60,31 +62,34 @@ class StockController extends Controller
 
     public function movements(Request $request): JsonResponse
     {
+        $branchId = $this->branchService->currentId();
+
         $movements = StockMovement::select([
             'id', 'product_id', 'product_variant_id', 'lot_id', 'user_id',
             'type', 'quantity', 'unit_cost', 'stock_before', 'stock_after',
             'source', 'notes', 'created_at',
         ])
-        ->with([
-            'product:id,name',
-            'variant:id,attribute_summary',
-            'user:id,name',
-            'lot:id,lot_number',
-        ])
-        ->when($request->product_id, fn($q) => $q->where('product_id', $request->product_id))
-        ->when($request->variant_id, fn($q) => $q->where('product_variant_id', $request->variant_id))
-        ->when($request->type, fn($q) => match ($request->type) {
-            // 'sale' est une source, pas un type — map vers source pour la convenance
-            'sale'   => $q->where('source', 'sale'),
-            default  => $q->where('type', $request->type),
-        })
-        ->when($request->user_id, fn($q) => $q->where('user_id', $request->user_id))
-        ->when(
-            $request->from && $request->to,
-            fn($q) => $q->whereBetween('created_at', [$request->from, $request->to])
-        )
-        ->latest('id')
-        ->paginate(30);
+            ->with([
+                'product:id,name',
+                'variant:id,attribute_summary',
+                'user:id,name',
+                'lot:id,lot_number',
+            ])
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
+            ->when($request->product_id, fn ($q) => $q->where('product_id', $request->product_id))
+            ->when($request->variant_id, fn ($q) => $q->where('product_variant_id', $request->variant_id))
+            ->when($request->type, fn ($q) => match ($request->type) {
+                // 'sale' est une source, pas un type — map vers source pour la convenance
+                'sale' => $q->where('source', 'sale'),
+                default => $q->where('type', $request->type),
+            })
+            ->when($request->user_id, fn ($q) => $q->where('user_id', $request->user_id))
+            ->when(
+                $request->from && $request->to,
+                fn ($q) => $q->whereBetween('created_at', [$request->from, $request->to])
+            )
+            ->latest('id')
+            ->paginate(30);
 
         return response()->json($movements);
     }
@@ -93,19 +98,19 @@ class StockController extends Controller
 
     public function alerts(Request $request): JsonResponse
     {
-        $tenantId   = $this->tenantService->currentId();
+        $tenantId = $this->tenantService->currentId();
         $categoryId = $request->integer('category_id') ?: null;
-        $search     = $request->input('search');
+        $search = $request->input('search');
 
         // Construction dynamique des WHERE pour éviter les injections
         // tout en restant flexible sur les filtres optionnels
-        $where1    = [
+        $where1 = [
             'p.tenant_id = ?', 'p.has_variants = 0', 'p.is_active = 1',
             'p.alert_threshold IS NOT NULL', 'p.stock_quantity <= p.alert_threshold',
         ];
         $bindings1 = [$tenantId];
 
-        $where2    = [
+        $where2 = [
             'p.tenant_id = ?', 'p.is_active = 1',
             'COALESCE(pv.alert_threshold, p.alert_threshold) IS NOT NULL',
             'pv.stock_quantity <= COALESCE(pv.alert_threshold, p.alert_threshold)',
@@ -138,7 +143,7 @@ class StockController extends Controller
                 p.unit
             FROM products p
             LEFT JOIN categories c ON c.id = p.category_id
-            WHERE ' . implode(' AND ', $where1) . '
+            WHERE '.implode(' AND ', $where1).'
 
             UNION ALL
 
@@ -154,27 +159,27 @@ class StockController extends Controller
             FROM product_variants pv
             JOIN products p ON p.id = pv.product_id
             LEFT JOIN categories c ON c.id = p.category_id
-            WHERE ' . implode(' AND ', $where2) . '
+            WHERE '.implode(' AND ', $where2).'
 
             ORDER BY current_stock ASC
         ';
 
         $rows = DB::select($sql, array_merge($bindings1, $bindings2));
 
-        $collection = collect($rows)->map(fn($r) => [
-            'product_id'      => $r->product_id,
-            'product_name'    => $r->product_name,
-            'variant_id'      => $r->variant_id,
+        $collection = collect($rows)->map(fn ($r) => [
+            'product_id' => $r->product_id,
+            'product_name' => $r->product_name,
+            'variant_id' => $r->variant_id,
             'variant_summary' => $r->variant_summary,
-            'current_stock'   => (float) $r->current_stock,
-            'threshold'       => (int)   $r->threshold,
-            'category_name'   => $r->category_name,
-            'unit'            => $r->unit,
+            'current_stock' => (float) $r->current_stock,
+            'threshold' => (int) $r->threshold,
+            'category_name' => $r->category_name,
+            'unit' => $r->unit,
         ]);
 
-        $page    = $request->integer('page', 1);
+        $page = $request->integer('page', 1);
         $perPage = 20;
-        $total   = $collection->count();
+        $total = $collection->count();
 
         return response()->json(
             new LengthAwarePaginator(
@@ -201,16 +206,16 @@ class StockController extends Controller
         }
 
         $allowedDays = [7, 15, 30, 60];
-        $days        = in_array($request->integer('days'), $allowedDays, true)
+        $days = in_array($request->integer('days'), $allowedDays, true)
             ? $request->integer('days')
             : (int) ($this->tenantService->setting('expiry_alert_days') ?? 30);
-        $search      = $request->input('search');
+        $search = $request->input('search');
         $bindings = [$tenantId, $days];
 
         $searchClause = '';
         if ($search) {
-            $searchClause  = ' AND p.name LIKE ?';
-            $bindings[]    = "%{$search}%";
+            $searchClause = ' AND p.name LIKE ?';
+            $bindings[] = "%{$search}%";
         }
 
         $rows = DB::select('
@@ -230,24 +235,24 @@ class StockController extends Controller
               AND pl.is_active           = 1
               AND pl.quantity_remaining  > 0
               AND pl.expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
-              ' . $searchClause . '
+              '.$searchClause.'
             ORDER BY pl.expiry_date ASC
         ', $bindings);
 
-        $collection = collect($rows)->map(fn($r) => [
-            'product_id'         => $r->product_id,
-            'product_name'       => $r->product_name,
-            'variant_id'         => $r->variant_id,
-            'variant_summary'    => $r->variant_summary,
-            'lot_number'         => $r->lot_number,
-            'expiry_date'        => $r->expiry_date,
-            'days_remaining'     => (int)   $r->days_remaining,
+        $collection = collect($rows)->map(fn ($r) => [
+            'product_id' => $r->product_id,
+            'product_name' => $r->product_name,
+            'variant_id' => $r->variant_id,
+            'variant_summary' => $r->variant_summary,
+            'lot_number' => $r->lot_number,
+            'expiry_date' => $r->expiry_date,
+            'days_remaining' => (int) $r->days_remaining,
             'quantity_remaining' => (float) $r->quantity_remaining,
         ]);
 
-        $page    = $request->integer('page', 1);
+        $page = $request->integer('page', 1);
         $perPage = 20;
-        $total   = $collection->count();
+        $total = $collection->count();
 
         return response()->json(
             new LengthAwarePaginator(

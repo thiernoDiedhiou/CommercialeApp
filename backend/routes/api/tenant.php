@@ -289,6 +289,10 @@ Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
             ->middleware('permission:users.delete');
         Route::post('{user:uid}/groups', [UserController::class, 'syncGroups'])
             ->middleware('permission:users.edit');
+        Route::get('{user:uid}/branches', [UserController::class, 'getBranches'])
+            ->middleware('permission:users.view');
+        Route::post('{user:uid}/branches', [UserController::class, 'syncBranches'])
+            ->middleware('permission:users.edit');
     });
 
     // ── Groupes — feature : multi_user ───────────────────────────────────────

@@ -20,6 +20,7 @@ import {
   CurrencyDollarIcon,
   ReceiptPercentIcon,
   DevicePhoneMobileIcon,
+  MapPinIcon,
 } from '@heroicons/react/24/outline'
 import { CreditCardIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
 import { useAuthStore } from '@/store/authStore'
@@ -53,6 +54,7 @@ import {
   deleteGroup,
   syncGroupPermissions,
 } from '@/services/api/groups'
+import { getBranches, getUserBranches, syncUserBranches } from '@/services/api/branches'
 import type { UserWithGroups, Group, Permission, CreateGroupData } from '@/types'
 import BranchesTab from '@/components/settings/BranchesTab'
 
@@ -813,16 +815,111 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
   )
 }
 
+// ─── UserBranchModal ─────────────────────────────────────────────────────────
+
+function UserBranchModal({ user, onClose }: { user: UserWithGroups; onClose: () => void }) {
+  const qc = useQueryClient()
+
+  const { data: allBranches = [], isLoading: loadingBranches } = useQuery({
+    queryKey: ['branches'],
+    queryFn: getBranches,
+  })
+
+  const { data: assignedBranches = [], isLoading: loadingAssigned } = useQuery({
+    queryKey: ['user-branches', user.uid],
+    queryFn: () => getUserBranches(user.uid),
+  })
+
+  const [selected, setSelected] = useState<string[]>([])
+
+  useEffect(() => {
+    if (!loadingAssigned) {
+      setSelected(assignedBranches.map((b) => b.uid))
+    }
+  }, [assignedBranches, loadingAssigned])
+
+  const mutation = useMutation({
+    mutationFn: () => syncUserBranches(user.uid, selected),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['user-branches', user.uid] })
+      toast.success('Accès succursales mis à jour')
+      onClose()
+    },
+    onError: (err) => toast.error(getApiErrorMessage(err)),
+  })
+
+  const toggle = (uid: string) => {
+    setSelected((prev) => prev.includes(uid) ? prev.filter((x) => x !== uid) : [...prev, uid])
+  }
+
+  const isLoading = loadingBranches || loadingAssigned
+
+  // N'affiche que les succursales non-principales (le principal est accessible à tous)
+  const branches = allBranches.filter((b) => b.type !== 'principal')
+
+  return (
+    <Modal isOpen title={`Accès succursales — ${user.name}`} onClose={onClose} size="sm">
+      <div className="space-y-3">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Sélectionnez les succursales auxquelles cet utilisateur a accès.
+          {' '}<strong>Aucune sélection = accès à toutes les succursales.</strong>
+        </p>
+
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
+          </div>
+        ) : branches.length === 0 ? (
+          <p className="text-sm text-gray-400 italic py-2">Aucune succursale secondaire configurée.</p>
+        ) : (
+          <div className="space-y-1.5">
+            {branches.map((branch) => (
+              <label
+                key={branch.uid}
+                className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-2.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.includes(branch.uid)}
+                  onChange={() => toggle(branch.uid)}
+                  className="h-4 w-4 rounded accent-brand-primary"
+                />
+                <MapPinIcon className="h-4 w-4 text-blue-400 shrink-0" />
+                <span className="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200">{branch.name}</span>
+                {!branch.is_active && (
+                  <span className="text-xs text-gray-400 italic">inactive</span>
+                )}
+              </label>
+            ))}
+          </div>
+        )}
+
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" variant="secondary" onClick={onClose}>Annuler</Button>
+          <Button type="button" variant="primary" disabled={mutation.isPending || isLoading} onClick={() => mutation.mutate()}>
+            {mutation.isPending ? 'Enregistrement…' : 'Enregistrer'}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 // ─── UsersTab ─────────────────────────────────────────────────────────────────
 
 function UsersTab() {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const me = useAuthStore((s) => s.user)
+  const availableBranches = useAuthStore((s) => s.availableBranches)
   const [modalOpen, setModalOpen]     = useState(false)
   const [editing, setEditing]         = useState<UserWithGroups | null>(null)
   const [deletingId, setDeletingId]   = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<UserWithGroups | null>(null)
+  const [branchUser, setBranchUser]   = useState<UserWithGroups | null>(null)
+
+  // Affiche la gestion des succursales uniquement si plusieurs succursales existent
+  const hasMultiBranch = availableBranches.length > 1
 
   const { data: page, isLoading } = useQuery({
     queryKey: ['users'],
@@ -877,6 +974,7 @@ function UsersTab() {
                 <th className="px-4 py-3 text-left">{t('settings.col_status')}</th>
                 <th className="px-4 py-3 sr-only">{t('common.actions')}</th>
               </tr>
+
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-gray-700/60 bg-white dark:bg-gray-800">
               {users.map((u) => (
@@ -902,6 +1000,16 @@ function UsersTab() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
+                      {hasMultiBranch && (
+                        <button
+                          type="button"
+                          onClick={() => setBranchUser(u)}
+                          className="rounded p-1 text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 transition"
+                          title="Gérer l'accès aux succursales"
+                        >
+                          <MapPinIcon className="h-4 w-4" />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => openEdit(u)}
@@ -936,6 +1044,10 @@ function UsersTab() {
         groups={groups}
         onClose={() => setModalOpen(false)}
       />
+
+      {branchUser && (
+        <UserBranchModal user={branchUser} onClose={() => setBranchUser(null)} />
+      )}
 
       <Modal
         isOpen={!!deleteTarget}

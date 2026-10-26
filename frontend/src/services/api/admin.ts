@@ -247,6 +247,7 @@ export interface Plan {
   max_users:             number
   max_products:          number
   max_monthly_sales:     number
+  max_branches:          number
   feature_pos:           boolean
   feature_invoicing:     boolean
   feature_purchases:     boolean
@@ -278,6 +279,7 @@ export interface PlanFormData {
   max_users?:            number
   max_products?:         number
   max_monthly_sales?:    number
+  max_branches?:         number
   feature_pos:           boolean
   feature_invoicing:     boolean
   feature_purchases:     boolean

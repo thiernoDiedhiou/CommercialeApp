@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useTranslation } from 'react-i18next'
 import {
   Plus,
   SquarePen,
@@ -56,7 +55,6 @@ type EditValues   = z.infer<typeof editSchema>
 // ─── Modal Création ───────────────────────────────────────────────────────────
 
 function CreateBranchModal({ onClose }: { onClose: () => void }) {
-  const { t }  = useTranslation()
   const qc     = useQueryClient()
   const setAvailableBranches = useAuthStore((s) => s.setAvailableBranches)
 
@@ -179,7 +177,7 @@ function EditBranchModal({ branch, onClose }: { branch: Branch; onClose: () => v
             'text-gray-500 dark:text-gray-400',
           )}>
             {TYPE_META[branch.type].label}
-            {branch.isPrincipal ?? branch.type === 'principal' ? (
+            {branch.type === 'principal' ? (
               <span className="text-xs text-gray-400 ml-auto">non modifiable</span>
             ) : null}
           </div>
@@ -222,7 +220,6 @@ function EditBranchModal({ branch, onClose }: { branch: Branch; onClose: () => v
 // ─── Composant principal ──────────────────────────────────────────────────────
 
 export default function BranchesTab() {
-  const { t }    = useTranslation()
   const qc       = useQueryClient()
   const permissions          = useAuthStore((s) => s.permissions)
   const setAvailableBranches = useAuthStore((s) => s.setAvailableBranches)
