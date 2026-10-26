@@ -138,15 +138,9 @@ class StockController extends Controller
                 : collect();
 
             foreach ($paginator as $product) {
-                $row = $branchStocksMap->get($product->id);
-                if ($row !== null) {
-                    $product->stock_quantity = (float) $row->quantity;
-                }
+                $product->stock_quantity = (float) ($branchStocksMap->get($product->id)?->quantity ?? 0);
                 foreach ($product->variants as $variant) {
-                    $vRow = $variantStocksMap->get($variant->id);
-                    if ($vRow !== null) {
-                        $variant->stock_quantity = (float) $vRow->quantity;
-                    }
+                    $variant->stock_quantity = (float) ($variantStocksMap->get($variant->id)?->quantity ?? 0);
                 }
             }
         }
@@ -289,7 +283,7 @@ class StockController extends Controller
                 p.name                AS product_name,
                 NULL                  AS variant_id,
                 NULL                  AS variant_summary,
-                COALESCE(bs.quantity, p.stock_quantity) AS current_stock,
+                COALESCE(bs.quantity, 0) AS current_stock,
                 p.alert_threshold     AS threshold,
                 c.name                AS category_name,
                 p.unit
@@ -300,7 +294,7 @@ class StockController extends Controller
             WHERE p.tenant_id = ?
               AND p.has_variants = 0 AND p.is_active = 1
               AND p.alert_threshold IS NOT NULL
-              AND COALESCE(bs.quantity, p.stock_quantity) <= p.alert_threshold
+              AND COALESCE(bs.quantity, 0) <= p.alert_threshold
               {$categoryClause} {$searchClause}
 
             UNION ALL
@@ -310,7 +304,7 @@ class StockController extends Controller
                 p.name                          AS product_name,
                 pv.id                           AS variant_id,
                 pv.attribute_summary            AS variant_summary,
-                COALESCE(bs.quantity, pv.stock_quantity) AS current_stock,
+                COALESCE(bs.quantity, 0)        AS current_stock,
                 COALESCE(pv.alert_threshold, p.alert_threshold) AS threshold,
                 c.name                          AS category_name,
                 p.unit
@@ -321,7 +315,7 @@ class StockController extends Controller
                 AND bs.branch_id = ?
             WHERE p.tenant_id = ? AND p.is_active = 1
               AND COALESCE(pv.alert_threshold, p.alert_threshold) IS NOT NULL
-              AND COALESCE(bs.quantity, pv.stock_quantity) <= COALESCE(pv.alert_threshold, p.alert_threshold)
+              AND COALESCE(bs.quantity, 0) <= COALESCE(pv.alert_threshold, p.alert_threshold)
               {$categoryClause} {$searchClause}
 
             ORDER BY current_stock ASC

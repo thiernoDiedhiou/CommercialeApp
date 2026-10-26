@@ -69,19 +69,10 @@ class PosService
                 : collect();
 
             foreach ($paginator as $product) {
-                $row = $branchStocksMap->get($product->id);
-                if ($row !== null) {
-                    $product->stock_quantity = (float) $row->quantity;
-                }
-                // Pas de ligne branch_stocks → garder stock_quantity global (bootstrap
-                // single-branch ou première utilisation). StockService créera la ligne
-                // automatiquement au prochain ajustement.
+                $product->stock_quantity = (float) ($branchStocksMap->get($product->id)?->quantity ?? 0);
 
                 foreach ($product->variants as $variant) {
-                    $vRow = $variantStocksMap->get($variant->id);
-                    if ($vRow !== null) {
-                        $variant->stock_quantity = (float) $vRow->quantity;
-                    }
+                    $variant->stock_quantity = (float) ($variantStocksMap->get($variant->id)?->quantity ?? 0);
                 }
             }
         }
