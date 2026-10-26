@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   ShoppingCartIcon,
   MagnifyingGlassIcon,
   Bars3Icon,
   XMarkIcon,
-  ChevronDownIcon,
-  Squares2X2Icon,
 } from '@heroicons/react/24/outline'
 import { useShopStore } from '@/shop/store/shopStore'
 import { getShopCategories } from '@/shop/services/shop'
@@ -72,22 +70,20 @@ const SOCIAL_ITEMS = [
 export default function ShopNavbar({ slug }: Props) {
   const navigate        = useNavigate()
   const location        = useLocation()
+  const [searchParams]  = useSearchParams()
   const [scrolled, setScrolled]             = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen]         = useState(false)
   const [searchValue, setSearchValue]       = useState('')
-  const [catMenuOpen, setCatMenuOpen]       = useState(false)
   const debounceRef    = useRef<ReturnType<typeof setTimeout>>()
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const catMenuRef     = useRef<HTMLDivElement>(null)
 
   // Sync le champ de recherche avec ?search= de l'URL quand on est sur le catalogue
   useEffect(() => {
-    const params = new URLSearchParams(location.search)
-    const urlSearch = params.get('search') ?? ''
+    const urlSearch = searchParams.get('search') ?? ''
     setSearchValue(urlSearch)
     if (!urlSearch) setSearchOpen(false)
-  }, [location.search, location.pathname])
+  }, [searchParams, location.pathname])
 
   const shopConfig = useShopStore((s) => s.shopConfig)
   const items      = useShopStore((s) => s.items)
@@ -101,6 +97,11 @@ export default function ShopNavbar({ slug }: Props) {
     enabled  : !!slug,
   })
   const categories = categoriesResult?.data ?? []
+
+  // Catégorie active depuis l'URL
+  const activeCategoryId = searchParams.get('category')
+    ? parseInt(searchParams.get('category')!, 10)
+    : null
 
   // Ombre au scroll
   useEffect(() => {
@@ -120,17 +121,6 @@ export default function ShopNavbar({ slug }: Props) {
     return () => { document.body.style.overflow = '' }
   }, [mobileMenuOpen])
 
-  // Fermer le menu catégories sur clic extérieur
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (catMenuRef.current && !catMenuRef.current.contains(e.target as Node)) {
-        setCatMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
   const handleSearch = (value: string) => {
     setSearchValue(value)
     clearTimeout(debounceRef.current)
@@ -139,7 +129,6 @@ export default function ShopNavbar({ slug }: Props) {
       if (value.trim()) {
         navigate(`${catalogBase}?search=${encodeURIComponent(value.trim())}`, { replace: location.pathname.includes('/catalog') })
       } else {
-        // Effacer la recherche : revenir au catalogue sans paramètre
         navigate(catalogBase, { replace: true })
       }
     }, 300)
@@ -156,14 +145,15 @@ export default function ShopNavbar({ slug }: Props) {
   return (
     <>
       <header
-        className={`sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 transition-shadow ${
+        className={`sticky top-0 z-50 bg-white border-b border-gray-100 transition-shadow ${
           scrolled ? 'shadow-sm' : ''
         }`}
       >
+        {/* ── Ligne 1 : Logo / Recherche / Actions ────────────────────── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-4">
 
-            {/* ── Logo ─────────────────────────────────────────────────── */}
+            {/* Logo */}
             <Link to={`/shop/${slug}`} className="flex-shrink-0">
               {shopConfig?.logo_url ? (
                 <img
@@ -178,66 +168,9 @@ export default function ShopNavbar({ slug }: Props) {
               )}
             </Link>
 
-            {/* ── Catégories dropdown (desktop) ────────────────────────── */}
-            <div ref={catMenuRef} className="relative hidden sm:flex shrink-0">
-              <button
-                type="button"
-                onClick={() => setCatMenuOpen((o) => !o)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors whitespace-nowrap"
-              >
-                <Squares2X2Icon className="h-4 w-4" />
-                Catégories
-                <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${catMenuOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {catMenuOpen && categories.length > 0 && (
-                <div className="absolute left-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
-                  {/* Header panneau */}
-                  <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Toutes les catégories</span>
-                    <span className="text-xs text-gray-400">{categories.length} rayons</span>
-                  </div>
-                  {/* Liste style Jumia */}
-                  <div className="max-h-[28rem] overflow-y-auto divide-y divide-gray-50">
-                    {categories.map((cat) => {
-                      const CatIcon = getCategoryIcon(cat.name)
-                      return (
-                        <button
-                          key={cat.id}
-                          type="button"
-                          onClick={() => {
-                            navigate(`/shop/${slug}/catalog?category=${cat.id}`)
-                            setCatMenuOpen(false)
-                          }}
-                          className="group flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        >
-                          <CatIcon className="h-4 w-4 shrink-0 text-gray-400 group-hover:text-[var(--shop-primary,#111827)] transition-colors" />
-                          <span className="flex-1 text-left font-medium truncate group-hover:text-gray-900">{cat.name}</span>
-                          {(cat.products_count ?? 0) > 0 && (
-                            <span className="shrink-0 text-xs text-gray-400">{cat.products_count}</span>
-                          )}
-                          <svg className="shrink-0 h-3.5 w-3.5 text-gray-300 group-hover:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                        </button>
-                      )
-                    })}
-                  </div>
-                  {/* Footer */}
-                  <div className="border-t border-gray-100">
-                    <button
-                      type="button"
-                      onClick={() => { navigate(`/shop/${slug}/catalog`); setCatMenuOpen(false) }}
-                      className="w-full px-4 py-3 text-sm font-semibold text-[var(--shop-primary,#111827)] hover:bg-gray-50 transition-colors text-left"
-                    >
-                      Voir tout le catalogue →
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* ── SearchBar desktop (centre) ────────────────────────────── */}
+            {/* SearchBar desktop */}
             <div className="hidden sm:flex flex-1 justify-center">
-              <div className="relative w-full max-w-sm">
+              <div className="relative w-full max-w-lg">
                 <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
                 <input
                   type="search"
@@ -249,7 +182,7 @@ export default function ShopNavbar({ slug }: Props) {
               </div>
             </div>
 
-            {/* ── Icons droite ─────────────────────────────────────────── */}
+            {/* Actions droite */}
             <div className="flex items-center gap-2 ml-auto sm:ml-0">
 
               {/* Recherche mobile */}
@@ -262,7 +195,7 @@ export default function ShopNavbar({ slug }: Props) {
                 <MagnifyingGlassIcon className="h-5 w-5" />
               </button>
 
-              {/* WhatsApp (desktop) */}
+              {/* WhatsApp desktop */}
               {whatsappNumber && (
                 <button
                   type="button"
@@ -304,6 +237,34 @@ export default function ShopNavbar({ slug }: Props) {
           </div>
         </div>
 
+        {/* ── Ligne 2 : Strip catégories (desktop) ────────────────────── */}
+        {categories.length > 0 && (
+          <div className="hidden sm:block border-t border-gray-100">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center overflow-x-auto scrollbar-hide">
+                {categories.map((cat) => {
+                  const CatIcon  = getCategoryIcon(cat.name)
+                  const isActive = cat.id === activeCategoryId && location.pathname.includes('/catalog')
+                  return (
+                    <Link
+                      key={cat.id}
+                      to={`/shop/${slug}/catalog?category=${cat.id}`}
+                      className={`flex items-center gap-1.5 px-3 py-2.5 text-sm whitespace-nowrap shrink-0 border-b-2 transition-colors ${
+                        isActive
+                          ? 'border-[var(--shop-primary,#111827)] text-[var(--shop-primary,#111827)] font-semibold'
+                          : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                      }`}
+                    >
+                      <CatIcon className="h-4 w-4 shrink-0" />
+                      {cat.name}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── Barre recherche mobile ──────────────────────────────────── */}
         {searchOpen && (
           <div className="sm:hidden border-t border-gray-100 bg-white px-4 py-3 flex items-center gap-3">
@@ -336,7 +297,6 @@ export default function ShopNavbar({ slug }: Props) {
       </header>
 
       {/* ── Menu mobile slide-over ──────────────────────────────────────── */}
-      {/* Toujours rendu pour que la transition CSS fonctionne */}
       <div
         className={`fixed inset-0 z-[60] flex sm:hidden overflow-hidden transition-all duration-300 ${
           mobileMenuOpen ? 'visible' : 'invisible'
@@ -363,22 +323,11 @@ export default function ShopNavbar({ slug }: Props) {
           {/* Header panneau */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
             {shopConfig?.logo_url ? (
-              <img
-                src={shopConfig.logo_url}
-                alt={shopConfig.name}
-                className="max-h-10 w-auto object-contain"
-              />
+              <img src={shopConfig.logo_url} alt={shopConfig.name} className="max-h-10 w-auto object-contain" />
             ) : (
-              <span className="font-semibold text-gray-900 truncate max-w-[180px]">
-                {shopConfig?.name ?? 'Menu'}
-              </span>
+              <span className="font-semibold text-gray-900 truncate max-w-[180px]">{shopConfig?.name ?? 'Menu'}</span>
             )}
-            <button
-              type="button"
-              onClick={close}
-              aria-label="Fermer le menu"
-              className="p-1 rounded-full hover:bg-gray-100"
-            >
+            <button type="button" onClick={close} aria-label="Fermer le menu" className="p-1 rounded-full hover:bg-gray-100">
               <XMarkIcon className="h-5 w-5 text-gray-500" />
             </button>
           </div>
@@ -399,13 +348,11 @@ export default function ShopNavbar({ slug }: Props) {
               </Link>
             ))}
 
-            {/* Catégories dynamiques */}
+            {/* Catégories mobile */}
             {categories.length > 0 && (
               <>
                 <div className="px-3 pt-4 pb-1">
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Catégories
-                  </span>
+                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Catégories</span>
                 </div>
                 {categories.map((cat) => {
                   const CatIcon = getCategoryIcon(cat.name)
@@ -427,8 +374,6 @@ export default function ShopNavbar({ slug }: Props) {
 
           {/* Footer panneau */}
           <div className="border-t border-gray-100 px-5 py-4 space-y-3">
-
-            {/* WhatsApp mobile */}
             {whatsappNumber && (
               <a
                 href={`https://wa.me/${whatsappNumber}`}
@@ -442,20 +387,12 @@ export default function ShopNavbar({ slug }: Props) {
                 Nous contacter sur WhatsApp
               </a>
             )}
-
-            {/* Réseaux sociaux */}
             {hasSocials && (
               <div className="flex gap-2 px-1">
                 {SOCIAL_ITEMS.map(({ key, label, icon }) =>
                   shopConfig?.[key] ? (
-                    <a
-                      key={key}
-                      href={shopConfig[key]!}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={label}
-                      className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
-                    >
+                    <a key={key} href={shopConfig[key]!} target="_blank" rel="noopener noreferrer" aria-label={label}
+                       className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors">
                       {icon}
                     </a>
                   ) : null
