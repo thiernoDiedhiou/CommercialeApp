@@ -154,7 +154,11 @@ export default function ShopProductDetailPage() {
       <div className="lg:grid lg:grid-cols-2 lg:gap-12 flex flex-col gap-6">
 
         {/* ── Colonne gauche — Galerie ───────────────────────────────────── */}
-        <ProductGallery imageUrl={product.image_url} productName={product.name} />
+        <ProductGallery
+          images={product.images ?? []}
+          imageUrl={product.image_url}
+          productName={product.name}
+        />
 
         {/* ── Colonne droite — Infos ─────────────────────────────────────── */}
         <div className="flex flex-col pb-24 lg:pb-0">

@@ -1,6 +1,7 @@
 import axios from 'axios'
 import apiClient from '@/lib/axios'
 import type { ShopConfig, ShopTheme, ShopOrderResult } from '@/shop/store/shopStore'
+import type { ProductImage } from '@/types'
 
 // ── Instance Axios publique (sans auth, sans X-Tenant-ID) ────────────────────
 
@@ -40,6 +41,7 @@ export interface ShopProduct {
   category         : { id: number; name: string } | null
   variants         : ShopVariant[]
   description     ?: string
+  images          ?: ProductImage[]
 }
 
 export interface ShopCategory {
