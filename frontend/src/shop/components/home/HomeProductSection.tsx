@@ -10,6 +10,7 @@ interface Props {
   limit?   : number
   seeAllTo?: string
   onSale?  : boolean
+  variant? : 'scroll' | 'grid'
 }
 
 function SkeletonCard() {
@@ -27,7 +28,7 @@ function SkeletonCard() {
   )
 }
 
-export default function HomeProductSection({ slug, title, sort, limit = 10, seeAllTo, onSale }: Props) {
+export default function HomeProductSection({ slug, title, sort, limit = 10, seeAllTo, onSale, variant = 'scroll' }: Props) {
   const navigate = useNavigate()
 
   const { data, isLoading } = useQuery({
@@ -58,6 +59,12 @@ export default function HomeProductSection({ slug, title, sort, limit = 10, seeA
       {isLoading ? (
         <div className="flex gap-4 overflow-hidden">
           {Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)}
+        </div>
+      ) : variant === 'grid' ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {products.map((product) => (
+            <ShopProductCard key={product.id} product={product} slug={slug} />
+          ))}
         </div>
       ) : (
         <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">

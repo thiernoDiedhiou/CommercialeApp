@@ -47,17 +47,23 @@ export default function TrustBadges() {
   if (badges.length === 0) return null
 
   return (
-    <div className="bg-gray-50 border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <div className="border-y border-gray-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
           {badges.map((b) => (
-            <div key={b.icon} className="flex items-center gap-3">
-              <div className="shrink-0 h-10 w-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-[var(--shop-primary,#111827)] shadow-sm">
+            <div key={b.icon} className="flex flex-col sm:flex-row items-center sm:items-start gap-3 text-center sm:text-left">
+              {/* Icône avec fond dégradé couleur tenant */}
+              <div
+                className="shrink-0 h-12 w-12 rounded-2xl flex items-center justify-center text-white shadow-md"
+                style={{
+                  background: 'linear-gradient(135deg, var(--shop-primary,#111827) 0%, var(--shop-secondary,#374151) 100%)',
+                }}
+              >
                 {ICONS[b.icon]}
               </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-900">{b.title}</p>
-                {b.subtitle && <p className="text-xs text-gray-500">{b.subtitle}</p>}
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-gray-900 leading-snug">{b.title}</p>
+                {b.subtitle && <p className="text-xs text-gray-500 mt-0.5">{b.subtitle}</p>}
               </div>
             </div>
           ))}

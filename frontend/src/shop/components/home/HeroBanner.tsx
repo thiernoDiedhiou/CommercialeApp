@@ -58,11 +58,11 @@ export default function HeroBanner({ title, subtitle, bannerUrl, onCatalogClick 
         <button
           type="button"
           onClick={onCatalogClick}
-          className="mt-8 px-8 py-3.5 rounded-full font-semibold text-base shadow-xl transition-all duration-200 max-w-xs w-full hover:scale-105 active:scale-95 text-white"
+          className="mt-8 px-8 py-3.5 rounded-full font-semibold text-base transition-all duration-200 max-w-xs w-full hover:scale-105 active:scale-95 text-white border border-white/40 backdrop-blur-md"
           style={{
-            animation   : 'fadeUp 0.6s ease 0.2s both',
-            background  : 'var(--shop-primary, #111827)',
-            boxShadow   : '0 4px 24px rgba(0,0,0,0.35)',
+            animation  : 'fadeUp 0.6s ease 0.2s both',
+            background : 'rgba(255,255,255,0.18)',
+            boxShadow  : '0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)',
           }}
         >
           Voir le catalogue →

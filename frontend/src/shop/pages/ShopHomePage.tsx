@@ -59,12 +59,13 @@ export default function ShopHomePage() {
       {/* ── Trust badges ──────────────────────────────────────────────────── */}
       <TrustBadges />
 
-      {/* ── Offres du moment (masquée si aucun produit en promo) ─────────── */}
+      {/* ── Offres du moment (grille — peu de produits en promo) ────────── */}
       <HomeProductSection
         slug={slug}
         title="🔥 Offres du moment"
         sort="newest"
         onSale={true}
+        variant="grid"
         seeAllTo={`/shop/${slug}/catalog?on_sale=1`}
       />
 
