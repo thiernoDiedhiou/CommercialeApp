@@ -161,6 +161,9 @@ export default function BranchSelector() {
                   )}
                 />
                 <span className="flex-1 truncate text-left">{branch.name}</span>
+                {branch.type === 'warehouse' && (
+                  <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Entrepôt</span>
+                )}
                 {!branch.is_active && (
                   <span className="text-xs text-gray-400 italic">inactif</span>
                 )}

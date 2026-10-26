@@ -9,6 +9,7 @@ import type { StockAdjustPrefill } from '@/components/stock/StockAdjustModal'
 import { getProduct, getProductStockMovements, createVariant, updateVariant, getProductLots, createProductLot, updateProductLot, regularizeProductLots } from '@/services/api/products'
 import { getAttributes } from '@/services/api/attributes'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { useAuthStore } from '@/store/authStore'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
@@ -49,6 +50,7 @@ export default function ProductDetailPage() {
   const { uid } = useParams<{ uid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const activeBranchUid = useAuthStore((s) => s.activeBranch?.uid ?? null)
   const [adjustOpen, setAdjustOpen] = useState(false)
   const [adjustPrefill, setAdjustPrefill] = useState<StockAdjustPrefill | null>(null)
   const [addVariantOpen, setAddVariantOpen] = useState(false)
@@ -100,7 +102,7 @@ export default function ProductDetailPage() {
   })
 
   const { data: movementsPage, isLoading: movLoading } = useQuery({
-    queryKey: ['product-movements', uid],
+    queryKey: ['product-movements', uid, activeBranchUid],
     queryFn: () => getProductStockMovements(uid!, { page: 1 }),
     enabled: !!uid,
   })

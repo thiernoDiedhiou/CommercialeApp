@@ -163,8 +163,11 @@ class ProductController extends Controller
 
     public function stockMovements(Request $request, Product $product): JsonResponse
     {
+        $branchId = $this->branchService->currentId();
+
         $movements = $product->stockMovements()
             ->with(['variant:id,attribute_summary'])
+            ->when($branchId, fn ($q) => $q->where('branch_id', $branchId))
             ->when($request->type, fn ($q) => $q->where('type', $request->type))
             ->paginate(30);
 
