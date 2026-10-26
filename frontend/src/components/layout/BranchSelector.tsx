@@ -1,9 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { ChevronDown, MapPin, Building2, Warehouse, AlertTriangle } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useCartStore } from '@/store/cartStore'
 import { getBranches } from '@/services/api/branches'
+import { toast } from '@/store/toastStore'
 import { cn } from '@/lib/utils'
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
@@ -28,6 +30,9 @@ export default function BranchSelector() {
 
   const cartItems  = useCartStore((s) => s.items)
   const clearCart  = useCartStore((s) => s.clearCart)
+
+  const qc       = useQueryClient()
+  const navigate = useNavigate()
 
   const [open, setOpen]             = useState(false)
   const [pendingBranch, setPendingBranch] = useState<Branch | null>(null)
@@ -54,6 +59,22 @@ export default function BranchSelector() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [open])
 
+  // Applique le changement de succursale : met à jour le store, vide le cache
+  // et redirige vers le dashboard pour que les données se rechargent proprement.
+  const applySwitch = useCallback((branch: Branch) => {
+    setActiveBranch(branch)
+    // Invalide tout le cache — les données de l'ancienne succursale ne doivent plus être affichées.
+    // On exclut 'branches' et 'plans' qui sont indépendants du contexte de succursale.
+    qc.invalidateQueries({
+      predicate: (query) => {
+        const key = query.queryKey[0]
+        return key !== 'branches' && key !== 'plans' && key !== 'public-plans'
+      },
+    })
+    toast.success(`Succursale : ${branch.name}`)
+    navigate('/dashboard')
+  }, [setActiveBranch, qc, navigate])
+
   const handleSelectBranch = (branch: Branch) => {
     // Même succursale — rien à faire
     if (branch.uid === activeBranch?.uid) {
@@ -69,14 +90,14 @@ export default function BranchSelector() {
     }
 
     // Panier vide → basculer directement
-    setActiveBranch(branch)
+    applySwitch(branch)
     setOpen(false)
   }
 
   const confirmSwitch = () => {
     if (!pendingBranch) return
     clearCart()
-    setActiveBranch(pendingBranch)
+    applySwitch(pendingBranch)
     setPendingBranch(null)
   }
 
