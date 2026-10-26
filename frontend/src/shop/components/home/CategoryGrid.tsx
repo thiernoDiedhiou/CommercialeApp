@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { ChevronRightIcon } from '@heroicons/react/24/outline'
 import type { ShopCategory } from '@/shop/services/shop'
 import { getCategoryIcon } from '@/shop/utils/categoryIcons'
 
@@ -7,24 +8,15 @@ interface Props {
   slug       : string
 }
 
-// Palette douce — fond clair, icône colorée (style Jumia / Shopee)
-const PALETTE: Array<{ bg: string; icon: string }> = [
-  { bg: '#FFF0E6', icon: '#FF6B35' },  // orange
-  { bg: '#E6F4FF', icon: '#0984E3' },  // bleu
-  { bg: '#E6FAF5', icon: '#00B894' },  // vert
-  { bg: '#F0EEFF', icon: '#6C5CE7' },  // violet
-  { bg: '#FFE6F3', icon: '#E84393' },  // rose
-  { bg: '#FFF8E6', icon: '#E6A817' },  // ambre
-  { bg: '#E6FFFE', icon: '#00A8A3' },  // teal
-  { bg: '#FFE8E8', icon: '#D63031' },  // rouge
-  { bg: '#E8F5FF', icon: '#0077C8' },  // bleu marine
-  { bg: '#FFF6E0', icon: '#B07D00' },  // doré
+// Couleur d'icône stable par catégorie
+const ICON_COLORS = [
+  '#FF6B35', '#0984E3', '#00B894', '#6C5CE7',
+  '#E84393', '#E6A817', '#00A8A3', '#D63031',
 ]
-
-function paletteFor(name: string) {
+function colorFor(name: string): string {
   let h = 0
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
-  return PALETTE[h % PALETTE.length]
+  return ICON_COLORS[h % ICON_COLORS.length]
 }
 
 export default function CategoryGrid({ categories, slug }: Props) {
@@ -32,39 +24,79 @@ export default function CategoryGrid({ categories, slug }: Props) {
 
   if (categories.length === 0) return null
 
+  // On coupe en 2 colonnes sur desktop, 1 colonne sur mobile
+  const mid  = Math.ceil(categories.length / 2)
+  const left  = categories.slice(0, mid)
+  const right = categories.slice(mid)
+
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <h2 className="text-base font-semibold text-gray-800 mb-4">Nos rayons</h2>
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+        Nos rayons
+      </h2>
 
-      {/* Strip horizontal scrollable — wrap sur desktop */}
-      <div className="flex flex-wrap gap-x-3 gap-y-4 sm:gap-x-4 overflow-x-auto scrollbar-hide pb-1">
-        {categories.map((cat) => {
-          const CatIcon = getCategoryIcon(cat.name)
-          const { bg, icon } = paletteFor(cat.name)
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2">
+          {/* Colonne gauche */}
+          <div className="divide-y divide-gray-50">
+            {left.map((cat) => <CategoryRow key={cat.id} cat={cat} slug={slug} navigate={navigate} />)}
+          </div>
 
-          return (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => navigate(`/shop/${slug}/catalog?category=${cat.id}`)}
-              className="group flex flex-col items-center gap-1.5 w-[4.5rem] sm:w-20 shrink-0 focus:outline-none"
-            >
-              {/* Bulle icône */}
-              <div
-                className="h-14 w-14 sm:h-16 sm:w-16 rounded-2xl flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
-                style={{ backgroundColor: bg }}
-              >
-                <CatIcon className="h-7 w-7 sm:h-8 sm:w-8" style={{ color: icon }} />
-              </div>
+          {/* Colonne droite (cachée sur mobile) */}
+          <div className="hidden sm:block divide-y divide-gray-50 border-l border-gray-100">
+            {right.map((cat) => <CategoryRow key={cat.id} cat={cat} slug={slug} navigate={navigate} />)}
+          </div>
 
-              {/* Nom */}
-              <span className="text-[10px] sm:text-[11px] font-medium text-gray-600 text-center leading-tight line-clamp-2 group-hover:text-gray-900 transition-colors">
-                {cat.name}
-              </span>
-            </button>
-          )
-        })}
+          {/* Colonne droite visible uniquement sur mobile (suite) */}
+          <div className="sm:hidden divide-y divide-gray-50 border-t border-gray-100">
+            {right.map((cat) => <CategoryRow key={cat.id} cat={cat} slug={slug} navigate={navigate} />)}
+          </div>
+        </div>
       </div>
     </section>
+  )
+}
+
+// ── Ligne de catégorie (style Jumia) ─────────────────────────────────────────
+
+function CategoryRow({
+  cat, slug, navigate,
+}: {
+  cat     : ShopCategory
+  slug    : string
+  navigate: ReturnType<typeof useNavigate>
+}) {
+  const CatIcon = getCategoryIcon(cat.name)
+  const color   = colorFor(cat.name)
+
+  return (
+    <button
+      type="button"
+      onClick={() => navigate(`/shop/${slug}/catalog?category=${cat.id}`)}
+      className="group w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+    >
+      {/* Icône colorée */}
+      <span
+        className="shrink-0 h-8 w-8 rounded-lg flex items-center justify-center"
+        style={{ backgroundColor: `${color}18` }}
+      >
+        <CatIcon className="h-4 w-4" style={{ color }} />
+      </span>
+
+      {/* Nom */}
+      <span className="flex-1 text-sm font-medium text-gray-700 group-hover:text-gray-900 truncate">
+        {cat.name}
+      </span>
+
+      {/* Compteur */}
+      {(cat.products_count ?? 0) > 0 && (
+        <span className="shrink-0 text-xs text-gray-400 font-medium">
+          {cat.products_count}
+        </span>
+      )}
+
+      {/* Flèche */}
+      <ChevronRightIcon className="shrink-0 h-4 w-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
+    </button>
   )
 }
