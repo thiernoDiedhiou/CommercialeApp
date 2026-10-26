@@ -26,48 +26,51 @@ use RuntimeException;
 class BictorysGateway implements PaymentGatewayInterface
 {
     private string $baseUrl;
+
     private string $privateKey;
+
     private string $webhookSecret;
+
     private string $paymentType;
 
     public function __construct()
     {
-        $this->baseUrl       = rtrim(config('payment.bictorys.api_url', 'https://api.test.bictorys.com'), '/');
-        $this->privateKey    = config('payment.bictorys.private_key', '');
+        $this->baseUrl = rtrim(config('payment.bictorys.api_url', 'https://api.test.bictorys.com'), '/');
+        $this->privateKey = config('payment.bictorys.private_key', '');
         $this->webhookSecret = config('payment.bictorys.webhook_secret', '');
-        $this->paymentType   = config('payment.bictorys.payment_type', 'checkout');
+        $this->paymentType = config('payment.bictorys.payment_type', 'checkout');
     }
 
     public function createInvoice(PaymentRequest $request): PaymentResult
     {
         $payload = [
-            'amount'             => $request->amount,
-            'currency'           => $request->currency,
-            'country'            => config('payment.bictorys.country', 'SN'),
-            'paymentReference'   => $request->idempotencyKey,
+            'amount' => $request->amount,
+            'currency' => $request->currency,
+            'country' => config('payment.bictorys.country', 'SN'),
+            'paymentReference' => $request->idempotencyKey,
             'successRedirectUrl' => $request->returnUrl,
-            'ErrorRedirectUrl'   => $request->cancelUrl,
+            'ErrorRedirectUrl' => $request->cancelUrl,
         ];
 
         if ($request->customerName || $request->customerEmail || $request->customerPhone) {
             $payload['customerObject'] = array_filter([
-                'name'    => $request->customerName,
-                'email'   => $request->customerEmail,
-                'phone'   => $request->customerPhone,
+                'name' => $request->customerName,
+                'email' => $request->customerEmail,
+                'phone' => $request->customerPhone,
                 'country' => config('payment.bictorys.country', 'SN'),
             ]);
         }
 
         $response = Http::withHeaders([
-            'X-API-Key'    => $this->privateKey,
+            'X-API-Key' => $this->privateKey,
             'Content-Type' => 'application/json',
         ])
-        ->timeout(15)
-        ->post("{$this->baseUrl}/pay/v1/charges?payment_type={$this->paymentType}", $payload);
+            ->timeout(15)
+            ->post("{$this->baseUrl}/pay/v1/charges?payment_type={$this->paymentType}", $payload);
 
         if (! $response->successful()) {
             throw new RuntimeException(
-                "Bictorys createInvoice failed [{$response->status()}] : " . $response->body()
+                "Bictorys createInvoice failed [{$response->status()}] : ".$response->body()
             );
         }
 
@@ -75,7 +78,7 @@ class BictorysGateway implements PaymentGatewayInterface
 
         if (empty($data['transactionId'])) {
             throw new RuntimeException(
-                "Bictorys: réponse invalide — transactionId absent. Body : " . json_encode($data)
+                'Bictorys: réponse invalide — transactionId absent. Body : '.json_encode($data)
             );
         }
 
@@ -85,7 +88,7 @@ class BictorysGateway implements PaymentGatewayInterface
 
         if (empty($checkoutUrl)) {
             throw new RuntimeException(
-                "Bictorys: aucune URL de checkout retournée. Body : " . json_encode($data)
+                'Bictorys: aucune URL de checkout retournée. Body : '.json_encode($data)
             );
         }
 
@@ -99,11 +102,11 @@ class BictorysGateway implements PaymentGatewayInterface
     public function verifyPayment(string $providerToken): PaymentStatus
     {
         $response = Http::withHeaders([
-            'X-API-Key'    => $this->privateKey,
+            'X-API-Key' => $this->privateKey,
             'Content-Type' => 'application/json',
         ])
-        ->timeout(15)
-        ->get("{$this->baseUrl}/pay/v1/transactions/{$providerToken}/status");
+            ->timeout(15)
+            ->get("{$this->baseUrl}/pay/v1/transactions/{$providerToken}/status");
 
         if (! $response->successful()) {
             return PaymentStatus::Pending;
@@ -140,10 +143,10 @@ class BictorysGateway implements PaymentGatewayInterface
         $payload = $request->all();
 
         // Bictorys : "id" = transactionId (notre provider_token)
-        $transactionId     = $payload['id']           ?? '';
-        $status            = $payload['status']       ?? 'pending';
-        $pspName           = $payload['pspName']      ?? null;
-        $paymentMeans      = $payload['paymentMeans'] ?? null;
+        $transactionId = $payload['id'] ?? '';
+        $status = $payload['status'] ?? 'pending';
+        $pspName = $payload['pspName'] ?? null;
+        $paymentMeans = $payload['paymentMeans'] ?? null;
 
         return new WebhookEvent(
             providerToken     : $transactionId,
@@ -159,9 +162,9 @@ class BictorysGateway implements PaymentGatewayInterface
     {
         return match ($status) {
             'succeeded', 'authorized' => PaymentStatus::Completed,
-            'failed'                  => PaymentStatus::Failed,
-            'cancelled', 'reversed'   => PaymentStatus::Cancelled,
-            default                   => PaymentStatus::Pending,
+            'failed' => PaymentStatus::Failed,
+            'cancelled', 'reversed' => PaymentStatus::Cancelled,
+            default => PaymentStatus::Pending,
         };
     }
 
@@ -175,14 +178,14 @@ class BictorysGateway implements PaymentGatewayInterface
         }
 
         $map = [
-            'wave_money'   => 'Wave',
-            'wave'         => 'Wave',
+            'wave_money' => 'Wave',
+            'wave' => 'Wave',
             'orange_money' => 'Orange Money',
-            'mtn_money'    => 'MTN Money',
-            'free_money'   => 'Free Money',
-            'card'         => 'Carte bancaire',
-            'visa'         => 'Visa',
-            'mastercard'   => 'Mastercard',
+            'mtn_money' => 'MTN Money',
+            'free_money' => 'Free Money',
+            'card' => 'Carte bancaire',
+            'visa' => 'Visa',
+            'mastercard' => 'Mastercard',
         ];
 
         $label = $map[strtolower($pspName)]

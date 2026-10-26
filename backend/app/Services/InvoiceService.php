@@ -24,7 +24,7 @@ class InvoiceService
     {
         return DB::transaction(function () use ($data) {
             $tenantId = $this->tenantService->currentId();
-            $type     = $data['type'] ?? Invoice::TYPE_INVOICE;
+            $type = $data['type'] ?? Invoice::TYPE_INVOICE;
 
             Tenant::lockForUpdate()->findOrFail($tenantId);
 
@@ -34,25 +34,25 @@ class InvoiceService
                 = $this->computeTotals($data);
 
             $invoice = Invoice::create([
-                'tenant_id'       => $tenantId,
-                'customer_id'     => $data['customer_id'] ?? null,
-                'user_id'         => Auth::id(),
-                'type'            => $type,
-                'reference'       => $reference,
-                'status'          => Invoice::STATUS_DRAFT,
-                'issue_date'      => $data['issue_date'],
-                'due_date'        => $data['due_date'] ?? null,
-                'subtotal'        => $subtotal,
-                'discount_type'   => $data['discount_type'] ?? null,
-                'discount_value'  => $data['discount_value'] ?? 0,
+                'tenant_id' => $tenantId,
+                'customer_id' => $data['customer_id'] ?? null,
+                'user_id' => Auth::id(),
+                'type' => $type,
+                'reference' => $reference,
+                'status' => Invoice::STATUS_DRAFT,
+                'issue_date' => $data['issue_date'],
+                'due_date' => $data['due_date'] ?? null,
+                'subtotal' => $subtotal,
+                'discount_type' => $data['discount_type'] ?? null,
+                'discount_value' => $data['discount_value'] ?? 0,
                 'discount_amount' => $discountAmount,
-                'tax_rate'        => $data['tax_rate'] ?? 0,
-                'tax_amount'      => $taxAmount,
-                'total'           => $total,
-                'paid_amount'     => 0,
-                'notes'           => $data['notes'] ?? null,
-                'footer'          => $data['footer'] ?? null,
-                'pdf_template'    => $data['pdf_template'] ?? null,
+                'tax_rate' => $data['tax_rate'] ?? 0,
+                'tax_amount' => $taxAmount,
+                'total' => $total,
+                'paid_amount' => 0,
+                'notes' => $data['notes'] ?? null,
+                'footer' => $data['footer'] ?? null,
+                'pdf_template' => $data['pdf_template'] ?? null,
             ]);
 
             $this->saveItems($invoice, $resolvedItems);
@@ -78,19 +78,19 @@ class InvoiceService
                 = $this->computeTotals($data);
 
             $invoice->update([
-                'customer_id'     => array_key_exists('customer_id', $data) ? $data['customer_id'] : $invoice->customer_id,
-                'issue_date'      => $data['issue_date'] ?? $invoice->issue_date,
-                'due_date'        => array_key_exists('due_date', $data) ? $data['due_date'] : $invoice->due_date,
-                'subtotal'        => $subtotal,
-                'discount_type'   => $data['discount_type'] ?? $invoice->discount_type,
-                'discount_value'  => $data['discount_value'] ?? $invoice->discount_value,
+                'customer_id' => array_key_exists('customer_id', $data) ? $data['customer_id'] : $invoice->customer_id,
+                'issue_date' => $data['issue_date'] ?? $invoice->issue_date,
+                'due_date' => array_key_exists('due_date', $data) ? $data['due_date'] : $invoice->due_date,
+                'subtotal' => $subtotal,
+                'discount_type' => $data['discount_type'] ?? $invoice->discount_type,
+                'discount_value' => $data['discount_value'] ?? $invoice->discount_value,
                 'discount_amount' => $discountAmount,
-                'tax_rate'        => $data['tax_rate'] ?? $invoice->tax_rate,
-                'tax_amount'      => $taxAmount,
-                'total'           => $total,
-                'notes'           => array_key_exists('notes', $data) ? $data['notes'] : $invoice->notes,
-                'footer'          => array_key_exists('footer', $data) ? $data['footer'] : $invoice->footer,
-                'pdf_template'    => array_key_exists('pdf_template', $data) ? $data['pdf_template'] : $invoice->pdf_template,
+                'tax_rate' => $data['tax_rate'] ?? $invoice->tax_rate,
+                'tax_amount' => $taxAmount,
+                'total' => $total,
+                'notes' => array_key_exists('notes', $data) ? $data['notes'] : $invoice->notes,
+                'footer' => array_key_exists('footer', $data) ? $data['footer'] : $invoice->footer,
+                'pdf_template' => array_key_exists('pdf_template', $data) ? $data['pdf_template'] : $invoice->pdf_template,
             ]);
 
             if (isset($data['items'])) {
@@ -107,45 +107,45 @@ class InvoiceService
     public function duplicate(Invoice $invoice): Invoice
     {
         return DB::transaction(function () use ($invoice) {
-            $tenantId  = $this->tenantService->currentId();
-            $type      = $invoice->type;
+            $tenantId = $this->tenantService->currentId();
+            $type = $invoice->type;
 
             Tenant::lockForUpdate()->findOrFail($tenantId);
 
             $reference = $this->generateReference($tenantId, $type);
-            $items     = $invoice->items()->get();
+            $items = $invoice->items()->get();
 
             $copy = Invoice::create([
-                'tenant_id'       => $tenantId,
-                'customer_id'     => $invoice->customer_id,
-                'user_id'         => Auth::id(),
-                'type'            => $type,
-                'reference'       => $reference,
-                'status'          => Invoice::STATUS_DRAFT,
-                'issue_date'      => now()->toDateString(),
-                'due_date'        => null,
-                'subtotal'        => $invoice->subtotal,
-                'discount_type'   => $invoice->discount_type,
-                'discount_value'  => $invoice->discount_value,
+                'tenant_id' => $tenantId,
+                'customer_id' => $invoice->customer_id,
+                'user_id' => Auth::id(),
+                'type' => $type,
+                'reference' => $reference,
+                'status' => Invoice::STATUS_DRAFT,
+                'issue_date' => now()->toDateString(),
+                'due_date' => null,
+                'subtotal' => $invoice->subtotal,
+                'discount_type' => $invoice->discount_type,
+                'discount_value' => $invoice->discount_value,
                 'discount_amount' => $invoice->discount_amount,
-                'tax_rate'        => $invoice->tax_rate,
-                'tax_amount'      => $invoice->tax_amount,
-                'total'           => $invoice->total,
-                'paid_amount'     => 0,
-                'notes'           => $invoice->notes,
-                'footer'          => $invoice->footer,
-                'pdf_template'    => $invoice->pdf_template,
+                'tax_rate' => $invoice->tax_rate,
+                'tax_amount' => $invoice->tax_amount,
+                'total' => $invoice->total,
+                'paid_amount' => 0,
+                'notes' => $invoice->notes,
+                'footer' => $invoice->footer,
+                'pdf_template' => $invoice->pdf_template,
             ]);
 
             foreach ($items as $item) {
                 InvoiceItem::create([
-                    'invoice_id'  => $copy->id,
-                    'product_id'  => $item->product_id,
+                    'invoice_id' => $copy->id,
+                    'product_id' => $item->product_id,
                     'description' => $item->description,
-                    'quantity'    => $item->quantity,
-                    'unit_price'  => $item->unit_price,
-                    'discount'    => $item->discount,
-                    'total'       => $item->total,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'discount' => $item->discount,
+                    'total' => $item->total,
                 ]);
             }
 
@@ -169,47 +169,47 @@ class InvoiceService
             Tenant::lockForUpdate()->findOrFail($tenantId);
 
             $reference = $this->generateReference($tenantId, Invoice::TYPE_INVOICE);
-            $items     = $quote->items()->get();
+            $items = $quote->items()->get();
 
             $invoice = Invoice::create([
-                'tenant_id'       => $tenantId,
-                'customer_id'     => $quote->customer_id,
-                'user_id'         => Auth::id(),
-                'type'            => Invoice::TYPE_INVOICE,
-                'reference'       => $reference,
-                'status'          => Invoice::STATUS_DRAFT,
-                'issue_date'      => now()->toDateString(),
-                'due_date'        => $quote->due_date,
-                'subtotal'        => $quote->subtotal,
-                'discount_type'   => $quote->discount_type,
-                'discount_value'  => $quote->discount_value,
+                'tenant_id' => $tenantId,
+                'customer_id' => $quote->customer_id,
+                'user_id' => Auth::id(),
+                'type' => Invoice::TYPE_INVOICE,
+                'reference' => $reference,
+                'status' => Invoice::STATUS_DRAFT,
+                'issue_date' => now()->toDateString(),
+                'due_date' => $quote->due_date,
+                'subtotal' => $quote->subtotal,
+                'discount_type' => $quote->discount_type,
+                'discount_value' => $quote->discount_value,
                 'discount_amount' => $quote->discount_amount,
-                'tax_rate'        => $quote->tax_rate,
-                'tax_amount'      => $quote->tax_amount,
-                'total'           => $quote->total,
-                'paid_amount'     => 0,
-                'notes'           => $quote->notes,
-                'footer'          => $quote->footer,
-                'pdf_template'    => $quote->pdf_template,
+                'tax_rate' => $quote->tax_rate,
+                'tax_amount' => $quote->tax_amount,
+                'total' => $quote->total,
+                'paid_amount' => 0,
+                'notes' => $quote->notes,
+                'footer' => $quote->footer,
+                'pdf_template' => $quote->pdf_template,
             ]);
 
             foreach ($items as $item) {
                 InvoiceItem::create([
-                    'invoice_id'  => $invoice->id,
-                    'product_id'  => $item->product_id,
+                    'invoice_id' => $invoice->id,
+                    'product_id' => $item->product_id,
                     'description' => $item->description,
-                    'quantity'    => $item->quantity,
-                    'unit_price'  => $item->unit_price,
-                    'discount'    => $item->discount,
-                    'total'       => $item->total,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'discount' => $item->discount,
+                    'total' => $item->total,
                 ]);
             }
 
             // Marque le devis comme converti
             $quote->update([
-                'status'          => Invoice::STATUS_CANCELLED,
+                'status' => Invoice::STATUS_CANCELLED,
                 'converted_to_id' => $invoice->id,
-                'cancelled_at'    => now(),
+                'cancelled_at' => now(),
             ]);
 
             return $invoice->load(['customer:id,name', 'user:id,name', 'items.product:id,name']);
@@ -232,38 +232,38 @@ class InvoiceService
             Tenant::lockForUpdate()->findOrFail($tenantId);
 
             $reference = $this->generateReference($tenantId, 'credit_note');
-            $items     = $invoice->items()->get();
+            $items = $invoice->items()->get();
 
             $creditNote = Invoice::create([
-                'tenant_id'          => $tenantId,
-                'customer_id'        => $invoice->customer_id,
-                'user_id'            => Auth::id(),
-                'type'               => Invoice::TYPE_INVOICE,
-                'reference'          => $reference,
-                'status'             => Invoice::STATUS_DRAFT,
-                'issue_date'         => now()->toDateString(),
-                'subtotal'           => $invoice->subtotal,
-                'discount_type'      => $invoice->discount_type,
-                'discount_value'     => $invoice->discount_value,
-                'discount_amount'    => $invoice->discount_amount,
-                'tax_rate'           => $invoice->tax_rate,
-                'tax_amount'         => $invoice->tax_amount,
-                'total'              => $invoice->total,
-                'paid_amount'        => 0,
-                'notes'              => "Avoir relatif à la facture {$invoice->reference}",
-                'footer'             => $invoice->footer,
+                'tenant_id' => $tenantId,
+                'customer_id' => $invoice->customer_id,
+                'user_id' => Auth::id(),
+                'type' => Invoice::TYPE_INVOICE,
+                'reference' => $reference,
+                'status' => Invoice::STATUS_DRAFT,
+                'issue_date' => now()->toDateString(),
+                'subtotal' => $invoice->subtotal,
+                'discount_type' => $invoice->discount_type,
+                'discount_value' => $invoice->discount_value,
+                'discount_amount' => $invoice->discount_amount,
+                'tax_rate' => $invoice->tax_rate,
+                'tax_amount' => $invoice->tax_amount,
+                'total' => $invoice->total,
+                'paid_amount' => 0,
+                'notes' => "Avoir relatif à la facture {$invoice->reference}",
+                'footer' => $invoice->footer,
                 'credit_note_for_id' => $invoice->id,
             ]);
 
             foreach ($items as $item) {
                 InvoiceItem::create([
-                    'invoice_id'  => $creditNote->id,
-                    'product_id'  => $item->product_id,
+                    'invoice_id' => $creditNote->id,
+                    'product_id' => $item->product_id,
                     'description' => $item->description,
-                    'quantity'    => $item->quantity,
-                    'unit_price'  => $item->unit_price,
-                    'discount'    => $item->discount,
-                    'total'       => $item->total,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'discount' => $item->discount,
+                    'total' => $item->total,
                 ]);
             }
 
@@ -282,7 +282,7 @@ class InvoiceService
         }
 
         $invoice->update([
-            'status'  => Invoice::STATUS_SENT,
+            'status' => Invoice::STATUS_SENT,
             'sent_at' => now(),
         ]);
 
@@ -305,7 +305,7 @@ class InvoiceService
             throw new LogicException('Le montant du paiement doit être supérieur à 0.');
         }
 
-        $newPaid    = bcadd((string) $invoice->paid_amount, (string) $amount, 2);
+        $newPaid = bcadd((string) $invoice->paid_amount, (string) $amount, 2);
         $maxAllowed = bcadd((string) $invoice->total, '1.00', 2);
 
         if (bccomp($newPaid, $maxAllowed, 2) > 0) {
@@ -319,19 +319,19 @@ class InvoiceService
         DB::transaction(function () use ($invoice, $amount, $extra, $newPaid, $isPaid) {
             InvoicePayment::create([
                 'invoice_id' => $invoice->id,
-                'tenant_id'  => $invoice->tenant_id,
-                'user_id'    => Auth::id(),
-                'amount'     => $amount,
-                'method'     => $extra['method'] ?? 'cash',
-                'paid_at'    => $extra['paid_at'] ?? now()->toDateString(),
-                'reference'  => $extra['reference'] ?? null,
-                'note'       => $extra['note'] ?? null,
+                'tenant_id' => $invoice->tenant_id,
+                'user_id' => Auth::id(),
+                'amount' => $amount,
+                'method' => $extra['method'] ?? 'cash',
+                'paid_at' => $extra['paid_at'] ?? now()->toDateString(),
+                'reference' => $extra['reference'] ?? null,
+                'note' => $extra['note'] ?? null,
             ]);
 
             $invoice->update([
                 'paid_amount' => $newPaid,
-                'status'      => $isPaid ? Invoice::STATUS_PAID : $invoice->status,
-                'paid_at'     => $isPaid ? now() : null,
+                'status' => $isPaid ? Invoice::STATUS_PAID : $invoice->status,
+                'paid_at' => $isPaid ? now() : null,
             ]);
         });
 
@@ -345,7 +345,7 @@ class InvoiceService
     public function incrementReminder(Invoice $invoice): Invoice
     {
         $invoice->update([
-            'reminder_count'   => $invoice->reminder_count + 1,
+            'reminder_count' => $invoice->reminder_count + 1,
             'last_reminder_at' => now(),
         ]);
 
@@ -372,7 +372,7 @@ class InvoiceService
         }
 
         $invoice->update([
-            'status'       => Invoice::STATUS_CANCELLED,
+            'status' => Invoice::STATUS_CANCELLED,
             'cancelled_at' => now(),
         ]);
 
@@ -391,22 +391,22 @@ class InvoiceService
         $subtotal = '0.00';
 
         foreach ($items as $item) {
-            $gross     = bcmul((string) $item['unit_price'], (string) $item['quantity'], 2);
+            $gross = bcmul((string) $item['unit_price'], (string) $item['quantity'], 2);
             $lineTotal = bcsub($gross, (string) ($item['discount'] ?? '0'), 2);
 
             $resolvedItems[] = array_merge($item, ['line_total' => $lineTotal]);
-            $subtotal        = bcadd($subtotal, $lineTotal, 2);
+            $subtotal = bcadd($subtotal, $lineTotal, 2);
         }
 
         $discountAmount = match ($data['discount_type'] ?? null) {
             'percent' => bcmul($subtotal, bcdiv((string) ($data['discount_value'] ?? '0'), '100', 6), 2),
-            'fixed'   => (string) ($data['discount_value'] ?? '0'),
-            default   => '0.00',
+            'fixed' => (string) ($data['discount_value'] ?? '0'),
+            default => '0.00',
         };
 
-        $taxable   = bcsub($subtotal, $discountAmount, 2);
+        $taxable = bcsub($subtotal, $discountAmount, 2);
         $taxAmount = bcmul($taxable, bcdiv((string) ($data['tax_rate'] ?? '0'), '100', 6), 2);
-        $total     = bcadd($taxable, $taxAmount, 2);
+        $total = bcadd($taxable, $taxAmount, 2);
 
         return [$subtotal, $discountAmount, $taxAmount, $total, $resolvedItems];
     }
@@ -415,13 +415,13 @@ class InvoiceService
     {
         foreach ($resolvedItems as $item) {
             InvoiceItem::create([
-                'invoice_id'  => $invoice->id,
-                'product_id'  => $item['product_id'] ?? null,
+                'invoice_id' => $invoice->id,
+                'product_id' => $item['product_id'] ?? null,
                 'description' => $item['description'],
-                'quantity'    => $item['quantity'],
-                'unit_price'  => $item['unit_price'],
-                'discount'    => $item['discount'] ?? 0,
-                'total'       => $item['line_total'],
+                'quantity' => $item['quantity'],
+                'unit_price' => $item['unit_price'],
+                'discount' => $item['discount'] ?? 0,
+                'total' => $item['line_total'],
             ]);
         }
     }
@@ -452,6 +452,6 @@ class InvoiceService
 
         $seq = $last ? ((int) substr($last, -5)) + 1 : 1;
 
-        return $prefix . str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
     }
 }

@@ -43,15 +43,15 @@ class Product extends Model
     ];
 
     protected $casts = [
-        'price'            => 'decimal:2',
+        'price' => 'decimal:2',
         'compare_at_price' => 'decimal:2',
-        'cost_price'       => 'decimal:2',
-        'has_variants'    => 'boolean',
+        'cost_price' => 'decimal:2',
+        'has_variants' => 'boolean',
         'is_weight_based' => 'boolean',
-        'has_expiry'      => 'boolean',
-        'is_active'       => 'boolean',
-        'is_for_sale'     => 'boolean',
-        'stock_quantity'  => 'float',
+        'has_expiry' => 'boolean',
+        'is_active' => 'boolean',
+        'is_for_sale' => 'boolean',
+        'stock_quantity' => 'float',
         'alert_threshold' => 'integer',
     ];
 

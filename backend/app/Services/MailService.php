@@ -12,7 +12,6 @@ use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Tenant;
-use App\Models\TenantSubscription;
 use App\Models\User;
 use Illuminate\Contracts\Mail\Mailer as MailerContract;
 use Illuminate\Mail\Mailer;
@@ -32,12 +31,12 @@ class MailService
         $smtpHost = $this->tenantSetting($tenant, 'smtp_host');
 
         if ($smtpHost) {
-            $port       = (int) ($this->tenantSetting($tenant, 'smtp_port') ?? 587);
+            $port = (int) ($this->tenantSetting($tenant, 'smtp_port') ?? 587);
             $encryption = $this->tenantSetting($tenant, 'smtp_encryption') ?? 'tls';
-            $username   = $this->tenantSetting($tenant, 'smtp_username') ?? '';
-            $password   = $this->tenantSetting($tenant, 'smtp_password') ?? '';
-            $fromAddr   = $this->tenantSetting($tenant, 'smtp_from_address') ?? '';
-            $fromName   = $this->tenantSetting($tenant, 'smtp_from_name') ?? $tenant->name;
+            $username = $this->tenantSetting($tenant, 'smtp_username') ?? '';
+            $password = $this->tenantSetting($tenant, 'smtp_password') ?? '';
+            $fromAddr = $this->tenantSetting($tenant, 'smtp_from_address') ?? '';
+            $fromName = $this->tenantSetting($tenant, 'smtp_from_name') ?? $tenant->name;
 
             $transport = new EsmtpTransport($smtpHost, $port, $encryption === 'ssl');
             $transport->setUsername($username);
@@ -63,17 +62,15 @@ class MailService
      */
     public function sendStockAlert(Tenant $tenant, Product $product, ?ProductVariant $variant = null): void
     {
-        $threshold    = (int) ($variant?->alert_threshold ?? $product->alert_threshold ?? 0);
+        $threshold = (int) ($variant?->alert_threshold ?? $product->alert_threshold ?? 0);
         $currentStock = (float) ($variant ? $variant->stock_quantity : $product->stock_quantity);
 
         // Utilisateurs actifs avec permission stock.view et un email
         $recipients = User::where('tenant_id', $tenant->id)
             ->where('is_active', true)
             ->whereNotNull('email')
-            ->whereHas('groups', fn ($q) =>
-                $q->whereHas('permissions', fn ($q2) =>
-                    $q2->where('name', 'stock.view')
-                )
+            ->whereHas('groups', fn ($q) => $q->whereHas('permissions', fn ($q2) => $q2->where('name', 'stock.view')
+            )
             )
             ->get();
 
@@ -81,7 +78,7 @@ class MailService
             return;
         }
 
-        $mailer   = $this->resolveMail($tenant);
+        $mailer = $this->resolveMail($tenant);
         $mailable = new StockAlertMail($tenant, $product, $variant, $currentStock, $threshold);
 
         foreach ($recipients as $user) {
@@ -89,9 +86,9 @@ class MailService
                 $mailer->to($user->email, $user->name)->send($mailable); // @phpstan-ignore-line
             } catch (\Throwable $e) {
                 Log::channel('daily')->error('StockAlert mail failed', [
-                    'user_id'    => $user->id,
+                    'user_id' => $user->id,
                     'product_id' => $product->id,
-                    'error'      => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
             }
         }
@@ -106,7 +103,7 @@ class MailService
     {
         $invoice->loadMissing(['customer', 'items.product']);
 
-        $email  = $toEmail ?? $invoice->customer?->email;
+        $email = $toEmail ?? $invoice->customer?->email;
         $tenant = Tenant::findOrFail($invoice->tenant_id);
 
         if (empty($email)) {
@@ -122,7 +119,7 @@ class MailService
         } catch (\Throwable $e) {
             Log::channel('daily')->error('Invoice mail failed', [
                 'invoice_id' => $invoice->id,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             return false;
@@ -133,7 +130,7 @@ class MailService
     {
         $invoice->loadMissing(['customer', 'items.product']);
 
-        $email  = $invoice->customer?->email;
+        $email = $invoice->customer?->email;
         $tenant = Tenant::findOrFail($invoice->tenant_id);
 
         if (empty($email)) {
@@ -149,7 +146,7 @@ class MailService
         } catch (\Throwable $e) {
             Log::channel('daily')->error('Invoice reminder mail failed', [
                 'invoice_id' => $invoice->id,
-                'error'      => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
 
             return false;
@@ -173,7 +170,7 @@ class MailService
         } catch (\Throwable $e) {
             Log::channel('daily')->error('TenantWelcome mail failed', [
                 'tenant_id' => $tenant->id,
-                'error'     => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -196,8 +193,8 @@ class MailService
         } catch (\Throwable $e) {
             Log::channel('daily')->error('UserWelcome mail failed', [
                 'tenant_id' => $tenant->id,
-                'user_id'   => $user->id,
-                'error'     => $e->getMessage(),
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -227,10 +224,10 @@ class MailService
                 ->send(new SubscriptionExpiringMail($tenant, $recipient, $subscription, $daysLeft));
         } catch (\Throwable $e) {
             Log::channel('daily')->error('SubscriptionExpiring mail failed', [
-                'tenant_id'    => $tenant->id,
+                'tenant_id' => $tenant->id,
                 'recipient_id' => $recipient->id,
-                'days_left'    => $daysLeft,
-                'error'        => $e->getMessage(),
+                'days_left' => $daysLeft,
+                'error' => $e->getMessage(),
             ]);
         }
     }

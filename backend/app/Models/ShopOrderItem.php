@@ -21,9 +21,9 @@ class ShopOrderItem extends Model
     ];
 
     protected $casts = [
-        'quantity'   => 'float',
+        'quantity' => 'float',
         'unit_price' => 'decimal:2',
-        'total'      => 'decimal:2',
+        'total' => 'decimal:2',
     ];
 
     // ─── Relations ────────────────────────────────────────────────────────────

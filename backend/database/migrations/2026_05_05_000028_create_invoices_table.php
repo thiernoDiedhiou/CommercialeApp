@@ -24,14 +24,14 @@ return new class extends Migration
             $table->date('due_date')->nullable();        // date d'échéance
 
             // Montants (bcmath côté service)
-            $table->decimal('subtotal',        15, 2)->default(0);
+            $table->decimal('subtotal', 15, 2)->default(0);
             $table->string('discount_type', 10)->nullable(); // 'percent' | 'fixed'
-            $table->decimal('discount_value',  15, 2)->default(0);
+            $table->decimal('discount_value', 15, 2)->default(0);
             $table->decimal('discount_amount', 15, 2)->default(0);
-            $table->decimal('tax_rate',         5, 2)->default(0); // taux TVA en %
-            $table->decimal('tax_amount',      15, 2)->default(0);
-            $table->decimal('total',           15, 2)->default(0);
-            $table->decimal('paid_amount',     15, 2)->default(0);
+            $table->decimal('tax_rate', 5, 2)->default(0); // taux TVA en %
+            $table->decimal('tax_amount', 15, 2)->default(0);
+            $table->decimal('total', 15, 2)->default(0);
+            $table->decimal('paid_amount', 15, 2)->default(0);
 
             $table->text('notes')->nullable();   // notes internes
             $table->text('footer')->nullable();  // conditions de paiement, mentions légales

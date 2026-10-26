@@ -3,14 +3,13 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
 use App\Models\InventorySession;
 use App\Services\InventoryService;
+use App\Services\TenantService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Auth;
 
 class InventoryController extends Controller
 {
@@ -37,7 +36,7 @@ class InventoryController extends Controller
         ]);
 
         $session = $this->service->create(
-            user:  $request->user(),
+            user: $request->user(),
             notes: $request->input('notes'),
         );
 
@@ -60,8 +59,8 @@ class InventoryController extends Controller
         $inventorySession->load('items');
 
         $lines = $this->service->lines(
-            session:    $inventorySession,
-            search:     $request->input('search'),
+            session: $inventorySession,
+            search: $request->input('search'),
             categoryId: $request->integer('category_id') ?: null,
         );
 
@@ -77,18 +76,18 @@ class InventoryController extends Controller
         }
 
         $request->validate([
-            'product_id'   => 'required|integer|exists:products,id',
-            'variant_id'   => 'nullable|integer|exists:product_variants,id',
+            'product_id' => 'required|integer|exists:products,id',
+            'variant_id' => 'nullable|integer|exists:product_variants,id',
             'expected_qty' => 'required|numeric|min:0',
-            'counted_qty'  => 'required|numeric|min:0',
+            'counted_qty' => 'required|numeric|min:0',
         ]);
 
         $item = $this->service->saveItem(
-            session:     $inventorySession,
-            productId:   $request->integer('product_id'),
-            variantId:   $request->integer('variant_id') ?: null,
+            session: $inventorySession,
+            productId: $request->integer('product_id'),
+            variantId: $request->integer('variant_id') ?: null,
             expectedQty: (float) $request->input('expected_qty'),
-            countedQty:  (float) $request->input('counted_qty'),
+            countedQty: (float) $request->input('counted_qty'),
         );
 
         return response()->json(['data' => $item]);
@@ -111,11 +110,11 @@ class InventoryController extends Controller
 
     public function exportCsv(InventorySession $inventorySession): Response
     {
-        $csv      = $this->service->exportCsv($inventorySession);
+        $csv = $this->service->exportCsv($inventorySession);
         $filename = "{$inventorySession->reference}.csv";
 
         return response($csv, 200, [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }
@@ -126,17 +125,17 @@ class InventoryController extends Controller
     {
         $inventorySession->load(['creator:id,name', 'confirmer:id,name', 'items.product.category', 'items.variant']);
 
-        $tenant = app(\App\Services\TenantService::class)->current();
+        $tenant = app(TenantService::class)->current();
 
         $pdf = Pdf::loadView('pdf.inventory', [
             'session' => $inventorySession,
-            'tenant'  => $tenant,
+            'tenant' => $tenant,
         ])->setPaper('a4', 'portrait');
 
         $filename = "{$inventorySession->reference}.pdf";
 
         return response($pdf->output(), 200, [
-            'Content-Type'        => 'application/pdf',
+            'Content-Type' => 'application/pdf',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }

@@ -14,7 +14,7 @@ class SyncGroupsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'group_ids'   => ['required', 'array'],
+            'group_ids' => ['required', 'array'],
             'group_ids.*' => ['integer', 'exists:groups,id'],
         ];
     }

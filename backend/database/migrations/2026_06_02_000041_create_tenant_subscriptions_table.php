@@ -13,16 +13,16 @@ return new class extends Migration
 
             // ── Relations ─────────────────────────────────────────────────────
             $table->foreignId('tenant_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->foreignId('plan_id')
-                  ->constrained()
-                  ->restrictOnDelete(); // Empêche la suppression d'un plan actif
+                ->constrained()
+                ->restrictOnDelete(); // Empêche la suppression d'un plan actif
 
             // ── Cycle de facturation ──────────────────────────────────────────
             $table->enum('billing_cycle', ['trial', 'monthly', 'yearly', 'lifetime'])
-                  ->default('trial');
+                ->default('trial');
 
             // ── Statut ────────────────────────────────────────────────────────
             // trial    → période d'essai en cours
@@ -30,7 +30,7 @@ return new class extends Migration
             // expired  → délai dépassé, tenant suspendu automatiquement
             // cancelled → résilié manuellement par le Super Admin
             $table->enum('status', ['trial', 'active', 'expired', 'cancelled'])
-                  ->default('trial');
+                ->default('trial');
 
             // ── Dates ─────────────────────────────────────────────────────────
             $table->timestamp('starts_at');

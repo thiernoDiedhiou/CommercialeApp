@@ -12,7 +12,7 @@ class LogInvoiceCancelled
         ActivityLogService::log(
             'cancel',
             'invoices',
-            'Facture ' . $event->invoice->reference . ' annulée',
+            'Facture '.$event->invoice->reference.' annulée',
         );
     }
 }

@@ -20,7 +20,7 @@ class ResolveTenant
         // Slash final obligatoire pour éviter qu'un préfixe partiel (/api/v1/authorize)
         // hérite accidentellement du bypass.
         $path = $request->getPathInfo();
-        if (str_starts_with($path, '/api/v1/admin/')  ||
+        if (str_starts_with($path, '/api/v1/admin/') ||
             str_starts_with($path, '/api/v1/public/') ||
             str_starts_with($path, '/api/v1/auth/')) {
             return $next($request);
@@ -31,7 +31,7 @@ class ResolveTenant
         if (empty($apiKey)) {
             return response()->json([
                 'message' => 'En-tête X-Tenant-ID manquant.',
-                'code'    => 'TENANT_HEADER_MISSING',
+                'code' => 'TENANT_HEADER_MISSING',
             ], 400);
         }
 
@@ -40,7 +40,7 @@ class ResolveTenant
         if (! $tenant) {
             return response()->json([
                 'message' => 'Tenant introuvable.',
-                'code'    => 'TENANT_NOT_FOUND',
+                'code' => 'TENANT_NOT_FOUND',
             ], 404);
         }
 
@@ -49,7 +49,7 @@ class ResolveTenant
         if (! $tenant->is_active) {
             return response()->json([
                 'message' => 'Ce compte est suspendu. Contactez le support.',
-                'code'    => 'TENANT_SUSPENDED',
+                'code' => 'TENANT_SUSPENDED',
             ], 401);
         }
 

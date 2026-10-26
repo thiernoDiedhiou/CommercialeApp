@@ -17,15 +17,15 @@ class AdminNotificationController extends Controller
             ->take(30)
             ->get()
             ->map(fn ($n) => [
-                'id'      => $n->id,
-                'type'    => $n->data['type'] ?? 'unknown',
-                'data'    => $n->data,
+                'id' => $n->id,
+                'type' => $n->data['type'] ?? 'unknown',
+                'data' => $n->data,
                 'read_at' => $n->read_at?->toISOString(),
                 'created_at' => $n->created_at->toISOString(),
             ]);
 
         return response()->json([
-            'data'         => $notifications,
+            'data' => $notifications,
             'unread_count' => $admin->unreadNotifications()->count(),
         ]);
     }

@@ -12,7 +12,7 @@ class LogInvoiceCreated
         ActivityLogService::log(
             'create',
             'invoices',
-            'Facture ' . $event->invoice->reference . ' créée',
+            'Facture '.$event->invoice->reference.' créée',
         );
     }
 }

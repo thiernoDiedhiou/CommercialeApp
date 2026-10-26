@@ -12,7 +12,7 @@ class LogInvoicePaid
         ActivityLogService::log(
             'payment',
             'invoices',
-            'Paiement enregistré sur ' . $event->invoice->reference,
+            'Paiement enregistré sur '.$event->invoice->reference,
         );
     }
 }

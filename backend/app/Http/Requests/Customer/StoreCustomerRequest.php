@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Customer;
 
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -16,20 +17,20 @@ class StoreCustomerRequest extends FormRequest
 
     public function rules(): array
     {
-        /** @var \App\Models\User $user */
-        $user     = Auth::user();
+        /** @var User $user */
+        $user = Auth::user();
         $tenantId = $user->tenant_id;
 
         return [
-            'name'    => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:100'],
             'country' => ['nullable', 'string', 'size:2'],
-            'phone'   => ['nullable', 'string', 'max:30',
-                          Rule::unique('customers')->where('tenant_id', $tenantId),
-                          (new Phone)->countryField('country')],
-            'email'   => ['nullable', 'email', 'max:150',
-                          Rule::unique('customers')->where('tenant_id', $tenantId)],
+            'phone' => ['nullable', 'string', 'max:30',
+                Rule::unique('customers')->where('tenant_id', $tenantId),
+                (new Phone)->countryField('country')],
+            'email' => ['nullable', 'email', 'max:150',
+                Rule::unique('customers')->where('tenant_id', $tenantId)],
             'address' => ['nullable', 'string', 'max:255'],
-            'notes'   => ['nullable', 'string', 'max:500'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ];
     }
 

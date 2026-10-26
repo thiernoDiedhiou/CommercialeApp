@@ -21,7 +21,7 @@ beforeEach(function () {
 function makeCsvFile(array $rows, bool $withBom = false): string
 {
     $path = tempnam(sys_get_temp_dir(), 'import_test_');
-    $out  = fopen($path, 'w');
+    $out = fopen($path, 'w');
     if ($withBom) {
         fwrite($out, "\xEF\xBB\xBF");
     }
@@ -31,6 +31,7 @@ function makeCsvFile(array $rows, bool $withBom = false): string
         fputcsv($out, $row, ';');
     }
     fclose($out);
+
     return $path;
 }
 
@@ -83,9 +84,9 @@ it('sets product fields correctly from CSV', function () {
 it('skips existing SKU when update_existing is false', function () {
     Product::factory()->create([
         'tenant_id' => $this->tenant->id,
-        'sku'       => 'EXISTING',
-        'price'     => 1000,
-        'cost_price'=> 500,
+        'sku' => 'EXISTING',
+        'price' => 1000,
+        'cost_price' => 500,
     ]);
 
     $csv = makeCsvFile([
@@ -102,10 +103,10 @@ it('skips existing SKU when update_existing is false', function () {
 it('updates existing SKU when update_existing is true', function () {
     Product::factory()->create([
         'tenant_id' => $this->tenant->id,
-        'sku'       => 'UPD-001',
-        'price'     => 1000,
-        'cost_price'=> 500,
-        'name'      => 'Ancien nom',
+        'sku' => 'UPD-001',
+        'price' => 1000,
+        'cost_price' => 500,
+        'name' => 'Ancien nom',
     ]);
 
     $csv = makeCsvFile([

@@ -27,7 +27,7 @@ class InvoiceSentMail extends Mailable
 
     public function envelope(): Envelope
     {
-        $label   = $this->invoice->isQuote() ? 'Devis' : ($this->invoice->isCreditNote() ? 'Avoir' : 'Facture');
+        $label = $this->invoice->isQuote() ? 'Devis' : ($this->invoice->isCreditNote() ? 'Avoir' : 'Facture');
         $subject = $this->customSubject
             ?? "{$label} {$this->invoice->reference} — {$this->tenant->name}";
 
@@ -44,7 +44,7 @@ class InvoiceSentMail extends Mailable
     public function attachments(): array
     {
         $invoice = $this->invoice;
-        $tenant  = $this->tenant;
+        $tenant = $this->tenant;
 
         $footer = $invoice->footer
             ?? $tenant->settings()->where('key', 'invoice_footer')->value('value')
@@ -54,10 +54,10 @@ class InvoiceSentMail extends Mailable
             Attachment::fromData(
                 fn () => Pdf::loadView('pdf.invoice_doc', [
                     'invoice' => $invoice,
-                    'tenant'  => $tenant,
-                    'footer'  => $footer,
+                    'tenant' => $tenant,
+                    'footer' => $footer,
                 ])->output(),
-                ($invoice->isCreditNote() ? 'avoir' : ($invoice->isQuote() ? 'devis' : 'facture')) . "-{$invoice->reference}.pdf",
+                ($invoice->isCreditNote() ? 'avoir' : ($invoice->isQuote() ? 'devis' : 'facture'))."-{$invoice->reference}.pdf",
             )->withMime('application/pdf'),
         ];
     }

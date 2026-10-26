@@ -14,8 +14,8 @@ class StorePaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'method'    => ['required', 'in:cash,card,transfer,mobile_money,credit'],
-            'amount'    => ['required', 'numeric', 'min:0.01'],
+            'method' => ['required', 'in:cash,card,transfer,mobile_money,credit'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
             'reference' => ['nullable', 'string', 'max:100'],
         ];
     }

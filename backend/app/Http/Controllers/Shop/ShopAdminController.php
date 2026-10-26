@@ -19,10 +19,10 @@ class ShopAdminController extends Controller
 {
     // Transitions autorisées par statut actuel
     private const TRANSITIONS = [
-        'pending'   => ['confirmed', 'cancelled'],
+        'pending' => ['confirmed', 'cancelled'],
         'confirmed' => ['preparing', 'cancelled'],
         'preparing' => ['shipped', 'cancelled'],
-        'shipped'   => ['delivered'],
+        'shipped' => ['delivered'],
         'delivered' => [],
         'cancelled' => [],
     ];
@@ -43,7 +43,7 @@ class ShopAdminController extends Controller
         if (! $shop) {
             return response()->json([
                 'data' => [
-                    'is_active'       => false,
+                    'is_active' => false,
                     'payment_methods' => ['cod', 'whatsapp'],
                 ],
             ]);
@@ -59,37 +59,37 @@ class ShopAdminController extends Controller
         $tenantId = $this->tenantService->currentId();
 
         $validated = $request->validate([
-            'shop_name'               => ['nullable', 'string', 'max:150'],
-            'shop_description'        => ['nullable', 'string', 'max:1000'],
-            'hero_title'              => ['nullable', 'string', 'max:200'],
-            'hero_subtitle'           => ['nullable', 'string', 'max:255'],
-            'primary_color'           => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'secondary_color'         => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'accent_color'            => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'whatsapp_number'         => ['nullable', 'string', 'max:20'],
-            'facebook_url'            => ['nullable', 'url', 'max:255'],
-            'instagram_url'           => ['nullable', 'url', 'max:255'],
-            'twitter_url'             => ['nullable', 'url', 'max:255'],
-            'tiktok_url'              => ['nullable', 'url', 'max:255'],
-            'youtube_url'             => ['nullable', 'url', 'max:255'],
-            'address'                 => ['nullable', 'string', 'max:255'],
-            'opening_hours'           => ['nullable', 'string', 'max:255'],
-            'minimum_order'           => ['nullable', 'numeric', 'min:0'],
-            'delivery_zones'          => ['nullable', 'array'],
-            'delivery_zones.*.name'   => ['required_with:delivery_zones', 'string', 'max:100'],
-            'delivery_zones.*.fee'    => ['required_with:delivery_zones', 'numeric', 'min:0'],
-            'payment_methods'              => ['nullable', 'array'],
-            'payment_methods.*'            => [Rule::in(['cod', 'whatsapp'])],
-            'trust_badges'                 => ['nullable', 'string'],
-            'announcement_bar'            => ['nullable', 'string', 'max:255'],
+            'shop_name' => ['nullable', 'string', 'max:150'],
+            'shop_description' => ['nullable', 'string', 'max:1000'],
+            'hero_title' => ['nullable', 'string', 'max:200'],
+            'hero_subtitle' => ['nullable', 'string', 'max:255'],
+            'primary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'secondary_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'accent_color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'whatsapp_number' => ['nullable', 'string', 'max:20'],
+            'facebook_url' => ['nullable', 'url', 'max:255'],
+            'instagram_url' => ['nullable', 'url', 'max:255'],
+            'twitter_url' => ['nullable', 'url', 'max:255'],
+            'tiktok_url' => ['nullable', 'url', 'max:255'],
+            'youtube_url' => ['nullable', 'url', 'max:255'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'opening_hours' => ['nullable', 'string', 'max:255'],
+            'minimum_order' => ['nullable', 'numeric', 'min:0'],
+            'delivery_zones' => ['nullable', 'array'],
+            'delivery_zones.*.name' => ['required_with:delivery_zones', 'string', 'max:100'],
+            'delivery_zones.*.fee' => ['required_with:delivery_zones', 'numeric', 'min:0'],
+            'payment_methods' => ['nullable', 'array'],
+            'payment_methods.*' => [Rule::in(['cod', 'whatsapp'])],
+            'trust_badges' => ['nullable', 'string'],
+            'announcement_bar' => ['nullable', 'string', 'max:255'],
             'announcement_bar_active' => ['nullable', 'boolean'],
-            'footer_text'             => ['nullable', 'string', 'max:500'],
-            'meta_title'              => ['nullable', 'string', 'max:160'],
-            'meta_description'        => ['nullable', 'string', 'max:320'],
-            'google_analytics_id'     => ['nullable', 'string', 'regex:/^G-[A-Z0-9]{4,12}$/i'],
-            'logo'                    => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
-            'favicon'                 => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:512'],
-            'hero_banner'             => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            'footer_text' => ['nullable', 'string', 'max:500'],
+            'meta_title' => ['nullable', 'string', 'max:160'],
+            'meta_description' => ['nullable', 'string', 'max:320'],
+            'google_analytics_id' => ['nullable', 'string', 'regex:/^G-[A-Z0-9]{4,12}$/i'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+            'favicon' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:512'],
+            'hero_banner' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
         ]);
 
         $shop = ShopSetting::where('tenant_id', $tenantId)->first();
@@ -139,7 +139,7 @@ class ShopAdminController extends Controller
     {
         $tenantId = $this->tenantService->currentId();
 
-        $shop       = ShopSetting::where('tenant_id', $tenantId)->first();
+        $shop = ShopSetting::where('tenant_id', $tenantId)->first();
         $activating = ! ($shop?->is_active ?? false);
 
         if ($activating && (! $shop || empty($shop->shop_name))) {
@@ -155,7 +155,7 @@ class ShopAdminController extends Controller
 
         return response()->json([
             'is_active' => $shop->is_active,
-            'message'   => $shop->is_active ? 'Boutique activée.' : 'Boutique désactivée.',
+            'message' => $shop->is_active ? 'Boutique activée.' : 'Boutique désactivée.',
         ]);
     }
 
@@ -164,27 +164,23 @@ class ShopAdminController extends Controller
     public function orders(Request $request): JsonResponse
     {
         $orders = ShopOrder::withCount('items')
-            ->when($request->filled('status'), fn($q) =>
-                $q->where('status', $request->status)
+            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->status)
             )
-            ->when($request->filled('from'), fn($q) =>
-                $q->whereDate('created_at', '>=', $request->from)
+            ->when($request->filled('from'), fn ($q) => $q->whereDate('created_at', '>=', $request->from)
             )
-            ->when($request->filled('to'), fn($q) =>
-                $q->whereDate('created_at', '<=', $request->to)
+            ->when($request->filled('to'), fn ($q) => $q->whereDate('created_at', '<=', $request->to)
             )
             ->when($request->filled('search'), function ($q) use ($request) {
-                $s = '%' . $request->search . '%';
-                $q->where(fn($sub) =>
-                    $sub->where('reference', 'like', $s)
-                        ->orWhere('customer_name', 'like', $s)
-                        ->orWhere('customer_phone', 'like', $s)
+                $s = '%'.$request->search.'%';
+                $q->where(fn ($sub) => $sub->where('reference', 'like', $s)
+                    ->orWhere('customer_name', 'like', $s)
+                    ->orWhere('customer_phone', 'like', $s)
                 );
             })
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        $orders->through(fn($o) => $this->formatOrder($o));
+        $orders->through(fn ($o) => $this->formatOrder($o));
 
         return response()->json($orders);
     }
@@ -198,17 +194,17 @@ class ShopAdminController extends Controller
             'items.variant:id,attribute_summary',
         ]);
 
-        $tenantId    = $this->tenantService->currentId();
+        $tenantId = $this->tenantService->currentId();
         $whatsappNum = ShopSetting::where('tenant_id', $tenantId)->value('whatsapp_number');
 
         $whatsappUrl = null;
         if ($whatsappNum && $order->payment_method === 'whatsapp') {
-            $number      = preg_replace('/[^0-9]/', '', $whatsappNum);
-            $whatsappUrl = 'https://wa.me/' . $number . '?text=' . urlencode($order->whatsappMessage());
+            $number = preg_replace('/[^0-9]/', '', $whatsappNum);
+            $whatsappUrl = 'https://wa.me/'.$number.'?text='.urlencode($order->whatsappMessage());
         }
 
         return response()->json([
-            'data'         => $this->formatOrder($order, detailed: true),
+            'data' => $this->formatOrder($order, detailed: true),
             'whatsapp_url' => $whatsappUrl,
         ]);
     }
@@ -224,7 +220,7 @@ class ShopAdminController extends Controller
         ]);
 
         $newStatus = $validated['status'];
-        $allowed   = self::TRANSITIONS[$order->status] ?? [];
+        $allowed = self::TRANSITIONS[$order->status] ?? [];
 
         if (! in_array($newStatus, $allowed, true)) {
             return response()->json([
@@ -248,18 +244,18 @@ class ShopAdminController extends Controller
                             : null;
 
                         $this->stockService->adjust(
-                            product:  $item->product,
-                            type:     'out',
+                            product: $item->product,
+                            type: 'out',
                             quantity: (float) $item->quantity,
-                            source:   'shop_order',
+                            source: 'shop_order',
                             sourceId: $item->id,   // idempotence par item
-                            variant:  $item->variant ?? null,
-                            lot:      $lot,
+                            variant: $item->variant ?? null,
+                            lot: $lot,
                         );
                     }
 
                     $order->update([
-                        'status'       => 'confirmed',
+                        'status' => 'confirmed',
                         'confirmed_at' => now(),
                     ]);
                 });
@@ -287,13 +283,13 @@ class ShopAdminController extends Controller
                         : null;
 
                     $this->stockService->adjust(
-                        product:  $item->product,
-                        type:     'in',
+                        product: $item->product,
+                        type: 'in',
                         quantity: (float) $item->quantity,
-                        source:   'shop_order_cancel',
+                        source: 'shop_order_cancel',
                         sourceId: $item->id,
-                        variant:  $item->variant ?? null,
-                        lot:      $lot,
+                        variant: $item->variant ?? null,
+                        lot: $lot,
                     );
                 }
 
@@ -306,7 +302,7 @@ class ShopAdminController extends Controller
         // ── Autres transitions ────────────────────────────────────────────────
         $extra = match ($newStatus) {
             'delivered' => ['delivered_at' => now()],
-            default     => [],
+            default => [],
         };
 
         $order->update(array_merge(['status' => $newStatus], $extra));
@@ -319,44 +315,44 @@ class ShopAdminController extends Controller
     private function formatOrder(ShopOrder $order, bool $detailed = false): array
     {
         $data = [
-            'id'               => $order->id,
-            'uid'              => $order->uid,
-            'reference'        => $order->reference,
-            'customer_name'    => $order->customer_name,
-            'customer_phone'   => $order->customer_phone,
-            'customer_email'   => $order->customer_email,
+            'id' => $order->id,
+            'uid' => $order->uid,
+            'reference' => $order->reference,
+            'customer_name' => $order->customer_name,
+            'customer_phone' => $order->customer_phone,
+            'customer_email' => $order->customer_email,
             'customer_address' => $order->customer_address,
-            'delivery_zone'    => $order->delivery_zone,
-            'delivery_fee'     => (float) $order->delivery_fee,
-            'subtotal'         => (float) $order->subtotal,
-            'total'            => (float) $order->total,
-            'formatted_total'  => $order->totalFormatted(),
-            'status'           => $order->status,
-            'status_label'     => $order->statusLabel(),
-            'payment_method'   => $order->payment_method,
-            'payment_status'   => $order->payment_status,
-            'notes'            => $order->notes,
-            'items_count'      => $order->items_count ?? null,
-            'confirmed_at'     => $order->confirmed_at?->toISOString(),
-            'delivered_at'     => $order->delivered_at?->toISOString(),
-            'created_at'       => $order->created_at?->toISOString(),
+            'delivery_zone' => $order->delivery_zone,
+            'delivery_fee' => (float) $order->delivery_fee,
+            'subtotal' => (float) $order->subtotal,
+            'total' => (float) $order->total,
+            'formatted_total' => $order->totalFormatted(),
+            'status' => $order->status,
+            'status_label' => $order->statusLabel(),
+            'payment_method' => $order->payment_method,
+            'payment_status' => $order->payment_status,
+            'notes' => $order->notes,
+            'items_count' => $order->items_count ?? null,
+            'confirmed_at' => $order->confirmed_at?->toISOString(),
+            'delivered_at' => $order->delivered_at?->toISOString(),
+            'created_at' => $order->created_at?->toISOString(),
         ];
 
         if ($detailed && $order->relationLoaded('items')) {
-            $data['items'] = $order->items->map(fn($item) => [
-                'id'           => $item->id,
-                'product_id'   => $item->product_id,
+            $data['items'] = $order->items->map(fn ($item) => [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
                 'product_name' => $item->product_name,
-                'variant_id'   => $item->variant_id,
+                'variant_id' => $item->variant_id,
                 'variant_name' => $item->variant_name,
-                'image_path'   => $item->image_path,
-                'quantity'     => (float) $item->quantity,
-                'unit_price'   => (float) $item->unit_price,
-                'total'        => (float) $item->total,
-                'product'      => $item->product
+                'image_path' => $item->image_path,
+                'quantity' => (float) $item->quantity,
+                'unit_price' => (float) $item->unit_price,
+                'total' => (float) $item->total,
+                'product' => $item->product
                     ? ['id' => $item->product->id, 'name' => $item->product->name]
                     : null,
-                'variant'      => $item->variant
+                'variant' => $item->variant
                     ? ['id' => $item->variant->id, 'attribute_summary' => $item->variant->attribute_summary]
                     : null,
             ])->values();
@@ -370,7 +366,7 @@ class ShopAdminController extends Controller
         if (! $url) {
             return;
         }
-        $disk    = Storage::disk('public');
+        $disk = Storage::disk('public');
         $baseUrl = $disk->url('');
 
         if (str_starts_with($url, $baseUrl)) {

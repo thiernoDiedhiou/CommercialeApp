@@ -35,15 +35,15 @@ class InvoiceController extends Controller
     {
         $invoices = Invoice::with(['customer:id,name', 'user:id,name'])
             ->withCount('items')
-            ->when($request->type,        fn ($q) => $q->where('type', $request->type))
-            ->when($request->status,      fn ($q) => $q->where('status', $request->status))
+            ->when($request->type, fn ($q) => $q->where('type', $request->type))
+            ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->when($request->customer_id, fn ($q) => $q->where('customer_id', $request->customer_id))
-            ->when($request->search,      fn ($q) => $q->where(function ($q2) use ($request) {
+            ->when($request->search, fn ($q) => $q->where(function ($q2) use ($request) {
                 $q2->where('reference', 'like', "%{$request->search}%")
-                   ->orWhereHas('customer', fn ($q3) => $q3->where('name', 'like', "%{$request->search}%"));
+                    ->orWhereHas('customer', fn ($q3) => $q3->where('name', 'like', "%{$request->search}%"));
             }))
             ->when($request->from, fn ($q) => $q->whereDate('issue_date', '>=', $request->from))
-            ->when($request->to,   fn ($q) => $q->whereDate('issue_date', '<=', $request->to))
+            ->when($request->to, fn ($q) => $q->whereDate('issue_date', '<=', $request->to))
             ->orderByDesc('id')
             ->paginate(20);
 
@@ -105,7 +105,7 @@ class InvoiceController extends Controller
         $invoice->loadMissing('customer');
 
         // Email personnalisé ou auto si email client présent — dispatché en queue (évite timeout PDF)
-        $email   = $request->input('email')   ?? $invoice->customer?->email;
+        $email = $request->input('email') ?? $invoice->customer?->email;
         $subject = $request->input('subject');
         $message = $request->input('message');
 
@@ -139,12 +139,12 @@ class InvoiceController extends Controller
     {
         try {
             $validated = $request->validated();
-            $amount    = (float) $validated['amount'];
-            $extra     = [
-                'method'    => $validated['method'] ?? 'cash',
-                'paid_at'   => $validated['paid_at'] ?? null,
+            $amount = (float) $validated['amount'];
+            $extra = [
+                'method' => $validated['method'] ?? 'cash',
+                'paid_at' => $validated['paid_at'] ?? null,
                 'reference' => $validated['reference'] ?? null,
-                'note'      => $validated['note'] ?? null,
+                'note' => $validated['note'] ?? null,
             ];
             $invoice = $this->invoiceService->recordPayment($invoice, $amount, $extra);
         } catch (LogicException $e) {
@@ -217,12 +217,12 @@ class InvoiceController extends Controller
 
         // pdf.invoice_doc gère à la fois 'classic' et 'moderne' via $template
         $view = 'pdf.invoice_doc';
-        $pdf  = Pdf::loadView($view, compact('invoice', 'tenant', 'footer', 'template'));
+        $pdf = Pdf::loadView($view, compact('invoice', 'tenant', 'footer', 'template'));
 
         $filename = match (true) {
-            $invoice->isCreditNote()              => "avoir-{$invoice->reference}.pdf",
+            $invoice->isCreditNote() => "avoir-{$invoice->reference}.pdf",
             $invoice->type === Invoice::TYPE_QUOTE => "devis-{$invoice->reference}.pdf",
-            default                               => "facture-{$invoice->reference}.pdf",
+            default => "facture-{$invoice->reference}.pdf",
         };
 
         return $pdf->stream($filename);

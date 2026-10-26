@@ -72,7 +72,7 @@ class GroupController extends Controller
         $permissions = Permission::orderBy('module')->orderBy('action')->get();
 
         // Regroupées par module pour l'affichage UI
-        $grouped = $permissions->groupBy('module')->map(fn($perms) => $perms->values());
+        $grouped = $permissions->groupBy('module')->map(fn ($perms) => $perms->values());
 
         return response()->json(['data' => $grouped]);
     }

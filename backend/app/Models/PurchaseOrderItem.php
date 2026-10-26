@@ -17,9 +17,9 @@ class PurchaseOrderItem extends Model
     ];
 
     protected $casts = [
-        'quantity_ordered'  => 'decimal:3',
+        'quantity_ordered' => 'decimal:3',
         'quantity_received' => 'decimal:3',
-        'unit_cost'         => 'decimal:2',
+        'unit_cost' => 'decimal:2',
     ];
 
     // ─── Relations ────────────────────────────────────────────────────────────

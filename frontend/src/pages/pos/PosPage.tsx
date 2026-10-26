@@ -260,6 +260,25 @@ export default function PosPage() {
   }
 
   // ── Render ───────────────────────────────────────────────────────────────
+
+  // Les entrepôts ne vendent pas directement — bloquer l'accès POS
+  if (activeBranch?.type === 'warehouse') {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-center max-w-sm p-8">
+          <div className="text-5xl mb-4">🏭</div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            Entrepôt — vente directe non disponible
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            L'entrepôt <strong>{activeBranch.name}</strong> est un espace de stockage.
+            Transférez le stock vers une succursale pour vendre.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-screen flex-col bg-gray-100 dark:bg-gray-900 overflow-hidden">
       <OfflineBanner />

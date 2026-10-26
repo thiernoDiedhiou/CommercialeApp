@@ -31,7 +31,7 @@ class CheckSubscription
         if (! $subscription || ! $subscription->isValid()) {
             return response()->json([
                 'message' => 'Votre abonnement a expiré. Veuillez contacter votre administrateur.',
-                'code'    => 'SUBSCRIPTION_EXPIRED',
+                'code' => 'SUBSCRIPTION_EXPIRED',
             ], 402);
         }
 
@@ -40,20 +40,20 @@ class CheckSubscription
         if (! $plan || ! $plan->is_active) {
             return response()->json([
                 'message' => 'Plan introuvable ou désactivé. Veuillez contacter votre administrateur.',
-                'code'    => 'PLAN_UNAVAILABLE',
+                'code' => 'PLAN_UNAVAILABLE',
             ], 402);
         }
 
         // ── Vérification des features demandées ──────────────────────────────
         foreach ($features as $feature) {
-            $column = 'feature_' . $feature;
+            $column = 'feature_'.$feature;
 
             if (! ($plan->{$column} ?? false)) {
                 return response()->json([
                     'message' => "Cette fonctionnalité n'est pas incluse dans votre plan \"{$plan->name}\".",
-                    'code'    => 'FEATURE_NOT_IN_PLAN',
+                    'code' => 'FEATURE_NOT_IN_PLAN',
                     'feature' => $feature,
-                    'plan'    => $plan->name,
+                    'plan' => $plan->name,
                 ], 403);
             }
         }
@@ -92,10 +92,10 @@ class CheckSubscription
             if ($count >= $plan->max_users) {
                 return response()->json([
                     'message' => "Limite de {$plan->max_users} utilisateurs actifs atteinte pour le plan \"{$plan->name}\".",
-                    'code'    => 'PLAN_LIMIT_EXCEEDED',
-                    'limit'   => 'max_users',
+                    'code' => 'PLAN_LIMIT_EXCEEDED',
+                    'limit' => 'max_users',
                     'current' => $count,
-                    'max'     => $plan->max_users,
+                    'max' => $plan->max_users,
                 ], 402);
             }
         }
@@ -107,10 +107,10 @@ class CheckSubscription
             if ($count >= $plan->max_products) {
                 return response()->json([
                     'message' => "Limite de {$plan->max_products} produits atteinte pour le plan \"{$plan->name}\".",
-                    'code'    => 'PLAN_LIMIT_EXCEEDED',
-                    'limit'   => 'max_products',
+                    'code' => 'PLAN_LIMIT_EXCEEDED',
+                    'limit' => 'max_products',
                     'current' => $count,
-                    'max'     => $plan->max_products,
+                    'max' => $plan->max_products,
                 ], 402);
             }
         }

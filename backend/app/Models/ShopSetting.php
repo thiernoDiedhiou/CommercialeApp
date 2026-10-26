@@ -44,12 +44,12 @@ class ShopSetting extends Model
     ];
 
     protected $casts = [
-        'is_active'               => 'boolean',
+        'is_active' => 'boolean',
         'announcement_bar_active' => 'boolean',
-        'minimum_order'           => 'decimal:2',
-        'delivery_zones'          => 'array',
-        'payment_methods'         => 'array',
-        'trust_badges'            => 'array',
+        'minimum_order' => 'decimal:2',
+        'delivery_zones' => 'array',
+        'payment_methods' => 'array',
+        'trust_badges' => 'array',
     ];
 
     protected $appends = ['hero_banner_url'];

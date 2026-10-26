@@ -24,7 +24,7 @@ class PublicTenantController extends Controller
         }
 
         return response()->json([
-            'slug'    => $tenant->slug,
+            'slug' => $tenant->slug,
             'api_key' => $tenant->getRawOriginal('api_key'),
         ]);
     }

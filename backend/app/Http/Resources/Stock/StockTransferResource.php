@@ -41,7 +41,7 @@ class StockTransferResource extends JsonResource
                 ] : null,
                 'variant' => $item->relationLoaded('variant') && $item->variant ? [
                     'uid' => $item->variant->uid,
-                    'name' => $item->variant->name,
+                    'attribute_summary' => $item->variant->attribute_summary,
                     'sku' => $item->variant->sku,
                 ] : null,
             ])),

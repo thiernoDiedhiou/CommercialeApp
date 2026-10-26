@@ -46,9 +46,9 @@ class AppServiceProvider extends ServiceProvider
         // Changer de provider = changer la valeur .env, pas le code.
         $this->app->bind(PaymentGatewayInterface::class, function () {
             return match (config('payment.provider')) {
-                'paydunya'    => new PayDunyaGateway(),
-                'bictorys'    => new BictorysGateway(),
-                default       => new NullGateway(), // null, 'nullgateway', 'null', ou toute autre valeur
+                'paydunya' => new PayDunyaGateway,
+                'bictorys' => new BictorysGateway,
+                default => new NullGateway, // null, 'nullgateway', 'null', ou toute autre valeur
             };
         });
     }
@@ -60,11 +60,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Domain Events — découple les services de ActivityLogService.
         // Ajouter un listener ici sans toucher au service émetteur.
-        Event::listen(SaleCreated::class,    LogSaleCreated::class);
-        Event::listen(SaleCancelled::class,  LogSaleCancelled::class);
+        Event::listen(SaleCreated::class, LogSaleCreated::class);
+        Event::listen(SaleCancelled::class, LogSaleCancelled::class);
         Event::listen(InvoiceCreated::class, LogInvoiceCreated::class);
-        Event::listen(InvoicePaid::class,     LogInvoicePaid::class);
-        Event::listen(InvoiceSent::class,     LogInvoiceSent::class);
+        Event::listen(InvoicePaid::class, LogInvoicePaid::class);
+        Event::listen(InvoiceSent::class, LogInvoiceSent::class);
         Event::listen(InvoiceCancelled::class, LogInvoiceCancelled::class);
 
         // Limite à 10 jobs de notification par tenant par minute.
@@ -73,10 +73,10 @@ class AppServiceProvider extends ServiceProvider
         // et retentés automatiquement sans perte.
         RateLimiter::for('tenant-notifications', function (object $job) {
             $tenantId = match (true) {
-                property_exists($job, 'tenant')      => $job->tenant?->id ?? 0,
-                property_exists($job, 'invoice')     => $job->invoice?->tenant_id ?? 0,
+                property_exists($job, 'tenant') => $job->tenant?->id ?? 0,
+                property_exists($job, 'invoice') => $job->invoice?->tenant_id ?? 0,
                 property_exists($job, 'transaction') => $job->transaction?->tenant_id ?? 0,
-                default                              => 0,
+                default => 0,
             };
 
             return Limit::perMinute(10)->by($tenantId);

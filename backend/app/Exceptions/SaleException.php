@@ -17,7 +17,7 @@ class SaleException extends RuntimeException
     {
         return [
             'message' => $this->getMessage(),
-            'code'    => $this->errorCode,
+            'code' => $this->errorCode,
         ];
     }
 }

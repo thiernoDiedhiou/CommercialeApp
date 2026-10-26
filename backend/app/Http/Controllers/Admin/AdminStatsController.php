@@ -55,25 +55,24 @@ class AdminStatsController extends Controller
             ->orderBy('ends_at')
             ->get()
             ->map(fn ($s) => [
-                'tenant_id'      => $s->tenant?->id,
-                'tenant_uid'     => $s->tenant?->uid,
-                'tenant_name'    => $s->tenant?->name,
-                'tenant_slug'    => $s->tenant?->slug,
-                'plan_name'      => $s->plan?->name,
-                'status'         => $s->status,
-                'ends_at'        => $s->ends_at?->toISOString(),
+                'tenant_id' => $s->tenant?->id,
+                'tenant_uid' => $s->tenant?->uid,
+                'tenant_name' => $s->tenant?->name,
+                'tenant_slug' => $s->tenant?->slug,
+                'plan_name' => $s->plan?->name,
+                'status' => $s->status,
+                'ends_at' => $s->ends_at?->toISOString(),
                 'days_remaining' => $s->daysUntilExpiry(),
             ]);
 
         $withoutSubscription = Tenant::where('is_active', true)
-            ->whereDoesntHave('subscriptions', fn ($q) =>
-                $q->whereIn('status', ['trial', 'active'])
-                  ->where(fn ($q2) => $q2->whereNull('ends_at')->orWhere('ends_at', '>', now()))
+            ->whereDoesntHave('subscriptions', fn ($q) => $q->whereIn('status', ['trial', 'active'])
+                ->where(fn ($q2) => $q2->whereNull('ends_at')->orWhere('ends_at', '>', now()))
             )
             ->get(['id', 'uid', 'name', 'slug'])
             ->map(fn ($t) => [
-                'tenant_id'   => $t->id,
-                'tenant_uid'  => $t->uid,
+                'tenant_id' => $t->id,
+                'tenant_uid' => $t->uid,
                 'tenant_name' => $t->name,
                 'tenant_slug' => $t->slug,
             ]);
@@ -85,20 +84,20 @@ class AdminStatsController extends Controller
 
         return response()->json([
             'data' => [
-                'tenants_total'    => (int) $tenantStats->total,
-                'tenants_active'   => (int) $tenantStats->active,
+                'tenants_total' => (int) $tenantStats->total,
+                'tenants_active' => (int) $tenantStats->active,
                 'tenants_inactive' => (int) $tenantStats->inactive,
-                'users_total'      => $usersTotal,
+                'users_total' => $usersTotal,
 
-                'trial_count'   => (int) $subStats->trial_count,
-                'active_count'  => (int) $subStats->active_count,
+                'trial_count' => (int) $subStats->trial_count,
+                'active_count' => (int) $subStats->active_count,
                 'expired_count' => (int) $subStats->expired_count,
-                'mrr'           => $mrr,
-                'arr'           => $arr,
+                'mrr' => $mrr,
+                'arr' => $arr,
 
-                'expiring_soon'        => $expiringSoon,
+                'expiring_soon' => $expiringSoon,
                 'without_subscription' => $withoutSubscription,
-                'tenants_recent'       => $tenantsRecent,
+                'tenants_recent' => $tenantsRecent,
             ],
         ]);
     }

@@ -15,14 +15,14 @@ class TenantFactory extends Factory
         $name = $this->faker->company();
 
         return [
-            'name'      => $name,
-            'slug'      => Str::slug($name) . '-' . Str::random(4),
-            'email'     => $this->faker->unique()->safeEmail(),
-            'phone'     => '+221' . $this->faker->numerify('7########'),
-            'sector'    => 'retail',
-            'currency'  => 'XOF',
-            'locale'    => 'fr',
-            'timezone'  => 'Africa/Dakar',
+            'name' => $name,
+            'slug' => Str::slug($name).'-'.Str::random(4),
+            'email' => $this->faker->unique()->safeEmail(),
+            'phone' => '+221'.$this->faker->numerify('7########'),
+            'sector' => 'retail',
+            'currency' => 'XOF',
+            'locale' => 'fr',
+            'timezone' => 'Africa/Dakar',
             'is_active' => true,
         ];
         // api_key auto-généré par Tenant::boot() si absent

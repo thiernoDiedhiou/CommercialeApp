@@ -5,54 +5,57 @@ use App\Models\Plan;
 use App\Models\Product;
 use App\Models\TenantSubscription;
 use App\Services\TenantService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Symfony\Component\HttpFoundation\Response;
 
 // ─── Helpers locaux ────────────────────────────────────────────────────────
 
 function makePlan(array $overrides = []): Plan
 {
     return Plan::create(array_merge([
-        'name'              => 'Test Plan',
-        'slug'              => 'test-plan-' . uniqid(),
-        'price_monthly'     => 10000,
-        'price_yearly'      => null,
-        'trial_days'        => 14,
-        'is_active'         => true,
-        'is_public'         => true,
-        'max_users'         => 0,
-        'max_products'      => 0,
+        'name' => 'Test Plan',
+        'slug' => 'test-plan-'.uniqid(),
+        'price_monthly' => 10000,
+        'price_yearly' => null,
+        'trial_days' => 14,
+        'is_active' => true,
+        'is_public' => true,
+        'max_users' => 0,
+        'max_products' => 0,
         'max_monthly_sales' => 0,
-        'feature_pos'            => true,
-        'feature_invoicing'      => false,
-        'feature_purchases'      => false,
-        'feature_reports'        => false,
-        'feature_shop'           => false,
-        'feature_import_csv'     => false,
-        'feature_stock_alerts'   => false,
-        'feature_multi_user'     => false,
-        'feature_custom_domain'  => false,
-        'sort_order'        => 0,
+        'feature_pos' => true,
+        'feature_invoicing' => false,
+        'feature_purchases' => false,
+        'feature_reports' => false,
+        'feature_shop' => false,
+        'feature_import_csv' => false,
+        'feature_stock_alerts' => false,
+        'feature_multi_user' => false,
+        'feature_custom_domain' => false,
+        'sort_order' => 0,
     ], $overrides));
 }
 
 function makeSubscription(int $tenantId, Plan $plan, array $overrides = []): TenantSubscription
 {
     return TenantSubscription::create(array_merge([
-        'tenant_id'     => $tenantId,
-        'plan_id'       => $plan->id,
+        'tenant_id' => $tenantId,
+        'plan_id' => $plan->id,
         'billing_cycle' => 'monthly',
-        'status'        => 'active',
-        'starts_at'     => now()->subDay(),
-        'ends_at'       => now()->addMonth(),
+        'status' => 'active',
+        'starts_at' => now()->subDay(),
+        'ends_at' => now()->addMonth(),
     ], $overrides));
 }
 
 // ── Middleware helper ──────────────────────────────────────────────────────
 
-function runSubscriptionMiddleware(Request $request, string ...$features): \Illuminate\Http\JsonResponse|\Symfony\Component\HttpFoundation\Response
+function runSubscriptionMiddleware(Request $request, string ...$features): JsonResponse|Response
 {
     $middleware = app(CheckSubscription::class);
+
     return $middleware->handle($request, fn ($_) => response()->json(['ok' => true]), ...$features);
 }
 
@@ -163,7 +166,7 @@ describe('CheckSubscription middleware', function () {
     it('returns 402 when subscription is expired', function () {
         $plan = makePlan();
         makeSubscription($this->tenant->id, $plan, [
-            'status'  => 'expired',
+            'status' => 'expired',
             'ends_at' => now()->subDay(),
         ]);
 
@@ -176,7 +179,7 @@ describe('CheckSubscription middleware', function () {
     it('returns 402 when active subscription has passed its end date', function () {
         $plan = makePlan();
         makeSubscription($this->tenant->id, $plan, [
-            'status'  => 'active',
+            'status' => 'active',
             'ends_at' => now()->subHour(),
         ]);
 
@@ -300,7 +303,7 @@ describe('ExpireSubscriptions command', function () {
         [$tenant] = $this->createTenantWithUser();
 
         $sub = makeSubscription($tenant->id, $plan, [
-            'status'  => 'active',
+            'status' => 'active',
             'ends_at' => now()->subHour(),
         ]);
 
@@ -315,7 +318,7 @@ describe('ExpireSubscriptions command', function () {
         $tenant->update(['is_active' => true]);
 
         makeSubscription($tenant->id, $plan, [
-            'status'  => 'active',
+            'status' => 'active',
             'ends_at' => now()->subHour(),
         ]);
 
@@ -329,7 +332,7 @@ describe('ExpireSubscriptions command', function () {
         [$tenant] = $this->createTenantWithUser();
 
         $sub = makeSubscription($tenant->id, $plan, [
-            'status'  => 'active',
+            'status' => 'active',
             'ends_at' => now()->addDays(10),
         ]);
 
@@ -344,7 +347,7 @@ describe('ExpireSubscriptions command', function () {
         $this->createUser($tenant, ['email' => 'admin@test.sn', 'is_active' => true]);
 
         $sub = makeSubscription($tenant->id, $plan, [
-            'status'  => 'active',
+            'status' => 'active',
             'ends_at' => now()->addDay(),
         ]);
 
@@ -364,7 +367,7 @@ describe('ExpireSubscriptions command', function () {
 
         // 5 jours → fenêtre J-7 (]1, 7]) — pas J-1
         makeSubscription($tenant->id, $plan, [
-            'status'  => 'active',
+            'status' => 'active',
             'ends_at' => now()->addDays(5),
         ]);
 

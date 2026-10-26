@@ -19,13 +19,13 @@ return new class extends Migration
 
             // ── Relations ─────────────────────────────────────────────────────
             $table->foreignId('tenant_id')
-                  ->constrained()
-                  ->cascadeOnDelete();
+                ->constrained()
+                ->cascadeOnDelete();
 
             $table->foreignId('plan_id')
-                  ->nullable()                    // null si paiement hors-plan
-                  ->constrained()
-                  ->nullOnDelete();
+                ->nullable()                    // null si paiement hors-plan
+                ->constrained()
+                ->nullOnDelete();
 
             // ── Provider de paiement ──────────────────────────────────────────
             // Permet de supporter plusieurs providers sans modifier le schéma.
@@ -45,8 +45,8 @@ return new class extends Migration
             // failed    → paiement refusé ou expiré
             // cancelled → annulé par le tenant avant paiement
             $table->enum('status', ['pending', 'completed', 'failed', 'cancelled'])
-                  ->default('pending')
-                  ->index();
+                ->default('pending')
+                ->index();
 
             // ── Expiration du lien de paiement ────────────────────────────────
             // Après cette date, un lien "pending" est considéré abandonné.
@@ -59,9 +59,9 @@ return new class extends Migration
 
             // Référence de l'abonnement activé après paiement (traçabilité)
             $table->foreignId('subscription_id')
-                  ->nullable()
-                  ->constrained('tenant_subscriptions')
-                  ->nullOnDelete();
+                ->nullable()
+                ->constrained('tenant_subscriptions')
+                ->nullOnDelete();
 
             $table->timestamps();
 

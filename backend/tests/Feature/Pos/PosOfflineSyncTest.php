@@ -18,12 +18,12 @@ function posPayload(Product $product, string $offlineId, float $qty = 1, float $
 {
     return [
         'offline_id' => $offlineId,
-        'items'      => [[
+        'items' => [[
             'product_id' => $product->id,
-            'quantity'   => $qty,
+            'quantity' => $qty,
             'unit_price' => $price,
         ]],
-        'payments'   => [['method' => 'cash', 'amount' => $qty * $price]],
+        'payments' => [['method' => 'cash', 'amount' => $qty * $price]],
     ];
 }
 
@@ -31,10 +31,10 @@ function posPayload(Product $product, string $offlineId, float $qty = 1, float $
 
 it('processes a valid offline sale', function () {
     $product = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 20,
-        'price'          => 1000,
-        'cost_price'     => 500,
+        'price' => 1000,
+        'cost_price' => 500,
     ]);
 
     $result = $this->service->syncOffline([posPayload($product, 'offline-001')], $this->user);
@@ -48,10 +48,10 @@ it('processes a valid offline sale', function () {
 
 it('skips a sale with an already-synced offline_id', function () {
     $product = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 20,
-        'price'          => 1000,
-        'cost_price'     => 500,
+        'price' => 1000,
+        'cost_price' => 500,
     ]);
     $sales = [posPayload($product, 'offline-002')];
 
@@ -67,10 +67,10 @@ it('skips a sale with an already-synced offline_id', function () {
 
 it('marks a sale as failed when stock is insufficient', function () {
     $product = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 1,
-        'price'          => 500,
-        'cost_price'     => 200,
+        'price' => 500,
+        'cost_price' => 200,
     ]);
 
     $result = $this->service->syncOffline(
@@ -87,16 +87,16 @@ it('marks a sale as failed when stock is insufficient', function () {
 
 it('processes multiple offline sales independently', function () {
     $p1 = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 10,
-        'price'          => 500,
-        'cost_price'     => 200,
+        'price' => 500,
+        'cost_price' => 200,
     ]);
     $p2 = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 5,
-        'price'          => 800,
-        'cost_price'     => 300,
+        'price' => 800,
+        'cost_price' => 300,
     ]);
 
     $result = $this->service->syncOffline([
@@ -115,16 +115,16 @@ it('processes multiple offline sales independently', function () {
 
 it('continues processing remaining sales when one fails', function () {
     $failing = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 0, // rupture
-        'price'          => 500,
-        'cost_price'     => 200,
+        'price' => 500,
+        'cost_price' => 200,
     ]);
     $ok = Product::factory()->create([
-        'tenant_id'      => $this->tenant->id,
+        'tenant_id' => $this->tenant->id,
         'stock_quantity' => 10,
-        'price'          => 1000,
-        'cost_price'     => 400,
+        'price' => 1000,
+        'cost_price' => 400,
     ]);
 
     $result = $this->service->syncOffline([

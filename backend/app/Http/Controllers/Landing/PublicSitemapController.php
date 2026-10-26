@@ -21,26 +21,26 @@ class PublicSitemapController extends Controller
         $urls = [];
         foreach ($tenants as $tenant) {
             $lastmod = $tenant->updated_at->toDateString();
-            $base    = "{$frontendUrl}/shop/{$tenant->slug}";
+            $base = "{$frontendUrl}/shop/{$tenant->slug}";
 
             $urls[] = [
-                'loc'        => $base,
-                'lastmod'    => $lastmod,
+                'loc' => $base,
+                'lastmod' => $lastmod,
                 'changefreq' => 'weekly',
-                'priority'   => '0.7',
+                'priority' => '0.7',
             ];
             $urls[] = [
-                'loc'        => "{$base}/catalog",
-                'lastmod'    => $lastmod,
+                'loc' => "{$base}/catalog",
+                'lastmod' => $lastmod,
                 'changefreq' => 'daily',
-                'priority'   => '0.6',
+                'priority' => '0.6',
             ];
         }
 
         $xml = $this->buildSitemap($urls);
 
         return response($xml, 200, [
-            'Content-Type'  => 'application/xml; charset=utf-8',
+            'Content-Type' => 'application/xml; charset=utf-8',
             'Cache-Control' => 'public, max-age=3600',
         ]);
     }
@@ -50,7 +50,7 @@ class PublicSitemapController extends Controller
         $items = '';
         foreach ($urls as $url) {
             $items .= "\n  <url>";
-            $items .= "\n    <loc>" . e($url['loc']) . "</loc>";
+            $items .= "\n    <loc>".e($url['loc']).'</loc>';
             $items .= "\n    <lastmod>{$url['lastmod']}</lastmod>";
             $items .= "\n    <changefreq>{$url['changefreq']}</changefreq>";
             $items .= "\n    <priority>{$url['priority']}</priority>";

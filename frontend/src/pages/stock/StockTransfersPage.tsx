@@ -307,7 +307,7 @@ function TransferDetailModal({ transfer, onClose }: { transfer: StockTransfer; o
                     {item.product?.name ?? '—'}
                   </p>
                   {item.variant && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{item.variant.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{item.variant.attribute_summary}</p>
                   )}
                 </div>
                 <span className="ml-3 text-sm font-semibold text-gray-700 dark:text-gray-300 shrink-0">
@@ -401,11 +401,11 @@ export default function StockTransfersPage() {
   const [status, setStatus]           = useState('')
   const [creating, setCreating]       = useState(false)
   const [selected, setSelected]       = useState<StockTransfer | null>(null)
-  const { availableBranches }         = useAuthStore()
+  const { availableBranches, activeBranch } = useAuthStore()
   const [branchFilter, setBranchFilter] = useState('')
 
   const { data, isLoading } = useQuery({
-    queryKey: ['stock-transfers', { page, status, branchFilter }],
+    queryKey: ['stock-transfers', { page, status, branchFilter, activeBranchUid: activeBranch?.uid }],
     queryFn: () => getStockTransfers({ status: status || undefined, branch_uid: branchFilter || undefined }),
   })
 

@@ -53,14 +53,14 @@ return new class extends Migration
                 $branchId = $existing;
             } else {
                 $branchId = DB::table('branches')->insertGetId([
-                    'uid'           => (string) Str::uuid(),
-                    'tenant_id'     => $tenant->id,
-                    'name'          => 'Principal',
-                    'type'          => 'principal',
-                    'is_active'     => true,
+                    'uid' => (string) Str::uuid(),
+                    'tenant_id' => $tenant->id,
+                    'name' => 'Principal',
+                    'type' => 'principal',
+                    'is_active' => true,
                     'display_order' => 0,
-                    'created_at'    => now(),
-                    'updated_at'    => now(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
 

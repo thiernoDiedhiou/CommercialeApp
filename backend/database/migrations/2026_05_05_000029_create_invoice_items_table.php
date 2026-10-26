@@ -16,10 +16,10 @@ return new class extends Migration
             $table->foreignId('product_id')->nullable()->constrained()->nullOnDelete();
 
             $table->string('description', 500);       // intitulé de la ligne
-            $table->decimal('quantity',   10, 3);
+            $table->decimal('quantity', 10, 3);
             $table->decimal('unit_price', 15, 2);
-            $table->decimal('discount',   15, 2)->default(0); // remise par ligne
-            $table->decimal('total',      15, 2);
+            $table->decimal('discount', 15, 2)->default(0); // remise par ligne
+            $table->decimal('total', 15, 2);
 
             $table->timestamps();
 

@@ -2,7 +2,6 @@
 
 use App\Models\Customer;
 use App\Models\Product;
-use App\Models\Sale;
 use App\Services\TenantService;
 
 it('does not expose tenant B products to tenant A Eloquent queries', function () {
@@ -49,7 +48,7 @@ it('auto-injects tenant_id on model creation when tenant is set', function () {
 
 it('does not expose tenant B products through HTTP to tenant A', function () {
     [$tenantA, $userA] = $this->createTenantWithUser();
-    [$tenantB]         = $this->createTenantWithUser();
+    [$tenantB] = $this->createTenantWithUser();
 
     app(TenantService::class)->setCurrentTenant($tenantB);
     Product::factory()->create(['tenant_id' => $tenantB->id, 'name' => 'Produit Confidentiel B']);

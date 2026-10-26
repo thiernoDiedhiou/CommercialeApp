@@ -16,9 +16,9 @@ class AttributeController extends Controller
         $attributes = ProductAttribute::with(['values' => function ($q) {
             $q->orderBy('sort_order')->orderBy('value');
         }])
-        ->orderBy('sort_order')
-        ->orderBy('name')
-        ->get();
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
 
         return response()->json(['data' => $attributes]);
     }
@@ -26,8 +26,8 @@ class AttributeController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'       => ['required', 'string', 'max:100'],
-            'slug'       => ['nullable', 'string', 'max:100', 'alpha_dash'],
+            'name' => ['required', 'string', 'max:100'],
+            'slug' => ['nullable', 'string', 'max:100', 'alpha_dash'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ]);
 
@@ -46,20 +46,21 @@ class AttributeController extends Controller
         if ($usedInVariants) {
             return response()->json([
                 'message' => 'Impossible de supprimer un attribut utilisé dans des variantes.',
-                'code'    => 'ATTRIBUTE_IN_USE',
+                'code' => 'ATTRIBUTE_IN_USE',
             ], 422);
         }
 
         $attribute->delete();
+
         return response()->json(null, 204);
     }
 
     public function storeValue(Request $request, ProductAttribute $attribute): JsonResponse
     {
         $data = $request->validate([
-            'value'      => ['required', 'string', 'max:100'],
-            'slug'       => ['nullable', 'string', 'max:100', 'alpha_dash'],
-            'color_hex'  => ['nullable', 'string', 'max:7', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'value' => ['required', 'string', 'max:100'],
+            'slug' => ['nullable', 'string', 'max:100', 'alpha_dash'],
+            'color_hex' => ['nullable', 'string', 'max:7', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
         ]);
 
@@ -79,11 +80,12 @@ class AttributeController extends Controller
         if ($value->variants()->exists()) {
             return response()->json([
                 'message' => 'Impossible de supprimer une valeur utilisée dans des variantes.',
-                'code'    => 'VALUE_IN_USE',
+                'code' => 'VALUE_IN_USE',
             ], 422);
         }
 
         $value->delete();
+
         return response()->json(null, 204);
     }
 }

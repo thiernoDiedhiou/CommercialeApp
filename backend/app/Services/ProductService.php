@@ -5,10 +5,8 @@ namespace App\Services;
 use App\Models\AttributeValue;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Models\SaleItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use App\Services\ActivityLogService;
 
 class ProductService
 {
@@ -23,22 +21,22 @@ class ProductService
             $hasVariants = (bool) ($data['has_variants'] ?? false);
 
             $product = Product::create([
-                'category_id'     => $data['category_id'] ?? null,
-                'name'            => $data['name'],
-                'description'     => $data['description'] ?? null,
-                'image_path'      => $data['image_path'] ?? null,
-                'sku'             => $data['sku'] ?? null,
-                'barcode'         => $data['barcode'] ?? null,
-                'price'           => $data['price'],
-                'cost_price'      => $data['cost_price'] ?? 0,
-                'has_variants'    => $hasVariants,
+                'category_id' => $data['category_id'] ?? null,
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+                'image_path' => $data['image_path'] ?? null,
+                'sku' => $data['sku'] ?? null,
+                'barcode' => $data['barcode'] ?? null,
+                'price' => $data['price'],
+                'cost_price' => $data['cost_price'] ?? 0,
+                'has_variants' => $hasVariants,
                 'is_weight_based' => $data['is_weight_based'] ?? false,
-                'has_expiry'      => $data['has_expiry'] ?? false,
+                'has_expiry' => $data['has_expiry'] ?? false,
                 // Stock géré par variante quand has_variants=true
-                'stock_quantity'  => $hasVariants ? 0 : ($data['stock_quantity'] ?? 0),
+                'stock_quantity' => $hasVariants ? 0 : ($data['stock_quantity'] ?? 0),
                 'alert_threshold' => $data['alert_threshold'] ?? null,
-                'unit'            => $data['unit'] ?? null,
-                'is_active'       => $data['is_active'] ?? true,
+                'unit' => $data['unit'] ?? null,
+                'is_active' => $data['is_active'] ?? true,
             ]);
 
             if ($hasVariants && ! empty($data['attribute_value_ids'])) {
@@ -47,7 +45,7 @@ class ProductService
 
             $product->load(self::EAGER_LOAD);
 
-            ActivityLogService::log('create', 'products', 'Produit "' . $product->name . '" créé');
+            ActivityLogService::log('create', 'products', 'Produit "'.$product->name.'" créé');
 
             return $product;
         });
@@ -63,7 +61,7 @@ class ProductService
 
             $product->update($data);
 
-            ActivityLogService::log('update', 'products', 'Produit "' . $product->name . '" mis à jour');
+            ActivityLogService::log('update', 'products', 'Produit "'.$product->name.'" mis à jour');
 
             // Les variantes ne sont jamais écrasées ici — utiliser VariantController
             return $product->fresh(self::EAGER_LOAD);
@@ -80,7 +78,7 @@ class ProductService
      *   → [[Rouge, S], [Rouge, M], [Bleu, S], [Bleu, M]]
      *
      * @param  int[]  $attributeValueIds
-     * @return array<array<array<string,mixed>>>  Tableau de combinaisons (chaque entrée = un tableau de valeurs)
+     * @return array<array<array<string,mixed>>> Tableau de combinaisons (chaque entrée = un tableau de valeurs)
      */
     public function generateVariantCombinations(array $attributeValueIds): array
     {
@@ -88,7 +86,7 @@ class ProductService
             ->get()
             ->groupBy('product_attribute_id')
             ->values()
-            ->map(fn($values) => $values->values()->toArray())
+            ->map(fn ($values) => $values->values()->toArray())
             ->toArray();
 
         return $this->cartesianProduct($grouped);
@@ -102,16 +100,16 @@ class ProductService
 
         foreach ($combinations as $combo) {
             // $combo = tableau de valeurs d'attribut sérialisées (arrays)
-            $summary  = collect($combo)->pluck('value')->join(' / ');
+            $summary = collect($combo)->pluck('value')->join(' / ');
             $valueIds = collect($combo)->pluck('id')->toArray();
 
             $variant = ProductVariant::create([
-                'product_id'        => $product->id,
+                'product_id' => $product->id,
                 'attribute_summary' => $summary,
-                'price'             => $product->price,
-                'cost_price'        => $product->cost_price,
-                'stock_quantity'    => 0,
-                'is_active'         => true,
+                'price' => $product->price,
+                'cost_price' => $product->cost_price,
+                'stock_quantity' => 0,
+                'is_active' => true,
             ]);
 
             $variant->attributeValues()->sync($valueIds);

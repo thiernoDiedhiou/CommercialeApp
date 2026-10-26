@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->foreignId('variant_id')->nullable()->constrained('product_variants')->nullOnDelete();
             $table->decimal('expected_qty', 12, 3)->default(0);
-            $table->decimal('counted_qty',  12, 3)->default(0);
+            $table->decimal('counted_qty', 12, 3)->default(0);
             $table->timestamps();
 
             $table->unique(['inventory_session_id', 'product_id', 'variant_id'], 'inv_items_unique');

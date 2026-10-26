@@ -88,6 +88,7 @@ class DefaultGroupSeeder extends Seeder
 
         if ($tenants->isEmpty()) {
             $this->command->warn('Aucun tenant trouvé. Créez un tenant avant de lancer ce seeder.');
+
             return;
         }
 

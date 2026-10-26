@@ -15,12 +15,12 @@ class StoreSupplierRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'      => ['required', 'string', 'max:200'],
-            'country'   => ['nullable', 'string', 'size:2'],
-            'phone'     => ['nullable', 'string', 'max:30', (new Phone)->countryField('country')],
-            'email'     => ['nullable', 'email', 'max:191'],
-            'address'   => ['nullable', 'string'],
-            'notes'     => ['nullable', 'string'],
+            'name' => ['required', 'string', 'max:200'],
+            'country' => ['nullable', 'string', 'size:2'],
+            'phone' => ['nullable', 'string', 'max:30', (new Phone)->countryField('country')],
+            'email' => ['nullable', 'email', 'max:191'],
+            'address' => ['nullable', 'string'],
+            'notes' => ['nullable', 'string'],
             'is_active' => ['boolean'],
         ];
     }

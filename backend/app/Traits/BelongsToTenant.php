@@ -5,6 +5,7 @@ namespace App\Traits;
 use App\Models\Tenant;
 use App\Scopes\TenantScope;
 use App\Services\TenantService;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Applique automatiquement le filtre tenant_id sur tous les modèles métier.
@@ -18,14 +19,15 @@ use App\Services\TenantService;
  *
  * @method static void addGlobalScope(\Illuminate\Database\Eloquent\Scope|\Closure|string $scope, ?\Closure $implementation = null)
  * @method static void creating(\Closure|string $callback, int $priority = 0)
- * @mixin \Illuminate\Database\Eloquent\Model
+ *
+ * @mixin Model
  */
 trait BelongsToTenant
 {
     public static function bootBelongsToTenant(): void
     {
         // Filtre global : toutes les requêtes SELECT incluent WHERE tenant_id = ?
-        static::addGlobalScope(new TenantScope());
+        static::addGlobalScope(new TenantScope);
 
         // Injection automatique du tenant_id à la création
         static::creating(function ($model) {

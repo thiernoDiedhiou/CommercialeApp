@@ -14,7 +14,7 @@ class StoreDraftRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'      => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:100'],
             'cart_data' => ['required', 'array'],
         ];
     }

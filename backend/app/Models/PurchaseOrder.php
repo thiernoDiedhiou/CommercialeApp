@@ -14,10 +14,14 @@ class PurchaseOrder extends Model
 {
     use BelongsToTenant, HasUuid, SoftDeletes;
 
-    const STATUS_DRAFT     = 'draft';
-    const STATUS_ORDERED   = 'ordered';
-    const STATUS_PARTIAL   = 'partial';
-    const STATUS_RECEIVED  = 'received';
+    const STATUS_DRAFT = 'draft';
+
+    const STATUS_ORDERED = 'ordered';
+
+    const STATUS_PARTIAL = 'partial';
+
+    const STATUS_RECEIVED = 'received';
+
     const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [

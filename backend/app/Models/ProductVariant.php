@@ -27,11 +27,11 @@ class ProductVariant extends Model
     ];
 
     protected $casts = [
-        'price'           => 'decimal:2',
-        'cost_price'      => 'decimal:2',
-        'stock_quantity'  => 'float',
+        'price' => 'decimal:2',
+        'cost_price' => 'decimal:2',
+        'stock_quantity' => 'float',
         'alert_threshold' => 'integer',
-        'is_active'       => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     // ─── Relations ────────────────────────────────────────────────────────────

@@ -32,8 +32,8 @@ class PosDraftController extends Controller
     public function store(StoreDraftRequest $request): JsonResponse
     {
         $draft = PosDraft::create([
-            'user_id'   => $request->user()->id,
-            'name'      => $request->input('name'),
+            'user_id' => $request->user()->id,
+            'name' => $request->input('name'),
             'cart_data' => $request->input('cart_data'),
         ]);
 

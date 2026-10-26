@@ -11,7 +11,6 @@ use App\Models\Tenant;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use LogicException;
-use App\Services\ActivityLogService;
 
 class PurchaseService
 {
@@ -48,29 +47,29 @@ class PurchaseService
             $reference = $this->generateReference($tenantId);
 
             $order = PurchaseOrder::create([
-                'tenant_id'   => $tenantId,
+                'tenant_id' => $tenantId,
                 'supplier_id' => $data['supplier_id'] ?? null,
-                'user_id'     => Auth::id(),
-                'reference'   => $reference,
-                'status'      => PurchaseOrder::STATUS_DRAFT,
+                'user_id' => Auth::id(),
+                'reference' => $reference,
+                'status' => PurchaseOrder::STATUS_DRAFT,
                 'expected_at' => $data['expected_at'] ?? null,
-                'notes'       => $data['notes'] ?? null,
+                'notes' => $data['notes'] ?? null,
             ]);
 
             foreach ($data['items'] as $item) {
                 PurchaseOrderItem::create([
-                    'purchase_order_id'  => $order->id,
-                    'product_id'         => $item['product_id'],
+                    'purchase_order_id' => $order->id,
+                    'product_id' => $item['product_id'],
                     'product_variant_id' => $item['product_variant_id'] ?? null,
-                    'quantity_ordered'   => $item['quantity_ordered'],
-                    'quantity_received'  => 0,
-                    'unit_cost'          => $item['unit_cost'],
+                    'quantity_ordered' => $item['quantity_ordered'],
+                    'quantity_received' => 0,
+                    'unit_cost' => $item['unit_cost'],
                 ]);
             }
 
             $order->load(['supplier', 'user', 'items.product', 'items.variant']);
 
-            ActivityLogService::log('create', 'purchases', 'Bon de commande ' . $order->reference . ' créé');
+            ActivityLogService::log('create', 'purchases', 'Bon de commande '.$order->reference.' créé');
 
             return $order;
         });
@@ -79,7 +78,7 @@ class PurchaseService
     /**
      * Passe le bon en statut 'ordered' (envoyé au fournisseur).
      *
-     * @throws LogicException  Statut actuel != draft
+     * @throws LogicException Statut actuel != draft
      */
     public function confirm(PurchaseOrder $order): PurchaseOrder
     {
@@ -91,7 +90,7 @@ class PurchaseService
 
         $order->update(['status' => PurchaseOrder::STATUS_ORDERED]);
 
-        ActivityLogService::log('confirm', 'purchases', 'Bon de commande ' . $order->reference . ' confirmé');
+        ActivityLogService::log('confirm', 'purchases', 'Bon de commande '.$order->reference.' confirmé');
 
         return $order->fresh();
     }
@@ -106,9 +105,9 @@ class PurchaseService
      *   3. Mise à jour de quantity_received sur chaque ligne
      *   4. Mise à jour du statut (partial → received si tout livré)
      *
-     * @param array<array{id: int, quantity_received: float}> $receptions
+     * @param  array<array{id: int, quantity_received: float}>  $receptions
      *
-     * @throws LogicException  Bon non réceptionnable, quantité invalide
+     * @throws LogicException Bon non réceptionnable, quantité invalide
      */
     public function receive(PurchaseOrder $order, array $receptions): PurchaseOrder
     {
@@ -155,25 +154,25 @@ class PurchaseService
                 $lot = null;
                 if ($product->has_expiry && ! empty($reception['lot_number'])) {
                     $lot = $this->findOrCreateLot(
-                        product:    $product,
-                        variant:    $variant,
-                        lotNumber:  $reception['lot_number'],
+                        product: $product,
+                        variant: $variant,
+                        lotNumber: $reception['lot_number'],
                         expiryDate: $reception['expiry_date'] ?? null,
-                        qty:        (int) $qty,
-                        unitCost:   (float) $item->unit_cost,
+                        qty: (int) $qty,
+                        unitCost: (float) $item->unit_cost,
                     );
                 }
 
                 $this->stockService->adjust(
-                    product:  $product,
-                    type:     'in',
+                    product: $product,
+                    type: 'in',
                     quantity: $qty,
-                    source:   'purchase',
+                    source: 'purchase',
                     sourceId: $sourceId,
-                    variant:  $variant,
+                    variant: $variant,
                     unitCost: (float) $item->unit_cost,
-                    notes:    "Réception {$order->reference}",
-                    lot:      $lot,
+                    notes: "Réception {$order->reference}",
+                    lot: $lot,
                 );
 
                 $item->increment('quantity_received', $qty);
@@ -184,11 +183,11 @@ class PurchaseService
             $allReceived = $order->items->every(fn ($i) => $i->isFullyReceived());
 
             $order->update([
-                'status'      => $allReceived ? PurchaseOrder::STATUS_RECEIVED : PurchaseOrder::STATUS_PARTIAL,
+                'status' => $allReceived ? PurchaseOrder::STATUS_RECEIVED : PurchaseOrder::STATUS_PARTIAL,
                 'received_at' => $allReceived ? now() : $order->received_at,
             ]);
 
-            ActivityLogService::log('receive', 'purchases', 'Bon de commande ' . $order->reference . ' reçu');
+            ActivityLogService::log('receive', 'purchases', 'Bon de commande '.$order->reference.' reçu');
 
             return $order->fresh(['supplier', 'user', 'items.product', 'items.variant']);
         });
@@ -198,7 +197,7 @@ class PurchaseService
      * Annule un bon draft ou ordered.
      * Pas de mouvement de stock — le stock n'a pas encore été crédité.
      *
-     * @throws LogicException  Bon non annulable (partial/received/cancelled)
+     * @throws LogicException Bon non annulable (partial/received/cancelled)
      */
     public function cancel(PurchaseOrder $order): PurchaseOrder
     {
@@ -210,7 +209,7 @@ class PurchaseService
 
         $order->update(['status' => PurchaseOrder::STATUS_CANCELLED]);
 
-        ActivityLogService::log('cancel', 'purchases', 'Bon de commande ' . $order->reference . ' annulé');
+        ActivityLogService::log('cancel', 'purchases', 'Bon de commande '.$order->reference.' annulé');
 
         return $order->fresh();
     }
@@ -218,12 +217,12 @@ class PurchaseService
     // ─── Lots ─────────────────────────────────────────────────────────────────
 
     private function findOrCreateLot(
-        Product        $product,
+        Product $product,
         ?ProductVariant $variant,
-        string         $lotNumber,
-        ?string        $expiryDate,
-        int            $qty,
-        float          $unitCost,
+        string $lotNumber,
+        ?string $expiryDate,
+        int $qty,
+        float $unitCost,
     ): ProductLot {
         $existing = ProductLot::where('tenant_id', $this->tenantService->currentId())
             ->where('product_id', $product->id)
@@ -240,15 +239,15 @@ class PurchaseService
         }
 
         return ProductLot::create([
-            'tenant_id'          => $this->tenantService->currentId(),
-            'product_id'         => $product->id,
+            'tenant_id' => $this->tenantService->currentId(),
+            'product_id' => $product->id,
             'product_variant_id' => $variant?->id,
-            'lot_number'         => $lotNumber,
-            'expiry_date'        => $expiryDate,
-            'quantity_received'  => $qty,
+            'lot_number' => $lotNumber,
+            'expiry_date' => $expiryDate,
+            'quantity_received' => $qty,
             'quantity_remaining' => 0, // StockService::adjust() incrémentera via updateLotQuantity()
-            'purchase_price'     => $unitCost,
-            'is_active'          => true,
+            'purchase_price' => $unitCost,
+            'is_active' => true,
         ]);
     }
 
@@ -260,7 +259,7 @@ class PurchaseService
      */
     private function generateReference(int $tenantId): string
     {
-        $year   = now()->format('Y');
+        $year = now()->format('Y');
         $prefix = "ACH-{$year}-";
 
         $last = PurchaseOrder::where('tenant_id', $tenantId)
@@ -269,6 +268,6 @@ class PurchaseService
 
         $seq = $last ? ((int) substr($last, -5)) + 1 : 1;
 
-        return $prefix . str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $seq, 5, '0', STR_PAD_LEFT);
     }
 }

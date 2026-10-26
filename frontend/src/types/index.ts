@@ -779,11 +779,11 @@ export interface StockTransferBranch {
 }
 
 export interface StockTransferItemType {
-  id:       number
-  quantity: number
-  notes:    string | null
+  id:                number
+  quantity:          number
+  notes:             string | null
   product:  { uid: string; name: string; sku: string; unit: string } | null
-  variant:  { uid: string; name: string; sku: string } | null
+  variant:  { uid: string; attribute_summary: string; sku: string } | null
 }
 
 export interface StockTransfer {

@@ -25,7 +25,7 @@ class PublicShopController extends Controller
     public function resolveByDomain(Request $request): JsonResponse
     {
         $domain = $request->query('domain') ?? $request->getHost();
-        $slug   = $request->query('slug');
+        $slug = $request->query('slug');
 
         // Option 2 — domaine custom (ex: ets18safar.sn)
         $tenant = Tenant::where('custom_domain', $domain)
@@ -42,15 +42,15 @@ class PublicShopController extends Controller
         if (! $tenant) {
             return response()->json([
                 'message' => 'Aucun tenant associé à ce domaine.',
-                'code'    => 'DOMAIN_NOT_FOUND',
+                'code' => 'DOMAIN_NOT_FOUND',
             ], 404);
         }
 
         return response()->json([
             'data' => [
-                'slug'    => $tenant->slug,
+                'slug' => $tenant->slug,
                 'api_key' => $tenant->api_key,
-                'name'    => $tenant->name,
+                'name' => $tenant->name,
             ],
         ]);
     }
@@ -60,48 +60,48 @@ class PublicShopController extends Controller
     public function config(Request $request): JsonResponse
     {
         /** @var ShopSetting $shop */
-        $shop   = $request->attributes->get('shop');
+        $shop = $request->attributes->get('shop');
         $tenant = $this->tenantService->current();
 
         // Couleurs : shop color → couleur tenant comme fallback
-        $primary   = $shop->primary_color   ?? $tenant->primary_color;
+        $primary = $shop->primary_color ?? $tenant->primary_color;
         $secondary = $shop->secondary_color ?? $tenant->secondary_color;
-        $accent    = $shop->accent_color    ?? $primary;
+        $accent = $shop->accent_color ?? $primary;
 
         return response()->json([
             'shop' => [
-                'name'                     => $shop->shop_name   ?? $tenant->name,
-                'currency'                 => $tenant->currency,
-                'description'              => $shop->shop_description,
-                'hero_title'               => $shop->hero_title,
-                'hero_subtitle'            => $shop->hero_subtitle,
-                'hero_banner_url'          => $shop->hero_banner_url,
-                'logo_url'                 => $shop->logo_url,
-                'favicon_url'              => $shop->favicon_url,
-                'announcement_bar'         => $shop->announcement_bar,
-                'announcement_bar_active'  => $shop->announcement_bar_active,
-                'whatsapp_number'          => $shop->whatsapp_number,
-                'facebook_url'             => $shop->facebook_url,
-                'instagram_url'            => $shop->instagram_url,
-                'twitter_url'              => $shop->twitter_url,
-                'tiktok_url'               => $shop->tiktok_url,
-                'youtube_url'              => $shop->youtube_url,
-                'address'                  => $shop->address,
-                'opening_hours'            => $shop->opening_hours,
-                'footer_text'              => $shop->footer_text,
-                'minimum_order'            => (float) $shop->minimum_order,
-                'payment_methods'          => $shop->payment_methods ?? ['cod', 'whatsapp'],
-                'delivery_zones'           => $shop->delivery_zones ?? [],
-                'trust_badges'             => $shop->trust_badges ?? null,
+                'name' => $shop->shop_name ?? $tenant->name,
+                'currency' => $tenant->currency,
+                'description' => $shop->shop_description,
+                'hero_title' => $shop->hero_title,
+                'hero_subtitle' => $shop->hero_subtitle,
+                'hero_banner_url' => $shop->hero_banner_url,
+                'logo_url' => $shop->logo_url,
+                'favicon_url' => $shop->favicon_url,
+                'announcement_bar' => $shop->announcement_bar,
+                'announcement_bar_active' => $shop->announcement_bar_active,
+                'whatsapp_number' => $shop->whatsapp_number,
+                'facebook_url' => $shop->facebook_url,
+                'instagram_url' => $shop->instagram_url,
+                'twitter_url' => $shop->twitter_url,
+                'tiktok_url' => $shop->tiktok_url,
+                'youtube_url' => $shop->youtube_url,
+                'address' => $shop->address,
+                'opening_hours' => $shop->opening_hours,
+                'footer_text' => $shop->footer_text,
+                'minimum_order' => (float) $shop->minimum_order,
+                'payment_methods' => $shop->payment_methods ?? ['cod', 'whatsapp'],
+                'delivery_zones' => $shop->delivery_zones ?? [],
+                'trust_badges' => $shop->trust_badges ?? null,
             ],
             'theme' => [
-                'primary_color'   => $primary,
+                'primary_color' => $primary,
                 'secondary_color' => $secondary,
-                'accent_color'    => $accent,
+                'accent_color' => $accent,
             ],
             'seo' => [
-                'meta_title'          => $shop->meta_title       ?? $shop->shop_name ?? $tenant->name,
-                'meta_description'    => $shop->meta_description,
+                'meta_title' => $shop->meta_title ?? $shop->shop_name ?? $tenant->name,
+                'meta_description' => $shop->meta_description,
                 'google_analytics_id' => $shop->google_analytics_id,
             ],
         ]);
@@ -114,34 +114,28 @@ class PublicShopController extends Controller
         $perPage = min((int) $request->input('per_page', 12), 48);
 
         $allowedSorts = ['name', 'newest', 'best_sellers'];
-        $sort         = in_array($request->input('sort'), $allowedSorts)
+        $sort = in_array($request->input('sort'), $allowedSorts)
             ? $request->input('sort')
             : 'name';
 
         $products = Product::with(['category', 'activeVariants'])
             ->where('is_active', true)
             ->where('is_for_sale', true)
-            ->when($request->filled('category_id'), fn($q) =>
-                $q->where('category_id', $request->integer('category_id'))
+            ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->integer('category_id'))
             )
-            ->when($request->filled('search'), fn($q) =>
-                $q->where('name', 'like', '%' . $request->search . '%')
+            ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', '%'.$request->search.'%')
             )
-            ->when($request->boolean('on_sale'), fn($q) =>
-                $q->whereNotNull('compare_at_price')->whereColumn('compare_at_price', '>', 'price')
+            ->when($request->boolean('on_sale'), fn ($q) => $q->whereNotNull('compare_at_price')->whereColumn('compare_at_price', '>', 'price')
             )
-            ->when($sort === 'newest', fn($q) =>
-                $q->orderBy('created_at', 'desc')
+            ->when($sort === 'newest', fn ($q) => $q->orderBy('created_at', 'desc')
             )
-            ->when($sort === 'best_sellers', fn($q) =>
-                $q->withCount('saleItems')->orderByDesc('sale_items_count')
+            ->when($sort === 'best_sellers', fn ($q) => $q->withCount('saleItems')->orderByDesc('sale_items_count')
             )
-            ->when($sort === 'name', fn($q) =>
-                $q->orderBy('name')
+            ->when($sort === 'name', fn ($q) => $q->orderBy('name')
             )
             ->paginate($perPage);
 
-        $collection = $products->getCollection()->map(fn($p) => $this->formatProduct($p));
+        $collection = $products->getCollection()->map(fn ($p) => $this->formatProduct($p));
         $products->setCollection($collection);
 
         return response()->json($products);
@@ -164,19 +158,18 @@ class PublicShopController extends Controller
 
     public function categories(): JsonResponse
     {
-        $categories = Category::withCount(['products' => fn($q) =>
-            $q->where('is_active', true)->where('is_for_sale', true)
+        $categories = Category::withCount(['products' => fn ($q) => $q->where('is_active', true)->where('is_for_sale', true),
         ])
-        ->having('products_count', '>', 0)
-        ->orderBy('name')
-        ->get()
-        ->map(fn($c) => [
-            'id'             => $c->id,
-            'name'           => $c->name,
-            'slug'           => $c->slug,
-            'image_url'      => $c->image_url,
-            'products_count' => $c->products_count,
-        ]);
+            ->having('products_count', '>', 0)
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'name' => $c->name,
+                'slug' => $c->slug,
+                'image_url' => $c->image_url,
+                'products_count' => $c->products_count,
+            ]);
 
         return response()->json(['data' => $categories]);
     }
@@ -186,26 +179,26 @@ class PublicShopController extends Controller
     public function order(Request $request): JsonResponse
     {
         /** @var ShopSetting $shop */
-        $shop     = $request->attributes->get('shop');
+        $shop = $request->attributes->get('shop');
         $tenantId = $this->tenantService->currentId();
 
         $validated = $request->validate([
-            'customer_name'      => ['required', 'string', 'max:150'],
-            'customer_phone'     => ['required', 'string', 'max:30'],
-            'customer_email'     => ['nullable', 'email', 'max:150'],
-            'customer_address'   => ['required', 'string', 'max:255'],
-            'delivery_zone'      => ['nullable', 'string', 'max:100'],
-            'payment_method'     => ['required', Rule::in(['cod', 'whatsapp'])],
-            'notes'              => ['nullable', 'string', 'max:500'],
-            'items'              => ['required', 'array', 'min:1'],
+            'customer_name' => ['required', 'string', 'max:150'],
+            'customer_phone' => ['required', 'string', 'max:30'],
+            'customer_email' => ['nullable', 'email', 'max:150'],
+            'customer_address' => ['required', 'string', 'max:255'],
+            'delivery_zone' => ['nullable', 'string', 'max:100'],
+            'payment_method' => ['required', Rule::in(['cod', 'whatsapp'])],
+            'notes' => ['nullable', 'string', 'max:500'],
+            'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer'],
             'items.*.variant_id' => ['nullable', 'integer'],
-            'items.*.quantity'   => ['required', 'numeric', 'min:0.001'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
         ]);
 
         // ── Résolution des produits + calcul des totaux ────────────────────────
         $productIds = array_column($validated['items'], 'product_id');
-        $products   = Product::with('activeVariants')
+        $products = Product::with('activeVariants')
             ->where('is_active', true)
             ->where('is_for_sale', true)
             ->whereIn('id', $productIds)
@@ -213,7 +206,7 @@ class PublicShopController extends Controller
             ->keyBy('id');
 
         $itemsData = [];
-        $subtotal  = 0.0;
+        $subtotal = 0.0;
 
         foreach ($validated['items'] as $item) {
             $product = $products->get($item['product_id']);
@@ -224,11 +217,11 @@ class PublicShopController extends Controller
                 ], 422);
             }
 
-            $variantId   = $item['variant_id'] ?? null;
+            $variantId = $item['variant_id'] ?? null;
             $variantName = null;
-            $unitPrice   = (float) $product->price;
-            $lotId       = null;
-            $variant     = null;
+            $unitPrice = (float) $product->price;
+            $lotId = null;
+            $variant = null;
 
             // TYPE 1 — Variante
             if ($variantId) {
@@ -238,7 +231,7 @@ class PublicShopController extends Controller
                         'message' => "Variante #{$variantId} introuvable pour {$product->name}.",
                     ], 422);
                 }
-                $unitPrice   = (float) $variant->price;
+                $unitPrice = (float) $variant->price;
                 $variantName = $variant->attribute_summary;
             }
 
@@ -251,7 +244,7 @@ class PublicShopController extends Controller
                     ->where('quantity_remaining', '>', 0)
                     ->where(function ($q) {
                         $q->whereNull('expiry_date')
-                          ->orWhere('expiry_date', '>', now()->toDateString());
+                            ->orWhere('expiry_date', '>', now()->toDateString());
                     })
                     ->orderByRaw('CASE WHEN expiry_date IS NULL THEN 1 ELSE 0 END')
                     ->orderBy('expiry_date')
@@ -271,6 +264,7 @@ class PublicShopController extends Controller
                 $label = $variant !== null
                     ? "{$product->name} ({$variantName})"
                     : $product->name;
+
                 return response()->json([
                     'message' => "Stock insuffisant pour « {$label} ». Stock disponible : {$availableStock}.",
                 ], 422);
@@ -279,15 +273,15 @@ class PublicShopController extends Controller
             $total = round($qty * $unitPrice, 2);
 
             $itemsData[] = [
-                'product_id'   => $product->id,
-                'variant_id'   => $variantId,
-                'lot_id'       => $lotId,
+                'product_id' => $product->id,
+                'variant_id' => $variantId,
+                'lot_id' => $lotId,
                 'product_name' => $product->name,
                 'variant_name' => $variantName,
-                'image_path'   => $product->image_path,
-                'quantity'     => $qty,
-                'unit_price'   => $unitPrice,
-                'total'        => $total,
+                'image_path' => $product->image_path,
+                'quantity' => $qty,
+                'unit_price' => $unitPrice,
+                'total' => $total,
             ];
 
             $subtotal += $total;
@@ -297,14 +291,14 @@ class PublicShopController extends Controller
         $minimumOrder = (float) $shop->minimum_order;
         if ($minimumOrder > 0 && $subtotal < $minimumOrder) {
             return response()->json([
-                'message' => "Le montant minimum de commande est de " .
-                    number_format($minimumOrder, 0, ',', ' ') . ' FCFA.',
+                'message' => 'Le montant minimum de commande est de '.
+                    number_format($minimumOrder, 0, ',', ' ').' FCFA.',
             ], 422);
         }
 
         // ── Frais de livraison ────────────────────────────────────────────────
         $deliveryFee = $this->resolveDeliveryFee($shop, $validated['delivery_zone'] ?? null);
-        $total       = round($subtotal + $deliveryFee, 2);
+        $total = round($subtotal + $deliveryFee, 2);
 
         // ── Transaction + verrou référence ────────────────────────────────────
         $order = DB::transaction(function () use (
@@ -312,26 +306,26 @@ class PublicShopController extends Controller
         ) {
             Tenant::lockForUpdate()->find($tenantId);
 
-            $year      = now()->year;
-            $count     = ShopOrder::withoutGlobalScopes()
+            $year = now()->year;
+            $count = ShopOrder::withoutGlobalScopes()
                 ->where('tenant_id', $tenantId)
                 ->whereYear('created_at', $year)
                 ->count();
-            $reference = 'CMD-' . $year . '-' . str_pad($count + 1, 5, '0', STR_PAD_LEFT);
+            $reference = 'CMD-'.$year.'-'.str_pad($count + 1, 5, '0', STR_PAD_LEFT);
 
             $order = ShopOrder::create([
-                'tenant_id'        => $tenantId,
-                'reference'        => $reference,
-                'customer_name'    => $validated['customer_name'],
-                'customer_phone'   => $validated['customer_phone'],
-                'customer_email'   => $validated['customer_email'] ?? null,
+                'tenant_id' => $tenantId,
+                'reference' => $reference,
+                'customer_name' => $validated['customer_name'],
+                'customer_phone' => $validated['customer_phone'],
+                'customer_email' => $validated['customer_email'] ?? null,
                 'customer_address' => $validated['customer_address'],
-                'delivery_zone'    => $validated['delivery_zone'] ?? null,
-                'delivery_fee'     => $deliveryFee,
-                'subtotal'         => $subtotal,
-                'total'            => $total,
-                'payment_method'   => $validated['payment_method'],
-                'notes'            => $validated['notes'] ?? null,
+                'delivery_zone' => $validated['delivery_zone'] ?? null,
+                'delivery_fee' => $deliveryFee,
+                'subtotal' => $subtotal,
+                'total' => $total,
+                'payment_method' => $validated['payment_method'],
+                'notes' => $validated['notes'] ?? null,
             ]);
 
             foreach ($itemsData as $item) {
@@ -345,15 +339,15 @@ class PublicShopController extends Controller
         $whatsappUrl = null;
         if ($shop->whatsapp_number && $validated['payment_method'] === 'whatsapp') {
             $order->load('items');
-            $number      = preg_replace('/[^0-9]/', '', $shop->whatsapp_number);
-            $whatsappUrl = 'https://wa.me/' . $number . '?text=' . urlencode($order->whatsappMessage());
+            $number = preg_replace('/[^0-9]/', '', $shop->whatsapp_number);
+            $whatsappUrl = 'https://wa.me/'.$number.'?text='.urlencode($order->whatsappMessage());
         }
 
         return response()->json([
             'order' => [
                 'reference' => $order->reference,
-                'total'     => (float) $order->total,
-                'status'    => $order->status,
+                'total' => (float) $order->total,
+                'status' => $order->status,
             ],
             'whatsapp_url' => $whatsappUrl,
         ], 201);
@@ -363,41 +357,41 @@ class PublicShopController extends Controller
 
     private function formatProduct(Product $product, bool $detailed = false): array
     {
-        $variants  = $product->activeVariants;
-        $minPrice  = null;
+        $variants = $product->activeVariants;
+        $minPrice = null;
 
         if ($product->has_variants && $variants->isNotEmpty()) {
             $withStock = $variants->where('stock_quantity', '>', 0);
-            $pool      = $withStock->isNotEmpty() ? $withStock : $variants;
-            $minPrice  = (float) $pool->min('price');
+            $pool = $withStock->isNotEmpty() ? $withStock : $variants;
+            $minPrice = (float) $pool->min('price');
         }
 
         $data = [
-            'id'               => $product->id,
-            'uid'              => $product->uid,
-            'name'             => $product->name,
-            'slug'             => $product->slug,
-            'price'            => (float) $product->price,
+            'id' => $product->id,
+            'uid' => $product->uid,
+            'name' => $product->name,
+            'slug' => $product->slug,
+            'price' => (float) $product->price,
             'compare_at_price' => $product->compare_at_price !== null ? (float) $product->compare_at_price : null,
-            'unit'             => $product->unit,
-            'has_variants'     => $product->has_variants,
-            'is_weight_based'  => $product->is_weight_based,
-            'has_expiry'       => $product->has_expiry,
-            'image_url'        => $product->image_url,
-            'stock_quantity'   => $product->has_variants ? null : (float) $product->stock_quantity,
-            'alert_threshold'  => $product->has_variants ? null : $product->alert_threshold,
-            'min_price'        => $minPrice,
-            'category'        => $product->category ? [
-                'id'   => $product->category->id,
+            'unit' => $product->unit,
+            'has_variants' => $product->has_variants,
+            'is_weight_based' => $product->is_weight_based,
+            'has_expiry' => $product->has_expiry,
+            'image_url' => $product->image_url,
+            'stock_quantity' => $product->has_variants ? null : (float) $product->stock_quantity,
+            'alert_threshold' => $product->has_variants ? null : $product->alert_threshold,
+            'min_price' => $minPrice,
+            'category' => $product->category ? [
+                'id' => $product->category->id,
                 'name' => $product->category->name,
             ] : null,
-            'variants' => $variants->map(fn($v) => [
-                'id'                => $v->id,
+            'variants' => $variants->map(fn ($v) => [
+                'id' => $v->id,
                 'attribute_summary' => $v->attribute_summary,
-                'price'             => (float) $v->price,
-                'stock_quantity'    => (float) $v->stock_quantity,
-                'is_active'         => $v->is_active,
-                'color_hex'         => $v->color_hex,
+                'price' => (float) $v->price,
+                'stock_quantity' => (float) $v->stock_quantity,
+                'is_active' => $v->is_active,
+                'color_hex' => $v->color_hex,
             ])->values(),
         ];
 

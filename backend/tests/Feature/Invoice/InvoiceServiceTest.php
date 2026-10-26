@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Customer;
 use App\Models\Invoice;
 use App\Services\InvoiceService;
 use App\Services\TenantService;
@@ -19,12 +18,12 @@ function invoicePayload(float $price = 5000, float $discount = 0, float $taxRate
 {
     return [
         'issue_date' => now()->toDateString(),
-        'tax_rate'   => $taxRate,
-        'items'      => [[
+        'tax_rate' => $taxRate,
+        'items' => [[
             'description' => 'Prestation de service',
-            'quantity'    => 1,
-            'unit_price'  => $price,
-            'discount'    => $discount,
+            'quantity' => 1,
+            'unit_price' => $price,
+            'discount' => $discount,
         ]],
     ];
 }
@@ -61,10 +60,10 @@ it('calculates subtotal and total correctly', function () {
 
 it('applies percent discount correctly', function () {
     $invoice = $this->service->create([
-        'issue_date'     => now()->toDateString(),
-        'discount_type'  => 'percent',
+        'issue_date' => now()->toDateString(),
+        'discount_type' => 'percent',
         'discount_value' => 10, // 10%
-        'items'          => [['description' => 'X', 'quantity' => 1, 'unit_price' => 10000, 'discount' => 0]],
+        'items' => [['description' => 'X', 'quantity' => 1, 'unit_price' => 10000, 'discount' => 0]],
     ]);
 
     expect((float) $invoice->discount_amount)->toBe(1000.0); // 10% de 10000
@@ -73,10 +72,10 @@ it('applies percent discount correctly', function () {
 
 it('applies fixed discount correctly', function () {
     $invoice = $this->service->create([
-        'issue_date'     => now()->toDateString(),
-        'discount_type'  => 'fixed',
+        'issue_date' => now()->toDateString(),
+        'discount_type' => 'fixed',
         'discount_value' => 500,
-        'items'          => [['description' => 'X', 'quantity' => 1, 'unit_price' => 5000, 'discount' => 0]],
+        'items' => [['description' => 'X', 'quantity' => 1, 'unit_price' => 5000, 'discount' => 0]],
     ]);
 
     expect((float) $invoice->discount_amount)->toBe(500.0);
@@ -109,7 +108,7 @@ it('persists items with correct totals', function () {
 
 it('sends a draft invoice — status becomes sent', function () {
     $invoice = $this->service->create(invoicePayload());
-    $sent    = $this->service->send($invoice);
+    $sent = $this->service->send($invoice);
 
     expect($sent->status)->toBe(Invoice::STATUS_SENT);
     expect($sent->sent_at)->not->toBeNull();
@@ -185,7 +184,7 @@ it('cumulates payments correctly', function () {
 // ─── Annulation ───────────────────────────────────────────────────────────
 
 it('cancels a draft invoice', function () {
-    $invoice   = $this->service->create(invoicePayload());
+    $invoice = $this->service->create(invoicePayload());
     $cancelled = $this->service->cancel($invoice);
 
     expect($cancelled->status)->toBe(Invoice::STATUS_CANCELLED);
@@ -193,8 +192,8 @@ it('cancels a draft invoice', function () {
 });
 
 it('cancels a sent invoice', function () {
-    $invoice   = $this->service->create(invoicePayload());
-    $invoice   = $this->service->send($invoice->fresh());
+    $invoice = $this->service->create(invoicePayload());
+    $invoice = $this->service->send($invoice->fresh());
     $cancelled = $this->service->cancel($invoice);
 
     expect($cancelled->status)->toBe(Invoice::STATUS_CANCELLED);
@@ -214,8 +213,8 @@ it('throws LogicException when cancelling a paid invoice', function () {
 it('marks overdue invoices — sent + past due date', function () {
     $invoice = $this->service->create([
         'issue_date' => now()->subDays(10)->toDateString(),
-        'due_date'   => now()->subDays(3)->toDateString(), // échéance dépassée
-        'items'      => [['description' => 'X', 'quantity' => 1, 'unit_price' => 1000, 'discount' => 0]],
+        'due_date' => now()->subDays(3)->toDateString(), // échéance dépassée
+        'items' => [['description' => 'X', 'quantity' => 1, 'unit_price' => 1000, 'discount' => 0]],
     ]);
     $this->service->send($invoice->fresh());
 
@@ -228,8 +227,8 @@ it('marks overdue invoices — sent + past due date', function () {
 it('does not mark paid invoices as overdue', function () {
     $invoice = $this->service->create([
         'issue_date' => now()->subDays(10)->toDateString(),
-        'due_date'   => now()->subDays(3)->toDateString(),
-        'items'      => [['description' => 'X', 'quantity' => 1, 'unit_price' => 1000, 'discount' => 0]],
+        'due_date' => now()->subDays(3)->toDateString(),
+        'items' => [['description' => 'X', 'quantity' => 1, 'unit_price' => 1000, 'discount' => 0]],
     ]);
     $invoice = $this->service->send($invoice->fresh());
     $this->service->recordPayment($invoice, 1000);

@@ -19,23 +19,23 @@ class DebtController extends Controller
     public function index(Request $request): JsonResponse
     {
         $tenantId = $this->tenantService->currentId();
-        $search   = $request->string('search')->trim()->toString();
-        $sort     = $request->input('sort', 'amount_desc');
-        $page     = max(1, (int) $request->input('page', 1));
-        $perPage  = 20;
-        $offset   = ($page - 1) * $perPage;
+        $search = $request->string('search')->trim()->toString();
+        $sort = $request->input('sort', 'amount_desc');
+        $page = max(1, (int) $request->input('page', 1));
+        $perPage = 20;
+        $offset = ($page - 1) * $perPage;
 
-        $paidSubquery = "
+        $paidSubquery = '
             SELECT sale_id, COALESCE(SUM(amount), 0) AS paid
             FROM payments
             GROUP BY sale_id
-        ";
+        ';
 
-        $searchBind  = [];
+        $searchBind = [];
         $searchWhere = '';
         if ($search !== '') {
-            $searchWhere = " AND (c.name LIKE ? OR c.phone LIKE ?)";
-            $searchBind  = ["%{$search}%", "%{$search}%"];
+            $searchWhere = ' AND (c.name LIKE ? OR c.phone LIKE ?)';
+            $searchBind = ["%{$search}%", "%{$search}%"];
         }
 
         $baseQuery = "
@@ -51,11 +51,11 @@ class DebtController extends Controller
         $baseBindings = [$tenantId, $tenantId, ...$searchBind];
 
         $orderBy = match ($sort) {
-            'name_asc'    => 'c.name ASC',
-            'name_desc'   => 'c.name DESC',
-            'oldest_first'=> 'oldest_debt_date ASC',
-            'amount_asc'  => 'outstanding_balance ASC',
-            default       => 'outstanding_balance DESC',
+            'name_asc' => 'c.name ASC',
+            'name_desc' => 'c.name DESC',
+            'oldest_first' => 'oldest_debt_date ASC',
+            'amount_asc' => 'outstanding_balance ASC',
+            default => 'outstanding_balance DESC',
         };
 
         $totalsRow = DB::selectOne("
@@ -66,7 +66,7 @@ class DebtController extends Controller
             ) sub
         ", $baseBindings);
 
-        $total             = (int) $totalsRow->total;
+        $total = (int) $totalsRow->total;
         $globalOutstanding = (float) $totalsRow->global_outstanding;
 
         $rows = DB::select("
@@ -85,19 +85,19 @@ class DebtController extends Controller
         ", [...$baseBindings, $perPage, $offset]);
 
         return response()->json([
-            'data' => array_map(fn($r) => [
-                'uid'                 => $r->uid,
-                'name'                => $r->name,
-                'phone'               => $r->phone,
-                'email'               => $r->email,
-                'unpaid_sales_count'  => (int) $r->unpaid_sales_count,
+            'data' => array_map(fn ($r) => [
+                'uid' => $r->uid,
+                'name' => $r->name,
+                'phone' => $r->phone,
+                'email' => $r->email,
+                'unpaid_sales_count' => (int) $r->unpaid_sales_count,
                 'outstanding_balance' => (float) $r->outstanding_balance,
-                'oldest_debt_date'    => $r->oldest_debt_date,
+                'oldest_debt_date' => $r->oldest_debt_date,
             ], $rows),
-            'total'              => $total,
-            'current_page'       => $page,
-            'last_page'          => max(1, (int) ceil($total / $perPage)),
-            'per_page'           => $perPage,
+            'total' => $total,
+            'current_page' => $page,
+            'last_page' => max(1, (int) ceil($total / $perPage)),
+            'per_page' => $perPage,
             'global_outstanding' => $globalOutstanding,
         ]);
     }
@@ -134,25 +134,25 @@ class DebtController extends Controller
             ORDER BY sale_date ASC
         ", [$customer->id, $tenantId]);
 
-        $totalOutstanding = array_sum(array_map(fn($s) => (float) $s->remaining, $sales));
+        $totalOutstanding = array_sum(array_map(fn ($s) => (float) $s->remaining, $sales));
 
         return response()->json([
             'customer' => [
-                'uid'   => $customer->uid,
-                'name'  => $customer->name,
+                'uid' => $customer->uid,
+                'name' => $customer->name,
                 'phone' => $customer->phone,
                 'email' => $customer->email,
             ],
-            'sales' => array_map(fn($s) => [
-                'uid'         => $s->uid,
-                'reference'   => $s->reference,
-                'sale_date'   => $s->sale_date,
-                'total'       => (float) $s->total,
+            'sales' => array_map(fn ($s) => [
+                'uid' => $s->uid,
+                'reference' => $s->reference,
+                'sale_date' => $s->sale_date,
+                'total' => (float) $s->total,
                 'paid_amount' => (float) $s->paid_amount,
-                'remaining'   => (float) $s->remaining,
+                'remaining' => (float) $s->remaining,
             ], $sales),
             'total_outstanding' => $totalOutstanding,
-            'unpaid_count'      => count($sales),
+            'unpaid_count' => count($sales),
         ]);
     }
 }

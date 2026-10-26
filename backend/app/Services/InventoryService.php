@@ -5,10 +5,8 @@ namespace App\Services;
 use App\Models\InventoryItem;
 use App\Models\InventorySession;
 use App\Models\Product;
-use App\Models\ProductVariant;
 use App\Models\Tenant;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class InventoryService
@@ -22,14 +20,14 @@ class InventoryService
 
     public function create(User $user, ?string $notes): InventorySession
     {
-        $tenant    = $this->tenantService->current();
+        $tenant = $this->tenantService->current();
         $reference = $this->generateReference($tenant);
 
         return InventorySession::create([
-            'tenant_id'  => $tenant->id,
-            'reference'  => $reference,
-            'status'     => 'draft',
-            'notes'      => $notes,
+            'tenant_id' => $tenant->id,
+            'reference' => $reference,
+            'status' => 'draft',
+            'notes' => $notes,
             'created_by' => $user->id,
         ]);
     }
@@ -45,53 +43,53 @@ class InventoryService
     {
         // Index des items déjà saisis, clé "productId-variantId"
         $existing = $session->items
-            ->keyBy(fn($item) => "{$item->product_id}-{$item->variant_id}");
+            ->keyBy(fn ($item) => "{$item->product_id}-{$item->variant_id}");
 
         $tenantId = $session->tenant_id;
 
         $query = Product::where('tenant_id', $tenantId)
             ->where('is_active', true)
             ->whereNull('deleted_at')
-            ->with(['category:id,name', 'variants' => fn($q) => $q->where('is_active', true)])
-            ->when($search, fn($q) => $q->where('name', 'like', "%{$search}%"))
-            ->when($categoryId, fn($q) => $q->where('category_id', $categoryId))
+            ->with(['category:id,name', 'variants' => fn ($q) => $q->where('is_active', true)])
+            ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%"))
+            ->when($categoryId, fn ($q) => $q->where('category_id', $categoryId))
             ->orderBy('name');
 
         $lines = [];
 
         foreach ($query->get() as $product) {
             if (! $product->has_variants) {
-                $key  = "{$product->id}-";
+                $key = "{$product->id}-";
                 $item = $existing->get($key);
                 $lines[] = [
-                    'product_id'       => $product->id,
-                    'product_uid'      => $product->uid,
-                    'variant_id'       => null,
-                    'name'             => $product->name,
-                    'sku'              => $product->sku ?? '',
-                    'variant_summary'  => null,
-                    'category_name'    => $product->category?->name,
-                    'unit'             => $product->unit,
-                    'expected_qty'     => (float) $product->stock_quantity,
-                    'counted_qty'      => $item ? (float) $item->counted_qty : null,
-                    'item_id'          => $item?->id,
+                    'product_id' => $product->id,
+                    'product_uid' => $product->uid,
+                    'variant_id' => null,
+                    'name' => $product->name,
+                    'sku' => $product->sku ?? '',
+                    'variant_summary' => null,
+                    'category_name' => $product->category?->name,
+                    'unit' => $product->unit,
+                    'expected_qty' => (float) $product->stock_quantity,
+                    'counted_qty' => $item ? (float) $item->counted_qty : null,
+                    'item_id' => $item?->id,
                 ];
             } else {
                 foreach ($product->variants as $variant) {
-                    $key  = "{$product->id}-{$variant->id}";
+                    $key = "{$product->id}-{$variant->id}";
                     $item = $existing->get($key);
                     $lines[] = [
-                        'product_id'       => $product->id,
-                        'product_uid'      => $product->uid,
-                        'variant_id'       => $variant->id,
-                        'name'             => $product->name,
-                        'sku'              => $variant->sku ?? '',
-                        'variant_summary'  => $variant->attribute_summary,
-                        'category_name'    => $product->category?->name,
-                        'unit'             => $product->unit,
-                        'expected_qty'     => (float) $variant->stock_quantity,
-                        'counted_qty'      => $item ? (float) $item->counted_qty : null,
-                        'item_id'          => $item?->id,
+                        'product_id' => $product->id,
+                        'product_uid' => $product->uid,
+                        'variant_id' => $variant->id,
+                        'name' => $product->name,
+                        'sku' => $variant->sku ?? '',
+                        'variant_summary' => $variant->attribute_summary,
+                        'category_name' => $product->category?->name,
+                        'unit' => $product->unit,
+                        'expected_qty' => (float) $variant->stock_quantity,
+                        'counted_qty' => $item ? (float) $item->counted_qty : null,
+                        'item_id' => $item?->id,
                     ];
                 }
             }
@@ -112,12 +110,12 @@ class InventoryService
         return InventoryItem::updateOrCreate(
             [
                 'inventory_session_id' => $session->id,
-                'product_id'           => $productId,
-                'variant_id'           => $variantId,
+                'product_id' => $productId,
+                'variant_id' => $variantId,
             ],
             [
                 'expected_qty' => $expectedQty,
-                'counted_qty'  => $countedQty,
+                'counted_qty' => $countedQty,
             ],
         );
     }
@@ -146,18 +144,18 @@ class InventoryService
                 }
 
                 $this->stockService->adjust(
-                    product:  $item->product,
-                    type:     'adjustment',
+                    product: $item->product,
+                    type: 'adjustment',
                     quantity: $delta,                  // delta signé
-                    source:   'inventory',
+                    source: 'inventory',
                     sourceId: $item->id,
-                    variant:  $item->variant,
-                    notes:    "Inventaire {$session->reference}",
+                    variant: $item->variant,
+                    notes: "Inventaire {$session->reference}",
                 );
             }
 
             $session->update([
-                'status'       => 'confirmed',
+                'status' => 'confirmed',
                 'confirmed_by' => $user->id,
                 'confirmed_at' => now(),
             ]);
@@ -175,7 +173,7 @@ class InventoryService
             ->orderBy('product_id')
             ->get();
 
-        $rows   = [['Référence', 'Statut', 'Date', 'Notes']];
+        $rows = [['Référence', 'Statut', 'Date', 'Notes']];
         $rows[] = [
             $session->reference,
             $session->status === 'confirmed' ? 'Confirmé' : 'Brouillon',
@@ -186,7 +184,7 @@ class InventoryService
         $rows[] = ['Produit', 'SKU', 'Variante', 'Catégorie', 'Unité', 'Stock attendu', 'Compté', 'Écart'];
 
         foreach ($items as $item) {
-            $diff   = $item->counted_qty - $item->expected_qty;
+            $diff = $item->counted_qty - $item->expected_qty;
             $rows[] = [
                 $item->product->name,
                 $item->variant?->sku ?? ($item->product->sku ?? ''),
@@ -195,19 +193,19 @@ class InventoryService
                 $item->product->unit ?? '',
                 $item->expected_qty,
                 $item->counted_qty,
-                ($diff >= 0 ? '+' : '') . $diff,
+                ($diff >= 0 ? '+' : '').$diff,
             ];
         }
 
         $output = '';
         foreach ($rows as $row) {
             $output .= implode(';', array_map(
-                fn($v) => '"' . str_replace('"', '""', (string) $v) . '"',
+                fn ($v) => '"'.str_replace('"', '""', (string) $v).'"',
                 $row,
-            )) . "\r\n";
+            ))."\r\n";
         }
 
-        return "\xEF\xBB\xBF" . $output; // BOM UTF-8 pour Excel
+        return "\xEF\xBB\xBF".$output; // BOM UTF-8 pour Excel
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────

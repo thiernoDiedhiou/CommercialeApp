@@ -20,24 +20,24 @@ class StoreStockAdjustmentRequest extends FormRequest
         return [
             'product_id' => ['required', 'integer'],
             'variant_id' => ['nullable', 'integer'],
-            'lot_id'     => ['nullable', 'integer'],
-            'type'       => ['required', Rule::in(['in', 'out', 'adjustment'])],
+            'lot_id' => ['nullable', 'integer'],
+            'type' => ['required', Rule::in(['in', 'out', 'adjustment'])],
             // numeric sans min pour autoriser les valeurs négatives (adjustment)
-            'quantity'   => ['required', 'numeric'],
-            'note'       => ['nullable', 'string', 'max:500'],
-            'unit_cost'  => ['nullable', 'numeric', 'min:0'],
+            'quantity' => ['required', 'numeric'],
+            'note' => ['nullable', 'string', 'max:500'],
+            'unit_cost' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            $tenantId  = auth()->user()->tenant_id;
+            $tenantId = auth()->user()->tenant_id;
             $productId = $this->input('product_id');
             $variantId = $this->input('variant_id');
-            $lotId     = $this->input('lot_id');
-            $type      = $this->input('type');
-            $quantity  = (float) $this->input('quantity');
+            $lotId = $this->input('lot_id');
+            $type = $this->input('type');
+            $quantity = (float) $this->input('quantity');
 
             // ── 1. Produit appartient au tenant ──────────────────────────────
             $product = Product::where('id', $productId)
@@ -47,6 +47,7 @@ class StoreStockAdjustmentRequest extends FormRequest
 
             if (! $product) {
                 $validator->errors()->add('product_id', 'Produit introuvable pour ce tenant.');
+
                 return;
             }
 
@@ -58,6 +59,7 @@ class StoreStockAdjustmentRequest extends FormRequest
 
                 if (! $variantExists) {
                     $validator->errors()->add('variant_id', 'La variante n\'appartient pas à ce produit.');
+
                     return;
                 }
             }
@@ -66,7 +68,7 @@ class StoreStockAdjustmentRequest extends FormRequest
             if ($lotId) {
                 $lotExists = ProductLot::where('id', $lotId)
                     ->where('product_id', $product->id)
-                    ->when($variantId, fn($q) => $q->where('product_variant_id', $variantId))
+                    ->when($variantId, fn ($q) => $q->where('product_variant_id', $variantId))
                     ->exists();
 
                 if (! $lotExists) {

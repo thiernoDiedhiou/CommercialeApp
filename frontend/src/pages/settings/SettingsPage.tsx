@@ -854,8 +854,13 @@ function UserBranchModal({ user, onClose }: { user: UserWithGroups; onClose: () 
 
   const isLoading = loadingBranches || loadingAssigned
 
-  // N'affiche que les succursales non-principales (le principal est accessible à tous)
-  const branches = allBranches.filter((b) => b.type !== 'principal')
+  const branches = allBranches
+
+  const branchIcon = (type: string) => {
+    if (type === 'principal') return <BuildingStorefrontIcon className="h-4 w-4 text-brand-primary shrink-0" />
+    if (type === 'warehouse') return <DevicePhoneMobileIcon className="h-4 w-4 text-amber-500 shrink-0" />
+    return <MapPinIcon className="h-4 w-4 text-blue-400 shrink-0" />
+  }
 
   return (
     <Modal isOpen title={`Accès succursales — ${user.name}`} onClose={onClose} size="sm">
@@ -870,7 +875,7 @@ function UserBranchModal({ user, onClose }: { user: UserWithGroups; onClose: () 
             {[1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}
           </div>
         ) : branches.length === 0 ? (
-          <p className="text-sm text-gray-400 italic py-2">Aucune succursale secondaire configurée.</p>
+          <p className="text-sm text-gray-400 italic py-2">Aucune succursale configurée.</p>
         ) : (
           <div className="space-y-1.5">
             {branches.map((branch) => (
@@ -884,8 +889,11 @@ function UserBranchModal({ user, onClose }: { user: UserWithGroups; onClose: () 
                   onChange={() => toggle(branch.uid)}
                   className="h-4 w-4 rounded accent-brand-primary"
                 />
-                <MapPinIcon className="h-4 w-4 text-blue-400 shrink-0" />
+                {branchIcon(branch.type)}
                 <span className="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200">{branch.name}</span>
+                {branch.type === 'warehouse' && (
+                  <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">Entrepôt</span>
+                )}
                 {!branch.is_active && (
                   <span className="text-xs text-gray-400 italic">inactive</span>
                 )}

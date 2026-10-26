@@ -22,13 +22,13 @@ class DatabaseSeeder extends Seeder
         $tenant = Tenant::firstOrCreate(
             ['slug' => 'demo'],
             [
-                'name'     => 'Commerce Démo',
-                'api_key'  => 'demo-api-key-change-in-production-64chars00000000000000000000000',
-                'sector'   => 'general',
+                'name' => 'Commerce Démo',
+                'api_key' => 'demo-api-key-change-in-production-64chars00000000000000000000000',
+                'sector' => 'general',
                 'currency' => 'XOF',
-                'locale'   => 'fr',
-                'email'    => 'demo@exemple.sn',
-                'city'     => 'Dakar',
+                'locale' => 'fr',
+                'email' => 'demo@exemple.sn',
+                'city' => 'Dakar',
             ]
         );
 
@@ -41,9 +41,9 @@ class DatabaseSeeder extends Seeder
         $admin = User::firstOrCreate(
             ['tenant_id' => $tenant->id, 'email' => 'admin@demo.sn'],
             [
-                'name'     => 'Admin Démo',
+                'name' => 'Admin Démo',
                 'password' => Hash::make('password'),
-                'is_active'=> true,
+                'is_active' => true,
             ]
         );
 

@@ -17,7 +17,7 @@ class InventoryItem extends Model
 
     protected $casts = [
         'expected_qty' => 'float',
-        'counted_qty'  => 'float',
+        'counted_qty' => 'float',
     ];
 
     public function product(): BelongsTo

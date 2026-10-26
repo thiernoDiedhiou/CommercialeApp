@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\StockTransfer;
+use App\Services\BranchService;
 use App\Services\StockTransferService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -16,10 +17,13 @@ class StockTransferController extends Controller
 {
     public function __construct(
         private readonly StockTransferService $transferService,
+        private readonly BranchService $branchService,
     ) {}
 
     public function index(Request $request): AnonymousResourceCollection
     {
+        $currentBranchId = $this->branchService->currentId();
+
         $transfers = StockTransfer::with(['fromBranch', 'toBranch', 'items'])
             ->when($request->input('status'), fn ($q, $s) => $q->where('status', $s))
             ->when($request->input('branch_uid'), function ($q, $uid): void {
@@ -29,6 +33,12 @@ class StockTransferController extends Controller
                     ->orWhere('to_branch_id', $branch->id)
                 );
             })
+            // Filtre automatique par succursale courante si aucun filtre explicite
+            ->when(! $request->input('branch_uid') && $currentBranchId, fn ($q) => $q->where(
+                fn ($q2) => $q2
+                    ->where('from_branch_id', $currentBranchId)
+                    ->orWhere('to_branch_id', $currentBranchId)
+            ))
             ->latest('id')
             ->paginate(20);
 

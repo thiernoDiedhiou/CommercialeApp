@@ -12,7 +12,7 @@ class LogSaleCancelled
         ActivityLogService::log(
             'cancel',
             'sales',
-            'Vente ' . $event->sale->reference . ' annulée',
+            'Vente '.$event->sale->reference.' annulée',
             ['uid' => $event->sale->uid],
         );
     }

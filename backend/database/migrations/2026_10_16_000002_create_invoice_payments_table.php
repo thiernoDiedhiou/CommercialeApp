@@ -14,7 +14,7 @@ return new class extends Migration
             $table->unsignedBigInteger('tenant_id');
             $table->decimal('amount', 12, 2);
             $table->enum('method', ['cash', 'bank_transfer', 'mobile_money', 'check', 'other'])
-                  ->default('cash');
+                ->default('cash');
             $table->date('paid_at');
             $table->string('reference', 100)->nullable(); // n° chèque, virement, etc.
             $table->text('note')->nullable();

@@ -20,9 +20,9 @@ function purchasePayload(Product $product, float $qty = 5, float $cost = 800): a
 {
     return [
         'items' => [[
-            'product_id'       => $product->id,
+            'product_id' => $product->id,
             'quantity_ordered' => $qty,
-            'unit_cost'        => $cost,
+            'unit_cost' => $cost,
         ]],
     ];
 }
@@ -30,10 +30,10 @@ function purchasePayload(Product $product, float $qty = 5, float $cost = 800): a
 function makeProduct($tenant, float $stock = 0): Product
 {
     return Product::factory()->create([
-        'tenant_id'      => $tenant->id,
+        'tenant_id' => $tenant->id,
         'stock_quantity' => $stock,
-        'price'          => 1000,
-        'cost_price'     => 500,
+        'price' => 1000,
+        'cost_price' => 500,
     ]);
 }
 
@@ -53,8 +53,8 @@ it('creates an order in draft status', function () {
 
 it('increments reference counter for subsequent orders', function () {
     $product = makeProduct($this->tenant);
-    $order1  = $this->service->create(purchasePayload($product));
-    $order2  = $this->service->create(purchasePayload($product));
+    $order1 = $this->service->create(purchasePayload($product));
+    $order2 = $this->service->create(purchasePayload($product));
 
     expect($order1->reference)->not->toBe($order2->reference);
     expect($order2->reference)->toMatch('/^ACH-\d{4}-\d{5}$/');
@@ -82,10 +82,10 @@ it('throws LogicException when confirming a non-draft order', function () {
 
 it('increases product stock on full reception', function () {
     $product = makeProduct($this->tenant);
-    $order   = $this->service->create(purchasePayload($product, 10));
-    $order   = $this->service->confirm($order->fresh());
+    $order = $this->service->create(purchasePayload($product, 10));
+    $order = $this->service->confirm($order->fresh());
     $order->load('items');
-    $item    = $order->items->first();
+    $item = $order->items->first();
 
     $this->service->receive($order, [['id' => $item->id, 'quantity_received' => 10]]);
 
@@ -94,10 +94,10 @@ it('increases product stock on full reception', function () {
 
 it('sets status to received after full reception', function () {
     $product = makeProduct($this->tenant);
-    $order   = $this->service->create(purchasePayload($product, 5));
-    $order   = $this->service->confirm($order->fresh());
+    $order = $this->service->create(purchasePayload($product, 5));
+    $order = $this->service->confirm($order->fresh());
     $order->load('items');
-    $item    = $order->items->first();
+    $item = $order->items->first();
 
     $received = $this->service->receive($order, [['id' => $item->id, 'quantity_received' => 5]]);
 
@@ -107,10 +107,10 @@ it('sets status to received after full reception', function () {
 
 it('sets status to partial after partial reception', function () {
     $product = makeProduct($this->tenant);
-    $order   = $this->service->create(purchasePayload($product, 10));
-    $order   = $this->service->confirm($order->fresh());
+    $order = $this->service->create(purchasePayload($product, 10));
+    $order = $this->service->confirm($order->fresh());
     $order->load('items');
-    $item    = $order->items->first();
+    $item = $order->items->first();
 
     $received = $this->service->receive($order, [['id' => $item->id, 'quantity_received' => 4]]);
 
@@ -120,10 +120,10 @@ it('sets status to partial after partial reception', function () {
 
 it('creates a stock movement of type "in" on reception', function () {
     $product = makeProduct($this->tenant);
-    $order   = $this->service->create(purchasePayload($product, 8));
-    $order   = $this->service->confirm($order->fresh());
+    $order = $this->service->create(purchasePayload($product, 8));
+    $order = $this->service->confirm($order->fresh());
     $order->load('items');
-    $item    = $order->items->first();
+    $item = $order->items->first();
 
     $this->service->receive($order, [['id' => $item->id, 'quantity_received' => 8]]);
 
@@ -137,10 +137,10 @@ it('creates a stock movement of type "in" on reception', function () {
 
 it('cumulates stock correctly across two partial receptions', function () {
     $product = makeProduct($this->tenant);
-    $order   = $this->service->create(purchasePayload($product, 10));
-    $order   = $this->service->confirm($order->fresh());
+    $order = $this->service->create(purchasePayload($product, 10));
+    $order = $this->service->confirm($order->fresh());
     $order->load('items');
-    $item    = $order->items->first();
+    $item = $order->items->first();
 
     $this->service->receive($order, [['id' => $item->id, 'quantity_received' => 6]]);
     $order->refresh()->load('items');
@@ -154,10 +154,10 @@ it('cumulates stock correctly across two partial receptions', function () {
 
 it('throws LogicException when receiving more than reliquat', function () {
     $product = makeProduct($this->tenant);
-    $order   = $this->service->create(purchasePayload($product, 5));
-    $order   = $this->service->confirm($order->fresh());
+    $order = $this->service->create(purchasePayload($product, 5));
+    $order = $this->service->confirm($order->fresh());
     $order->load('items');
-    $item    = $order->items->first();
+    $item = $order->items->first();
 
     expect(fn () => $this->service->receive($order, [['id' => $item->id, 'quantity_received' => 99]]))
         ->toThrow(LogicException::class);
@@ -165,9 +165,9 @@ it('throws LogicException when receiving more than reliquat', function () {
 
 it('throws LogicException when receiving a non-receivable order (draft)', function () {
     $product = makeProduct($this->tenant);
-    $order   = $this->service->create(purchasePayload($product, 5));
+    $order = $this->service->create(purchasePayload($product, 5));
     $order->load('items');
-    $item    = $order->items->first();
+    $item = $order->items->first();
 
     expect(fn () => $this->service->receive($order, [['id' => $item->id, 'quantity_received' => 3]]))
         ->toThrow(LogicException::class);
@@ -175,14 +175,15 @@ it('throws LogicException when receiving a non-receivable order (draft)', functi
 
 it('does not change stock if reception throws', function () {
     $product = makeProduct($this->tenant);
-    $order   = $this->service->create(purchasePayload($product, 5));
-    $order   = $this->service->confirm($order->fresh());
+    $order = $this->service->create(purchasePayload($product, 5));
+    $order = $this->service->confirm($order->fresh());
     $order->load('items');
-    $item    = $order->items->first();
+    $item = $order->items->first();
 
     try {
         $this->service->receive($order, [['id' => $item->id, 'quantity_received' => 99]]);
-    } catch (LogicException) {}
+    } catch (LogicException) {
+    }
 
     expect((float) Product::find($product->id)->stock_quantity)->toBe(0.0);
 });
@@ -208,11 +209,11 @@ it('cancels an ordered purchase order', function () {
 
 it('throws LogicException when cancelling a received order', function () {
     $product = makeProduct($this->tenant);
-    $order   = $this->service->create(purchasePayload($product, 5));
-    $order   = $this->service->confirm($order->fresh());
+    $order = $this->service->create(purchasePayload($product, 5));
+    $order = $this->service->confirm($order->fresh());
     $order->load('items');
-    $item    = $order->items->first();
-    $order   = $this->service->receive($order, [['id' => $item->id, 'quantity_received' => 5]]);
+    $item = $order->items->first();
+    $order = $this->service->receive($order, [['id' => $item->id, 'quantity_received' => 5]]);
 
     expect(fn () => $this->service->cancel($order))
         ->toThrow(LogicException::class);
@@ -220,11 +221,11 @@ it('throws LogicException when cancelling a received order', function () {
 
 it('throws LogicException when cancelling a partial order', function () {
     $product = makeProduct($this->tenant);
-    $order   = $this->service->create(purchasePayload($product, 10));
-    $order   = $this->service->confirm($order->fresh());
+    $order = $this->service->create(purchasePayload($product, 10));
+    $order = $this->service->confirm($order->fresh());
     $order->load('items');
-    $item    = $order->items->first();
-    $order   = $this->service->receive($order, [['id' => $item->id, 'quantity_received' => 5]]);
+    $item = $order->items->first();
+    $order = $this->service->receive($order, [['id' => $item->id, 'quantity_received' => 5]]);
 
     expect(fn () => $this->service->cancel($order))
         ->toThrow(LogicException::class);

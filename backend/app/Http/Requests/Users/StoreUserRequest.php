@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Users;
 
+use App\Services\TenantService;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreUserRequest extends FormRequest
@@ -13,11 +14,11 @@ class StoreUserRequest extends FormRequest
 
     public function rules(): array
     {
-        $tenantId = app(\App\Services\TenantService::class)->currentId();
+        $tenantId = app(TenantService::class)->currentId();
 
         return [
-            'name'      => ['required', 'string', 'max:255'],
-            'email'     => [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => [
                 'required', 'email', 'max:191',
                 // Email unique dans le scope du tenant courant
                 "unique:users,email,NULL,id,tenant_id,{$tenantId}",

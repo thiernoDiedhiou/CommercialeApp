@@ -18,6 +18,6 @@ class TenantScope implements Scope
             return;
         }
 
-        $builder->where($model->getTable() . '.tenant_id', $tenantService->currentId());
+        $builder->where($model->getTable().'.tenant_id', $tenantService->currentId());
     }
 }

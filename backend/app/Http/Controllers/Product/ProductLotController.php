@@ -33,11 +33,11 @@ class ProductLotController extends Controller
     {
         $data = $request->validate([
             'product_variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
-            'lot_number'         => ['required', 'string', 'max:100'],
-            'expiry_date'        => ['nullable', 'date'],
-            'quantity'           => ['required', 'integer', 'min:1'],
-            'purchase_price'     => ['nullable', 'numeric', 'min:0'],
-            'notes'              => ['nullable', 'string', 'max:500'],
+            'lot_number' => ['required', 'string', 'max:100'],
+            'expiry_date' => ['nullable', 'date'],
+            'quantity' => ['required', 'integer', 'min:1'],
+            'purchase_price' => ['nullable', 'numeric', 'min:0'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
         return DB::transaction(function () use ($data, $product) {
@@ -57,28 +57,28 @@ class ProductLotController extends Controller
             }
 
             $lot = ProductLot::create([
-                'tenant_id'          => $this->tenantService->currentId(),
-                'product_id'         => $product->id,
+                'tenant_id' => $this->tenantService->currentId(),
+                'product_id' => $product->id,
                 'product_variant_id' => $data['product_variant_id'] ?? null,
-                'lot_number'         => $data['lot_number'],
-                'expiry_date'        => $data['expiry_date'] ?? null,
-                'quantity_received'  => $data['quantity'],
+                'lot_number' => $data['lot_number'],
+                'expiry_date' => $data['expiry_date'] ?? null,
+                'quantity_received' => $data['quantity'],
                 'quantity_remaining' => 0, // StockService::adjust() incrémentera via updateLotQuantity()
-                'purchase_price'     => $data['purchase_price'] ?? null,
-                'is_active'          => true,
-                'notes'              => $data['notes'] ?? null,
+                'purchase_price' => $data['purchase_price'] ?? null,
+                'is_active' => true,
+                'notes' => $data['notes'] ?? null,
             ]);
 
             $this->stockService->adjust(
-                product:  $product,
-                type:     'in',
+                product: $product,
+                type: 'in',
                 quantity: $data['quantity'],
-                source:   'lot_manual',
+                source: 'lot_manual',
                 sourceId: $lot->id,
-                variant:  $variant,
+                variant: $variant,
                 unitCost: $data['purchase_price'] ?? null,
-                notes:    "Lot {$lot->lot_number}",
-                lot:      $lot,
+                notes: "Lot {$lot->lot_number}",
+                lot: $lot,
             );
 
             return response()->json(['data' => $lot], 201);
@@ -92,9 +92,9 @@ class ProductLotController extends Controller
         }
 
         $data = $request->validate([
-            'expiry_date'    => ['nullable', 'date'],
-            'is_active'      => ['boolean'],
-            'notes'          => ['nullable', 'string', 'max:500'],
+            'expiry_date' => ['nullable', 'date'],
+            'is_active' => ['boolean'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
         $lot->update($data);
@@ -109,9 +109,9 @@ class ProductLotController extends Controller
     public function regularize(Request $request, Product $product): JsonResponse
     {
         $data = $request->validate([
-            'lot_number'  => ['nullable', 'string', 'max:100'],
+            'lot_number' => ['nullable', 'string', 'max:100'],
             'expiry_date' => ['nullable', 'date'],
-            'notes'       => ['nullable', 'string', 'max:500'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ]);
 
         $lotTotal = ProductLot::where('product_id', $product->id)->sum('quantity_remaining');
@@ -121,7 +121,7 @@ class ProductLotController extends Controller
             return response()->json(['message' => 'Aucun stock orphelin à régulariser.'], 422);
         }
 
-        $lotNumber = $data['lot_number'] ?? ('REG-' . now()->format('Ymd'));
+        $lotNumber = $data['lot_number'] ?? ('REG-'.now()->format('Ymd'));
 
         $existing = ProductLot::where('product_id', $product->id)
             ->where('lot_number', $lotNumber)
@@ -132,15 +132,15 @@ class ProductLotController extends Controller
         }
 
         $lot = ProductLot::create([
-            'tenant_id'          => $this->tenantService->currentId(),
-            'product_id'         => $product->id,
+            'tenant_id' => $this->tenantService->currentId(),
+            'product_id' => $product->id,
             'product_variant_id' => null,
-            'lot_number'         => $lotNumber,
-            'expiry_date'        => $data['expiry_date'] ?? null,
-            'quantity_received'  => $orphaned,
+            'lot_number' => $lotNumber,
+            'expiry_date' => $data['expiry_date'] ?? null,
+            'quantity_received' => $orphaned,
             'quantity_remaining' => $orphaned,
-            'is_active'          => true,
-            'notes'              => $data['notes'] ?? 'Régularisation stock existant',
+            'is_active' => true,
+            'notes' => $data['notes'] ?? 'Régularisation stock existant',
         ]);
 
         return response()->json(['data' => $lot, 'orphaned_absorbed' => $orphaned], 201);

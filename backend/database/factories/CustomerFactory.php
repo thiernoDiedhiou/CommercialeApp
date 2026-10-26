@@ -12,10 +12,10 @@ class CustomerFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'      => $this->faker->name(),
-            'phone'     => '+221' . $this->faker->numerify('7########'),
-            'email'     => $this->faker->optional(0.6)->safeEmail(),
-            'address'   => $this->faker->optional(0.4)->address(),
+            'name' => $this->faker->name(),
+            'phone' => '+221'.$this->faker->numerify('7########'),
+            'email' => $this->faker->optional(0.6)->safeEmail(),
+            'address' => $this->faker->optional(0.4)->address(),
             'is_active' => true,
         ];
     }

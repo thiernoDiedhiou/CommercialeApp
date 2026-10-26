@@ -8,8 +8,8 @@ namespace App\DTOs\Payment;
  */
 enum PaymentStatus: string
 {
-    case Pending   = 'pending';
+    case Pending = 'pending';
     case Completed = 'completed';
-    case Failed    = 'failed';
+    case Failed = 'failed';
     case Cancelled = 'cancelled';
 }

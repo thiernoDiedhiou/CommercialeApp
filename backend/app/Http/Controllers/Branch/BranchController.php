@@ -24,8 +24,8 @@ class BranchController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $tenant    = $this->tenantService->current();
-        $tenantId  = $tenant->id;
+        $tenant = $this->tenantService->current();
+        $tenantId = $tenant->id;
 
         // Vérification de la limite plan
         $maxBranches = $tenant->activeSubscription?->plan?->max_branches ?? 1;
@@ -33,7 +33,7 @@ class BranchController extends Controller
         if ($maxBranches > 0 && Branch::count() >= $maxBranches) {
             return response()->json([
                 'message' => "Votre plan ne permet pas plus de {$maxBranches} succursale(s).",
-                'code'    => 'BRANCH_LIMIT_REACHED',
+                'code' => 'BRANCH_LIMIT_REACHED',
             ], 422);
         }
 
@@ -42,9 +42,9 @@ class BranchController extends Controller
                 'required', 'string', 'max:120',
                 Rule::unique('branches')->where('tenant_id', $tenantId),
             ],
-            'type'          => ['required', Rule::in(['principal', 'sync', 'warehouse'])],
-            'address'       => ['nullable', 'string', 'max:500'],
-            'phone'         => ['nullable', 'string', 'max:30'],
+            'type' => ['required', Rule::in(['principal', 'sync', 'warehouse'])],
+            'address' => ['nullable', 'string', 'max:500'],
+            'phone' => ['nullable', 'string', 'max:30'],
             'display_order' => ['nullable', 'integer', 'min:0'],
         ]);
 
@@ -52,7 +52,7 @@ class BranchController extends Controller
         if ($validated['type'] === 'principal' && Branch::where('type', 'principal')->exists()) {
             return response()->json([
                 'message' => 'Une succursale principale existe déjà pour ce tenant.',
-                'code'    => 'PRINCIPAL_ALREADY_EXISTS',
+                'code' => 'PRINCIPAL_ALREADY_EXISTS',
             ], 422);
         }
 
@@ -75,10 +75,10 @@ class BranchController extends Controller
                 'sometimes', 'string', 'max:120',
                 Rule::unique('branches')->where('tenant_id', $tenantId)->ignore($branch->id),
             ],
-            'type'          => ['sometimes', Rule::in(['principal', 'sync', 'warehouse'])],
-            'address'       => ['nullable', 'string', 'max:500'],
-            'phone'         => ['nullable', 'string', 'max:30'],
-            'is_active'     => ['sometimes', 'boolean'],
+            'type' => ['sometimes', Rule::in(['principal', 'sync', 'warehouse'])],
+            'address' => ['nullable', 'string', 'max:500'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'is_active' => ['sometimes', 'boolean'],
             'display_order' => ['nullable', 'integer', 'min:0'],
         ]);
 
@@ -86,7 +86,7 @@ class BranchController extends Controller
         if ($branch->isPrincipal() && isset($validated['type']) && $validated['type'] !== 'principal') {
             return response()->json([
                 'message' => 'Le type de la succursale principale ne peut pas être modifié.',
-                'code'    => 'PRINCIPAL_TYPE_IMMUTABLE',
+                'code' => 'PRINCIPAL_TYPE_IMMUTABLE',
             ], 422);
         }
 
@@ -94,7 +94,7 @@ class BranchController extends Controller
         if ($branch->isPrincipal() && isset($validated['is_active']) && ! $validated['is_active']) {
             return response()->json([
                 'message' => 'La succursale principale ne peut pas être désactivée.',
-                'code'    => 'PRINCIPAL_UNDELETABLE',
+                'code' => 'PRINCIPAL_UNDELETABLE',
             ], 422);
         }
 
@@ -108,7 +108,7 @@ class BranchController extends Controller
         if ($branch->isPrincipal()) {
             return response()->json([
                 'message' => 'La succursale principale ne peut pas être supprimée.',
-                'code'    => 'PRINCIPAL_UNDELETABLE',
+                'code' => 'PRINCIPAL_UNDELETABLE',
             ], 422);
         }
 
@@ -119,7 +119,7 @@ class BranchController extends Controller
         if ($hasSales) {
             return response()->json([
                 'message' => 'Cette succursale a des ventes associées et ne peut pas être supprimée.',
-                'code'    => 'BRANCH_HAS_SALES',
+                'code' => 'BRANCH_HAS_SALES',
             ], 422);
         }
 

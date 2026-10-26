@@ -26,38 +26,38 @@ class VariantController extends Controller
     public function store(Request $request, Product $product): JsonResponse
     {
         $data = $request->validate([
-            'sku'                   => ['nullable', 'string', 'max:100'],
-            'barcode'               => ['nullable', 'string', 'max:100'],
-            'price'                 => ['nullable', 'numeric', 'min:0'],
-            'cost_price'            => ['nullable', 'numeric', 'min:0'],
-            'alert_threshold'       => ['nullable', 'integer', 'min:0'],
-            'attribute_value_ids'   => ['required', 'array', 'min:1'],
+            'sku' => ['nullable', 'string', 'max:100'],
+            'barcode' => ['nullable', 'string', 'max:100'],
+            'price' => ['nullable', 'numeric', 'min:0'],
+            'cost_price' => ['nullable', 'numeric', 'min:0'],
+            'alert_threshold' => ['nullable', 'integer', 'min:0'],
+            'attribute_value_ids' => ['required', 'array', 'min:1'],
             'attribute_value_ids.*' => ['integer'],
         ]);
 
         $valueIds = $data['attribute_value_ids'];
-        $values   = AttributeValue::whereIn('id', $valueIds)->get();
-        $summary  = $values->pluck('value')->join(' / ');
+        $values = AttributeValue::whereIn('id', $valueIds)->get();
+        $summary = $values->pluck('value')->join(' / ');
 
         // Auto-generate SKU if not provided — avoids NOT NULL DB constraint error
         $sku = $data['sku'] ?? null;
         if (! $sku) {
             $suffix = strtoupper(str_replace([' / ', ' '], ['-', ''], $summary));
-            $sku = ($product->sku ? $product->sku . '-' : '') . $suffix;
+            $sku = ($product->sku ? $product->sku.'-' : '').$suffix;
         }
 
         try {
             $variant = DB::transaction(function () use ($product, $data, $valueIds, $summary, $sku) {
                 $variant = ProductVariant::create([
-                    'product_id'        => $product->id,
-                    'sku'               => $sku,
-                    'barcode'           => $data['barcode'] ?? null,
-                    'price'             => $data['price'] ?? $product->price,
-                    'cost_price'        => $data['cost_price'] ?? $product->cost_price,
-                    'alert_threshold'   => $data['alert_threshold'] ?? null,
+                    'product_id' => $product->id,
+                    'sku' => $sku,
+                    'barcode' => $data['barcode'] ?? null,
+                    'price' => $data['price'] ?? $product->price,
+                    'cost_price' => $data['cost_price'] ?? $product->cost_price,
+                    'alert_threshold' => $data['alert_threshold'] ?? null,
                     'attribute_summary' => $summary,
-                    'stock_quantity'    => 0,
-                    'is_active'         => true,
+                    'stock_quantity' => 0,
+                    'is_active' => true,
                 ]);
 
                 $variant->attributeValues()->sync($valueIds);
@@ -85,12 +85,12 @@ class VariantController extends Controller
         }
 
         $data = $request->validate([
-            'sku'             => ['nullable', 'string', 'max:100'],
-            'barcode'         => ['nullable', 'string', 'max:100'],
-            'price'           => ['nullable', 'numeric', 'min:0'],
-            'cost_price'      => ['nullable', 'numeric', 'min:0'],
+            'sku' => ['nullable', 'string', 'max:100'],
+            'barcode' => ['nullable', 'string', 'max:100'],
+            'price' => ['nullable', 'numeric', 'min:0'],
+            'cost_price' => ['nullable', 'numeric', 'min:0'],
             'alert_threshold' => ['nullable', 'integer', 'min:0'],
-            'is_active'       => ['sometimes', 'boolean'],
+            'is_active' => ['sometimes', 'boolean'],
         ]);
 
         $variant->update($data);
@@ -107,10 +107,12 @@ class VariantController extends Controller
         if (SaleItem::where('variant_id', $variant->id)->exists()) {
             // Désactivation — conserve l'historique des ventes
             $variant->update(['is_active' => false]);
+
             return response()->json(['message' => 'Variante désactivée (historique de ventes conservé).']);
         }
 
         $variant->delete();
+
         return response()->json(null, 204);
     }
 }

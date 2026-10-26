@@ -5,7 +5,6 @@ namespace App\Models;
 use App\Traits\BelongsToTenant;
 use App\Traits\HasUuid;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ShopOrder extends Model
@@ -33,11 +32,11 @@ class ShopOrder extends Model
     ];
 
     protected $casts = [
-        'delivery_fee'  => 'decimal:2',
-        'subtotal'      => 'decimal:2',
-        'total'         => 'decimal:2',
-        'confirmed_at'  => 'datetime',
-        'delivered_at'  => 'datetime',
+        'delivery_fee' => 'decimal:2',
+        'subtotal' => 'decimal:2',
+        'total' => 'decimal:2',
+        'confirmed_at' => 'datetime',
+        'delivered_at' => 'datetime',
     ];
 
     // ─── Relations ────────────────────────────────────────────────────────────
@@ -51,33 +50,33 @@ class ShopOrder extends Model
 
     public function totalFormatted(): string
     {
-        return number_format((float) $this->total, 0, ',', ' ') . ' FCFA';
+        return number_format((float) $this->total, 0, ',', ' ').' FCFA';
     }
 
     public function statusLabel(): string
     {
         return match ($this->status) {
-            'pending'   => 'En attente',
+            'pending' => 'En attente',
             'confirmed' => 'Confirmée',
             'preparing' => 'En préparation',
-            'shipped'   => 'Expédiée',
+            'shipped' => 'Expédiée',
             'delivered' => 'Livrée',
             'cancelled' => 'Annulée',
-            default     => $this->status,
+            default => $this->status,
         };
     }
 
     public function whatsappMessage(): string
     {
         $lines = $this->items->map(function (ShopOrderItem $item) {
-            $qty  = fmod((float) $item->quantity, 1.0) === 0.0
+            $qty = fmod((float) $item->quantity, 1.0) === 0.0
                 ? (int) $item->quantity
                 : $item->quantity;
             $name = $item->variant_name
                 ? "{$item->product_name} ({$item->variant_name})"
                 : $item->product_name;
 
-            return "• {$name} × {$qty} — " . number_format((float) $item->total, 0, ',', ' ') . ' FCFA';
+            return "• {$name} × {$qty} — ".number_format((float) $item->total, 0, ',', ' ').' FCFA';
         })->join("\n");
 
         return implode("\n", [
@@ -85,10 +84,10 @@ class ShopOrder extends Model
             '',
             $lines,
             '',
-            'Livraison : ' . (($this->delivery_fee > 0)
-                ? number_format((float) $this->delivery_fee, 0, ',', ' ') . ' FCFA'
+            'Livraison : '.(($this->delivery_fee > 0)
+                ? number_format((float) $this->delivery_fee, 0, ',', ' ').' FCFA'
                 : 'À définir'),
-            '*Total : ' . $this->totalFormatted() . '*',
+            '*Total : '.$this->totalFormatted().'*',
             '',
             "👤 {$this->customer_name}",
             "📞 {$this->customer_phone}",

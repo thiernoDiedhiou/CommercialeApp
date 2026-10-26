@@ -9,13 +9,12 @@ use App\Services\PaymentService;
 use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class BillingController extends Controller
 {
     public function __construct(
         private readonly PaymentService $paymentService,
-        private readonly TenantService  $tenantService,
+        private readonly TenantService $tenantService,
     ) {}
 
     /**
@@ -29,7 +28,7 @@ class BillingController extends Controller
     public function initiate(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'plan_uid'      => ['required', 'string'],
+            'plan_uid' => ['required', 'string'],
             'billing_cycle' => ['required', 'in:monthly,yearly'],
         ]);
 
@@ -44,7 +43,7 @@ class BillingController extends Controller
         if ($validated['billing_cycle'] === 'yearly' && ! $plan->price_yearly) {
             return response()->json([
                 'message' => 'Ce plan ne propose pas de facturation annuelle.',
-                'code'    => 'YEARLY_NOT_AVAILABLE',
+                'code' => 'YEARLY_NOT_AVAILABLE',
             ], 422);
         }
 
@@ -71,7 +70,7 @@ class BillingController extends Controller
      */
     public function verify(Request $request): JsonResponse
     {
-        $token  = $request->query('token');
+        $token = $request->query('token');
         $tenant = $this->tenantService->current();
 
         if (! $token) {
@@ -85,7 +84,7 @@ class BillingController extends Controller
         if (! $transaction) {
             return response()->json([
                 'message' => 'Transaction introuvable.',
-                'code'    => 'TRANSACTION_NOT_FOUND',
+                'code' => 'TRANSACTION_NOT_FOUND',
             ], 404);
         }
 
@@ -111,7 +110,7 @@ class BillingController extends Controller
      */
     public function transactions(): JsonResponse
     {
-        $tenant       = $this->tenantService->current();
+        $tenant = $this->tenantService->current();
         $transactions = $tenant->paymentTransactions()
             ->with('plan:id,name')
             ->latest()

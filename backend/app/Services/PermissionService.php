@@ -22,7 +22,7 @@ class PermissionService
         return Cache::remember(
             $this->userCacheKey($user),
             now()->addMinutes(self::TTL_MINUTES),
-            fn() => $this->loadFromDatabase($user),
+            fn () => $this->loadFromDatabase($user),
         );
     }
 
@@ -62,7 +62,7 @@ class PermissionService
         return $user->groups()
             ->with('permissions:id,name')
             ->get()
-            ->flatMap(fn(Group $group) => $group->permissions->pluck('name'))
+            ->flatMap(fn (Group $group) => $group->permissions->pluck('name'))
             ->unique()
             ->sort()
             ->values()

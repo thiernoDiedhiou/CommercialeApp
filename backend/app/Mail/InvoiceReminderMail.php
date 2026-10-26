@@ -43,9 +43,9 @@ class InvoiceReminderMail extends Mailable
     public function attachments(): array
     {
         $invoice = $this->invoice;
-        $tenant  = $this->tenant;
+        $tenant = $this->tenant;
 
-        $footer   = $invoice->footer
+        $footer = $invoice->footer
             ?? $tenant->settings()->where('key', 'invoice_footer')->value('value')
             ?? 'Merci de votre confiance';
         $template = $invoice->pdf_template
@@ -55,9 +55,9 @@ class InvoiceReminderMail extends Mailable
         return [
             Attachment::fromData(
                 fn () => Pdf::loadView('pdf.invoice_doc', [
-                    'invoice'  => $invoice,
-                    'tenant'   => $tenant,
-                    'footer'   => $footer,
+                    'invoice' => $invoice,
+                    'tenant' => $tenant,
+                    'footer' => $footer,
                     'template' => $template,
                 ])->output(),
                 "facture-{$invoice->reference}.pdf",

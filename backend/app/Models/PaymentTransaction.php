@@ -27,9 +27,9 @@ class PaymentTransaction extends Model
     ];
 
     protected $casts = [
-        'amount'          => 'integer',
+        'amount' => 'integer',
         'webhook_payload' => 'array',
-        'expires_at'      => 'datetime',
+        'expires_at' => 'datetime',
     ];
 
     // ── Journal append-only ────────────────────────────────────────────────────
@@ -42,7 +42,7 @@ class PaymentTransaction extends Model
 
         static::updating(function (PaymentTransaction $transaction) {
             $original = $transaction->getOriginal('status');
-            $new      = $transaction->status;
+            $new = $transaction->status;
 
             // Les états finaux sont immuables
             if (in_array($original, ['completed', 'failed'], true) && $original !== $new) {

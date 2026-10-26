@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Groups;
 
+use App\Services\TenantService;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateGroupRequest extends FormRequest
@@ -13,11 +14,11 @@ class UpdateGroupRequest extends FormRequest
 
     public function rules(): array
     {
-        $tenantId = app(\App\Services\TenantService::class)->currentId();
-        $groupId  = $this->route('group')?->id;
+        $tenantId = app(TenantService::class)->currentId();
+        $groupId = $this->route('group')?->id;
 
         return [
-            'name'        => [
+            'name' => [
                 'sometimes', 'string', 'max:100',
                 "unique:groups,name,{$groupId},id,tenant_id,{$tenantId}",
             ],

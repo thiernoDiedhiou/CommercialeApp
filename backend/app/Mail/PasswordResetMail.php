@@ -15,7 +15,7 @@ class PasswordResetMail extends Mailable
     use Queueable, SerializesModels;
 
     public function __construct(
-        public readonly User   $user,
+        public readonly User $user,
         public readonly Tenant $tenant,
         public readonly string $resetUrl,
     ) {}
@@ -23,7 +23,7 @@ class PasswordResetMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Réinitialisation de votre mot de passe — ' . $this->tenant->name,
+            subject: 'Réinitialisation de votre mot de passe — '.$this->tenant->name,
         );
     }
 

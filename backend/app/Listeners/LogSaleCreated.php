@@ -12,7 +12,7 @@ class LogSaleCreated
         ActivityLogService::log(
             'create',
             'sales',
-            'Vente ' . $event->sale->reference . ' créée',
+            'Vente '.$event->sale->reference.' créée',
             ['uid' => $event->sale->uid, 'total' => $event->sale->total],
         );
     }

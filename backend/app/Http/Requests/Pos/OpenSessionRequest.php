@@ -15,7 +15,7 @@ class OpenSessionRequest extends FormRequest
     {
         return [
             'opening_cash' => ['nullable', 'numeric', 'min:0'],
-            'notes'        => ['nullable', 'string', 'max:500'],
+            'notes' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

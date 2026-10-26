@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Product;
 
+use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -16,31 +17,31 @@ class StoreProductRequest extends FormRequest
 
     public function rules(): array
     {
-        /** @var \App\Models\User $user */
-        $user     = Auth::user();
+        /** @var User $user */
+        $user = Auth::user();
         $tenantId = $user->tenant_id;
 
         return [
-            'category_id'           => ['nullable', 'integer', Rule::exists('categories', 'id')->where('tenant_id', $tenantId)],
-            'brand_id'              => ['nullable', 'integer', Rule::exists('brands', 'id')->where('tenant_id', $tenantId)],
-            'name'                  => ['required', 'string', 'max:200'],
-            'description'           => ['nullable', 'string'],
-            'image'                 => ['nullable', 'mimes:jpeg,png,webp', 'max:2048'],
-            'sku'                   => ['nullable', 'string', 'max:100', Rule::unique('products')->where('tenant_id', $tenantId)->whereNull('deleted_at')],
-            'barcode'               => ['nullable', 'string', 'max:100', Rule::unique('products')->where('tenant_id', $tenantId)->whereNull('deleted_at')],
-            'price'                 => ['required', 'numeric', 'min:0'],
-            'compare_at_price'      => ['nullable', 'numeric', 'min:0'],
-            'cost_price'            => ['nullable', 'numeric', 'min:0'],
-            'has_variants'          => ['boolean'],
-            'is_weight_based'       => ['boolean'],
-            'has_expiry'            => ['boolean'],
-            'stock_quantity'        => ['nullable', 'numeric', 'min:0'],
-            'alert_threshold'       => ['nullable', 'integer', 'min:0'],
-            'unit'                  => ['nullable', 'string', 'max:20'],
-            'is_active'             => ['boolean'],
+            'category_id' => ['nullable', 'integer', Rule::exists('categories', 'id')->where('tenant_id', $tenantId)],
+            'brand_id' => ['nullable', 'integer', Rule::exists('brands', 'id')->where('tenant_id', $tenantId)],
+            'name' => ['required', 'string', 'max:200'],
+            'description' => ['nullable', 'string'],
+            'image' => ['nullable', 'mimes:jpeg,png,webp', 'max:2048'],
+            'sku' => ['nullable', 'string', 'max:100', Rule::unique('products')->where('tenant_id', $tenantId)->whereNull('deleted_at')],
+            'barcode' => ['nullable', 'string', 'max:100', Rule::unique('products')->where('tenant_id', $tenantId)->whereNull('deleted_at')],
+            'price' => ['required', 'numeric', 'min:0'],
+            'compare_at_price' => ['nullable', 'numeric', 'min:0'],
+            'cost_price' => ['nullable', 'numeric', 'min:0'],
+            'has_variants' => ['boolean'],
+            'is_weight_based' => ['boolean'],
+            'has_expiry' => ['boolean'],
+            'stock_quantity' => ['nullable', 'numeric', 'min:0'],
+            'alert_threshold' => ['nullable', 'integer', 'min:0'],
+            'unit' => ['nullable', 'string', 'max:20'],
+            'is_active' => ['boolean'],
 
             // Variantes — requis si has_variants, scopées au tenant pour sécurité
-            'attribute_value_ids'   => ['array'],
+            'attribute_value_ids' => ['array'],
             'attribute_value_ids.*' => ['integer', Rule::exists('attribute_values', 'id')->where('tenant_id', $tenantId)],
         ];
     }

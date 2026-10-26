@@ -23,16 +23,16 @@ class InvoicePayment extends Model
     ];
 
     protected $casts = [
-        'amount'  => 'decimal:2',
+        'amount' => 'decimal:2',
         'paid_at' => 'date',
     ];
 
     const METHODS = [
-        'cash'          => 'Espèces',
+        'cash' => 'Espèces',
         'bank_transfer' => 'Virement bancaire',
-        'mobile_money'  => 'Mobile Money',
-        'check'         => 'Chèque',
-        'other'         => 'Autre',
+        'mobile_money' => 'Mobile Money',
+        'check' => 'Chèque',
+        'other' => 'Autre',
     ];
 
     protected static function boot(): void

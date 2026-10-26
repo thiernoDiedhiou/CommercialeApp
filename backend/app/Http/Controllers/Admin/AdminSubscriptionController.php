@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
 use App\Services\TenantService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -43,28 +44,28 @@ class AdminSubscriptionController extends Controller
         $items = $subscriptions->map(function (TenantSubscription $sub) {
             return array_merge($this->formatSubscription($sub), [
                 'tenant' => [
-                    'id'        => $sub->tenant?->id,
-                    'uid'       => $sub->tenant?->uid,
-                    'name'      => $sub->tenant?->name,
-                    'slug'      => $sub->tenant?->slug,
+                    'id' => $sub->tenant?->id,
+                    'uid' => $sub->tenant?->uid,
+                    'name' => $sub->tenant?->name,
+                    'slug' => $sub->tenant?->slug,
                     'is_active' => $sub->tenant?->is_active,
                 ],
             ]);
         });
 
         return response()->json([
-            'data'    => $items,
-            'meta'    => [
+            'data' => $items,
+            'meta' => [
                 'current_page' => $subscriptions->currentPage(),
-                'last_page'    => $subscriptions->lastPage(),
-                'total'        => $subscriptions->total(),
-                'per_page'     => $subscriptions->perPage(),
+                'last_page' => $subscriptions->lastPage(),
+                'total' => $subscriptions->total(),
+                'per_page' => $subscriptions->perPage(),
             ],
             'summary' => [
-                'mrr'          => (float) $totalMrr,
-                'trial_count'  => TenantSubscription::where('status', 'trial')->count(),
+                'mrr' => (float) $totalMrr,
+                'trial_count' => TenantSubscription::where('status', 'trial')->count(),
                 'active_count' => TenantSubscription::where('status', 'active')->count(),
-                'expired_count'=> TenantSubscription::where('status', 'expired')->count(),
+                'expired_count' => TenantSubscription::where('status', 'expired')->count(),
             ],
         ]);
     }
@@ -100,26 +101,26 @@ class AdminSubscriptionController extends Controller
     public function store(Request $request, Tenant $tenant): JsonResponse
     {
         $validated = $request->validate([
-            'plan_id'       => ['required', 'integer', Rule::exists('plans', 'id')->where('is_active', true)],
+            'plan_id' => ['required', 'integer', Rule::exists('plans', 'id')->where('is_active', true)],
             'billing_cycle' => ['required', Rule::in(['trial', 'monthly', 'yearly', 'lifetime'])],
-            'starts_at'     => ['nullable', 'date'],
-            'ends_at'       => ['nullable', 'date', 'after:starts_at'],
-            'notes'         => ['nullable', 'string', 'max:1000'],
+            'starts_at' => ['nullable', 'date'],
+            'ends_at' => ['nullable', 'date', 'after:starts_at'],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $plan     = Plan::findOrFail($validated['plan_id']);
+        $plan = Plan::findOrFail($validated['plan_id']);
         $startsAt = isset($validated['starts_at'])
-            ? \Carbon\Carbon::parse($validated['starts_at'])
+            ? Carbon::parse($validated['starts_at'])
             : now();
 
         // Calcul automatique de ends_at si non fourni
         $endsAt = match (true) {
-            isset($validated['ends_at'])                         => \Carbon\Carbon::parse($validated['ends_at']),
-            $validated['billing_cycle'] === 'trial'              => $startsAt->copy()->addDays($plan->trial_days),
-            $validated['billing_cycle'] === 'monthly'            => $startsAt->copy()->addMonth(),
-            $validated['billing_cycle'] === 'yearly'             => $startsAt->copy()->addYear(),
-            $validated['billing_cycle'] === 'lifetime'           => null,
-            default                                              => $startsAt->copy()->addMonth(),
+            isset($validated['ends_at']) => Carbon::parse($validated['ends_at']),
+            $validated['billing_cycle'] === 'trial' => $startsAt->copy()->addDays($plan->trial_days),
+            $validated['billing_cycle'] === 'monthly' => $startsAt->copy()->addMonth(),
+            $validated['billing_cycle'] === 'yearly' => $startsAt->copy()->addYear(),
+            $validated['billing_cycle'] === 'lifetime' => null,
+            default => $startsAt->copy()->addMonth(),
         };
 
         $status = $validated['billing_cycle'] === 'trial' ? 'trial' : 'active';
@@ -130,13 +131,13 @@ class AdminSubscriptionController extends Controller
             ->update(['status' => 'expired']);
 
         $subscription = TenantSubscription::create([
-            'tenant_id'     => $tenant->id,
-            'plan_id'       => $plan->id,
+            'tenant_id' => $tenant->id,
+            'plan_id' => $plan->id,
             'billing_cycle' => $validated['billing_cycle'],
-            'status'        => $status,
-            'starts_at'     => $startsAt,
-            'ends_at'       => $endsAt,
-            'notes'         => $validated['notes'] ?? null,
+            'status' => $status,
+            'starts_at' => $startsAt,
+            'ends_at' => $endsAt,
+            'notes' => $validated['notes'] ?? null,
         ]);
 
         // Réactive le tenant s'il était suspendu
@@ -159,8 +160,8 @@ class AdminSubscriptionController extends Controller
 
         $validated = $request->validate([
             'ends_at' => ['nullable', 'date'],
-            'status'  => ['sometimes', Rule::in(['trial', 'active', 'expired', 'cancelled'])],
-            'notes'   => ['nullable', 'string', 'max:1000'],
+            'status' => ['sometimes', Rule::in(['trial', 'active', 'expired', 'cancelled'])],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $subscription->update($validated);
@@ -179,19 +180,19 @@ class AdminSubscriptionController extends Controller
     private function formatSubscription(TenantSubscription $sub): array
     {
         return [
-            'id'            => $sub->id,
-            'plan'          => $sub->plan ? [
-                'id'   => $sub->plan->id,
+            'id' => $sub->id,
+            'plan' => $sub->plan ? [
+                'id' => $sub->plan->id,
                 'name' => $sub->plan->name,
                 'slug' => $sub->plan->slug,
             ] : null,
             'billing_cycle' => $sub->billing_cycle,
-            'status'        => $sub->status,
-            'starts_at'     => $sub->starts_at?->toISOString(),
-            'ends_at'       => $sub->ends_at?->toISOString(),
-            'days_remaining'=> $sub->daysUntilExpiry(),
-            'notes'         => $sub->notes,
-            'created_at'    => $sub->created_at?->toISOString(),
+            'status' => $sub->status,
+            'starts_at' => $sub->starts_at?->toISOString(),
+            'ends_at' => $sub->ends_at?->toISOString(),
+            'days_remaining' => $sub->daysUntilExpiry(),
+            'notes' => $sub->notes,
+            'created_at' => $sub->created_at?->toISOString(),
         ];
     }
 }

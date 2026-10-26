@@ -20,17 +20,17 @@ class Payment extends Model
     ];
 
     protected $casts = [
-        'amount'  => 'decimal:2',
+        'amount' => 'decimal:2',
         'paid_at' => 'datetime',
     ];
 
     // Libellés lisibles pour l'UI et les factures PDF
     public const METHOD_LABELS = [
-        'cash'         => 'Espèces',
-        'card'         => 'Carte bancaire',
-        'transfer'     => 'Virement',
+        'cash' => 'Espèces',
+        'card' => 'Carte bancaire',
+        'transfer' => 'Virement',
         'mobile_money' => 'Mobile Money',
-        'credit'       => 'Crédit',
+        'credit' => 'Crédit',
     ];
 
     // ─── Relations ────────────────────────────────────────────────────────────

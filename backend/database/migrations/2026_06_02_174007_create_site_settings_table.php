@@ -24,12 +24,12 @@ return new class extends Migration
 
         // Ligne singleton — toujours id = 1
         DB::table('site_settings')->insert([
-            'contact_email'    => 'contact@didisphere.sn',
+            'contact_email' => 'contact@didisphere.sn',
             'contact_whatsapp' => '+221 00 000 00 00',
-            'contact_address'  => 'Dakar, Sénégal',
-            'contact_hours'    => 'Lun–Ven 8h–18h',
-            'created_at'       => now(),
-            'updated_at'       => now(),
+            'contact_address' => 'Dakar, Sénégal',
+            'contact_hours' => 'Lun–Ven 8h–18h',
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 

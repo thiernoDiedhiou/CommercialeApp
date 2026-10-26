@@ -26,11 +26,11 @@ class ProductLot extends Model
     ];
 
     protected $casts = [
-        'expiry_date'         => 'date',
-        'quantity_received'   => 'integer',
-        'quantity_remaining'  => 'integer',
-        'purchase_price'      => 'decimal:2',
-        'is_active'           => 'boolean',
+        'expiry_date' => 'date',
+        'quantity_received' => 'integer',
+        'quantity_remaining' => 'integer',
+        'purchase_price' => 'decimal:2',
+        'is_active' => 'boolean',
     ];
 
     // ─── Relations ────────────────────────────────────────────────────────────

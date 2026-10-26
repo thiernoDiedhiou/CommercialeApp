@@ -18,17 +18,17 @@ class CategoryController extends Controller
         $categories = Category::with(['children' => function ($q) {
             $q->withCount('products')->orderBy('name');
         }])
-        ->withCount('products')
-        ->whereNull('parent_id')
-        ->orderBy('name')
-        ->get();
+            ->withCount('products')
+            ->whereNull('parent_id')
+            ->orderBy('name')
+            ->get();
 
         return response()->json(['data' => CategoryResource::collection($categories)]);
     }
 
     public function store(StoreCategoryRequest $request): JsonResponse
     {
-        $data         = $request->validated();
+        $data = $request->validated();
         $data['slug'] = $data['slug'] ?? Str::slug($data['name']);
 
         if ($request->hasFile('image')) {
@@ -74,7 +74,7 @@ class CategoryController extends Controller
         if ($category->products()->exists()) {
             return response()->json([
                 'message' => 'Impossible de supprimer une catégorie contenant des produits.',
-                'code'    => 'CATEGORY_HAS_PRODUCTS',
+                'code' => 'CATEGORY_HAS_PRODUCTS',
             ], 422);
         }
 

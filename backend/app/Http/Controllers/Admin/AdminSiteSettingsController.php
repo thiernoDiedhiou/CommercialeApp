@@ -17,16 +17,16 @@ class AdminSiteSettingsController extends Controller
     public function update(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'contact_email'    => ['nullable', 'email',   'max:150'],
+            'contact_email' => ['nullable', 'email',   'max:150'],
             'contact_whatsapp' => ['nullable', 'string',  'max:50'],
-            'contact_address'  => ['nullable', 'string',  'max:200'],
-            'contact_hours'    => ['nullable', 'string',  'max:100'],
-            'facebook_url'     => ['nullable', 'url',     'max:255'],
-            'twitter_url'      => ['nullable', 'url',     'max:255'],
-            'linkedin_url'     => ['nullable', 'url',     'max:255'],
-            'instagram_url'    => ['nullable', 'url',     'max:255'],
+            'contact_address' => ['nullable', 'string',  'max:200'],
+            'contact_hours' => ['nullable', 'string',  'max:100'],
+            'facebook_url' => ['nullable', 'url',     'max:255'],
+            'twitter_url' => ['nullable', 'url',     'max:255'],
+            'linkedin_url' => ['nullable', 'url',     'max:255'],
+            'instagram_url' => ['nullable', 'url',     'max:255'],
             'tenant_deletion_grace_days' => ['nullable', 'integer', 'min:7', 'max:365'],
-            'renewal_url'  => ['nullable', 'url', 'max:500'],
+            'renewal_url' => ['nullable', 'url', 'max:500'],
         ]);
 
         $settings = SiteSettings::instance();

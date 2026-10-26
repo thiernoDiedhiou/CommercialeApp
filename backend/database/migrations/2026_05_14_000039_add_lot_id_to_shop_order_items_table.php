@@ -10,10 +10,10 @@ return new class extends Migration
     {
         Schema::table('shop_order_items', function (Blueprint $table) {
             $table->foreignId('lot_id')
-                  ->nullable()
-                  ->after('variant_id')
-                  ->constrained('product_lots')
-                  ->nullOnDelete();
+                ->nullable()
+                ->after('variant_id')
+                ->constrained('product_lots')
+                ->nullOnDelete();
         });
     }
 

@@ -1,5 +1,13 @@
 <?php
 
+use App\Models\Tenant;
+use App\Models\User;
+use App\Services\InvoiceService;
+use App\Services\PurchaseService;
+use App\Services\SaleService;
+use App\Services\StockService;
+use Tests\TestCase;
+
 /**
  * Fichier de stubs pour l'IDE (Intelephense).
  * NON exécuté — uniquement pour la résolution statique des types.
@@ -8,13 +16,13 @@
  * Intelephense ne comprend pas ce mécanisme → P1013/P1014 dans les closures.
  * Ce stub déclare les propriétés et méthodes disponibles via TestCase.
  *
- * @mixin \Tests\TestCase
+ * @mixin TestCase
  */
 
 // Propriétés injectées dans beforeEach() des tests Feature
-/** @var \App\Models\Tenant $tenant */
-/** @var \App\Models\User $user */
-/** @var \App\Services\PurchaseService $service */
-/** @var \App\Services\SaleService $saleService */
-/** @var \App\Services\StockService $stockService */
-/** @var \App\Services\InvoiceService $invoiceService */
+/** @var Tenant $tenant */
+/** @var User $user */
+/** @var PurchaseService $service */
+/** @var SaleService $saleService */
+/** @var StockService $stockService */
+/** @var InvoiceService $invoiceService */

@@ -17,9 +17,9 @@ return new class extends Migration
             ->pluck('email');
 
         if ($duplicates->isNotEmpty()) {
-            throw new \RuntimeException(
-                'Migration annulée — emails dupliqués entre tenants : ' . $duplicates->implode(', ') . "\n"
-                . 'Résolvez les doublons avant de relancer la migration.'
+            throw new RuntimeException(
+                'Migration annulée — emails dupliqués entre tenants : '.$duplicates->implode(', ')."\n"
+                .'Résolvez les doublons avant de relancer la migration.'
             );
         }
 

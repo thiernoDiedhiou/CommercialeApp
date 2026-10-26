@@ -19,20 +19,20 @@ return [
     'stores' => [
 
         'array' => [
-            'driver'    => 'array',
+            'driver' => 'array',
             'serialize' => false,
         ],
 
         'database' => [
-            'driver'     => 'database',
+            'driver' => 'database',
             'connection' => env('DB_CACHE_CONNECTION', null),
-            'table'      => env('DB_CACHE_TABLE', 'cache'),
+            'table' => env('DB_CACHE_TABLE', 'cache'),
             'lock_table' => env('DB_CACHE_LOCK_TABLE', 'cache_locks'),
         ],
 
         'file' => [
             'driver' => 'file',
-            'path'   => storage_path('framework/cache/data'),
+            'path' => storage_path('framework/cache/data'),
             'lock_path' => storage_path('framework/cache/data'),
         ],
 
@@ -44,7 +44,7 @@ return [
         |----------------------------------------------------------------------
         */
         'redis' => [
-            'driver'     => 'redis',
+            'driver' => 'redis',
             'connection' => env('REDIS_CACHE_CONNECTION', 'cache'),
             'lock_connection' => env('REDIS_CACHE_LOCK_CONNECTION', 'default'),
         ],
@@ -57,6 +57,6 @@ return [
     |--------------------------------------------------------------------------
     | Isole les entrées cache de ce projet en cas de Redis partagé.
     */
-    'prefix' => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'saas'), '_') . '_cache'),
+    'prefix' => env('CACHE_PREFIX', Str::slug(env('APP_NAME', 'saas'), '_').'_cache'),
 
 ];

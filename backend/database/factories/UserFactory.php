@@ -12,9 +12,9 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'      => $this->faker->name(),
-            'email'     => $this->faker->unique()->safeEmail(),
-            'password'  => 'password',  // cast 'hashed' auto-hashes on save
+            'name' => $this->faker->name(),
+            'email' => $this->faker->unique()->safeEmail(),
+            'password' => 'password',  // cast 'hashed' auto-hashes on save
             'is_active' => true,
         ];
         // tenant_id fourni explicitement à la création : ->create(['tenant_id' => $tenant->id])

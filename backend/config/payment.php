@@ -15,10 +15,10 @@ return [
     |--------------------------------------------------------------------------
     */
     'paydunya' => [
-        'master_key'  => env('PAYDUNYA_MASTER_KEY'),
+        'master_key' => env('PAYDUNYA_MASTER_KEY'),
         'private_key' => env('PAYDUNYA_PRIVATE_KEY'),
-        'token'       => env('PAYDUNYA_TOKEN'),
-        'mode'        => env('PAYDUNYA_MODE', 'test'), // test | live
+        'token' => env('PAYDUNYA_TOKEN'),
+        'mode' => env('PAYDUNYA_MODE', 'test'), // test | live
     ],
 
     /*
@@ -31,12 +31,12 @@ return [
     | country      : "SN" (Sénégal) | "CI" (Côte d'Ivoire) | "BJ" | "ML" | "TG"
     */
     'bictorys' => [
-        'api_url'        => env('BICTORYS_API_URL', 'https://api.test.bictorys.com'),
-        'api_key'        => env('BICTORYS_API_KEY'),         // clé publique (frontend/mobile)
-        'private_key'    => env('BICTORYS_PRIVATE_KEY'),     // clé privée (backend — CheckoutsWr + TransactionsRd)
+        'api_url' => env('BICTORYS_API_URL', 'https://api.test.bictorys.com'),
+        'api_key' => env('BICTORYS_API_KEY'),         // clé publique (frontend/mobile)
+        'private_key' => env('BICTORYS_PRIVATE_KEY'),     // clé privée (backend — CheckoutsWr + TransactionsRd)
         'webhook_secret' => env('BICTORYS_WEBHOOK_SECRET'),
-        'payment_type'   => env('BICTORYS_PAYMENT_TYPE', 'checkout'),
-        'country'        => env('BICTORYS_COUNTRY', 'SN'),
+        'payment_type' => env('BICTORYS_PAYMENT_TYPE', 'checkout'),
+        'country' => env('BICTORYS_COUNTRY', 'SN'),
     ],
 
     /*

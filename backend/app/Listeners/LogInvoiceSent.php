@@ -12,7 +12,7 @@ class LogInvoiceSent
         ActivityLogService::log(
             'send',
             'invoices',
-            'Facture ' . $event->invoice->reference . ' envoyée',
+            'Facture '.$event->invoice->reference.' envoyée',
         );
     }
 }

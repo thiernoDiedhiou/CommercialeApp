@@ -14,7 +14,6 @@ use Illuminate\Support\Str;
 
 class PasswordResetController extends Controller
 {
-
     public function send(Request $request): JsonResponse
     {
         $request->validate(['email' => ['required', 'email']]);
@@ -29,7 +28,7 @@ class PasswordResetController extends Controller
         // Toujours 200 — ne jamais révéler si l'email existe
         if ($user && $user->tenant) {
             $tenant = $user->tenant;
-            $plain  = Str::random(64);
+            $plain = Str::random(64);
 
             DB::table('password_reset_tokens')
                 ->where('email', $request->email)
@@ -37,16 +36,16 @@ class PasswordResetController extends Controller
                 ->delete();
 
             DB::table('password_reset_tokens')->insert([
-                'email'      => $request->email,
-                'tenant_id'  => $tenant->id,
-                'token'      => hash('sha256', $plain),
+                'email' => $request->email,
+                'tenant_id' => $tenant->id,
+                'token' => hash('sha256', $plain),
                 'created_at' => now(),
             ]);
 
             $resetUrl = rtrim(config('saas.frontend_url'), '/')
-                . '/reinitialisation'
-                . '?token=' . urlencode($plain)
-                . '&email=' . urlencode($request->email);
+                .'/reinitialisation'
+                .'?token='.urlencode($plain)
+                .'&email='.urlencode($request->email);
 
             try {
                 Mail::to($user->email, $user->name)->send(
@@ -65,9 +64,9 @@ class PasswordResetController extends Controller
     public function reset(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'email'                 => ['required', 'email'],
-            'token'                 => ['required', 'string'],
-            'password'              => ['required', 'string', 'min:8'],
+            'email' => ['required', 'email'],
+            'token' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8'],
             'password_confirmation' => ['required', 'same:password'],
         ]);
 

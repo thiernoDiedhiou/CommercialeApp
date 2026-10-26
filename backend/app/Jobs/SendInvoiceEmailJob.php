@@ -2,9 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Mail\InvoiceSentMail;
 use App\Models\Invoice;
-use App\Models\Tenant;
 use App\Services\MailService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,8 +15,10 @@ class SendInvoiceEmailJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 3;
+    public int $tries = 3;
+
     public int $timeout = 120;
+
     public array $backoff = [60, 300];
 
     public function __construct(

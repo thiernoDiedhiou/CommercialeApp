@@ -22,7 +22,7 @@ class NullGateway implements PaymentGatewayInterface
 {
     public function createInvoice(PaymentRequest $request): PaymentResult
     {
-        $token       = 'null-' . Str::random(16);
+        $token = 'null-'.Str::random(16);
         $frontendUrl = rtrim(config('app.frontend_url', 'http://localhost:5173'), '/');
 
         // Redirige directement vers la page de succès (ou d'échec selon la config)

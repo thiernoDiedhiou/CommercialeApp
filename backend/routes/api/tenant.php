@@ -189,6 +189,8 @@ Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
             ->middleware('permission:stock.view');
         Route::get('expiring', [StockController::class, 'expiring'])
             ->middleware('permission:stock.view');
+        Route::get('inventory', [StockController::class, 'inventory'])
+            ->middleware('permission:stock.view');
 
         // ── Transferts inter-succursales ──────────────────────────────────────
         Route::prefix('transfers')->name('transfers.')->group(function () {

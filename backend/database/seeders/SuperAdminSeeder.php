@@ -13,8 +13,8 @@ class SuperAdminSeeder extends Seeder
         SuperAdmin::firstOrCreate(
             ['email' => 'didispheres@gmail.com'],
             [
-                'name'      => 'Super Admin',
-                'password'  => Hash::make('superadmin123'),
+                'name' => 'Super Admin',
+                'password' => Hash::make('superadmin123'),
                 'is_active' => true,
             ]
         );

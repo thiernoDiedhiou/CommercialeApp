@@ -16,10 +16,10 @@ class SubscriptionExpiringMail extends Mailable
     use Queueable, SerializesModels;
 
     public function __construct(
-        public readonly Tenant             $tenant,
-        public readonly User               $recipient,
+        public readonly Tenant $tenant,
+        public readonly User $recipient,
         public readonly TenantSubscription $subscription,
-        public readonly int                $daysLeft,
+        public readonly int $daysLeft,
     ) {}
 
     public function envelope(): Envelope

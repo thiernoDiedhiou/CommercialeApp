@@ -14,7 +14,7 @@ class AdminAuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email'    => ['required', 'email'],
+            'email' => ['required', 'email'],
             'password' => ['required', 'string'],
         ]);
 
@@ -23,14 +23,14 @@ class AdminAuthController extends Controller
         if (! $admin || ! Hash::check($request->password, $admin->password)) {
             return response()->json([
                 'message' => 'Email ou mot de passe incorrect.',
-                'code'    => 'INVALID_CREDENTIALS',
+                'code' => 'INVALID_CREDENTIALS',
             ], 401);
         }
 
         if (! $admin->is_active) {
             return response()->json([
                 'message' => 'Ce compte est désactivé.',
-                'code'    => 'ACCOUNT_DISABLED',
+                'code' => 'ACCOUNT_DISABLED',
             ], 403);
         }
 
@@ -42,9 +42,9 @@ class AdminAuthController extends Controller
 
         return response()->json([
             'token' => $token,
-            'data'  => [
-                'id'    => $admin->id,
-                'name'  => $admin->name,
+            'data' => [
+                'id' => $admin->id,
+                'name' => $admin->name,
                 'email' => $admin->email,
             ],
         ]);
@@ -104,9 +104,9 @@ class AdminAuthController extends Controller
     private function formatAdmin(SuperAdmin $admin): array
     {
         return [
-            'id'     => $admin->id,
-            'name'   => $admin->name,
-            'email'  => $admin->email,
+            'id' => $admin->id,
+            'name' => $admin->name,
+            'email' => $admin->email,
             'avatar' => $admin->avatar_path
                 ? Storage::disk('public')->url($admin->avatar_path)
                 : null,
@@ -118,16 +118,16 @@ class AdminAuthController extends Controller
         $superAdmin = $request->attributes->get('super_admin');
 
         $validated = $request->validate([
-            'name'                 => ['required', 'string', 'max:150'],
-            'current_password'     => ['nullable', 'string'],
-            'password'             => ['nullable', 'string', 'min:8', 'confirmed'],
+            'name' => ['required', 'string', 'max:150'],
+            'current_password' => ['nullable', 'string'],
+            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
 
         if (! empty($validated['password'])) {
             if (empty($validated['current_password']) || ! Hash::check($validated['current_password'], $superAdmin->password)) {
                 return response()->json([
                     'message' => 'Le mot de passe actuel est incorrect.',
-                    'errors'  => ['current_password' => ['Le mot de passe actuel est incorrect.']],
+                    'errors' => ['current_password' => ['Le mot de passe actuel est incorrect.']],
                 ], 422);
             }
             $superAdmin->password = Hash::make($validated['password']);

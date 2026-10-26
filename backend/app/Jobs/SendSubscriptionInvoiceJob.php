@@ -16,7 +16,8 @@ class SendSubscriptionInvoiceJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 3;
+    public int $tries = 3;
+
     public int $backoff = 120; // 2 minutes entre les retries
 
     public function __construct(
@@ -25,9 +26,9 @@ class SendSubscriptionInvoiceJob implements ShouldQueue
 
     public function handle(): void
     {
-        $transaction  = $this->transaction->fresh(['tenant', 'plan', 'subscription']);
-        $tenant       = $transaction->tenant;
-        $plan         = $transaction->plan;
+        $transaction = $this->transaction->fresh(['tenant', 'plan', 'subscription']);
+        $tenant = $transaction->tenant;
+        $plan = $transaction->plan;
         $subscription = $transaction->subscription;
 
         if (! $tenant || ! $plan || ! $subscription) {
@@ -40,7 +41,7 @@ class SendSubscriptionInvoiceJob implements ShouldQueue
             ->first();
 
         $recipientEmail = $adminUser?->email ?? $tenant->email;
-        $recipientName  = $adminUser?->name  ?? $tenant->name;
+        $recipientName = $adminUser?->name ?? $tenant->name;
 
         if (! $recipientEmail) {
             return; // Pas d'email configuré

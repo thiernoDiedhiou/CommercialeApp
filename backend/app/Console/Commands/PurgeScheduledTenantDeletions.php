@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Storage;
 
 class PurgeScheduledTenantDeletions extends Command
 {
-    protected $signature   = 'tenants:purge-scheduled-deletions';
+    protected $signature = 'tenants:purge-scheduled-deletions';
+
     protected $description = 'Supprime définitivement les tenants dont la fenêtre de grâce RGPD est expirée';
 
     public function __construct(private readonly TenantService $tenantService)
@@ -27,6 +28,7 @@ class PurgeScheduledTenantDeletions extends Command
 
         if ($tenants->isEmpty()) {
             $this->info('Aucun tenant à purger.');
+
             return self::SUCCESS;
         }
 
@@ -44,32 +46,33 @@ class PurgeScheduledTenantDeletions extends Command
 
                 // Audit RGPD complet avant la suppression (après forceDelete le tenant n'existe plus)
                 $auditRecord = [
-                    'tenant_id'          => $tenant->id,
-                    'tenant_name'        => $tenant->name,
-                    'tenant_slug'        => $tenant->slug,
-                    'deletion_requested_by'  => $tenant->deletion_requested_by ?? 'inconnu',
-                    'deletion_requested_at'  => $tenant->deletion_requested_at?->toISOString() ?? 'inconnu',
-                    'deletion_scheduled_at'  => $tenant->scheduled_deletion_at?->toISOString(),
-                    'deletion_executed_at'   => now()->toISOString(),
-                    'deleted_at_soft'        => $tenant->deleted_at?->toISOString(),
+                    'tenant_id' => $tenant->id,
+                    'tenant_name' => $tenant->name,
+                    'tenant_slug' => $tenant->slug,
+                    'deletion_requested_by' => $tenant->deletion_requested_by ?? 'inconnu',
+                    'deletion_requested_at' => $tenant->deletion_requested_at?->toISOString() ?? 'inconnu',
+                    'deletion_scheduled_at' => $tenant->scheduled_deletion_at?->toISOString(),
+                    'deletion_executed_at' => now()->toISOString(),
+                    'deleted_at_soft' => $tenant->deleted_at?->toISOString(),
                 ];
 
                 // Suppression définitive — cascade DB gère les données liées
                 $tenant->forceDelete();
 
                 $purged++;
-                Log::info("[RGPD] Tenant purgé définitivement", $auditRecord);
+                Log::info('[RGPD] Tenant purgé définitivement', $auditRecord);
                 $this->line("[RGPD] {$auditRecord['tenant_name']} — exécuté le {$auditRecord['deletion_executed_at']}");
             } catch (\Throwable $e) {
-                Log::error("Échec purge tenant", [
+                Log::error('Échec purge tenant', [
                     'tenant_id' => $tenant->id,
-                    'error'     => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
                 $this->error("Erreur pour le tenant #{$tenant->id} : {$e->getMessage()}");
             }
         }
 
         $this->info("{$purged} tenant(s) purgé(s) définitivement.");
+
         return self::SUCCESS;
     }
 }

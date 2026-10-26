@@ -61,7 +61,7 @@ class PurchaseOrderController extends Controller
         $purchaseOrder->update([
             'supplier_id' => array_key_exists('supplier_id', $data) ? $data['supplier_id'] : $purchaseOrder->supplier_id,
             'expected_at' => $data['expected_at'] ?? $purchaseOrder->expected_at,
-            'notes'       => array_key_exists('notes', $data) ? $data['notes'] : $purchaseOrder->notes,
+            'notes' => array_key_exists('notes', $data) ? $data['notes'] : $purchaseOrder->notes,
         ]);
 
         // Remplacement complet des lignes si items fournis
@@ -69,12 +69,12 @@ class PurchaseOrderController extends Controller
             $purchaseOrder->items()->delete();
             foreach ($data['items'] as $item) {
                 PurchaseOrderItem::create([
-                    'purchase_order_id'  => $purchaseOrder->id,
-                    'product_id'         => $item['product_id'],
+                    'purchase_order_id' => $purchaseOrder->id,
+                    'product_id' => $item['product_id'],
                     'product_variant_id' => $item['product_variant_id'] ?? null,
-                    'quantity_ordered'   => $item['quantity_ordered'],
-                    'quantity_received'  => 0,
-                    'unit_cost'          => $item['unit_cost'],
+                    'quantity_ordered' => $item['quantity_ordered'],
+                    'quantity_received' => 0,
+                    'unit_cost' => $item['unit_cost'],
                 ]);
             }
         }

@@ -34,7 +34,7 @@ abstract class TestCase extends BaseTestCase
     {
         return [
             'X-Tenant-ID' => $tenant->api_key,
-            'Accept'      => 'application/json',
+            'Accept' => 'application/json',
         ];
     }
 
@@ -56,10 +56,10 @@ abstract class TestCase extends BaseTestCase
      */
     protected function createTenantWithUser(
         array $tenantOverrides = [],
-        array $userOverrides   = [],
+        array $userOverrides = [],
     ): array {
         $tenant = $this->createTenant($tenantOverrides);
-        $user   = $this->createUser($tenant, $userOverrides);
+        $user = $this->createUser($tenant, $userOverrides);
 
         return [$tenant, $user];
     }

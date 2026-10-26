@@ -26,12 +26,12 @@ class StockInsufficientException extends RuntimeException
     public function toArray(): array
     {
         return [
-            'message'           => $this->getMessage(),
-            'code'              => 'STOCK_INSUFFICIENT',
-            'product_id'        => $this->product->id,
-            'product_variant_id'=> $this->variant?->id,
-            'requested'         => $this->requested,
-            'available'         => $this->available,
+            'message' => $this->getMessage(),
+            'code' => 'STOCK_INSUFFICIENT',
+            'product_id' => $this->product->id,
+            'product_variant_id' => $this->variant?->id,
+            'requested' => $this->requested,
+            'available' => $this->available,
         ];
     }
 }

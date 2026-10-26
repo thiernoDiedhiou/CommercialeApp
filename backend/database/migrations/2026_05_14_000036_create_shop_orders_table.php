@@ -32,7 +32,7 @@ return new class extends Migration
 
             // Statut commande
             $table->enum('status', ['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled'])
-                  ->default('pending');
+                ->default('pending');
 
             // Paiement — 'paydunya' réservé pour intégration future (non exposé en API pour l'instant)
             $table->enum('payment_method', ['cod', 'whatsapp', 'paydunya'])->default('cod');

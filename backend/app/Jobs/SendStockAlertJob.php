@@ -20,7 +20,8 @@ class SendStockAlertJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 3;
+    public int $tries = 3;
+
     public array $backoff = [60, 300]; // 1 min puis 5 min entre les tentatives
 
     public function __construct(
@@ -35,7 +36,7 @@ class SendStockAlertJob implements ShouldQueue
 
         // Notification in-app pour les utilisateurs ayant la permission stock.view
         $permission = Permission::where('name', 'stock.view')->first();
-        if (!$permission) {
+        if (! $permission) {
             return;
         }
 

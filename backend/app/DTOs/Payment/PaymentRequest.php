@@ -28,7 +28,7 @@ readonly class PaymentRequest
         public string $cancelUrl,
 
         /** Informations optionnelles sur le payeur */
-        public ?string $customerName  = null,
+        public ?string $customerName = null,
         public ?string $customerEmail = null,
         public ?string $customerPhone = null,
     ) {}

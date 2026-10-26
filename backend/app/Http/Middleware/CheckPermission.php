@@ -23,21 +23,21 @@ class CheckPermission
         if (! $user) {
             return response()->json([
                 'message' => 'Non authentifié.',
-                'code'    => 'UNAUTHENTICATED',
+                'code' => 'UNAUTHENTICATED',
             ], 401);
         }
 
         if (! $user->is_active) {
             return response()->json([
                 'message' => 'Votre compte est désactivé.',
-                'code'    => 'ACCOUNT_DISABLED',
+                'code' => 'ACCOUNT_DISABLED',
             ], 403);
         }
 
         if (! $this->permissionService->hasPermission($user, $permission)) {
             return response()->json([
-                'message'             => "Vous n'avez pas la permission requise pour cette action.",
-                'code'                => 'FORBIDDEN',
+                'message' => "Vous n'avez pas la permission requise pour cette action.",
+                'code' => 'FORBIDDEN',
                 'required_permission' => $permission,
             ], 403);
         }

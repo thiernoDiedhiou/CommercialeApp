@@ -17,8 +17,8 @@ class CustomerController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $customers = Customer::when($request->search, fn($q) => $q->search($request->search))
-            ->when($request->has('is_active'), fn($q) => $q->where('is_active', $request->boolean('is_active')))
+        $customers = Customer::when($request->search, fn ($q) => $q->search($request->search))
+            ->when($request->has('is_active'), fn ($q) => $q->where('is_active', $request->boolean('is_active')))
             ->orderBy('name')
             ->paginate(20);
 
@@ -33,7 +33,7 @@ class CustomerController extends Controller
     {
         $customer = Customer::create($request->validated());
 
-        ActivityLogService::log('create', 'customers', 'Client "' . $customer->name . '" créé');
+        ActivityLogService::log('create', 'customers', 'Client "'.$customer->name.'" créé');
 
         return response()->json(['data' => new CustomerResource($customer)], 201);
     }
@@ -50,21 +50,21 @@ class CustomerController extends Controller
             ->where('customer_id', $customer->id)
             ->withSum('payments', 'amount')
             ->get()
-            ->filter(fn($s) => (float) $s->total > (float) ($s->payments_sum_amount ?? 0));
+            ->filter(fn ($s) => (float) $s->total > (float) ($s->payments_sum_amount ?? 0));
 
         $outstandingBalance = $unpaidSales->sum(
-            fn($s) => bcsub((string) $s->total, (string) ($s->payments_sum_amount ?? 0), 2)
+            fn ($s) => bcsub((string) $s->total, (string) ($s->payments_sum_amount ?? 0), 2)
         );
 
         return response()->json([
             'data' => array_merge(
                 (new CustomerResource($customer))->toArray(request()),
                 [
-                    'sales_count'         => (int) $stats->sales_count,
-                    'total_purchases'     => (float) $stats->total_purchases,
-                    'last_purchase_at'    => $stats->last_purchase_at,
+                    'sales_count' => (int) $stats->sales_count,
+                    'total_purchases' => (float) $stats->total_purchases,
+                    'last_purchase_at' => $stats->last_purchase_at,
                     'outstanding_balance' => (float) $outstandingBalance,
-                    'unpaid_sales_count'  => $unpaidSales->count(),
+                    'unpaid_sales_count' => $unpaidSales->count(),
                 ]
             ),
         ]);
@@ -74,7 +74,7 @@ class CustomerController extends Controller
     {
         $customer->update($request->validated());
 
-        ActivityLogService::log('update', 'customers', 'Client "' . $customer->name . '" mis à jour');
+        ActivityLogService::log('update', 'customers', 'Client "'.$customer->name.'" mis à jour');
 
         return response()->json(['data' => new CustomerResource($customer->fresh())]);
     }
@@ -85,13 +85,14 @@ class CustomerController extends Controller
 
         if ($customer->sales()->exists()) {
             $customer->update(['is_active' => false]);
-            ActivityLogService::log('delete', 'customers', 'Client "' . $name . '" supprimé');
+            ActivityLogService::log('delete', 'customers', 'Client "'.$name.'" supprimé');
+
             return response()->json(['message' => 'Client désactivé (historique de ventes conservé).']);
         }
 
         $customer->delete();
 
-        ActivityLogService::log('delete', 'customers', 'Client "' . $name . '" supprimé');
+        ActivityLogService::log('delete', 'customers', 'Client "'.$name.'" supprimé');
 
         return response()->json(null, 204);
     }
@@ -102,7 +103,7 @@ class CustomerController extends Controller
             ->with(['user:id,name'])
             ->withCount('items')
             ->withSum('payments', 'amount')
-            ->when($request->status, fn($q) => $q->where('status', $request->status))
+            ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->latest('id')
             ->paginate(20);
 

@@ -10,14 +10,15 @@ use Illuminate\Support\Facades\Log;
 
 class ExpireSubscriptions extends Command
 {
-    protected $signature   = 'subscription:expire';
+    protected $signature = 'subscription:expire';
+
     protected $description = 'Expire les abonnements échus et envoie les notifications J-7 / J-1';
 
     // Paliers de notification (ordre croissant obligatoire pour le calcul des fenêtres)
     private const NOTIFY_DAYS = [1, 7];
 
     public function __construct(
-        private readonly MailService   $mailService,
+        private readonly MailService $mailService,
         private readonly TenantService $tenantService,
     ) {
         parent::__construct();
@@ -93,9 +94,9 @@ class ExpireSubscriptions extends Command
 
                 Log::info('Tenant suspendu (abonnement expiré)', [
                     'tenant_id' => $sub->tenant->id,
-                    'tenant'    => $sub->tenant->name,
-                    'plan'      => $sub->plan?->name,
-                    'ended_at'  => $sub->ends_at->toISOString(),
+                    'tenant' => $sub->tenant->name,
+                    'plan' => $sub->plan?->name,
+                    'ended_at' => $sub->ends_at->toISOString(),
                 ]);
 
                 $this->line("  [expiré] {$sub->tenant->name} — suspendu");
@@ -120,8 +121,8 @@ class ExpireSubscriptions extends Command
             } catch (\Throwable $e) {
                 Log::warning('Échec notification expiration', [
                     'tenant_id' => $sub->tenant_id,
-                    'user_id'   => $admin->id,
-                    'error'     => $e->getMessage(),
+                    'user_id' => $admin->id,
+                    'error' => $e->getMessage(),
                 ]);
             }
         }

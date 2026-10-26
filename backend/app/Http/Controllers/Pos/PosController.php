@@ -19,7 +19,7 @@ class PosController extends Controller
     public function products(Request $request): JsonResponse
     {
         $products = $this->posService->getProducts(
-            search:     $request->input('search'),
+            search: $request->input('search'),
             categoryId: $request->integer('category_id') ?: null,
         );
 
@@ -37,12 +37,12 @@ class PosController extends Controller
     {
         try {
             $session = $this->posService->openSession(
-                user:         $request->user(),
-                openingCash:  (float) $request->input('opening_cash', 0),
-                notes:        $request->input('notes'),
+                user: $request->user(),
+                openingCash: (float) $request->input('opening_cash', 0),
+                notes: $request->input('notes'),
             );
 
-            ActivityLogService::log('open_session', 'pos', 'Session POS ouverte (fonds : ' . number_format((float) $request->input('opening_cash', 0)) . ')');
+            ActivityLogService::log('open_session', 'pos', 'Session POS ouverte (fonds : '.number_format((float) $request->input('opening_cash', 0)).')');
 
             return response()->json(['session' => $session], 201);
         } catch (\DomainException $e) {
@@ -59,12 +59,12 @@ class PosController extends Controller
 
         try {
             $result = $this->posService->closeSession(
-                session:     $session,
+                session: $session,
                 closingCash: (float) $request->input('closing_cash'),
-                notes:       $request->input('notes'),
+                notes: $request->input('notes'),
             );
 
-            ActivityLogService::log('close_session', 'pos', 'Session POS fermée (fonds : ' . number_format((float) $request->input('closing_cash')) . ')');
+            ActivityLogService::log('close_session', 'pos', 'Session POS fermée (fonds : '.number_format((float) $request->input('closing_cash')).')');
 
             return response()->json($result);
         } catch (\DomainException $e) {
@@ -81,7 +81,7 @@ class PosController extends Controller
     {
         $result = $this->posService->syncOffline(
             sales: $request->input('sales'),
-            user:  $request->user(),
+            user: $request->user(),
         );
 
         $count = count($request->input('sales', []));

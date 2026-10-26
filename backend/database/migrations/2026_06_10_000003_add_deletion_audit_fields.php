@@ -12,7 +12,7 @@ return new class extends Migration
         Schema::table('tenants', function (Blueprint $table) {
             $table->timestamp('deletion_requested_at')->nullable()->after('scheduled_deletion_at');
             $table->string('deletion_requested_by')->nullable()->after('deletion_requested_at')
-                  ->comment('Nom + email du Super Admin ayant programmé la suppression');
+                ->comment('Nom + email du Super Admin ayant programmé la suppression');
         });
 
         // Délai de grâce configurable dans les paramètres du site (défaut 30 jours)

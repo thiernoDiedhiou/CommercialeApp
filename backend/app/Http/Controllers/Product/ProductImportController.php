@@ -25,7 +25,7 @@ class ProductImportController extends Controller
      */
     public function import(ImportProductRequest $request): JsonResponse
     {
-        $filePath       = $request->file('file')->getRealPath();
+        $filePath = $request->file('file')->getRealPath();
         $updateExisting = $request->boolean('update_existing', false);
 
         $result = $this->importService->import($filePath, $updateExisting);
@@ -36,7 +36,7 @@ class ProductImportController extends Controller
             'created' => $result['created'],
             'updated' => $result['updated'],
             'skipped' => $result['skipped'],
-            'errors'  => $result['errors'],
+            'errors' => $result['errors'],
         ], $status);
     }
 
@@ -54,7 +54,7 @@ class ProductImportController extends Controller
             }
             fclose($out);
         }, 'modele-import-produits.csv', [
-            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="modele-import-produits.csv"',
         ]);
     }

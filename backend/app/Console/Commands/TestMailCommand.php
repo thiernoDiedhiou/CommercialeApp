@@ -29,6 +29,7 @@ class TestMailCommand extends Command
             $this->line('  <fg=green>✓ SMTP OK — email envoyé</>');
         } catch (\Throwable $e) {
             $this->line("  <fg=red>✗ SMTP ERREUR : {$e->getMessage()}</>");
+
             return self::FAILURE;
         }
 
@@ -40,6 +41,7 @@ class TestMailCommand extends Command
 
             if (! $invoice) {
                 $this->line("  <fg=red>✗ Facture #{$invoiceId} introuvable</>");
+
                 return self::FAILURE;
             }
 
@@ -52,6 +54,7 @@ class TestMailCommand extends Command
                 }
             } catch (\Throwable $e) {
                 $this->line("  <fg=red>✗ ERREUR facture : {$e->getMessage()}</>");
+
                 return self::FAILURE;
             }
         }

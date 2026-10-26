@@ -45,7 +45,7 @@ class BrandController extends Controller
         if ($brand->products()->exists()) {
             return response()->json([
                 'message' => 'Impossible de supprimer une marque associée à des produits.',
-                'code'    => 'BRAND_HAS_PRODUCTS',
+                'code' => 'BRAND_HAS_PRODUCTS',
             ], 422);
         }
 

@@ -14,14 +14,19 @@ class Invoice extends Model
 {
     use BelongsToTenant, HasUuid, SoftDeletes;
 
-    const STATUS_DRAFT     = 'draft';
-    const STATUS_SENT      = 'sent';
-    const STATUS_PAID      = 'paid';
-    const STATUS_OVERDUE   = 'overdue';
+    const STATUS_DRAFT = 'draft';
+
+    const STATUS_SENT = 'sent';
+
+    const STATUS_PAID = 'paid';
+
+    const STATUS_OVERDUE = 'overdue';
+
     const STATUS_CANCELLED = 'cancelled';
 
     const TYPE_INVOICE = 'invoice';
-    const TYPE_QUOTE   = 'quote';
+
+    const TYPE_QUOTE = 'quote';
 
     protected $fillable = [
         'tenant_id',
@@ -53,18 +58,18 @@ class Invoice extends Model
     ];
 
     protected $casts = [
-        'issue_date'       => 'date',
-        'due_date'         => 'date',
-        'subtotal'         => 'decimal:2',
-        'discount_value'   => 'decimal:2',
-        'discount_amount'  => 'decimal:2',
-        'tax_rate'         => 'decimal:2',
-        'tax_amount'       => 'decimal:2',
-        'total'            => 'decimal:2',
-        'paid_amount'      => 'decimal:2',
-        'sent_at'          => 'datetime',
-        'paid_at'          => 'datetime',
-        'cancelled_at'     => 'datetime',
+        'issue_date' => 'date',
+        'due_date' => 'date',
+        'subtotal' => 'decimal:2',
+        'discount_value' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
+        'tax_rate' => 'decimal:2',
+        'tax_amount' => 'decimal:2',
+        'total' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
+        'sent_at' => 'datetime',
+        'paid_at' => 'datetime',
+        'cancelled_at' => 'datetime',
         'last_reminder_at' => 'datetime',
     ];
 

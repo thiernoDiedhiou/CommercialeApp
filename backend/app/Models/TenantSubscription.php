@@ -19,8 +19,8 @@ class TenantSubscription extends Model
     ];
 
     protected $casts = [
-        'starts_at'        => 'datetime',
-        'ends_at'          => 'datetime',
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
         'notified_at_days' => 'array',
     ];
 
@@ -61,7 +61,7 @@ class TenantSubscription extends Model
     /** Marque un palier de notification comme envoyé. */
     public function markNotified(int $daysThreshold): void
     {
-        $notified   = $this->notified_at_days ?? [];
+        $notified = $this->notified_at_days ?? [];
         $notified[] = $daysThreshold;
 
         $this->update(['notified_at_days' => array_unique($notified)]);

@@ -29,13 +29,13 @@ class PublicOgController extends Controller
             return $this->fallback();
         }
 
-        $shop        = $tenant->shopSettings;
+        $shop = $tenant->shopSettings;
         $frontendUrl = rtrim(config('app.frontend_url', 'https://didisphere.shop'), '/');
-        $shopUrl     = "{$frontendUrl}/shop/{$slug}";
+        $shopUrl = "{$frontendUrl}/shop/{$slug}";
 
-        $title  = $shop?->meta_title    ?? $shop?->shop_name  ?? $tenant->name;
-        $desc   = $shop?->meta_description ?? "Découvrez la boutique en ligne de {$tenant->name}. Commandez facilement.";
-        $image  = $shop?->logo_url      ?? $shop?->favicon_url ?? "{$frontendUrl}/og-image.png";
+        $title = $shop?->meta_title ?? $shop?->shop_name ?? $tenant->name;
+        $desc = $shop?->meta_description ?? "Découvrez la boutique en ligne de {$tenant->name}. Commandez facilement.";
+        $image = $shop?->logo_url ?? $shop?->favicon_url ?? "{$frontendUrl}/og-image.png";
 
         return $this->render($title, $desc, $image, $shopUrl);
     }
@@ -50,13 +50,13 @@ class PublicOgController extends Controller
             return $this->fallback();
         }
 
-        $shop        = $tenant->shopSettings;
+        $shop = $tenant->shopSettings;
         $frontendUrl = rtrim(config('app.frontend_url', 'https://didisphere.shop'), '/');
-        $shopUrl     = "{$frontendUrl}/shop/{$slug}/catalog";
-        $shopName    = $shop?->shop_name ?? $tenant->name;
+        $shopUrl = "{$frontendUrl}/shop/{$slug}/catalog";
+        $shopName = $shop?->shop_name ?? $tenant->name;
 
         $title = "Catalogue — {$shopName}";
-        $desc  = "Parcourez tous les produits de {$shopName}. Commandez en ligne.";
+        $desc = "Parcourez tous les produits de {$shopName}. Commandez en ligne.";
         $image = $shop?->logo_url ?? "{$frontendUrl}/og-image.png";
 
         return $this->render($title, $desc, $image, $shopUrl);
@@ -66,9 +66,9 @@ class PublicOgController extends Controller
     {
         // Échapper toutes les données user-controlled avant insertion HTML (XSS)
         $eTitle = htmlspecialchars($title, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $eDesc  = htmlspecialchars($desc,  ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $eDesc = htmlspecialchars($desc, ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $eImage = htmlspecialchars($image, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $eUrl   = htmlspecialchars($url,   ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $eUrl = htmlspecialchars($url, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
         $html = <<<HTML
 <!DOCTYPE html>
@@ -104,9 +104,10 @@ HTML;
     private function fallback(): Response
     {
         $frontendUrl = rtrim(config('app.frontend_url', 'https://didisphere.shop'), '/');
+
         return $this->render(
             'DiDi Sphere — Logiciel de gestion commerciale',
-            "Gérez vos ventes, stocks et clients en un seul endroit.",
+            'Gérez vos ventes, stocks et clients en un seul endroit.',
             "{$frontendUrl}/og-image.png",
             $frontendUrl,
         );

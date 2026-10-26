@@ -31,7 +31,7 @@ return new class extends Migration
 
             $table->enum('discount_type', ['percent', 'fixed'])->nullable();
             $table->decimal('discount_value', 10, 2)->default(0); // saisie UI : % ou montant
-            $table->decimal('discount_amount', 12, 2)->default(0);// montant calculé
+            $table->decimal('discount_amount', 12, 2)->default(0); // montant calculé
             $table->decimal('tax_amount', 12, 2)->default(0);     // TVA si applicable
 
             $table->decimal('total', 12, 2)->default(0);          // = subtotal - discount + tax

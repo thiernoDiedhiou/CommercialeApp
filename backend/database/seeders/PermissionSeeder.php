@@ -15,6 +15,7 @@ class PermissionSeeder extends Seeder
 
         if (! is_array($data)) {
             $this->command->error("Fichier introuvable ou JSON invalide : {$path}");
+
             return;
         }
 
@@ -32,8 +33,8 @@ class PermissionSeeder extends Seeder
                     ['name' => $perm['name']],
                     [
                         'display_name' => $perm['display_name'],
-                        'module'       => $module['module'],
-                        'action'       => $perm['action'],
+                        'module' => $module['module'],
+                        'action' => $perm['action'],
                     ]
                 );
                 $count++;

@@ -15,7 +15,7 @@ class ImportProductRequest extends FormRequest
     {
         return [
             // Accepte .csv (text/csv ou text/plain selon l'OS)
-            'file'            => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
             // Si true : met à jour les produits dont le SKU existe déjà
             'update_existing' => ['boolean'],
         ];
@@ -25,8 +25,8 @@ class ImportProductRequest extends FormRequest
     {
         return [
             'file.required' => 'Un fichier CSV est requis.',
-            'file.mimes'    => 'Le fichier doit être au format CSV (.csv).',
-            'file.max'      => 'Le fichier ne doit pas dépasser 2 Mo.',
+            'file.mimes' => 'Le fichier doit être au format CSV (.csv).',
+            'file.max' => 'Le fichier ne doit pas dépasser 2 Mo.',
         ];
     }
 }

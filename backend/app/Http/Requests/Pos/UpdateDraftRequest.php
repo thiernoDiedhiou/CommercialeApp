@@ -14,7 +14,7 @@ class UpdateDraftRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'      => ['sometimes', 'string', 'max:100'],
+            'name' => ['sometimes', 'string', 'max:100'],
             'cart_data' => ['sometimes', 'array'],
         ];
     }
