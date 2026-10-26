@@ -11,9 +11,14 @@ interface SidebarContentProps {
   onClose: () => void
 }
 
-function findParentPath(pathname: string): string | null {
+// Retourne l'id de l'item parent dont un enfant correspond à la route courante
+function findParentId(pathname: string): string | null {
   for (const item of NAV_ITEMS) {
-    if (item.children?.some((c) => c.path === pathname)) return item.path
+    if (item.children?.some(
+      (c) => pathname === c.path || pathname.startsWith(c.path + '/'),
+    )) {
+      return item.id
+    }
   }
   return null
 }
@@ -26,8 +31,6 @@ function SidebarContent({ onClose }: SidebarContentProps) {
   const location     = useLocation()
   const homePath     = useHomePath()
 
-  // Vérifie si une feature est disponible dans le plan actuel.
-  // Si planFeatures est null (abonnement inconnu), on laisse passer — l'API bloquera si besoin.
   const hasFeature = (feature?: string): boolean => {
     if (!feature || !planFeatures) return true
     const key = feature as keyof typeof planFeatures
@@ -35,17 +38,18 @@ function SidebarContent({ onClose }: SidebarContentProps) {
   }
 
   const visibleItems = NAV_ITEMS.filter((item) =>
-    permissions.includes(item.permission)
+    permissions.includes(item.permission),
   )
 
-  const [expandedPath, setExpandedPath] = useState<string | null>(
-    () => findParentPath(location.pathname),
+  // Identifiant (item.id) du groupe actuellement ouvert
+  const [expandedId, setExpandedId] = useState<string | null>(
+    () => findParentId(location.pathname),
   )
 
-  // Auto-expand quand on navigue vers un sous-menu depuis ailleurs dans l'app
+  // Auto-expand quand on navigue directement vers un sous-chemin (lien externe, F5…)
   useEffect(() => {
-    const parent = findParentPath(location.pathname)
-    if (parent) setExpandedPath(parent)
+    const parentId = findParentId(location.pathname)
+    if (parentId) setExpandedId(parentId)
   }, [location.pathname])
 
   return (
@@ -73,16 +77,21 @@ function SidebarContent({ onClose }: SidebarContentProps) {
         {visibleItems.map((item) => {
           const featureAllowed  = hasFeature(item.feature)
           const visibleChildren = item.children?.filter((c) =>
-            permissions.includes(c.permission)
+            permissions.includes(c.permission),
           ) ?? []
           const hasChildren = visibleChildren.length > 0
-          const isExpanded  = hasChildren && expandedPath === item.path
+          const isExpanded  = hasChildren && expandedId === item.id
 
-          // Item désactivé (feature absente du plan) — affiché grisé, non cliquable
+          // Un enfant correspond à la route courante → parent "actif"
+          const isChildActive = hasChildren && visibleChildren.some(
+            (c) => location.pathname === c.path || location.pathname.startsWith(c.path + '/'),
+          )
+
+          // Feature absente du plan — item grisé, non cliquable
           if (!featureAllowed) {
             return (
               <div
-                key={item.path}
+                key={item.id}
                 title={t('nav.not_in_plan')}
                 className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-300 dark:text-gray-600 cursor-not-allowed select-none"
               >
@@ -96,37 +105,53 @@ function SidebarContent({ onClose }: SidebarContentProps) {
           }
 
           return (
-            <div key={item.path}>
-              <NavLink
-                to={item.path}
-                onClick={() => {
-                  if (hasChildren) {
-                    setExpandedPath((prev) => (prev === item.path ? null : item.path))
-                  } else {
-                    onClose()
+            <div key={item.id}>
+              {hasChildren ? (
+                // ── En-tête de groupe : bouton toggle uniquement ──────────────
+                // Sur mobile, le clic ouvre/ferme le sous-menu SANS fermer la sidebar.
+                // Seul le clic sur un enfant ferme la sidebar (via onClose dans le NavLink enfant).
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedId((prev) => (prev === item.id ? null : item.id))
                   }
-                }}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                    (!hasChildren && isActive) || (hasChildren && isExpanded)
+                  className={cn(
+                    'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    isExpanded || isChildActive
                       ? 'bg-brand-primary/10 text-brand-primary'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100',
-                  )
-                }
-              >
-                <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-                <span className="flex-1">{t(item.labelKey)}</span>
-                {hasChildren && (
+                  )}
+                  aria-expanded={isExpanded}
+                >
+                  <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  <span className="flex-1 text-left">{t(item.labelKey)}</span>
                   <ChevronDown
                     className={cn(
                       'h-4 w-4 shrink-0 transition-transform duration-200',
                       isExpanded && 'rotate-180',
                     )}
                   />
-                )}
-              </NavLink>
+                </button>
+              ) : (
+                // ── Lien direct ───────────────────────────────────────────────
+                <NavLink
+                  to={item.path!}
+                  onClick={onClose}
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-brand-primary/10 text-brand-primary'
+                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100',
+                    )
+                  }
+                >
+                  <item.icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  <span className="flex-1">{t(item.labelKey)}</span>
+                </NavLink>
+              )}
 
+              {/* Sous-menu déroulant */}
               {hasChildren && isExpanded && (
                 <div className="mt-0.5 ml-4 space-y-0.5 border-l-2 border-brand-primary/20 pl-3">
                   {visibleChildren.map((child) => {

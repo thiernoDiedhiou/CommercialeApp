@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
+import Breadcrumb from '@/components/ui/Breadcrumb'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeftIcon,
   PhoneIcon,
   EnvelopeIcon,
   ExclamationCircleIcon,
@@ -25,7 +25,6 @@ import type { DebtSale } from '@/types'
 export default function DebtDetailPage() {
   const { t } = useTranslation()
   const { uid } = useParams<{ uid: string }>()
-  const navigate  = useNavigate()
   const qc        = useQueryClient()
 
   const PAYMENT_METHODS = [
@@ -96,18 +95,13 @@ export default function DebtDetailPage() {
     <div className="space-y-6 p-4 sm:p-6">
 
       {/* Navigation */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => navigate('/debts')}
-          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          {t('nav.debts')}
-        </button>
-        <span className="text-gray-300 dark:text-gray-600">/</span>
-        <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{customer.name}</span>
-      </div>
+      <Breadcrumb
+        className="mb-0"
+        items={[
+          { label: t('nav.debts'), to: '/debts' },
+          { label: customer.name },
+        ]}
+      />
 
       {/* Carte client + solde */}
       <div className="rounded-xl bg-white dark:bg-gray-800 shadow-sm ring-1 ring-gray-100 dark:ring-gray-700 p-6">

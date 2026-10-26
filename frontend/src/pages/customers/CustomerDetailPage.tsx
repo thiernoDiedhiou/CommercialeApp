@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import Breadcrumb from '@/components/ui/Breadcrumb'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowLeftIcon,
   PhoneIcon,
   EnvelopeIcon,
   MapPinIcon,
@@ -246,14 +246,13 @@ export default function CustomerDetailPage() {
 
       {/* Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => navigate('/customers')}
-          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          {t('customers.title')}
-        </button>
+        <Breadcrumb
+          className="mb-0"
+          items={[
+            { label: t('customers.title'), to: '/customers' },
+            { label: customer.name },
+          ]}
+        />
         <CanDo permission="customers.edit">
           <Button
             variant="outline"
