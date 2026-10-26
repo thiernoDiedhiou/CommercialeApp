@@ -6,6 +6,8 @@ import {
   MagnifyingGlassIcon,
   Bars3Icon,
   XMarkIcon,
+  ChevronDownIcon,
+  Squares2X2Icon,
 } from '@heroicons/react/24/outline'
 import { useShopStore } from '@/shop/store/shopStore'
 import { getShopCategories } from '@/shop/services/shop'
@@ -74,8 +76,10 @@ export default function ShopNavbar({ slug }: Props) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen]         = useState(false)
   const [searchValue, setSearchValue]       = useState('')
+  const [catMenuOpen, setCatMenuOpen]       = useState(false)
   const debounceRef    = useRef<ReturnType<typeof setTimeout>>()
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const catMenuRef     = useRef<HTMLDivElement>(null)
 
   // Sync le champ de recherche avec ?search= de l'URL quand on est sur le catalogue
   useEffect(() => {
@@ -115,6 +119,17 @@ export default function ShopNavbar({ slug }: Props) {
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [mobileMenuOpen])
+
+  // Fermer le menu catégories sur clic extérieur
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (catMenuRef.current && !catMenuRef.current.contains(e.target as Node)) {
+        setCatMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const handleSearch = (value: string) => {
     setSearchValue(value)
@@ -162,6 +177,46 @@ export default function ShopNavbar({ slug }: Props) {
                 </span>
               )}
             </Link>
+
+            {/* ── Catégories dropdown (desktop) ────────────────────────── */}
+            <div ref={catMenuRef} className="relative hidden sm:flex shrink-0">
+              <button
+                type="button"
+                onClick={() => setCatMenuOpen((o) => !o)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors whitespace-nowrap"
+              >
+                <Squares2X2Icon className="h-4 w-4" />
+                Catégories
+                <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${catMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {catMenuOpen && categories.length > 0 && (
+                <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+                  <div className="max-h-80 overflow-y-auto py-2">
+                    {categories.map((cat) => {
+                      const CatIcon = getCategoryIcon(cat.name)
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            navigate(`/shop/${slug}/catalog?category=${cat.id}`)
+                            setCatMenuOpen(false)
+                          }}
+                          className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <CatIcon className="h-4 w-4 shrink-0 text-gray-400" />
+                          <span className="truncate">{cat.name}</span>
+                          {(cat.products_count ?? 0) > 0 && (
+                            <span className="ml-auto text-xs text-gray-400 shrink-0">{cat.products_count}</span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* ── SearchBar desktop (centre) ────────────────────────────── */}
             <div className="hidden sm:flex flex-1 justify-center">
