@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeftIcon, UserIcon, TrashIcon, ShoppingCartIcon, CameraIcon } from '@heroicons/react/24/outline'
+import { ArrowLeftIcon, UserIcon, TrashIcon, ShoppingCartIcon, CameraIcon, MapPinIcon } from '@heroicons/react/24/outline'
 import axios from 'axios'
 import { useTranslation } from 'react-i18next'
 
@@ -63,6 +63,7 @@ export default function PosPage() {
   // ── Local state ──────────────────────────────────────────────────────────
   const tenant           = useAuthStore((s) => s.tenant)
   const user             = useAuthStore((s) => s.user)
+  const activeBranch     = useAuthStore((s) => s.activeBranch)
   const applyBrandColors = useTenantStore((s) => s.applyBrandColors)
   const applyTheme       = useThemeStore((s) => s.applyTheme)
 
@@ -277,6 +278,12 @@ export default function PosPage() {
             </button>
           )}
           <h1 className="text-base font-semibold text-gray-800 dark:text-gray-200">{t('pos.title')}</h1>
+          {activeBranch && (
+            <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-900/20 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300 ring-1 ring-blue-200 dark:ring-blue-800">
+              <MapPinIcon className="h-3 w-3" aria-hidden="true" />
+              {activeBranch.name}
+            </span>
+          )}
           {session ? (
             <button
               type="button"

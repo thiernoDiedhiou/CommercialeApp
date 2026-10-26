@@ -21,12 +21,13 @@ interface AuthState {
   activeBranch: Branch | null
 
   setAuth: (
-    token:        string,
-    user:         User,
-    permissions:  string[],
-    tenant:       TenantInfo,
-    subscription?: SubscriptionInfo | null,
-    planFeatures?: PlanFeatures | null,
+    token:              string,
+    user:               User,
+    permissions:        string[],
+    tenant:             TenantInfo,
+    subscription?:      SubscriptionInfo | null,
+    planFeatures?:      PlanFeatures | null,
+    availableBranches?: Branch[],
   ) => void
   setTenantApiKey: (key: string) => void
   setSubscriptionExpired: (value: boolean) => void
@@ -49,8 +50,28 @@ export const useAuthStore = create<AuthState>()(
       availableBranches:   [],
       activeBranch:        null,
 
-      setAuth: (token, user, permissions, tenant, subscription = null, planFeatures = null) =>
-        set({ token, user, permissions, tenant, subscription, planFeatures, tenantApiKey: tenant.api_key, subscriptionExpired: false }),
+      setAuth: (token, user, permissions, tenant, subscription = null, planFeatures = null, availableBranches) =>
+        set((state) => {
+          const branches = availableBranches ?? state.availableBranches
+          const currentActive = state.activeBranch
+          const nextActive = availableBranches !== undefined
+            ? (currentActive && branches.some((b) => b.uid === currentActive.uid)
+                ? currentActive
+                : (branches.find((b) => b.type === 'principal') ?? branches[0] ?? null))
+            : currentActive
+          return {
+            token,
+            user,
+            permissions,
+            tenant,
+            subscription,
+            planFeatures,
+            tenantApiKey: tenant.api_key,
+            subscriptionExpired: false,
+            availableBranches: branches,
+            activeBranch: nextActive,
+          }
+        }),
 
       setTenantApiKey: (key) =>
         set({ tenantApiKey: key }),

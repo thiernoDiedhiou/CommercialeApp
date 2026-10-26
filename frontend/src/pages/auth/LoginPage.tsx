@@ -47,8 +47,8 @@ export default function LoginPage() {
       const r = await apiClient.post<LoginResponse>('/api/v1/auth/login', data)
       return r.data
     },
-    onSuccess: ({ token, data: { user, permissions, tenant, subscription, plan_features } }) => {
-      setAuth(token, user, permissions, tenant, subscription, plan_features)
+    onSuccess: ({ token, data: { user, permissions, tenant, subscription, plan_features, available_branches } }) => {
+      setAuth(token, user, permissions, tenant, subscription, plan_features, available_branches ?? [])
       applyBrandColors(tenant.primary_color, tenant.secondary_color)
       navigate('/dashboard', { replace: true })
     },

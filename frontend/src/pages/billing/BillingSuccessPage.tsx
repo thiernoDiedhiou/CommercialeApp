@@ -41,8 +41,8 @@ export default function BillingSuccessPage() {
             setStatus('error')
             return
           }
-          const { user: u, permissions, tenant, subscription, plan_features } = res.data.data
-          setAuth(currentToken, u, permissions, tenant, subscription, plan_features)
+          const { user: u, permissions, tenant, subscription, plan_features, available_branches } = res.data.data
+          setAuth(currentToken, u, permissions, tenant, subscription, plan_features, available_branches ?? [])
           qc.invalidateQueries({ queryKey: ['dashboard'] })
         }
 

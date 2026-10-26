@@ -73,8 +73,8 @@ export default function Layout() {
     apiClient.get<{ data: LoginResponse['data'] }>('/api/v1/auth/me').then(({ data: response }) => {
       const currentToken = useAuthStore.getState().token
       if (!currentToken) return
-      const { user: freshUser, permissions: freshPerms, tenant: freshTenant, subscription: freshSub, plan_features } = response.data
-      setAuth(currentToken, freshUser, freshPerms, freshTenant, freshSub, plan_features)
+      const { user: freshUser, permissions: freshPerms, tenant: freshTenant, subscription: freshSub, plan_features, available_branches } = response.data
+      setAuth(currentToken, freshUser, freshPerms, freshTenant, freshSub, plan_features, available_branches ?? [])
       applyBrandColors(freshTenant.primary_color, freshTenant.secondary_color)
       const lang = freshUser.locale ?? freshTenant.locale
       if (lang) {

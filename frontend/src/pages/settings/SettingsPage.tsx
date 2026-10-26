@@ -55,7 +55,7 @@ import {
   syncGroupPermissions,
 } from '@/services/api/groups'
 import { getBranches, getUserBranches, syncUserBranches } from '@/services/api/branches'
-import type { UserWithGroups, Group, Permission, CreateGroupData } from '@/types'
+import type { UserWithGroups, Group, Permission, CreateGroupData, CreateUserResponse } from '@/types'
 import BranchesTab from '@/components/settings/BranchesTab'
 
 // ─── Tab IDs ──────────────────────────────────────────────────────────────────
@@ -591,7 +591,7 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
 
   const schema = editing ? userEditSchema : userCreateSchema
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<UserCreateValues>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<UserEditValues>({
     resolver: zodResolver(schema),
   })
 
@@ -605,7 +605,7 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
     setShowPassword(false)
   }, [isOpen, editing, reset])
 
-  const mutation = useMutation({
+  const mutation = useMutation<CreateUserResponse | UserWithGroups, Error, UserValues>({
     mutationFn: async (vals: UserValues) => {
       if (editing) {
         const body: Record<string, unknown> = { name: vals.name, email: vals.email, is_active: vals.is_active }
@@ -734,7 +734,7 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
-                  {...register('password' as keyof UserCreateValues)}
+                  {...register('password')}
                   className="w-full rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 pr-10 text-sm outline-none focus:border-indigo-400 transition"
                 />
                 <button
@@ -760,7 +760,7 @@ function UserModal({ isOpen, editing, groups, onClose }: UserModalProps) {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
-                  {...register('password_confirmation' as keyof UserCreateValues)}
+                  {...register('password_confirmation')}
                   className="w-full rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 px-3 py-2 pr-10 text-sm outline-none focus:border-indigo-400 transition"
                 />
               </div>

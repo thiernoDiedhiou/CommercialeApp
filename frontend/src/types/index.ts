@@ -29,6 +29,7 @@ export interface PlanFeatures {
   stock_alerts:   boolean
   multi_user:     boolean
   custom_domain:  boolean
+  max_branches?:  number
 }
 
 export interface Branch {
@@ -61,11 +62,12 @@ export interface TenantInfo {
 export interface LoginResponse {
   token: string
   data: {
-    user:         User
-    permissions:  string[]
-    tenant:       TenantInfo
-    subscription: SubscriptionInfo | null
-    plan_features: PlanFeatures | null
+    user:                User
+    permissions:         string[]
+    tenant:              TenantInfo
+    subscription:        SubscriptionInfo | null
+    plan_features:       PlanFeatures | null
+    available_branches:  Branch[]
   }
 }
 
