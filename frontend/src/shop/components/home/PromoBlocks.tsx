@@ -8,7 +8,8 @@ export default function PromoBlocks() {
   const shopConfig  = useShopStore((s) => s.shopConfig)
   const promoBlocks = shopConfig?.promo_blocks ?? []
 
-  const active = promoBlocks.filter((b) => b.title.trim())
+  // Les blocs avec image_url sont réservés à BrandShowcase (grandes cartes éditoriales)
+  const active = promoBlocks.filter((b) => b.title.trim() && !b.image_url)
   if (active.length === 0) return null
 
   const handleClick = (link: string) => {

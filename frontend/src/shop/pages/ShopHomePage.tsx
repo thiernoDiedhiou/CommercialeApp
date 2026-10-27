@@ -1,14 +1,17 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useShopStore } from '@/shop/store/shopStore'
-import { HeroBanner, PromoBlocks, TrustBadges, HomeProductSection } from '@/shop/components/home'
+import {
+  HeroBanner, PromoBlocks, TrustBadges,
+  HomeProductSection, BrandShowcase,
+} from '@/shop/components/home'
 import { getShopCategories } from '@/shop/services/shop'
 import { getCategoryIcon } from '@/shop/utils/categoryIcons'
 import { Link } from 'react-router-dom'
 
 const JAKARTA: React.CSSProperties = { fontFamily: "'Plus Jakarta Sans', sans-serif" }
 
-// ── Strip de catégories pills (entre trust badges et sections produits) ────────
+// ── Strip de catégories pills ─────────────────────────────────────────────────
 function CategoryPillStrip({ slug }: { slug: string }) {
   const { data } = useQuery({
     queryKey : ['shop-categories', slug],
@@ -20,9 +23,8 @@ function CategoryPillStrip({ slug }: { slug: string }) {
   if (categories.length === 0) return null
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 sm:mt-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 sm:mt-10">
       <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
-        {/* "Tous" pill */}
         <Link
           to={`/shop/${slug}/catalog`}
           className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-white transition-colors"
@@ -30,8 +32,6 @@ function CategoryPillStrip({ slug }: { slug: string }) {
         >
           Tous les produits
         </Link>
-
-        {/* Catégories */}
         {categories.slice(0, 8).map((cat) => {
           const CatIcon = getCategoryIcon(cat.name)
           return (
@@ -59,7 +59,7 @@ export default function ShopHomePage() {
 
   return (
     <>
-      {/* 1. Hero */}
+      {/* 1. Hero (desktop pleine largeur + mobile carte arrondie) */}
       <HeroBanner
         title={shopConfig?.hero_title ?? null}
         subtitle={shopConfig?.hero_subtitle ?? null}
@@ -67,11 +67,11 @@ export default function ShopHomePage() {
         onCatalogClick={() => navigate(`/shop/${slug}/catalog`)}
       />
 
-      {/* 2. Blocs promo configurables */}
-      <PromoBlocks />
-
-      {/* 3. Trust badges / réassurance */}
+      {/* 2. Value Props Strip — desktop -mt-10 pour overlap hero, mobile 3 cols compactes */}
       <TrustBadges />
+
+      {/* 3. Blocs promo colorés (sans image — ceux avec image vont dans BrandShowcase) */}
+      <PromoBlocks />
 
       {/* 4. Strip catégories pills */}
       <CategoryPillStrip slug={slug} />
@@ -89,7 +89,10 @@ export default function ShopHomePage() {
         seeAllTo={`/shop/${slug}/catalog?on_sale=1`}
       />
 
-      {/* 6. Nouveaux arrivages */}
+      {/* 6. Brand Showcase (partenaires / mises en avant — blocs promo avec images) */}
+      <BrandShowcase />
+
+      {/* 7. Nouveaux arrivages */}
       <HomeProductSection
         slug={slug}
         title="Nouveaux arrivages"
@@ -100,7 +103,7 @@ export default function ShopHomePage() {
         seeAllTo={`/shop/${slug}/catalog`}
       />
 
-      {/* 7. Meilleures ventes */}
+      {/* 8. Meilleures ventes */}
       <HomeProductSection
         slug={slug}
         title="Meilleures ventes"
