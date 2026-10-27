@@ -178,6 +178,25 @@ export default function ShopSettingsPage() {
   const set = (key: keyof ShopSettingsData, value: unknown) =>
     setFields((prev) => ({ ...prev, [key]: value }))
 
+  // Auto-sauvegarde immédiate des promo_blocks (utilisé sur suppression d'un bloc)
+  const savePromoBlocksNow = (blocks: PromoBlock[]) => {
+    const fd = new FormData()
+    fd.append('promo_blocks', JSON.stringify(blocks))
+    saveMutation.mutate(fd)
+  }
+
+  const handleDeletePromoBlock = (i: number) => {
+    const newBlocks = promoBlocks.filter((_, idx) => idx !== i)
+    setPromoBlocks(newBlocks)
+    setPromoImages((prev) => {
+      const next = [...prev]
+      next.splice(i, 1)
+      next.push(null)
+      return next
+    })
+    savePromoBlocksNow(newBlocks)
+  }
+
   const handleSave = () => {
     const fd = new FormData()
     Object.entries(fields).forEach(([k, v]) => {
@@ -798,17 +817,11 @@ export default function ShopSettingsPage() {
                       <div className="flex justify-end">
                         <button
                           type="button"
-                          onClick={() => {
-                            setPromoBlocks((prev) => prev.filter((_, idx) => idx !== i))
-                            setPromoImages((prev) => {
-                              const next = [...prev]
-                              next[i] = null
-                              return next
-                            })
-                          }}
-                          className="text-xs text-red-500 hover:text-red-700 hover:underline"
+                          onClick={() => handleDeletePromoBlock(i)}
+                          disabled={saveMutation.isPending}
+                          className="text-xs text-red-500 hover:text-red-700 hover:underline disabled:opacity-50"
                         >
-                          Supprimer ce bloc
+                          {saveMutation.isPending ? 'Suppression…' : 'Supprimer ce bloc'}
                         </button>
                       </div>
                     </div>
