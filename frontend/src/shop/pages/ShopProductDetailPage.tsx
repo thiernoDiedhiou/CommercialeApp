@@ -1,13 +1,126 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
+import { ChevronRightIcon, BoltIcon, CheckBadgeIcon } from '@heroicons/react/24/outline'
 import { getShopProduct } from '@/shop/services/shop'
 import { useShopStore } from '@/shop/store/shopStore'
 import { ProductGallery, VariantPicker, AddToCartBar, SimilarProducts } from '@/shop/components/product'
-import { Breadcrumb, SkeletonGrid } from '@/shop/components/shared'
+import { SkeletonGrid } from '@/shop/components/shared'
 
+// ── Typographies ──────────────────────────────────────────────────────────────
+const GROTESK: React.CSSProperties = { fontFamily: "'Space Grotesk', sans-serif" }
+const JAKARTA: React.CSSProperties = { fontFamily: "'Plus Jakarta Sans', sans-serif" }
+
+function formatPrice(price: number): string {
+  return Math.round(price).toLocaleString('fr-FR')
+}
+
+// ── Séparateur entre sections ─────────────────────────────────────────────────
+function Sep() {
+  return <div className="h-2 bg-slate-100 -mx-4 sm:-mx-6 my-4" />
+}
+
+// ── Points forts extraits de la description ───────────────────────────────────
+function KeyHighlights({ description }: { description: string | null }) {
+  if (!description) return null
+
+  // Essaie de parser la description en bullet points
+  const bullets = description
+    .split(/[•\n\r]+/)
+    .map((s) => s.replace(/^[-–—*\s]+/, '').trim())
+    .filter((s) => s.length > 5 && s.length < 80)
+    .slice(0, 4)
+
+  if (bullets.length < 2) {
+    // Affiche la description brute
+    return (
+      <div className="px-4">
+        <h2
+          className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mb-3"
+          style={JAKARTA}
+        >
+          <BoltIcon className="w-4 h-4 text-[var(--shop-primary,#006948)]" />
+          Description du produit
+        </h2>
+        <p className="text-sm text-slate-600 leading-relaxed" style={JAKARTA}>
+          {description}
+        </p>
+      </div>
+    )
+  }
+
+  const ICONS = ['⚡', '🎯', '🔒', '✅']
+
+  return (
+    <div className="px-4">
+      <h2
+        className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mb-3"
+        style={JAKARTA}
+      >
+        <BoltIcon className="w-4 h-4 text-[var(--shop-primary,#006948)]" />
+        Points forts &amp; Atouts majeurs
+      </h2>
+      <div className="grid grid-cols-2 gap-2.5">
+        {bullets.map((b, i) => (
+          <div key={i} className="p-3 bg-slate-50 rounded-xl flex items-start gap-2.5">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-base"
+              style={{ background: 'var(--shop-primary-10, rgba(0,105,72,0.08))' }}
+            >
+              {ICONS[i] ?? '✓'}
+            </div>
+            <p className="text-xs font-medium text-slate-700 leading-snug mt-0.5" style={JAKARTA}>
+              {b}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Piliers de réassurance ────────────────────────────────────────────────────
+function ReassurancePillars() {
+  const trustBadges = useShopStore((s) => (s.shopConfig?.trust_badges ?? []).filter((b) => b.active))
+
+  const defaultPillars = [
+    { icon: '🚚', title: 'Livraison disponible',     subtitle: 'Expédition sécurisée à domicile ou en point de retrait.' },
+    { icon: '🏪', title: 'SAV & Boutique physique',  subtitle: 'Venez tester ou récupérer votre commande directement.' },
+    { icon: '🛡️', title: 'Garantie authenticité',   subtitle: 'Produits neufs vérifiés avec assistance dédiée.' },
+  ]
+
+  const pillars = trustBadges.length >= 2
+    ? trustBadges.slice(0, 3).map((b) => ({ icon: b.icon ?? '✓', title: b.title, subtitle: b.subtitle ?? '' }))
+    : defaultPillars
+
+  return (
+    <div className="px-4 space-y-2.5">
+      {pillars.map((p, i) => (
+        <div key={i} className="flex items-center gap-3 p-3 bg-white shadow-sm rounded-xl border border-slate-100">
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-xl"
+            style={{ background: 'rgba(0,105,72,0.08)', color: 'var(--shop-primary,#006948)' }}
+          >
+            {p.icon}
+          </div>
+          <div>
+            <p className="text-xs font-bold text-slate-900" style={JAKARTA}>{p.title}</p>
+            {p.subtitle && (
+              <p className="text-[11px] text-slate-500 leading-snug mt-0.5" style={JAKARTA}>
+                {p.subtitle}
+              </p>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ── Page principale ───────────────────────────────────────────────────────────
 export default function ShopProductDetailPage() {
+  const navigate = useNavigate()
   const { slug = '', productId = '' } = useParams<{ slug: string; productId: string }>()
   const addItem   = useShopStore((s) => s.addItem)
   const openCart  = useShopStore((s) => s.openCart)
@@ -26,7 +139,9 @@ export default function ShopProductDetailPage() {
 
   const product = data?.data
 
-  // Stock à afficher selon le contexte
+  const selectedVariant = product?.variants.find((v) => v.id === selectedVariantId) ?? null
+  const displayPrice    = selectedVariant?.price ?? product?.price ?? 0
+
   const resolvedStock = (() => {
     if (!product) return null
     if (!product.has_variants) return product.stock_quantity ?? 0
@@ -39,30 +154,35 @@ export default function ShopProductDetailPage() {
     return Math.round((1 - product.price / product.compare_at_price) * 100)
   })()
 
-  const lowStock = !product?.has_variants
-    && product?.alert_threshold !== null
-    && (product?.stock_quantity ?? 0) > 0
-    && (product?.stock_quantity ?? 0) <= (product?.alert_threshold ?? 0)
+  const inStock = resolvedStock !== null ? resolvedStock > 0 : null
+  const lowStockThreshold = product?.alert_threshold ?? null
+  const lowStockQty = (
+    !product?.has_variants &&
+    lowStockThreshold !== null &&
+    (product?.stock_quantity ?? 0) > 0 &&
+    (product?.stock_quantity ?? 0) <= lowStockThreshold
+  ) ? product!.stock_quantity : null
+
+  const savings = promoPercent !== null && product?.compare_at_price
+    ? product.compare_at_price - product.price
+    : null
 
   const handleAddToCart = () => {
     if (!product) return
     if (product.has_variants && !selectedVariantId) return
-
-    const variant = product.variants.find((v) => v.id === selectedVariantId)
-    const price   = variant?.price ?? product.price
-
+    const price = selectedVariant?.price ?? product.price
     addItem({
       product_id     : product.id,
       variant_id     : selectedVariantId,
       product_name   : product.name,
-      variant_name   : variant?.attribute_summary ?? null,
+      variant_name   : selectedVariant?.attribute_summary ?? null,
       image_url      : product.image_url,
       quantity,
       unit_price     : price,
       total          : price * quantity,
       is_weight_based: false,
       unit           : product.unit,
-      stock_quantity : variant?.stock_quantity ?? product.stock_quantity ?? 0,
+      stock_quantity : selectedVariant?.stock_quantity ?? product.stock_quantity ?? 0,
     })
     openCart()
   }
@@ -77,7 +197,7 @@ export default function ShopProductDetailPage() {
 
   if (!product) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center text-gray-500">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center text-slate-400">
         Produit introuvable.
       </div>
     )
@@ -91,180 +211,244 @@ export default function ShopProductDetailPage() {
     : rawDesc
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <>
       <Helmet>
         <title>{productTitle}</title>
         <meta name="description" content={productDesc} />
         <link rel="canonical" href={`${window.location.origin}/shop/${slug}/products/${productId}`} />
-        <meta property="og:title"       content={productTitle} />
+        <meta property="og:title"   content={productTitle} />
         <meta property="og:description" content={productDesc} />
-        <meta property="og:type"        content="product" />
-        <meta property="og:locale"      content="fr_SN" />
-        <meta property="og:url"         content={`${window.location.origin}/shop/${slug}/products/${productId}`} />
-        {product.image_url && <meta property="og:image"             content={product.image_url} />}
-        {product.image_url && <meta property="og:image:secure_url"  content={product.image_url} />}
-        {product.image_url && <meta property="og:image:type"        content={product.image_url.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg'} />}
-        {product.image_url && <meta property="og:image:alt"         content={product.name} />}
+        <meta property="og:type"    content="product" />
+        <meta property="og:locale"  content="fr_SN" />
+        <meta property="og:url"     content={`${window.location.origin}/shop/${slug}/products/${productId}`} />
+        {product.image_url && <meta property="og:image"           content={product.image_url} />}
+        {product.image_url && <meta property="og:image:secure_url" content={product.image_url} />}
+        {product.image_url && <meta property="og:image:alt"       content={product.name} />}
         <script type="application/ld+json">{JSON.stringify([
           {
-            '@context'    : 'https://schema.org',
-            '@type'       : 'Product',
-            'name'        : product.name,
-            'description' : productDesc,
-            'image'       : product.image_url ?? undefined,
-            'offers'      : {
-              '@type'         : 'Offer',
-              'price'         : String(product.price),
-              'priceCurrency' : currency,
-              'availability'  : (product.stock_quantity ?? 1) > 0
+            '@context': 'https://schema.org', '@type': 'Product',
+            'name': product.name, 'description': productDesc,
+            'image': product.image_url ?? undefined,
+            'offers': {
+              '@type': 'Offer',
+              'price': String(product.price),
+              'priceCurrency': currency,
+              'availability': (product.stock_quantity ?? 1) > 0
                 ? 'https://schema.org/InStock'
                 : 'https://schema.org/OutOfStock',
             },
           },
-          {
-            '@context'       : 'https://schema.org',
-            '@type'          : 'BreadcrumbList',
-            'itemListElement': [
-              { '@type': 'ListItem', 'position': 1, 'name': 'Accueil',   'item': `${window.location.origin}/shop/${slug}` },
-              { '@type': 'ListItem', 'position': 2, 'name': 'Catalogue', 'item': `${window.location.origin}/shop/${slug}/catalog` },
-              ...(product.category ? [{
-                '@type': 'ListItem',
-                'position': 3,
-                'name': product.category.name,
-                'item': `${window.location.origin}/shop/${slug}/catalog?category=${product.category.id}`,
-              }] : []),
-              { '@type': 'ListItem', 'position': product.category ? 4 : 3, 'name': product.name },
-            ],
-          },
         ])}</script>
       </Helmet>
 
-      {/* ── Breadcrumb ───────────────────────────────────────────────────── */}
-      <Breadcrumb items={[
-        { label: 'Accueil',   to: `/shop/${slug}` },
-        { label: 'Catalogue', to: `/shop/${slug}/catalog` },
-        ...(product.category ? [{
-          label: product.category.name,
-          to   : `/shop/${slug}/catalog?category=${product.category.id}`,
-        }] : []),
-        { label: product.name },
-      ]} />
-
-      {/* ── Contenu (2 colonnes desktop) ─────────────────────────────────── */}
-      <div className="lg:grid lg:grid-cols-2 lg:gap-12 flex flex-col gap-6">
-
-        {/* ── Colonne gauche — Galerie ───────────────────────────────────── */}
-        <ProductGallery
-          images={product.images ?? []}
-          imageUrl={product.image_url}
-          productName={product.name}
-        />
-
-        {/* ── Colonne droite — Infos ─────────────────────────────────────── */}
-        <div className="flex flex-col gap-5 pb-32 sm:pb-24 lg:pb-0">
-
-          {/* ── En-tête produit ────────────────────────────────────────────── */}
-          <div className="space-y-3">
-            {/* Catégorie */}
+      {/* ── Barre contextuelle : retour + breadcrumb + actions ──────────── */}
+      <div className="flex items-center justify-between px-4 py-3 bg-white/70 backdrop-blur-md border-b border-slate-100">
+        <div className="flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            aria-label="Retour"
+            className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 active:scale-95 transition-transform shrink-0"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+              <path d="M15.75 19.5 8.25 12l7.5-7.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          {/* Breadcrumb compact */}
+          <div className="flex items-center gap-1 text-xs text-slate-500 font-medium overflow-hidden">
             {product.category && (
-              <span className="inline-block text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-                {product.category.name}
-              </span>
+              <>
+                <Link
+                  to={`/shop/${slug}/catalog?category=${product.category.id}`}
+                  className="hover:text-slate-800 transition-colors whitespace-nowrap"
+                  style={JAKARTA}
+                >
+                  {product.category.name}
+                </Link>
+                <ChevronRightIcon className="w-3 h-3 shrink-0 text-slate-300" />
+              </>
             )}
-
-            {/* Nom + badge promo */}
-            <div className="flex items-start gap-3 flex-wrap">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
-                {product.name}
-              </h1>
-              {promoPercent !== null && (
-                <span className="shrink-0 rounded-lg bg-red-500 px-2.5 py-1 text-sm font-bold text-white shadow">
-                  -{promoPercent}%
-                </span>
-              )}
-            </div>
-
-            {/* Description */}
-            {product.description && (
-              <p className="text-sm text-gray-500 leading-relaxed">
-                {product.description}
-              </p>
-            )}
+            <span className="text-slate-800 font-semibold truncate" style={JAKARTA}>
+              {product.name}
+            </span>
           </div>
-
-          {/* ── Buy box ────────────────────────────────────────────────────── */}
-          <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-5 space-y-4">
-
-            {/* VariantPicker */}
-            {product.has_variants && (
-              <VariantPicker
-                product={product}
-                selectedVariantId={selectedVariantId}
-                onSelect={setSelectedVariantId}
-              />
-            )}
-
-            {/* Prix + prix barré */}
-            <div className="flex items-baseline gap-3 flex-wrap">
-              <span className="text-2xl font-bold text-[var(--shop-accent,#111827)]">
-                {product.price.toLocaleString('fr-FR')} {currency}
-                {product.is_weight_based && ` / ${product.unit ?? 'unité'}`}
-              </span>
-              {promoPercent !== null && product.compare_at_price !== null && (
-                <span className="text-base text-gray-400 line-through">
-                  {product.compare_at_price.toLocaleString('fr-FR')} {currency}
-                </span>
-              )}
-            </div>
-
-            {/* Badge stock */}
-            {resolvedStock !== null && (
-              resolvedStock > 0 ? (
-                <div className="space-y-1">
-                  <span className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
-                    <span className="h-2 w-2 rounded-full bg-green-500" />
-                    En stock
-                  </span>
-                  {lowStock && (
-                    <p className="text-sm font-medium text-orange-500">
-                      Plus que {product.stock_quantity} en stock — commandez vite !
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600">
-                  <span className="h-2 w-2 rounded-full bg-red-500" />
-                  Rupture de stock
-                </span>
-              )
-            )}
-
-            {product.has_variants && !selectedVariantId && (
-              <p className="text-sm text-gray-400 italic">
-                Sélectionnez une option pour voir la disponibilité
-              </p>
-            )}
-
-            {/* Quantité + bouton (inline desktop, sticky mobile) */}
-            <AddToCartBar
-              product={product}
-              selectedVariantId={selectedVariantId}
-              quantity={quantity}
-              onQuantityChange={setQuantity}
-              onAddToCart={handleAddToCart}
-            />
-          </div>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            aria-label="Partager"
+            onClick={() => navigator.share?.({ title: product.name, url: window.location.href }).catch(() => {})}
+            className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-700 active:scale-95 transition-transform"
+          >
+            <svg className="w-4.5 h-4.5 w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
         </div>
       </div>
 
-      {/* ── Produits similaires ──────────────────────────────────────────── */}
-      {product.category && (
-        <SimilarProducts
-          slug={slug}
-          categoryId={product.category.id}
-          currentProductId={product.id}
-        />
-      )}
-    </div>
+      {/* ── Contenu principal ─────────────────────────────────────────────── */}
+      {/* Desktop : 2 colonnes — Mobile : colonne unique */}
+      <div className="lg:grid lg:grid-cols-2 lg:gap-12 lg:items-start lg:max-w-7xl lg:mx-auto lg:px-6 lg:py-8">
+
+        {/* ── Galerie ────────────────────────────────────────────────────── */}
+        <div className="px-4 sm:px-6 pt-3 pb-0 lg:px-0 lg:sticky lg:top-6">
+          <ProductGallery
+            images={product.images ?? []}
+            imageUrl={product.image_url}
+            productName={product.name}
+            promoPercent={promoPercent}
+            inStock={inStock}
+            lowStockQty={lowStockQty}
+          />
+        </div>
+
+        {/* ── Colonne infos ──────────────────────────────────────────────── */}
+        <div className="pb-32 sm:pb-28 lg:pb-8">
+
+          {/* ── Badge catégorie + titre + prix ──────────────────────────── */}
+          <div className="px-4 sm:px-6 lg:px-0 space-y-2.5 pt-4">
+
+            {/* Badge catégorie */}
+            <div className="flex items-center justify-between">
+              {product.category ? (
+                <Link
+                  to={`/shop/${slug}/catalog?category=${product.category.id}`}
+                  className="text-[11px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md"
+                  style={{ ...JAKARTA, color: 'var(--shop-primary,#006948)', background: 'rgba(0,105,72,0.08)' }}
+                >
+                  {product.category.name}
+                </Link>
+              ) : <div />}
+              <div className="flex items-center gap-1 text-xs text-slate-400" style={JAKARTA}>
+                <CheckBadgeIcon className="w-4 h-4 text-emerald-500" />
+                Produit authentique
+              </div>
+            </div>
+
+            {/* Titre */}
+            <h1
+              className="text-lg font-bold text-slate-900 leading-snug"
+              style={GROTESK}
+            >
+              {product.name}
+            </h1>
+
+            {/* Section prix */}
+            <div
+              className="p-3.5 rounded-2xl flex items-baseline justify-between"
+              style={{ background: 'linear-gradient(to right, rgba(0,105,72,0.07), rgba(248,250,252,0.6), transparent)' }}
+            >
+              <div>
+                <div className="flex items-baseline gap-2.5 flex-wrap">
+                  <span
+                    className="text-2xl font-black tracking-tight"
+                    style={{ ...GROTESK, color: 'var(--shop-primary,#006948)' }}
+                  >
+                    {formatPrice(displayPrice)} {currency}
+                    {product.is_weight_based && ` / ${product.unit ?? 'unité'}`}
+                  </span>
+                  {promoPercent !== null && product.compare_at_price !== null && (
+                    <span className="text-sm font-semibold text-slate-400 line-through" style={JAKARTA}>
+                      {formatPrice(product.compare_at_price)} {currency}
+                    </span>
+                  )}
+                </div>
+                {savings !== null && (
+                  <div className="flex items-center gap-2 mt-1">
+                    <span
+                      className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ ...JAKARTA, color: 'var(--shop-primary,#006948)', background: 'rgba(0,105,72,0.1)' }}
+                    >
+                      Économie : {formatPrice(savings)} {currency}
+                    </span>
+                    <span className="text-[11px] text-slate-500 font-medium" style={JAKARTA}>TVA incluse</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Notice paiement mobile */}
+            <div className="flex items-center gap-2.5 px-3 py-2 bg-slate-100/80 rounded-xl text-xs text-slate-600" style={JAKARTA}>
+              <span>💳</span>
+              <p className="leading-tight">
+                Paiement via <strong className="text-slate-800">Wave, Orange Money</strong> ou carte bancaire.
+              </p>
+            </div>
+          </div>
+
+          <Sep />
+
+          {/* ── Variantes ──────────────────────────────────────────────── */}
+          {product.has_variants && (
+            <>
+              <div className="px-4 sm:px-6 lg:px-0">
+                <VariantPicker
+                  product={product}
+                  selectedVariantId={selectedVariantId}
+                  onSelect={setSelectedVariantId}
+                />
+              </div>
+              <Sep />
+            </>
+          )}
+
+          {/* ── Stock faible ────────────────────────────────────────────── */}
+          {lowStockQty !== null && (
+            <div className="px-4 sm:px-6 lg:px-0 -mt-3 mb-3">
+              <p className="text-[11px] text-orange-600 font-semibold" style={JAKARTA}>
+                ⚠️ Plus que {lowStockQty} unité(s) disponible(s) — commandez rapidement !
+              </p>
+            </div>
+          )}
+
+          {/* ── Points forts / Description ──────────────────────────────── */}
+          <div className="sm:px-2 lg:px-0">
+            <KeyHighlights description={product.description ?? null} />
+          </div>
+
+          <Sep />
+
+          {/* ── Réassurance ─────────────────────────────────────────────── */}
+          <div className="sm:px-2 lg:px-0">
+            <ReassurancePillars />
+          </div>
+
+          <Sep />
+
+          {/* ── Produits similaires ─────────────────────────────────────── */}
+          {product.category && (
+            <div className="px-4 sm:px-6 lg:px-0">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-bold text-slate-900" style={GROTESK}>
+                  Accessoires &amp; Produits similaires
+                </h2>
+                <Link
+                  to={`/shop/${slug}/catalog?category=${product.category.id}`}
+                  className="text-xs font-semibold transition-colors"
+                  style={{ ...JAKARTA, color: 'var(--shop-primary,#006948)' }}
+                >
+                  Voir tout →
+                </Link>
+              </div>
+              <SimilarProducts
+                slug={slug}
+                categoryId={product.category.id}
+                currentProductId={product.id}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Barre fixe sticky — Quantité + WhatsApp + Panier ─────────────── */}
+      <AddToCartBar
+        product={product}
+        selectedVariantId={selectedVariantId}
+        quantity={quantity}
+        onQuantityChange={setQuantity}
+        onAddToCart={handleAddToCart}
+      />
+    </>
   )
 }

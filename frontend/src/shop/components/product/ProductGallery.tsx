@@ -3,20 +3,29 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import type { ProductImage } from '@/types'
 
 interface Props {
-  images      : ProductImage[]
-  imageUrl    : string | null
-  productName : string
+  images        : ProductImage[]
+  imageUrl      : string | null
+  productName   : string
+  promoPercent? : number | null
+  inStock?      : boolean | null
+  lowStockQty?  : number | null
 }
 
-export default function ProductGallery({ images, imageUrl, productName }: Props) {
-  // Normalise la liste d'images : priorité à la galerie, sinon image_url seule
+export default function ProductGallery({
+  images,
+  imageUrl,
+  productName,
+  promoPercent = null,
+  inStock      = null,
+  lowStockQty  = null,
+}: Props) {
   const slides = images.length > 0
     ? images
     : imageUrl
       ? [{ uid: 'main', url: imageUrl, sort_order: 0 }]
       : []
 
-  const [activeIdx, setActiveIdx] = useState(0)
+  const [activeIdx, setActiveIdx]   = useState(0)
   const touchStartX = useRef<number | null>(null)
   const touchEndX   = useRef<number | null>(null)
 
@@ -28,7 +37,6 @@ export default function ProductGallery({ images, imageUrl, productName }: Props)
     setActiveIdx((i) => (i + 1) % slides.length),
   [slides.length])
 
-  // Navigation clavier
   useEffect(() => {
     if (slides.length <= 1) return
     const handler = (e: KeyboardEvent) => {
@@ -43,15 +51,12 @@ export default function ProductGallery({ images, imageUrl, productName }: Props)
     touchStartX.current = e.touches[0].clientX
     touchEndX.current   = null
   }
-  const handleTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX
-  }
-  const handleTouchEnd = () => {
+  const handleTouchMove  = (e: React.TouchEvent) => { touchEndX.current = e.touches[0].clientX }
+  const handleTouchEnd   = () => {
     if (touchStartX.current === null || touchEndX.current === null) return
     const delta = touchStartX.current - touchEndX.current
     if (Math.abs(delta) > 40) delta > 0 ? next() : prev()
-    touchStartX.current = null
-    touchEndX.current   = null
+    touchStartX.current = null; touchEndX.current = null
   }
 
   const current = slides[activeIdx]
@@ -60,31 +65,55 @@ export default function ProductGallery({ images, imageUrl, productName }: Props)
   return (
     <div className="flex flex-col gap-3 select-none">
 
-      {/* ── Image principale ─────────────────────────────────────────────── */}
+      {/* ── Cadre principal ──────────────────────────────────────────────── */}
       <div
-        className="relative aspect-square sm:aspect-[4/3] lg:aspect-square w-full overflow-hidden rounded-2xl bg-gray-50"
+        className="relative bg-slate-50 rounded-2xl overflow-hidden shadow-sm"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {current ? (
-          <img
-            key={current.uid}
-            src={current.url}
-            alt={productName}
-            loading="eager"
-            decoding="async"
-            className="w-full h-full object-cover transition-opacity duration-200"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-            <span className="text-6xl font-bold text-gray-300 select-none">
-              {productName.charAt(0).toUpperCase()}
+        {/* Badges flottants — haut gauche */}
+        <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
+          {promoPercent !== null && (
+            <span className="bg-rose-500 text-white text-[11px] font-extrabold px-2.5 py-1 rounded-full shadow-sm tracking-wide">
+              -{promoPercent}% PROMO
             </span>
-          </div>
-        )}
+          )}
+          {inStock === true && (
+            <span className="bg-emerald-600/90 backdrop-blur text-white text-[11px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-200" />
+              En stock
+            </span>
+          )}
+          {lowStockQty !== null && lowStockQty > 0 && (
+            <span className="bg-orange-500/90 backdrop-blur text-white text-[11px] font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-200" />
+              Plus que {lowStockQty}
+            </span>
+          )}
+        </div>
 
-        {/* Boutons prev/next — visibles uniquement si > 1 image */}
+        {/* Image principale */}
+        <div className="w-full h-72 sm:h-80 flex items-center justify-center p-6 relative">
+          {current ? (
+            <img
+              key={current.uid}
+              src={current.url}
+              alt={productName}
+              loading="eager"
+              decoding="async"
+              className="w-full h-full object-contain transition-all duration-300 drop-shadow-md"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <span className="text-7xl font-bold text-slate-200 select-none">
+                {productName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Navigation prev/next */}
         {hasMany && (
           <>
             <button
@@ -93,7 +122,7 @@ export default function ProductGallery({ images, imageUrl, productName }: Props)
               aria-label="Image précédente"
               className="absolute left-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm transition hover:bg-white active:scale-95"
             >
-              <ChevronLeftIcon className="h-5 w-5 text-gray-700" />
+              <ChevronLeftIcon className="h-5 w-5 text-slate-700" />
             </button>
             <button
               type="button"
@@ -101,59 +130,52 @@ export default function ProductGallery({ images, imageUrl, productName }: Props)
               aria-label="Image suivante"
               className="absolute right-2 top-1/2 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm transition hover:bg-white active:scale-95"
             >
-              <ChevronRightIcon className="h-5 w-5 text-gray-700" />
+              <ChevronRightIcon className="h-5 w-5 text-slate-700" />
             </button>
           </>
         )}
 
-        {/* Compteur discret */}
+        {/* Dots indicators */}
         {hasMany && (
-          <span className="absolute bottom-2 right-2 rounded-full bg-black/50 px-2 py-0.5 text-[11px] font-medium text-white tabular-nums backdrop-blur-sm">
-            {activeIdx + 1} / {slides.length}
-          </span>
+          <div className="flex justify-center items-center gap-1.5 pb-3">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setActiveIdx(i)}
+                className={`rounded-full transition-all duration-200 ${
+                  i === activeIdx
+                    ? 'w-5 h-1.5 bg-[var(--shop-primary,#006948)]'
+                    : 'w-1.5 h-1.5 bg-slate-300'
+                }`}
+              />
+            ))}
+          </div>
         )}
       </div>
 
-      {/* ── Miniatures (desktop ≥ 5 cols, scrollable) ────────────────────── */}
+      {/* ── Strip de miniatures ──────────────────────────────────────────── */}
       {hasMany && (
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex gap-2.5 overflow-x-auto scrollbar-hide py-0.5">
           {slides.map((img, i) => (
             <button
               key={img.uid}
               type="button"
               onClick={() => setActiveIdx(i)}
-              aria-label={`Voir image ${i + 1}`}
-              className={`shrink-0 h-16 w-16 sm:h-20 sm:w-20 overflow-hidden rounded-xl border-2 transition-all duration-150 ${
+              aria-label={`Vue ${i + 1}`}
+              className={`shrink-0 w-16 h-16 rounded-xl bg-slate-100 p-1 transition-all ${
                 i === activeIdx
-                  ? 'border-[var(--shop-primary,#111827)] shadow-md scale-[1.04]'
-                  : 'border-transparent opacity-60 hover:opacity-90 hover:border-gray-300'
+                  ? 'bg-emerald-50 shadow-sm ring-2 ring-[var(--shop-primary,#006948)]'
+                  : 'opacity-70 hover:opacity-100'
               }`}
             >
               <img
                 src={img.url}
                 alt=""
                 loading="lazy"
-                className="h-full w-full object-cover"
+                className="w-full h-full object-contain"
               />
             </button>
-          ))}
-        </div>
-      )}
-
-      {/* Dots mobiles quand < 6 images (complément aux miniatures) */}
-      {hasMany && slides.length <= 5 && (
-        <div className="flex justify-center gap-1.5 sm:hidden">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setActiveIdx(i)}
-              className={`h-1.5 rounded-full transition-all duration-200 ${
-                i === activeIdx
-                  ? 'w-4 bg-[var(--shop-primary,#111827)]'
-                  : 'w-1.5 bg-gray-300'
-              }`}
-            />
           ))}
         </div>
       )}
