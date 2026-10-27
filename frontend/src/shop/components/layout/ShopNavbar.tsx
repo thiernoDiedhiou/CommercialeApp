@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query'
 import {
   ShoppingCartIcon,
   MagnifyingGlassIcon,
-  Bars3Icon,
   XMarkIcon,
 } from '@heroicons/react/24/outline'
 import { useShopStore } from '@/shop/store/shopStore'
@@ -225,15 +224,6 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
                 )}
               </button>
 
-              {/* Burger — masqué sur mobile (géré par ShopMobileNav) */}
-              <button
-                type="button"
-                onClick={() => onMobileMenuToggle(true)}
-                aria-label="Menu"
-                className="hidden sm:flex p-2 rounded-full text-gray-600 hover:bg-gray-100"
-              >
-                <Bars3Icon className="h-6 w-6" />
-              </button>
             </div>
           </div>
         </div>
