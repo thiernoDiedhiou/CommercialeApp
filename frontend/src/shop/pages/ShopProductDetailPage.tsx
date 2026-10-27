@@ -91,8 +91,15 @@ function ReassurancePillars() {
     { icon: '🛡️', title: 'Garantie authenticité',   subtitle: 'Produits neufs vérifiés avec assistance dédiée.' },
   ]
 
+  const ICON_MAP: Record<string, string> = {
+    delivery: '🚚',
+    payment : '💳',
+    quality : '🛡️',
+    support : '💬',
+  }
+
   const pillars = trustBadges.length >= 2
-    ? trustBadges.slice(0, 3).map((b) => ({ icon: b.icon ?? '✓', title: b.title, subtitle: b.subtitle ?? '' }))
+    ? trustBadges.slice(0, 3).map((b) => ({ icon: ICON_MAP[b.icon] ?? '✓', title: b.title, subtitle: b.subtitle ?? '' }))
     : defaultPillars
 
   return (
