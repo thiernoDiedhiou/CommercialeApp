@@ -5,7 +5,8 @@ import { useShopStore } from '@/shop/store/shopStore'
 export default function PromoBlocks() {
   const { slug = '' } = useParams<{ slug: string }>()
   const navigate    = useNavigate()
-  const promoBlocks = useShopStore((s) => s.shopConfig?.promo_blocks ?? [])
+  const shopConfig  = useShopStore((s) => s.shopConfig)
+  const promoBlocks = shopConfig?.promo_blocks ?? []
 
   const active = promoBlocks.filter((b) => b.title.trim())
   if (active.length === 0) return null

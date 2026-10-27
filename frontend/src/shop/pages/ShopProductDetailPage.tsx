@@ -82,7 +82,8 @@ function KeyHighlights({ description }: { description: string | null }) {
 
 // ── Piliers de réassurance ────────────────────────────────────────────────────
 function ReassurancePillars() {
-  const trustBadges = useShopStore((s) => (s.shopConfig?.trust_badges ?? []).filter((b) => b.active))
+  const shopConfig  = useShopStore((s) => s.shopConfig)
+  const trustBadges = (shopConfig?.trust_badges ?? []).filter((b) => b.active)
 
   const defaultPillars = [
     { icon: '🚚', title: 'Livraison disponible',     subtitle: 'Expédition sécurisée à domicile ou en point de retrait.' },
