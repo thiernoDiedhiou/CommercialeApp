@@ -692,23 +692,25 @@ export default function ShopSettingsPage() {
                   <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                     {/* Preview carte */}
                     <div
-                      className="relative h-24 flex items-end p-3"
+                      className="relative h-36 overflow-hidden"
                       style={{ backgroundColor: block.color || '#111827' }}
                     >
                       {imgPreview && (
-                        <img src={imgPreview} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                        <img src={imgPreview} alt="" className="absolute inset-0 w-full h-full object-cover object-center" />
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-                      <div className="relative z-10 flex items-end justify-between w-full">
-                        <div>
-                          <p className="text-white font-bold text-sm leading-snug">{block.title || 'Titre du bloc'}</p>
-                          {block.subtitle && (
-                            <p className="text-white/80 text-xs">{block.subtitle}</p>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+                      <div className="relative z-10 flex flex-col justify-between h-full p-4">
+                        <div className="flex items-start justify-between">
+                          {block.emoji && (
+                            <span className="text-2xl leading-none drop-shadow" aria-hidden="true">{block.emoji}</span>
                           )}
                         </div>
-                        {block.emoji && (
-                          <span className="text-2xl leading-none" aria-hidden="true">{block.emoji}</span>
-                        )}
+                        <div className="space-y-0.5">
+                          <p className="text-white font-bold text-sm leading-snug drop-shadow">{block.title || 'Titre du bloc'}</p>
+                          {block.subtitle && (
+                            <p className="text-white/85 text-xs drop-shadow">{block.subtitle}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
 
