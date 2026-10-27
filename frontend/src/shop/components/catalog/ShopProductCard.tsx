@@ -132,7 +132,7 @@ export default function ShopProductCard({ product, slug }: Props) {
             )}
             {lowStock && !outOfStock && (
               <span className="rounded-lg bg-orange-400 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
-                Fin de stock
+                Plus que {product.stock_quantity}
               </span>
             )}
           </div>
