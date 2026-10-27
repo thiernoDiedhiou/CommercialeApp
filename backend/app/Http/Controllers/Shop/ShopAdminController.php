@@ -81,6 +81,11 @@ class ShopAdminController extends Controller
             'payment_methods' => ['nullable', 'array'],
             'payment_methods.*' => [Rule::in(['cod', 'whatsapp'])],
             'trust_badges' => ['nullable', 'string'],
+            'promo_blocks' => ['nullable', 'string'],
+            'promo_block_image_0' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+            'promo_block_image_1' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+            'promo_block_image_2' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+            'promo_block_image_3' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
             'announcement_bar' => ['nullable', 'string', 'max:255'],
             'announcement_bar_active' => ['nullable', 'boolean'],
             'footer_text' => ['nullable', 'string', 'max:500'],
@@ -95,13 +100,36 @@ class ShopAdminController extends Controller
         $shop = ShopSetting::where('tenant_id', $tenantId)->first();
 
         $updateData = collect($validated)
-            ->except(['logo', 'favicon', 'hero_banner'])
+            ->except(['logo', 'favicon', 'hero_banner', 'promo_block_image_0', 'promo_block_image_1', 'promo_block_image_2', 'promo_block_image_3'])
             ->toArray();
 
         // trust_badges arrive comme JSON string depuis FormData
         if (array_key_exists('trust_badges', $updateData) && is_string($updateData['trust_badges'])) {
             $decoded = json_decode($updateData['trust_badges'], true);
             $updateData['trust_badges'] = json_last_error() === JSON_ERROR_NONE ? $decoded : null;
+        }
+
+        // promo_blocks arrive comme JSON string depuis FormData
+        if (array_key_exists('promo_blocks', $updateData) && is_string($updateData['promo_blocks'])) {
+            $decoded = json_decode($updateData['promo_blocks'], true);
+            $updateData['promo_blocks'] = json_last_error() === JSON_ERROR_NONE ? $decoded : null;
+        }
+
+        // ── Upload images des blocs promo ─────────────────────────────────────
+        foreach (range(0, 3) as $i) {
+            $key = "promo_block_image_{$i}";
+            if ($request->hasFile($key)) {
+                // Supprimer l'ancienne image si elle existe
+                $oldUrl = $updateData['promo_blocks'][$i]['image_url'] ?? null;
+                $this->deleteStoredFile($oldUrl);
+
+                $path = $request->file($key)->store("shops/{$tenantId}/promos", 'public');
+                $imageUrl = Storage::disk('public')->url($path);
+
+                if (isset($updateData['promo_blocks'][$i])) {
+                    $updateData['promo_blocks'][$i]['image_url'] = $imageUrl;
+                }
+            }
         }
 
         // ── Uploads ───────────────────────────────────────────────────────────

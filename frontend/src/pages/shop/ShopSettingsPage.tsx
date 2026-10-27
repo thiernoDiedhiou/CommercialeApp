@@ -6,7 +6,7 @@ import {
   toggleShopActive,
   updateShopSettings,
 } from '@/shop/services/shop'
-import type { TrustBadge } from '@/shop/store/shopStore'
+import type { TrustBadge, PromoBlock } from '@/shop/store/shopStore'
 import { toast } from '@/store/toastStore'
 import { getApiErrorMessage } from '@/lib/errors'
 
@@ -54,9 +54,19 @@ interface ShopSettingsData {
   footer_text             : string | null
   minimum_order           : number | null
   trust_badges            : TrustBadge[] | null
+  promo_blocks            : PromoBlock[] | null
 }
 
-type Tab = 'general' | 'appearance' | 'contact' | 'seo' | 'trust'
+type Tab = 'general' | 'appearance' | 'contact' | 'seo' | 'trust' | 'promo'
+
+const DEFAULT_PROMO_BLOCK: PromoBlock = {
+  title    : '',
+  subtitle : '',
+  color    : '#e11d48',
+  image_url: null,
+  link     : '?on_sale=1',
+  emoji    : '🔥',
+}
 
 // ── Composant ─────────────────────────────────────────────────────────────────
 
@@ -72,9 +82,17 @@ export default function ShopSettingsPage() {
   const [faviconFile, setFaviconFile] = useState<File | null>(null)
   const [bannerFile,  setBannerFile]  = useState<File | null>(null)
   const [badges, setBadges]           = useState<TrustBadge[]>(DEFAULT_TRUST_BADGES)
+  const [promoBlocks, setPromoBlocks] = useState<PromoBlock[]>([])
+  const [promoImages, setPromoImages] = useState<(File | null)[]>([null, null, null, null])
   const logoInputRef    = useRef<HTMLInputElement>(null)
   const faviconInputRef = useRef<HTMLInputElement>(null)
   const bannerInputRef  = useRef<HTMLInputElement>(null)
+  const promoImageRefs  = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ]
 
   // Champs formulaire locaux (contrôlés)
   const [fields, setFields] = useState<Partial<ShopSettingsData>>({})
@@ -121,6 +139,14 @@ export default function ShopSettingsPage() {
         subtitle: b.subtitle ?? '',
       }))
     )
+    setPromoBlocks(
+      (settings.promo_blocks ?? []).map((b) => ({
+        ...b,
+        subtitle : b.subtitle ?? '',
+        image_url: b.image_url ?? null,
+      }))
+    )
+    setPromoImages([null, null, null, null])
   }, [settings])
 
   // ── Mutations ──────────────────────────────────────────────────────────────
@@ -142,6 +168,7 @@ export default function ShopSettingsPage() {
       setLogoFile(null)
       setFaviconFile(null)
       setBannerFile(null)
+      setPromoImages([null, null, null, null])
     },
     onError: (err) => toast.error(getApiErrorMessage(err)),
   })
@@ -159,9 +186,13 @@ export default function ShopSettingsPage() {
       else fd.append(k, String(v))
     })
     fd.append('trust_badges', JSON.stringify(badges))
+    fd.append('promo_blocks', JSON.stringify(promoBlocks))
     if (logoFile)    fd.append('logo',        logoFile)
     if (faviconFile) fd.append('favicon',     faviconFile)
     if (bannerFile)  fd.append('hero_banner', bannerFile)
+    promoImages.forEach((file, i) => {
+      if (file) fd.append(`promo_block_image_${i}`, file)
+    })
     saveMutation.mutate(fd)
   }
 
@@ -185,6 +216,7 @@ export default function ShopSettingsPage() {
     { key: 'contact',    label: 'Contact' },
     { key: 'seo',        label: 'SEO' },
     { key: 'trust',      label: 'Confiance' },
+    { key: 'promo',      label: 'Promos' },
   ]
 
   return (
@@ -595,6 +627,194 @@ export default function ShopSettingsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* ── PROMOS ──────────────────────────────────────────────── */}
+          {tab === 'promo' && (
+            <div className="space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">Blocs promotionnels</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    Affichés entre le hero et les sections produits. Maximum 4 blocs.
+                    Chaque bloc peut avoir une image de fond ou une couleur.
+                  </p>
+                </div>
+                {promoBlocks.length < 4 && (
+                  <button
+                    type="button"
+                    onClick={() => setPromoBlocks((prev) => [...prev, { ...DEFAULT_PROMO_BLOCK }])}
+                    className="shrink-0 flex items-center gap-1.5 px-3 h-9 rounded-xl bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-sm font-medium hover:opacity-90 transition-opacity"
+                  >
+                    <span className="text-base leading-none">+</span>
+                    Ajouter
+                  </button>
+                )}
+              </div>
+
+              {promoBlocks.length === 0 && (
+                <div className="rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 py-10 text-center">
+                  <p className="text-sm text-gray-400 dark:text-gray-500">
+                    Aucun bloc promo — cliquez sur "Ajouter" pour créer le premier.
+                  </p>
+                </div>
+              )}
+
+              {promoBlocks.map((block, i) => {
+                const imgPreview = promoImages[i]
+                  ? URL.createObjectURL(promoImages[i]!)
+                  : block.image_url
+
+                const updateBlock = (patch: Partial<PromoBlock>) =>
+                  setPromoBlocks((prev) => prev.map((b, idx) => idx === i ? { ...b, ...patch } : b))
+
+                return (
+                  <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                    {/* Preview carte */}
+                    <div
+                      className="relative h-24 flex items-end p-3"
+                      style={{ backgroundColor: block.color || '#111827' }}
+                    >
+                      {imgPreview && (
+                        <img src={imgPreview} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                      <div className="relative z-10 flex items-end justify-between w-full">
+                        <div>
+                          <p className="text-white font-bold text-sm leading-snug">{block.title || 'Titre du bloc'}</p>
+                          {block.subtitle && (
+                            <p className="text-white/80 text-xs">{block.subtitle}</p>
+                          )}
+                        </div>
+                        {block.emoji && (
+                          <span className="text-2xl leading-none" aria-hidden="true">{block.emoji}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Champs */}
+                    <div className="p-4 space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <Field label="Titre *">
+                          <input
+                            type="text"
+                            value={block.title}
+                            maxLength={60}
+                            onChange={(e) => updateBlock({ title: e.target.value })}
+                            className={INPUT_CLS}
+                            placeholder="Promotions en cours"
+                          />
+                        </Field>
+                        <Field label="Sous-titre">
+                          <input
+                            type="text"
+                            value={block.subtitle ?? ''}
+                            maxLength={80}
+                            onChange={(e) => updateBlock({ subtitle: e.target.value })}
+                            className={INPUT_CLS}
+                            placeholder="Jusqu'à -50%"
+                          />
+                        </Field>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <Field label="Emoji">
+                          <input
+                            type="text"
+                            value={block.emoji}
+                            maxLength={4}
+                            onChange={(e) => updateBlock({ emoji: e.target.value })}
+                            className={`${INPUT_CLS} text-center text-xl`}
+                            placeholder="🔥"
+                          />
+                        </Field>
+                        <Field label="Couleur de fond">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={block.color || '#111827'}
+                              onChange={(e) => updateBlock({ color: e.target.value })}
+                              aria-label="Couleur de fond"
+                              className="h-10 w-14 rounded-lg border border-gray-200 p-1 cursor-pointer"
+                            />
+                            <span className="text-xs font-mono text-gray-500">{block.color}</span>
+                          </div>
+                        </Field>
+                        <Field label="Lien">
+                          <input
+                            type="text"
+                            value={block.link}
+                            onChange={(e) => updateBlock({ link: e.target.value })}
+                            className={INPUT_CLS}
+                            placeholder="?on_sale=1"
+                          />
+                        </Field>
+                      </div>
+
+                      <Field label="Image de fond (surpasse la couleur)">
+                        <div className="flex items-center gap-3">
+                          <input
+                            ref={promoImageRefs[i]}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            aria-label={`Image du bloc promo ${i + 1}`}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0] ?? null
+                              setPromoImages((prev) => {
+                                const next = [...prev]
+                                next[i] = file
+                                return next
+                              })
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => promoImageRefs[i].current?.click()}
+                            className="text-sm text-blue-600 hover:underline"
+                          >
+                            {imgPreview ? 'Changer l\'image' : 'Ajouter une image'}
+                          </button>
+                          {imgPreview && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateBlock({ image_url: null })
+                                setPromoImages((prev) => {
+                                  const next = [...prev]
+                                  next[i] = null
+                                  return next
+                                })
+                              }}
+                              className="text-xs text-red-500 hover:underline"
+                            >
+                              Supprimer l'image
+                            </button>
+                          )}
+                        </div>
+                      </Field>
+
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPromoBlocks((prev) => prev.filter((_, idx) => idx !== i))
+                            setPromoImages((prev) => {
+                              const next = [...prev]
+                              next[i] = null
+                              return next
+                            })
+                          }}
+                          className="text-xs text-red-500 hover:text-red-700 hover:underline"
+                        >
+                          Supprimer ce bloc
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
 

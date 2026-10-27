@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { useShopStore } from '@/shop/store/shopStore'
-import { HeroBanner, TrustBadges, HomeProductSection } from '@/shop/components/home'
+import { HeroBanner, PromoBlocks, TrustBadges, HomeProductSection } from '@/shop/components/home'
 
 export default function ShopHomePage() {
   const { slug = '' } = useParams<{ slug: string }>()
@@ -15,6 +15,8 @@ export default function ShopHomePage() {
         bannerUrl={shopConfig?.hero_banner_url ?? null}
         onCatalogClick={() => navigate(`/shop/${slug}/catalog`)}
       />
+
+      <PromoBlocks />
 
       <TrustBadges />
 

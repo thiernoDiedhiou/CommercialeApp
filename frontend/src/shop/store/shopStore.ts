@@ -52,6 +52,7 @@ export interface ShopConfig {
   payment_methods         : string[]
   delivery_zones          : DeliveryZone[]
   trust_badges            : TrustBadge[] | null
+  promo_blocks            : PromoBlock[]
 }
 
 export interface TrustBadge {
@@ -59,6 +60,15 @@ export interface TrustBadge {
   title   : string
   subtitle: string | null
   active  : boolean
+}
+
+export interface PromoBlock {
+  title    : string
+  subtitle : string | null
+  color    : string
+  image_url: string | null
+  link     : string
+  emoji    : string
 }
 
 export interface ShopOrderResult {

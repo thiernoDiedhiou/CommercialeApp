@@ -93,6 +93,7 @@ class PublicShopController extends Controller
                 'payment_methods' => $shop->payment_methods ?? ['cod', 'whatsapp'],
                 'delivery_zones' => $shop->delivery_zones ?? [],
                 'trust_badges' => $shop->trust_badges ?? null,
+                'promo_blocks' => $shop->promo_blocks ?? [],
             ],
             'theme' => [
                 'primary_color' => $primary,
