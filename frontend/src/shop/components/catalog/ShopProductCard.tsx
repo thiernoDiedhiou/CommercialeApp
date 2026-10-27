@@ -48,7 +48,28 @@ function isLowStock(product: ShopProduct): boolean {
   return threshold !== null && qty > 0 && qty <= threshold
 }
 
+/** Extrait des "chips" depuis la description courte ou les variantes */
+function getSpecChips(product: ShopProduct): string[] {
+  // Pour les produits à variantes : attributs uniques des variantes actives
+  if (product.has_variants) {
+    const attrs = new Set<string>()
+    product.variants
+      .filter((v) => v.is_active)
+      .forEach((v) => {
+        v.attribute_summary?.split(' / ').forEach((a) => attrs.add(a.trim()))
+      })
+    return [...attrs].slice(0, 4)
+  }
+  // Pour les produits simples : découpe la description sur les séparateurs courants
+  const desc = product.description?.trim()
+  if (!desc || desc.length > 120) return []
+  // Séparateurs possibles : " • " / " · " / " | " / " / " / ","
+  const parts = desc.split(/\s*[•·|/,]\s*/).map((s) => s.trim()).filter((s) => s.length > 0 && s.length < 30)
+  return parts.slice(0, 4)
+}
+
 const GROTESK: React.CSSProperties = { fontFamily: "'Space Grotesk', sans-serif" }
+const JAKARTA: React.CSSProperties = { fontFamily: "'Plus Jakarta Sans', sans-serif" }
 
 export default function ShopProductCard({ product, slug }: Props) {
   const navigate   = useNavigate()
@@ -61,6 +82,7 @@ export default function ShopProductCard({ product, slug }: Props) {
   const priceLabel   = getPriceLabel(product, currency)
   const promoPercent = getPromoPercent(product)
   const lowStock     = isLowStock(product)
+  const chips        = getSpecChips(product)
 
   const handleCardClick = () => navigate(`/shop/${slug}/products/${product.uid}`)
 
@@ -96,9 +118,9 @@ export default function ShopProductCard({ product, slug }: Props) {
     <>
       <article
         onClick={handleCardClick}
-        className="group relative flex flex-col h-full overflow-hidden rounded-xl bg-white border border-slate-200 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-slate-300 cursor-pointer"
+        className="group relative flex flex-col h-full overflow-hidden rounded-xl bg-white border border-slate-200 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:border-slate-300 cursor-pointer"
       >
-        {/* ── Zone image ─────────────────────────────────────────────────────── */}
+        {/* ── Zone image ───────────────────────────────────────────────────────── */}
         <div className="relative aspect-square overflow-hidden bg-slate-100">
           {product.image_url ? (
             <img
@@ -110,7 +132,7 @@ export default function ShopProductCard({ product, slug }: Props) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <span className="text-5xl font-bold text-slate-300 select-none" style={GROTESK}>
+              <span className="text-5xl font-bold text-slate-200 select-none" style={GROTESK}>
                 {product.name.charAt(0).toUpperCase()}
               </span>
             </div>
@@ -119,7 +141,7 @@ export default function ShopProductCard({ product, slug }: Props) {
           {/* Overlay rupture */}
           {outOfStock && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/75 backdrop-blur-[2px]">
-              <span className="rounded-full bg-slate-800/90 px-3 py-1 text-xs font-bold text-white shadow">
+              <span className="rounded-full bg-slate-800/90 px-3 py-1 text-xs font-bold text-white shadow" style={JAKARTA}>
                 Rupture de stock
               </span>
             </div>
@@ -127,74 +149,98 @@ export default function ShopProductCard({ product, slug }: Props) {
 
           {/* Badge promo — haut gauche */}
           {promoPercent !== null && !outOfStock && (
-            <span className="absolute top-2.5 left-2.5 rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
+            <span
+              className="absolute top-2.5 left-2.5 rounded px-1.5 py-0.5 text-[11px] font-bold text-white shadow-sm"
+              style={{ ...GROTESK, background: '#ef4444' }}
+            >
               -{promoPercent}%
             </span>
           )}
 
           {/* Badge stock — haut droite */}
           {!outOfStock && !lowStock && (
-            <span className="absolute top-2.5 right-2.5 flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm">
+            <span
+              className="absolute top-2.5 right-2.5 flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm"
+              style={JAKARTA}
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
               En stock
             </span>
           )}
           {lowStock && !outOfStock && (
-            <span className="absolute top-2.5 right-2.5 flex items-center gap-1 text-[10px] font-semibold text-orange-700 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm">
+            <span
+              className="absolute top-2.5 right-2.5 flex items-center gap-1 text-[10px] font-semibold text-orange-700 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm"
+              style={JAKARTA}
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
               Plus que {product.stock_quantity}
             </span>
           )}
         </div>
 
-        {/* ── Infos produit ──────────────────────────────────────────────────── */}
-        <div className="flex flex-1 flex-col gap-1.5 p-3 pt-2.5">
+        {/* ── Infos produit ────────────────────────────────────────────────────── */}
+        <div className="flex flex-1 flex-col gap-1 p-3 pt-2.5">
 
-          {/* Catégorie */}
+          {/* Catégorie — label-caps style */}
           {product.category && (
-            <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400 truncate">
+            <span
+              className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400 truncate"
+              style={JAKARTA}
+            >
               {product.category.name}
+              {product.is_weight_based && ` • Vendu au ${product.unit ?? 'poids'}`}
             </span>
           )}
 
-          {/* Nom */}
+          {/* Nom du produit — Space Grotesk, headline-sm */}
           <h3
-            className="text-sm font-semibold text-slate-900 line-clamp-2 leading-snug"
+            className="text-sm font-semibold text-slate-900 line-clamp-2 leading-snug group-hover:text-[var(--shop-primary,#006948)] transition-colors"
             style={GROTESK}
           >
             {product.name}
           </h3>
 
-          {/* Sous-titre variantes/poids */}
-          {product.has_variants && (
-            <span className="text-xs text-slate-400">Plusieurs options disponibles</span>
-          )}
-          {product.is_weight_based && !product.has_variants && (
-            <span className="text-xs text-slate-400">Vendu au {product.unit ?? 'poids'}</span>
+          {/* Spec chips — description courte ou attributs variantes */}
+          {chips.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-0.5">
+              {chips.map((chip, i) => (
+                <span
+                  key={i}
+                  className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[11px] leading-tight"
+                  style={JAKARTA}
+                >
+                  {chip}
+                </span>
+              ))}
+            </div>
           )}
 
-          {/* Prix */}
-          <div className="mt-auto flex items-baseline gap-1.5 flex-wrap pt-1">
-            <p className="font-bold text-slate-900 text-[15px] leading-snug" style={GROTESK}>
+          {/* Prix — Space Grotesk, price-display */}
+          <div className="mt-auto flex items-baseline gap-1.5 flex-wrap pt-2">
+            <p
+              className="font-bold text-slate-900 text-[15px] leading-snug"
+              style={GROTESK}
+            >
               {priceLabel}
             </p>
             {promoPercent !== null && product.compare_at_price !== null && (
-              <span className="text-xs text-slate-400 line-through">
+              <span className="text-xs text-slate-400 line-through" style={JAKARTA}>
                 {formatPrice(product.compare_at_price)} {currency}
               </span>
             )}
           </div>
 
-          {/* CTA — toujours visible */}
+          {/* CTA — toujours visible, pleine largeur */}
           <button
             type="button"
             onClick={handleButton}
             disabled={outOfStock}
-            className={`mt-1.5 h-10 w-full rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-150 ${
+            className={`mt-2 h-10 w-full rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-150 ${
               outOfStock
                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                : 'bg-[var(--shop-primary,#006948)] text-white hover:opacity-90 active:scale-[.98]'
+                : 'text-white hover:opacity-90 active:scale-[.98]'
             }`}
+            style={!outOfStock ? { ...JAKARTA, background: 'var(--shop-primary,#006948)' } : JAKARTA}
           >
             {!outOfStock && <ShoppingCartIcon className="h-4 w-4 shrink-0" />}
             {buttonLabel()}
