@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useShopStore } from '@/shop/store/shopStore'
 import {
   HeroBanner, PromoBlocks, TrustBadges,
-  HomeProductSection, BrandShowcase,
+  HomeProductSection, BrandShowcase, PaymentBar,
 } from '@/shop/components/home'
 import { getShopCategories } from '@/shop/services/shop'
 import { getCategoryIcon } from '@/shop/utils/categoryIcons'
@@ -113,6 +113,9 @@ export default function ShopHomePage() {
         sort="best_sellers"
         seeAllTo={`/shop/${slug}/catalog`}
       />
+
+      {/* 9. Barre moyens de paiement */}
+      <PaymentBar />
 
       {/* Espace bas de page */}
       <div className="h-8 sm:h-12" />
