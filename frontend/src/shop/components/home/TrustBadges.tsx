@@ -31,13 +31,25 @@ const ICONS: Record<TrustBadge['icon'], React.ReactNode> = {
   ),
 }
 
-// ── Badges par défaut (affichés si le tenant n'a pas configuré les siens) ─────
+// Couleur par position — indépendante des couleurs tenant
+const BADGE_COLORS = [
+  // payment
+  { rest: 'bg-emerald-50 text-emerald-600', hover: 'group-hover:bg-emerald-600 group-hover:text-white' },
+  // quality
+  { rest: 'bg-blue-50 text-blue-600',     hover: 'group-hover:bg-blue-600 group-hover:text-white'    },
+  // delivery
+  { rest: 'bg-violet-50 text-violet-600', hover: 'group-hover:bg-violet-600 group-hover:text-white'  },
+  // support
+  { rest: 'bg-amber-50 text-amber-600',   hover: 'group-hover:bg-amber-600 group-hover:text-white'   },
+]
+
+// ── Badges par défaut ─────────────────────────────────────────────────────────
 
 const DEFAULT_BADGES: TrustBadge[] = [
-  { icon: 'delivery', title: 'Livraison rapide',  subtitle: 'À votre porte',       active: true },
-  { icon: 'payment',  title: 'Paiement sécurisé', subtitle: 'Plusieurs options',   active: true },
-  { icon: 'quality',  title: 'Qualité garantie',  subtitle: 'Produits vérifiés',   active: true },
-  { icon: 'support',  title: 'Support client',    subtitle: 'Réponse rapide',      active: true },
+  { icon: 'payment',  title: 'Paiement sécurisé', subtitle: 'Wave, OM, Cash',        active: true },
+  { icon: 'quality',  title: 'Qualité garantie',  subtitle: 'Produits vérifiés',     active: true },
+  { icon: 'delivery', title: 'Livraison rapide',  subtitle: 'À votre porte',         active: true },
+  { icon: 'support',  title: 'Support client',    subtitle: 'Réponse rapide 7j/7',   active: true },
 ]
 
 export default function TrustBadges() {
@@ -47,28 +59,37 @@ export default function TrustBadges() {
   if (badges.length === 0) return null
 
   return (
-    <div className="border-y border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
-          {badges.map((b) => (
-            <div key={b.icon} className="flex flex-col sm:flex-row items-center sm:items-start gap-3 text-center sm:text-left">
-              {/* Icône avec fond dégradé couleur tenant */}
+    <section className="bg-slate-50 border-y border-slate-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className={`grid gap-4 ${
+          badges.length <= 2 ? 'grid-cols-1 sm:grid-cols-2' :
+          badges.length === 3 ? 'grid-cols-1 sm:grid-cols-3' :
+          'grid-cols-2 sm:grid-cols-4'
+        }`}>
+          {badges.map((b, i) => {
+            const color = BADGE_COLORS[i % BADGE_COLORS.length]
+            return (
               <div
-                className="shrink-0 h-12 w-12 rounded-2xl flex items-center justify-center text-white shadow-md"
-                style={{
-                  background: 'linear-gradient(135deg, var(--shop-primary,#111827) 0%, var(--shop-secondary,#374151) 100%)',
-                }}
+                key={b.icon}
+                className="group flex items-start gap-4 p-5 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200"
               >
-                {ICONS[b.icon]}
+                {/* Icône */}
+                <div
+                  className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-200 ${color.rest} ${color.hover}`}
+                >
+                  {ICONS[b.icon]}
+                </div>
+
+                {/* Texte */}
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900 leading-snug">{b.title}</p>
+                  {b.subtitle && <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{b.subtitle}</p>}
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-gray-900 leading-snug">{b.title}</p>
-                {b.subtitle && <p className="text-xs text-gray-500 mt-0.5">{b.subtitle}</p>}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
-    </div>
+    </section>
   )
 }

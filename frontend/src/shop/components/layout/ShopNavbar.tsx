@@ -5,6 +5,7 @@ import {
   ShoppingCartIcon,
   MagnifyingGlassIcon,
   XMarkIcon,
+  Bars3Icon,
 } from '@heroicons/react/24/outline'
 import { useShopStore } from '@/shop/store/shopStore'
 import { getShopCategories } from '@/shop/services/shop'
@@ -73,16 +74,13 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
   const location        = useLocation()
   const [searchParams]  = useSearchParams()
   const [scrolled, setScrolled] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [searchValue, setSearchValue]       = useState('')
-  const debounceRef    = useRef<ReturnType<typeof setTimeout>>()
-  const searchInputRef = useRef<HTMLInputElement>(null)
+  const [searchValue, setSearchValue] = useState('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
 
   // Sync le champ de recherche avec ?search= de l'URL quand on est sur le catalogue
   useEffect(() => {
     const urlSearch = searchParams.get('search') ?? ''
     setSearchValue(urlSearch)
-    if (!urlSearch) setSearchOpen(false)
   }, [searchParams, location.pathname])
 
   const shopConfig = useShopStore((s) => s.shopConfig)
@@ -109,11 +107,6 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
-
-  // Autofocus barre de recherche mobile
-  useEffect(() => {
-    if (searchOpen) searchInputRef.current?.focus()
-  }, [searchOpen])
 
   // Bloquer le scroll quand le menu mobile est ouvert
   useEffect(() => {
@@ -142,14 +135,67 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
 
   const hasSocials = SOCIAL_ITEMS.some(({ key }) => !!shopConfig?.[key])
 
+  // Badges trust actifs — utilisés dans la barre info desktop
+  const activeBadges = (shopConfig?.trust_badges ?? []).filter((b) => b.active)
+
   return (
     <>
       <header
-        className={`sticky top-0 z-50 bg-white border-b border-gray-100 transition-shadow ${
-          scrolled ? 'shadow-sm' : ''
+        className={`sticky top-0 z-50 bg-white transition-shadow ${
+          scrolled ? 'shadow-sm' : 'border-b border-slate-100'
         }`}
       >
-        {/* ── Ligne 1 : Logo / Recherche / Actions ────────────────────── */}
+        {/* ── Barre d'info (desktop uniquement) ──────────────────────────── */}
+        <div className="hidden sm:block bg-slate-900 text-slate-400">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-8 text-xs font-medium">
+              {/* Gauche : titres des 2 premiers badges trust */}
+              <div className="flex items-center gap-5">
+                {activeBadges.slice(0, 2).map((b, i) => (
+                  <span key={i} className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                    {b.title}
+                  </span>
+                ))}
+                {activeBadges.length === 0 && (
+                  <>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      Livraison rapide
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      Paiement sécurisé
+                    </span>
+                  </>
+                )}
+              </div>
+              {/* Droite : WhatsApp + devise */}
+              <div className="flex items-center gap-4">
+                {whatsappNumber && (
+                  <a
+                    href={`https://wa.me/${whatsappNumber}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 text-slate-400 hover:text-slate-200 transition-colors"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="#25D366" aria-hidden="true">
+                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                    </svg>
+                    +{whatsappNumber}
+                  </a>
+                )}
+                {shopConfig?.currency && (
+                  <span className="font-semibold text-slate-200 uppercase tracking-wide">
+                    {shopConfig.currency}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Ligne principale : Logo / Recherche / Actions ────────────────── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-4">
 
@@ -162,38 +208,28 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
                   className="max-h-14 w-auto object-contain"
                 />
               ) : (
-                <span className="text-lg font-semibold text-gray-900 truncate max-w-[140px]">
+                <span className="text-lg font-semibold text-slate-900 truncate max-w-[140px]">
                   {shopConfig?.name ?? ''}
                 </span>
               )}
             </Link>
 
-            {/* SearchBar desktop */}
+            {/* Barre de recherche desktop */}
             <div className="hidden sm:flex flex-1 justify-center">
               <div className="relative w-full max-w-lg">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 <input
                   type="search"
                   placeholder="Rechercher un produit…"
                   value={searchValue}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-full outline-none transition-colors focus:border-[var(--shop-primary,#111827)] focus:bg-white"
+                  className="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-100 border border-transparent rounded-xl outline-none transition-all focus:bg-white focus:border-[var(--shop-primary,#006948)] focus:ring-2 focus:ring-[var(--shop-primary,#006948)]/10"
                 />
               </div>
             </div>
 
             {/* Actions droite */}
-            <div className="flex items-center gap-2 ml-auto sm:ml-0">
-
-              {/* Recherche mobile */}
-              <button
-                type="button"
-                onClick={() => setSearchOpen(!searchOpen)}
-                aria-label="Rechercher"
-                className="sm:hidden p-2 rounded-full text-gray-600 hover:bg-gray-100"
-              >
-                <MagnifyingGlassIcon className="h-5 w-5" />
-              </button>
+            <div className="flex items-center gap-1.5 ml-auto sm:ml-0">
 
               {/* WhatsApp desktop */}
               {whatsappNumber && (
@@ -201,7 +237,7 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
                   type="button"
                   onClick={() => window.open(`https://wa.me/${whatsappNumber}`, '_blank')}
                   aria-label="WhatsApp"
-                  className="hidden sm:flex p-2 rounded-full hover:bg-gray-100"
+                  className="hidden sm:flex p-2 rounded-full hover:bg-slate-100 transition-colors"
                 >
                   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="#25D366" aria-hidden="true">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -214,23 +250,47 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
                 type="button"
                 onClick={toggleCart}
                 aria-label={`Panier — ${itemCount} article${itemCount > 1 ? 's' : ''}`}
-                className="relative p-2 rounded-full text-gray-600 hover:bg-gray-100"
+                className="relative p-2 rounded-full text-slate-600 hover:bg-slate-100 transition-colors"
               >
                 <ShoppingCartIcon className="h-6 w-6" />
                 {itemCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white bg-[var(--shop-primary,#111827)]">
+                  <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white bg-[var(--shop-primary,#006948)]">
                     {itemCount > 99 ? '99+' : itemCount}
                   </span>
                 )}
+              </button>
+
+              {/* Hamburger mobile */}
+              <button
+                type="button"
+                onClick={() => onMobileMenuToggle(true)}
+                aria-label="Menu"
+                className="sm:hidden p-2 rounded-full text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                <Bars3Icon className="h-5 w-5" />
               </button>
 
             </div>
           </div>
         </div>
 
-        {/* ── Ligne 2 : Strip catégories (desktop) ────────────────────── */}
+        {/* ── Barre de recherche mobile (toujours visible) ─────────────────── */}
+        <div className="sm:hidden bg-white px-4 pb-3">
+          <div className="relative">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+            <input
+              type="search"
+              placeholder="Rechercher un produit…"
+              value={searchValue}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-100 border border-transparent rounded-xl outline-none transition-all focus:bg-white focus:border-[var(--shop-primary,#006948)] focus:ring-2 focus:ring-[var(--shop-primary,#006948)]/10"
+            />
+          </div>
+        </div>
+
+        {/* ── Strip catégories (desktop) ───────────────────────────────────── */}
         {categories.length > 0 && (
-          <div className="hidden sm:block border-t border-gray-100">
+          <div className="hidden sm:block border-t border-slate-100">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center overflow-x-auto scrollbar-hide">
                 {categories.map((cat) => {
@@ -242,8 +302,8 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
                       to={`/shop/${slug}/catalog?category=${cat.id}`}
                       className={`flex items-center gap-1.5 px-3 py-2.5 text-sm whitespace-nowrap shrink-0 border-b-2 transition-colors ${
                         isActive
-                          ? 'border-[var(--shop-primary,#111827)] text-[var(--shop-primary,#111827)] font-semibold'
-                          : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                          ? 'border-[var(--shop-primary,#006948)] text-[var(--shop-primary,#006948)] font-semibold'
+                          : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
                       }`}
                     >
                       <CatIcon className="h-4 w-4 shrink-0" />
@@ -255,39 +315,9 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
             </div>
           </div>
         )}
-
-        {/* ── Barre recherche mobile ──────────────────────────────────── */}
-        {searchOpen && (
-          <div className="sm:hidden border-t border-gray-100 bg-white px-4 py-3 flex items-center gap-3">
-            <div className="relative flex-1">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-              <input
-                ref={searchInputRef}
-                type="search"
-                placeholder="Rechercher un produit…"
-                value={searchValue}
-                onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-full outline-none"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setSearchOpen(false)
-                setSearchValue('')
-                if (location.pathname.includes('/catalog')) {
-                  navigate(`/shop/${slug}/catalog`, { replace: true })
-                }
-              }}
-              className="text-sm text-gray-500 font-medium shrink-0"
-            >
-              Annuler
-            </button>
-          </div>
-        )}
       </header>
 
-      {/* ── Menu mobile slide-over ──────────────────────────────────────── */}
+      {/* ── Menu mobile slide-over ──────────────────────────────────────────── */}
       <div
         className={`fixed inset-0 z-[60] flex sm:hidden overflow-hidden transition-all duration-300 ${
           mobileMenuOpen ? 'visible' : 'invisible'
@@ -312,14 +342,14 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
           }`}
         >
           {/* Header panneau */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             {shopConfig?.logo_url ? (
               <img src={shopConfig.logo_url} alt={shopConfig.name} className="max-h-10 w-auto object-contain" />
             ) : (
-              <span className="font-semibold text-gray-900 truncate max-w-[180px]">{shopConfig?.name ?? 'Menu'}</span>
+              <span className="font-semibold text-slate-900 truncate max-w-[180px]">{shopConfig?.name ?? 'Menu'}</span>
             )}
-            <button type="button" onClick={close} aria-label="Fermer le menu" className="p-1 rounded-full hover:bg-gray-100">
-              <XMarkIcon className="h-5 w-5 text-gray-500" />
+            <button type="button" onClick={close} aria-label="Fermer le menu" className="p-1 rounded-full hover:bg-slate-100">
+              <XMarkIcon className="h-5 w-5 text-slate-500" />
             </button>
           </div>
 
@@ -333,7 +363,7 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
                 key={item.to}
                 to={item.to}
                 onClick={close}
-                className="block px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="block px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-50"
               >
                 {item.label}
               </Link>
@@ -343,7 +373,7 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
             {categories.length > 0 && (
               <>
                 <div className="px-3 pt-4 pb-1">
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Catégories</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Catégories</span>
                 </div>
                 {categories.map((cat) => {
                   const CatIcon = getCategoryIcon(cat.name)
@@ -352,9 +382,9 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
                       key={cat.id}
                       to={`/shop/${slug}/catalog?category=${cat.id}`}
                       onClick={close}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition-colors"
                     >
-                      <CatIcon className="h-5 w-5 shrink-0 text-gray-400" />
+                      <CatIcon className="h-5 w-5 shrink-0 text-slate-400" />
                       <span className="truncate">{cat.name}</span>
                     </Link>
                   )
@@ -364,7 +394,7 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
           </nav>
 
           {/* Footer panneau */}
-          <div className="border-t border-gray-100 px-5 py-4 space-y-3">
+          <div className="border-t border-slate-100 px-5 py-4 space-y-3">
             {whatsappNumber && (
               <a
                 href={`https://wa.me/${whatsappNumber}`}
@@ -383,7 +413,7 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
                 {SOCIAL_ITEMS.map(({ key, label, icon }) =>
                   shopConfig?.[key] ? (
                     <a key={key} href={shopConfig[key]!} target="_blank" rel="noopener noreferrer" aria-label={label}
-                       className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors">
+                       className="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors">
                       {icon}
                     </a>
                   ) : null

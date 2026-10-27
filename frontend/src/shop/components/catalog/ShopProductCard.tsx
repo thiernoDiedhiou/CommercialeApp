@@ -43,10 +43,12 @@ function getPromoPercent(product: ShopProduct): number | null {
 
 function isLowStock(product: ShopProduct): boolean {
   if (product.has_variants) return false
-  const qty = product.stock_quantity ?? 0
+  const qty       = product.stock_quantity ?? 0
   const threshold = product.alert_threshold
   return threshold !== null && qty > 0 && qty <= threshold
 }
+
+const GROTESK: React.CSSProperties = { fontFamily: "'Space Grotesk', sans-serif" }
 
 export default function ShopProductCard({ product, slug }: Props) {
   const navigate   = useNavigate()
@@ -84,7 +86,7 @@ export default function ShopProductCard({ product, slug }: Props) {
   }
 
   const buttonLabel = () => {
-    if (outOfStock)              return 'Rupture'
+    if (outOfStock)              return 'Rupture de stock'
     if (product.has_variants)    return 'Voir les options'
     if (product.is_weight_based) return 'Choisir la quantité'
     return 'Ajouter au panier'
@@ -94,21 +96,21 @@ export default function ShopProductCard({ product, slug }: Props) {
     <>
       <article
         onClick={handleCardClick}
-        className="group relative flex flex-col h-full overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:ring-black/10 cursor-pointer"
+        className="group relative flex flex-col h-full overflow-hidden rounded-xl bg-white border border-slate-200 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-slate-300 cursor-pointer"
       >
-        {/* ── Image ─────────────────────────────────────────────────────────── */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-gray-50">
+        {/* ── Zone image ─────────────────────────────────────────────────────── */}
+        <div className="relative aspect-square overflow-hidden bg-slate-100">
           {product.image_url ? (
             <img
               src={product.image_url}
               alt={product.name}
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
-              <span className="text-4xl font-bold text-gray-300 select-none">
+            <div className="w-full h-full flex items-center justify-center">
+              <span className="text-5xl font-bold text-slate-300 select-none" style={GROTESK}>
                 {product.name.charAt(0).toUpperCase()}
               </span>
             </div>
@@ -116,100 +118,87 @@ export default function ShopProductCard({ product, slug }: Props) {
 
           {/* Overlay rupture */}
           {outOfStock && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-[2px]">
-              <span className="rounded-full bg-gray-800/90 px-3 py-1 text-xs font-semibold text-white shadow">
+            <div className="absolute inset-0 flex items-center justify-center bg-white/75 backdrop-blur-[2px]">
+              <span className="rounded-full bg-slate-800/90 px-3 py-1 text-xs font-bold text-white shadow">
                 Rupture de stock
               </span>
             </div>
           )}
 
-          {/* Badges */}
-          <div className="absolute left-2 top-2 flex flex-col gap-1">
-            {promoPercent !== null && !outOfStock && (
-              <span className="rounded-lg bg-red-500 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
-                -{promoPercent}%
-              </span>
-            )}
-            {lowStock && !outOfStock && (
-              <span className="rounded-lg bg-orange-400 px-2 py-0.5 text-[11px] font-bold text-white shadow-sm">
-                Plus que {product.stock_quantity}
-              </span>
-            )}
-          </div>
+          {/* Badge promo — haut gauche */}
+          {promoPercent !== null && !outOfStock && (
+            <span className="absolute top-2.5 left-2.5 rounded bg-red-500 px-1.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
+              -{promoPercent}%
+            </span>
+          )}
 
-          {/* Bouton panier au survol (desktop) */}
-          {!outOfStock && !product.has_variants && !product.is_weight_based && (
-            <button
-              type="button"
-              onClick={handleButton}
-              className="absolute bottom-2 right-2 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--shop-primary,#111827)] text-white shadow-md opacity-0 translate-y-2 transition-all duration-200 group-hover:opacity-100 group-hover:translate-y-0 active:scale-90 hidden sm:flex"
-              aria-label="Ajouter au panier"
-            >
-              <ShoppingCartIcon className="h-4 w-4" />
-            </button>
+          {/* Badge stock — haut droite */}
+          {!outOfStock && !lowStock && (
+            <span className="absolute top-2.5 right-2.5 flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+              En stock
+            </span>
+          )}
+          {lowStock && !outOfStock && (
+            <span className="absolute top-2.5 right-2.5 flex items-center gap-1 text-[10px] font-semibold text-orange-700 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
+              Plus que {product.stock_quantity}
+            </span>
           )}
         </div>
 
-        {/* ── Infos ─────────────────────────────────────────────────────────── */}
-        <div className="flex flex-1 flex-col gap-2 p-3">
+        {/* ── Infos produit ──────────────────────────────────────────────────── */}
+        <div className="flex flex-1 flex-col gap-1.5 p-3 pt-2.5">
+
           {/* Catégorie */}
           {product.category && (
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 truncate">
+            <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400 truncate">
               {product.category.name}
             </span>
           )}
 
           {/* Nom */}
-          <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
+          <h3
+            className="text-sm font-semibold text-slate-900 line-clamp-2 leading-snug"
+            style={GROTESK}
+          >
             {product.name}
           </h3>
 
           {/* Sous-titre variantes/poids */}
           {product.has_variants && (
-            <span className="text-xs text-gray-400">Plusieurs options disponibles</span>
+            <span className="text-xs text-slate-400">Plusieurs options disponibles</span>
           )}
           {product.is_weight_based && !product.has_variants && (
-            <span className="text-xs text-gray-400">Vendu au {product.unit ?? 'poids'}</span>
+            <span className="text-xs text-slate-400">Vendu au {product.unit ?? 'poids'}</span>
           )}
 
           {/* Prix */}
-          <div className="mt-auto flex items-baseline gap-1.5 flex-wrap">
-            <p className="text-sm font-bold text-[var(--shop-accent,#111827)]">
+          <div className="mt-auto flex items-baseline gap-1.5 flex-wrap pt-1">
+            <p className="font-bold text-slate-900 text-[15px] leading-snug" style={GROTESK}>
               {priceLabel}
             </p>
             {promoPercent !== null && product.compare_at_price !== null && (
-              <span className="text-xs text-gray-400 line-through">
+              <span className="text-xs text-slate-400 line-through">
                 {formatPrice(product.compare_at_price)} {currency}
               </span>
             )}
           </div>
 
-          {/* CTA mobile / variantes */}
-          {(outOfStock || product.has_variants || product.is_weight_based) && (
-            <button
-              type="button"
-              onClick={handleButton}
-              disabled={outOfStock}
-              className={`h-9 w-full rounded-xl text-xs font-semibold transition-all duration-150 ${
-                outOfStock
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-[var(--shop-primary,#111827)] text-white hover:opacity-90 active:scale-95'
-              }`}
-            >
-              {buttonLabel()}
-            </button>
-          )}
-
-          {/* CTA mobile (simple, sans variante) — visible seulement sur mobile */}
-          {!outOfStock && !product.has_variants && !product.is_weight_based && (
-            <button
-              type="button"
-              onClick={handleButton}
-              className="h-9 w-full rounded-xl text-xs font-semibold bg-[var(--shop-primary,#111827)] text-white hover:opacity-90 active:scale-95 transition-all duration-150 sm:hidden"
-            >
-              Ajouter au panier
-            </button>
-          )}
+          {/* CTA — toujours visible */}
+          <button
+            type="button"
+            onClick={handleButton}
+            disabled={outOfStock}
+            className={`mt-1.5 h-10 w-full rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-150 ${
+              outOfStock
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                : 'bg-[var(--shop-primary,#006948)] text-white hover:opacity-90 active:scale-[.98]'
+            }`}
+          >
+            {!outOfStock && <ShoppingCartIcon className="h-4 w-4 shrink-0" />}
+            {buttonLabel()}
+          </button>
         </div>
       </article>
 
