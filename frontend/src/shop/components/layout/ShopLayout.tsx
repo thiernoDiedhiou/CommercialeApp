@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
@@ -9,10 +9,12 @@ import { AnnouncementBar } from '@/shop/components/home'
 import { CartDrawer } from '@/shop/components/cart'
 import ShopNavbar from './ShopNavbar'
 import ShopFooter from './ShopFooter'
+import ShopMobileNav from './ShopMobileNav'
 
 export default function ShopLayout() {
   const { slug = '' } = useParams<{ slug: string }>()
   const { setConfig, shopConfig } = useShopStore()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['shop-config', slug],
@@ -114,12 +116,17 @@ export default function ShopLayout() {
         />
       )}
 
-      <ShopNavbar slug={slug} />
+      <ShopNavbar
+        slug={slug}
+        mobileMenuOpen={mobileMenuOpen}
+        onMobileMenuToggle={setMobileMenuOpen}
+      />
 
-      <main><Outlet /></main>
+      <main className="pb-14 sm:pb-0"><Outlet /></main>
 
       <ShopFooter slug={slug} />
 
+      <ShopMobileNav slug={slug} onMenuOpen={() => setMobileMenuOpen(true)} />
       <WhatsAppFAB number={shopConfig?.whatsapp_number ?? null} />
       <ScrollToTopButton />
       <CartDrawer />

@@ -39,7 +39,7 @@ export default function AddToCartBar({
     : 'Ajouter au panier'
 
   return (
-    <div className="sticky bottom-0 lg:static bg-white border-t border-gray-100 lg:border-t-0 p-4 lg:p-0 z-30">
+    <div className="sticky bottom-14 sm:bottom-0 lg:static bg-white border-t border-gray-100 lg:border-t-0 p-4 lg:p-0 z-30">
       {/* Prix — visible uniquement dans la barre sticky mobile (desktop : déjà affiché dans la page) */}
       <p className="lg:hidden text-xl font-bold mb-3 text-[var(--shop-accent,#111827)]">
         {formatPrice(price * quantity)} {currency}

@@ -161,7 +161,7 @@ export default function ShopProductDetailPage() {
         />
 
         {/* ── Colonne droite — Infos ─────────────────────────────────────── */}
-        <div className="flex flex-col gap-5 pb-24 lg:pb-0">
+        <div className="flex flex-col gap-5 pb-32 sm:pb-24 lg:pb-0">
 
           {/* ── En-tête produit ────────────────────────────────────────────── */}
           <div className="space-y-3">

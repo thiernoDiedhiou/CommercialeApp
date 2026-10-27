@@ -12,7 +12,9 @@ import { getShopCategories } from '@/shop/services/shop'
 import { getCategoryIcon } from '@/shop/utils/categoryIcons'
 
 interface Props {
-  slug: string
+  slug              : string
+  mobileMenuOpen    : boolean
+  onMobileMenuToggle: (open: boolean) => void
 }
 
 // ── Icônes réseaux sociaux ────────────────────────────────────────────────────
@@ -67,13 +69,12 @@ const SOCIAL_ITEMS = [
 
 // ── Composant ─────────────────────────────────────────────────────────────────
 
-export default function ShopNavbar({ slug }: Props) {
+export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }: Props) {
   const navigate        = useNavigate()
   const location        = useLocation()
   const [searchParams]  = useSearchParams()
-  const [scrolled, setScrolled]             = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [searchOpen, setSearchOpen]         = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [searchValue, setSearchValue]       = useState('')
   const debounceRef    = useRef<ReturnType<typeof setTimeout>>()
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -134,7 +135,7 @@ export default function ShopNavbar({ slug }: Props) {
     }, 300)
   }
 
-  const close = () => setMobileMenuOpen(false)
+  const close = () => onMobileMenuToggle(false)
 
   const whatsappNumber = shopConfig?.whatsapp_number
     ? shopConfig.whatsapp_number.replace(/[^0-9]/g, '')
@@ -224,12 +225,12 @@ export default function ShopNavbar({ slug }: Props) {
                 )}
               </button>
 
-              {/* Burger mobile */}
+              {/* Burger — masqué sur mobile (géré par ShopMobileNav) */}
               <button
                 type="button"
-                onClick={() => setMobileMenuOpen(true)}
+                onClick={() => onMobileMenuToggle(true)}
                 aria-label="Menu"
-                className="sm:hidden p-2 rounded-full text-gray-600 hover:bg-gray-100"
+                className="hidden sm:flex p-2 rounded-full text-gray-600 hover:bg-gray-100"
               >
                 <Bars3Icon className="h-6 w-6" />
               </button>
