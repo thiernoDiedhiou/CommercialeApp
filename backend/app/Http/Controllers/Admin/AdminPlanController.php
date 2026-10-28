@@ -118,6 +118,7 @@ class AdminPlanController extends Controller
             'feature_stock_alerts' => ['boolean'],
             'feature_multi_user' => ['boolean'],
             'feature_custom_domain' => ['boolean'],
+            'feature_marketing' => ['boolean'],
         ];
     }
 }

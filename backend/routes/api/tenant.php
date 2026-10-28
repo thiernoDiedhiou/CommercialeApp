@@ -418,8 +418,8 @@ Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
             ->middleware('permission:shop.orders');
     });
 
-    // ── Marketing — Newsletter ────────────────────────────────────────────────
-    Route::prefix('marketing')->name('marketing.')->group(function () {
+    // ── Marketing — Newsletter — feature : marketing ──────────────────────────
+    Route::prefix('marketing')->name('marketing.')->middleware('subscription:marketing')->group(function () {
         Route::get('stats', [NewsletterController::class, 'stats'])
             ->middleware('permission:marketing.view');
 

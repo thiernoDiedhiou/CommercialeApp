@@ -79,7 +79,7 @@ export const NAV_ITEMS: NavItem[] = [
       { labelKey: 'nav.shop_settings', path: '/shop-settings', permission: 'shop.manage',  feature: 'shop' },
     ],
   },
-  { labelKey: 'nav.marketing',      path: '/marketing',       icon: Megaphone,       permission: 'marketing.view' },
+  { labelKey: 'nav.marketing',      path: '/marketing',       icon: Megaphone,       permission: 'marketing.view', feature: 'marketing' },
   { labelKey: 'nav.activity_log',  path: '/activity-logs',  icon: ClipboardList,  permission: 'settings.view' },
   { labelKey: 'nav.settings',      path: '/settings',        icon: Settings,       permission: 'users.view' },
 ]

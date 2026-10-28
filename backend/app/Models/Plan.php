@@ -37,6 +37,7 @@ class Plan extends Model
         'feature_stock_alerts',
         'feature_multi_user',
         'feature_custom_domain',
+        'feature_marketing',
     ];
 
     protected $casts = [
@@ -54,6 +55,7 @@ class Plan extends Model
         'feature_stock_alerts' => 'boolean',
         'feature_multi_user' => 'boolean',
         'feature_custom_domain' => 'boolean',
+        'feature_marketing' => 'boolean',
     ];
 
     // ─── Relations ────────────────────────────────────────────────────────────

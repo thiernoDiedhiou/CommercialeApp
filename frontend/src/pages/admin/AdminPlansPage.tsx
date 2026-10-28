@@ -39,6 +39,7 @@ const schema = z.object({
   feature_stock_alerts:  z.boolean().default(false),
   feature_multi_user:    z.boolean().default(false),
   feature_custom_domain: z.boolean().default(false),
+  feature_marketing:     z.boolean().default(false),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -58,6 +59,7 @@ const FEATURES_META: { key: keyof FormValues; label: string }[] = [
   { key: 'feature_stock_alerts',  label: 'Alertes email stock' },
   { key: 'feature_multi_user',    label: 'Multi-utilisateurs & groupes' },
   { key: 'feature_custom_domain', label: 'Domaine personnalisé' },
+  { key: 'feature_marketing',     label: 'Marketing / Newsletter' },
 ]
 
 function planToForm(plan: Plan): FormValues {
@@ -88,6 +90,7 @@ function planToForm(plan: Plan): FormValues {
     feature_stock_alerts:  plan.feature_stock_alerts,
     feature_multi_user:    plan.feature_multi_user,
     feature_custom_domain: plan.feature_custom_domain,
+    feature_marketing:     plan.feature_marketing,
   }
 }
 
@@ -325,6 +328,7 @@ function PlanModal({ plan, onClose, onSaved }: { plan: Plan | null; onClose: () 
     feature_pos: true, feature_invoicing: false, feature_purchases: false,
     feature_reports: false, feature_shop: false, feature_import_csv: false,
     feature_stock_alerts: false, feature_multi_user: false, feature_custom_domain: false,
+    feature_marketing: false,
   }
 
   const { register, control, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<FormValues>({

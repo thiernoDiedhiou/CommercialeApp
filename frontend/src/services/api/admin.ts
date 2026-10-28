@@ -257,6 +257,7 @@ export interface Plan {
   feature_stock_alerts:  boolean
   feature_multi_user:    boolean
   feature_custom_domain: boolean
+  feature_marketing:     boolean
   subscriptions_count?:         number
   active_subscribers_count?:    number
   trial_subscribers_count?:     number
@@ -289,6 +290,7 @@ export interface PlanFormData {
   feature_stock_alerts:  boolean
   feature_multi_user:    boolean
   feature_custom_domain: boolean
+  feature_marketing:     boolean
 }
 
 export async function getAdminPlans(): Promise<Plan[]> {
