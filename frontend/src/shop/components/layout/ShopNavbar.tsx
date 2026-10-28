@@ -150,7 +150,7 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
         {/* ── Barre d'info (desktop uniquement) ──────────────────────────── */}
         <div className="hidden sm:block bg-slate-900 text-slate-300">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-9 text-[12px] font-medium">
+            <div className="flex items-center justify-between h-10 text-[12px] font-medium">
               {/* Gauche : badges trust avec icônes SVG */}
               <div className="flex items-center gap-6">
                 {activeBadges.slice(0, 2).map((b, i) => {
