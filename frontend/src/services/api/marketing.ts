@@ -13,6 +13,7 @@ export interface NewsletterCampaign {
   subject          : string
   preview_text     : string | null
   body             : string
+  design           : string | null  // JSON Unlayer (null = ancienne campagne sans éditeur visuel)
   status           : 'draft' | 'sending' | 'sent'
   recipients_count : number
   sent_at          : string | null
@@ -79,6 +80,7 @@ export async function createCampaign(payload: {
   subject      : string
   preview_text ?: string
   body         : string
+  design       ?: string
 }): Promise<{ data: NewsletterCampaign }> {
   const { data } = await apiClient.post('/api/v1/marketing/campaigns', payload)
   return data
@@ -88,8 +90,18 @@ export async function updateCampaign(uid: string, payload: Partial<{
   subject      : string
   preview_text : string
   body         : string
+  design       : string
 }>): Promise<{ data: NewsletterCampaign }> {
   const { data } = await apiClient.put(`/api/v1/marketing/campaigns/${uid}`, payload)
+  return data
+}
+
+export async function uploadMarketingMedia(file: File): Promise<{ url: string }> {
+  const form = new FormData()
+  form.append('image', file)
+  const { data } = await apiClient.post<{ url: string }>('/api/v1/marketing/media', form, {
+    headers: { 'Content-Type': undefined },
+  })
   return data
 }
 

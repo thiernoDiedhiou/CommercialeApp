@@ -446,5 +446,7 @@ Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
             ->middleware('permission:marketing.create');
         Route::post('campaigns/{campaign:uid}/send', [NewsletterController::class, 'send'])
             ->middleware('permission:marketing.send');
+        Route::post('media', [NewsletterController::class, 'uploadMedia'])
+            ->middleware('permission:marketing.create');
     });
 });

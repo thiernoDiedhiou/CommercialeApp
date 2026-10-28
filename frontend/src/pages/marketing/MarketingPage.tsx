@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import {
   Users, Send, FileText, Mail, TrendingUp, Trash2,
   Power, Download, PlusCircle, Eye, ChevronLeft, Loader2,
-  Bold, Italic, Underline, List, ListOrdered, Link, AlignLeft,
 } from 'lucide-react'
 import {
   getMarketingStats, getSubscribers, toggleSubscriber, deleteSubscriber,
@@ -14,6 +13,7 @@ import {
 import { getApiErrorMessage } from '@/lib/errors'
 import { toast } from '@/store/toastStore'
 import { useAuthStore } from '@/store/authStore'
+import { EmailEditorWrapper, type EmailEditorHandle } from '@/components/marketing/EmailEditorWrapper'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -57,90 +57,6 @@ function StatCard({ icon: Icon, label, value, color }: {
   )
 }
 
-// ── Éditeur WYSIWYG léger ─────────────────────────────────────────────────────
-
-function WysiwygEditor({ value, onChange }: { value: string; onChange: (html: string) => void }) {
-  const editorRef = useRef<HTMLDivElement>(null)
-  const lastHtml  = useRef(value)
-
-  useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value
-      lastHtml.current = value
-    }
-  }, []) // initialisation seulement
-
-  const exec = (cmd: string, val?: string) => {
-    document.execCommand(cmd, false, val)
-    editorRef.current?.focus()
-  }
-
-  const handleInput = useCallback(() => {
-    const html = editorRef.current?.innerHTML ?? ''
-    if (html !== lastHtml.current) {
-      lastHtml.current = html
-      onChange(html)
-    }
-  }, [onChange])
-
-  const handleLink = () => {
-    const url = prompt('URL du lien :')
-    if (url) exec('createLink', url)
-  }
-
-  const ToolBtn = ({ title, onClick, children }: {
-    title: string; onClick: () => void; children: React.ReactNode
-  }) => (
-    <button
-      type="button"
-      title={title}
-      onClick={onClick}
-      className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition-colors"
-    >
-      {children}
-    </button>
-  )
-
-  return (
-    <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-0.5 px-2 py-1.5 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50">
-        <ToolBtn title="Gras (Ctrl+B)"       onClick={() => exec('bold')}>          <Bold         className="h-4 w-4" /></ToolBtn>
-        <ToolBtn title="Italique (Ctrl+I)"    onClick={() => exec('italic')}>        <Italic       className="h-4 w-4" /></ToolBtn>
-        <ToolBtn title="Souligné (Ctrl+U)"    onClick={() => exec('underline')}>     <Underline    className="h-4 w-4" /></ToolBtn>
-        <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
-        <ToolBtn title="Liste à puces"        onClick={() => exec('insertUnorderedList')}><List     className="h-4 w-4" /></ToolBtn>
-        <ToolBtn title="Liste numérotée"      onClick={() => exec('insertOrderedList')}> <ListOrdered className="h-4 w-4" /></ToolBtn>
-        <div className="w-px h-4 bg-gray-300 dark:bg-gray-600 mx-1" />
-        <ToolBtn title="Lien"                 onClick={handleLink}>                  <Link         className="h-4 w-4" /></ToolBtn>
-        <ToolBtn title="Paragraphe normal"    onClick={() => exec('formatBlock', 'p')}><AlignLeft   className="h-4 w-4" /></ToolBtn>
-        <button
-          type="button"
-          onClick={() => exec('formatBlock', 'h2')}
-          className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-bold transition-colors"
-          title="Titre"
-        >H2</button>
-        <button
-          type="button"
-          onClick={() => exec('formatBlock', 'h3')}
-          className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-semibold transition-colors"
-          title="Sous-titre"
-        >H3</button>
-      </div>
-      {/* Zone d'édition */}
-      <div
-        ref={editorRef}
-        contentEditable
-        suppressContentEditableWarning
-        onInput={handleInput}
-        onBlur={handleInput}
-        className="min-h-[280px] p-4 outline-none text-sm text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-800 prose prose-sm max-w-none dark:prose-invert"
-        style={{ lineHeight: '1.7' }}
-      />
-    </div>
-  )
-}
-
 // ── Formulaire campagne ───────────────────────────────────────────────────────
 
 function CampaignForm({
@@ -152,31 +68,54 @@ function CampaignForm({
   onSaved: (c: NewsletterCampaign) => void
   onCancel: () => void
 }) {
-  const { t } = useTranslation()
-  const queryClient = useQueryClient()
-  const [subject,     setSubject]     = useState(initial?.subject ?? '')
-  const [previewText, setPreviewText] = useState(initial?.preview_text ?? '')
-  const [body,        setBody]        = useState(initial?.body ?? '')
+  const { t }          = useTranslation()
+  const tenant         = useAuthStore((s) => s.tenant)
+  const queryClient    = useQueryClient()
+  const emailRef       = useRef<EmailEditorHandle>(null)
+  const [subject,      setSubject]     = useState(initial?.subject ?? '')
+  const [previewText,  setPreviewText] = useState(initial?.preview_text ?? '')
+  const [isSaving,     setIsSaving]    = useState(false)
+
+  const primaryColor = tenant?.primary_color ?? '#16a34a'
+
+  const initialDesign = (() => {
+    if (!initial?.design) return null
+    try { return JSON.parse(initial.design) as object } catch { return null }
+  })()
 
   const create = useMutation({
-    mutationFn: () => createCampaign({ subject, preview_text: previewText || undefined, body }),
+    mutationFn: (payload: { subject: string; preview_text?: string; body: string; design: string }) =>
+      createCampaign(payload),
     onSuccess: (r) => { queryClient.invalidateQueries({ queryKey: ['campaigns'] }); onSaved(r.data) },
     onError:   (e) => toast.error(getApiErrorMessage(e)),
   })
 
   const update = useMutation({
-    mutationFn: () => updateCampaign(initial!.uid, { subject, preview_text: previewText, body }),
+    mutationFn: (payload: { subject: string; preview_text?: string; body: string; design: string }) =>
+      updateCampaign(initial!.uid, payload),
     onSuccess: (r) => { queryClient.invalidateQueries({ queryKey: ['campaigns'] }); onSaved(r.data) },
     onError:   (e) => toast.error(getApiErrorMessage(e)),
   })
 
-  const isPending = create.isPending || update.isPending
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!subject.trim() || !body.trim()) return
-    initial ? update.mutate() : create.mutate()
+    if (!subject.trim()) return
+    setIsSaving(true)
+    try {
+      const { design, html } = await emailRef.current!.exportHtml()
+      const payload = {
+        subject,
+        preview_text: previewText || undefined,
+        body  : html,
+        design: JSON.stringify(design),
+      }
+      initial ? update.mutate(payload) : create.mutate(payload)
+    } finally {
+      setIsSaving(false)
+    }
   }
+
+  const isPending = isSaving || create.isPending || update.isPending
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -210,16 +149,16 @@ function CampaignForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           {t('marketing.form_body')} <span className="text-red-500">*</span>
         </label>
-        <WysiwygEditor value={body} onChange={setBody} />
+        <EmailEditorWrapper ref={emailRef} initialDesign={initialDesign} primaryColor={primaryColor} />
       </div>
 
       <div className="flex gap-3 pt-2">
         <button
           type="submit"
-          disabled={isPending || !subject.trim() || !body.trim()}
+          disabled={isPending || !subject.trim()}
           className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary text-white text-sm font-semibold rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
           {isPending && <Loader2 className="h-4 w-4 animate-spin" />}

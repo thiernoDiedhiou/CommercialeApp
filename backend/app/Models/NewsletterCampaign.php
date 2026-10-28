@@ -15,6 +15,7 @@ class NewsletterCampaign extends Model
         'subject',
         'preview_text',
         'body',
+        'design',
         'status',
         'recipients_count',
         'sent_at',

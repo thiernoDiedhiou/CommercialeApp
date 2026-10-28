@@ -9,6 +9,7 @@ use App\Models\NewsletterSubscriber;
 use App\Services\TenantService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class NewsletterController extends Controller
 {
@@ -94,6 +95,7 @@ class NewsletterController extends Controller
             'subject'      => ['required', 'string', 'max:255'],
             'preview_text' => ['nullable', 'string', 'max:200'],
             'body'         => ['required', 'string'],
+            'design'       => ['nullable', 'string'],
         ]);
 
         $campaign = NewsletterCampaign::create($validated);
@@ -120,6 +122,7 @@ class NewsletterController extends Controller
             'subject'      => ['sometimes', 'string', 'max:255'],
             'preview_text' => ['nullable', 'string', 'max:200'],
             'body'         => ['sometimes', 'string'],
+            'design'       => ['nullable', 'string'],
         ]);
 
         $campaign->update($validated);
@@ -164,6 +167,16 @@ class NewsletterController extends Controller
             'message'     => "Envoi en cours vers {$count} abonné(s).",
             'subscribers' => $count,
         ]);
+    }
+
+    // ── POST /api/v1/marketing/media ─────────────────────────────────────────
+
+    public function uploadMedia(Request $request): JsonResponse
+    {
+        $request->validate(['image' => ['required', 'image', 'mimes:jpeg,png,gif,webp', 'max:5120']]);
+        $path = $request->file('image')->store('marketing', 'public');
+
+        return response()->json(['url' => Storage::disk('public')->url($path)]);
     }
 
     // ── GET /api/v1/marketing/stats ──────────────────────────────────────────
