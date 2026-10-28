@@ -74,12 +74,21 @@ function FooterAccordion({ title, children }: { title: string; children: React.R
 
 export default function ShopFooter({ slug }: Props) {
   const shopConfig  = useShopStore((s) => s.shopConfig)
-  const [email, setEmail] = useState('')
-  const [done,  setDone]  = useState(false)
+  const [email,    setEmail]    = useState('')
+  const [done,     setDone]     = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const { mutate: subscribe, isPending } = useMutation({
     mutationFn: (e: string) => subscribeNewsletter(slug, e),
-    onSuccess: () => { setDone(true); setEmail('') },
+    onSuccess: () => { setDone(true); setEmail(''); setErrorMsg(null) },
+    onError: (err: unknown) => {
+      const status = (err as { response?: { status?: number } })?.response?.status
+      if (status === 429) {
+        setErrorMsg('Trop de tentatives. Veuillez patienter quelques instants.')
+      } else {
+        setErrorMsg('Une erreur est survenue. Veuillez réessayer.')
+      }
+    },
   })
 
   const waNumber   = shopConfig?.whatsapp_number?.replace(/[^0-9]/g, '') ?? null
@@ -113,28 +122,33 @@ export default function ShopFooter({ slug }: Props) {
               Inscription confirmée ! Vous recevrez nos offres.
             </div>
           ) : (
-            <form
-              className="flex items-center gap-2 w-full lg:w-auto lg:min-w-[380px]"
-              onSubmit={(e) => { e.preventDefault(); if (email) subscribe(email) }}
-            >
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Votre adresse email…"
-                required
-                className="flex-1 h-11 px-4 rounded-xl bg-slate-700 text-white placeholder:text-slate-500 text-sm border border-slate-600 focus:outline-none focus:border-[var(--shop-primary,#006948)] transition-colors"
-                style={JAKARTA}
-              />
-              <button
-                type="submit"
-                disabled={isPending || !email}
-                className="h-11 px-5 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90 shrink-0 disabled:opacity-60"
-                style={{ ...JAKARTA, background: 'var(--shop-primary,#006948)' }}
+            <div className="flex flex-col gap-2 w-full lg:w-auto lg:min-w-[380px]">
+              <form
+                className="flex items-center gap-2"
+                onSubmit={(e) => { e.preventDefault(); if (email) { setErrorMsg(null); subscribe(email) } }}
               >
-                {isPending ? '…' : "S'inscrire"}
-              </button>
-            </form>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); setErrorMsg(null) }}
+                  placeholder="Votre adresse email…"
+                  required
+                  className={`flex-1 h-11 px-4 rounded-xl bg-slate-700 text-white placeholder:text-slate-500 text-sm border transition-colors focus:outline-none ${errorMsg ? 'border-red-500' : 'border-slate-600 focus:border-[var(--shop-primary,#006948)]'}`}
+                  style={JAKARTA}
+                />
+                <button
+                  type="submit"
+                  disabled={isPending || !email}
+                  className="h-11 px-5 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90 shrink-0 disabled:opacity-60"
+                  style={{ ...JAKARTA, background: 'var(--shop-primary,#006948)' }}
+                >
+                  {isPending ? '…' : "S'inscrire"}
+                </button>
+              </form>
+              {errorMsg && (
+                <p className="text-xs text-red-400" style={JAKARTA}>{errorMsg}</p>
+              )}
+            </div>
           )}
         </div>
       </div>

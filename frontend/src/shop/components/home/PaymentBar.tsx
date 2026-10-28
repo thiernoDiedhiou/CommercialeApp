@@ -17,6 +17,10 @@ function getMethod(name: string) {
   return METHOD_ICON.find((m) => m.test.test(name)) ?? { color: 'text-slate-600', dot: 'bg-slate-400' }
 }
 
+function formatMethodName(m: string): string {
+  return m.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
 // Icône carte de paiement SVG simple
 function CardIcon({ className }: { className: string }) {
   return (
@@ -73,7 +77,7 @@ export default function PaymentBar() {
               >
                 <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${m.dot}`} />
                 <span className={`text-sm font-semibold ${m.color}`} style={JAKARTA}>
-                  {method}
+                  {formatMethodName(method)}
                 </span>
               </div>
             )
