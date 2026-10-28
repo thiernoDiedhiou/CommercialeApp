@@ -29,6 +29,7 @@ export interface PlanFeatures {
   stock_alerts:   boolean
   multi_user:     boolean
   custom_domain:  boolean
+  marketing:      boolean
   max_branches?:  number
 }
 

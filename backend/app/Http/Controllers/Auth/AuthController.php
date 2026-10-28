@@ -254,6 +254,7 @@ class AuthController extends Controller
                 'stock_alerts' => (bool) $subscription->plan->feature_stock_alerts,
                 'multi_user' => (bool) $subscription->plan->feature_multi_user,
                 'custom_domain' => (bool) $subscription->plan->feature_custom_domain,
+                'marketing' => (bool) $subscription->plan->feature_marketing,
                 'max_branches' => (int) ($subscription->plan->max_branches ?? 1),
             ] : null,
             // Succursales accessibles — filtrées par les restrictions de l'utilisateur
