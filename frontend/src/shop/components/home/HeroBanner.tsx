@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowRightIcon, ShoppingBagIcon } from '@heroicons/react/24/outline'
 import { useQuery } from '@tanstack/react-query'
@@ -30,14 +31,32 @@ export default function HeroBanner({ title, subtitle, bannerUrl, onCatalogClick 
   const whatsappNumber = shopConfig?.whatsapp_number?.replace(/[^0-9]/g, '') ?? null
   const activeBadges   = (shopConfig?.trust_badges ?? []).filter((b) => b.active)
 
-  // Produit vedette : 1er produit en promo (on_sale) pour la carte hero desktop
+  // Produits vedettes : plusieurs promos pour le carousel automatique
   const { data: onSaleData } = useQuery({
     queryKey : ['hero-featured', slug],
-    queryFn  : () => getShopProducts(slug, { sort: 'newest', per_page: 1, on_sale: true }),
+    queryFn  : () => getShopProducts(slug, { sort: 'newest', per_page: 5, on_sale: true }),
     staleTime: 5 * 60 * 1000,
     enabled  : !!slug,
   })
-  const featured = onSaleData?.data?.[0] ?? null
+  const featuredList = onSaleData?.data ?? []
+
+  // Carousel auto-rotatif toutes les 4 secondes
+  const [featuredIdx, setFeaturedIdx] = useState(0)
+  const [fading, setFading] = useState(false)
+
+  useEffect(() => {
+    if (featuredList.length <= 1) return
+    const timer = setInterval(() => {
+      setFading(true)
+      setTimeout(() => {
+        setFeaturedIdx((i) => (i + 1) % featuredList.length)
+        setFading(false)
+      }, 300)
+    }, 4000)
+    return () => clearInterval(timer)
+  }, [featuredList.length])
+
+  const featured = featuredList[featuredIdx] ?? null
   const featuredPromo = featured?.compare_at_price
     ? Math.round((1 - featured.price / featured.compare_at_price) * 100)
     : null
@@ -151,7 +170,7 @@ export default function HeroBanner({ title, subtitle, bannerUrl, onCatalogClick 
           )}
         </div>
 
-        {/* ── Colonne droite — carte produit vedette ────────────────────── */}
+        {/* ── Colonne droite — carousel produits vedettes ───────────────── */}
         {featured && (
           <div
             className="w-full lg:w-80 xl:w-96 shrink-0 rounded-2xl shadow-2xl p-5 space-y-4 hidden md:block"
@@ -175,66 +194,82 @@ export default function HeroBanner({ title, subtitle, bannerUrl, onCatalogClick 
               )}
             </div>
 
-            {/* Image produit */}
-            <div className="w-full h-44 rounded-xl overflow-hidden flex items-center justify-center p-3"
-              style={{ background: 'rgba(255,255,255,0.05)' }}
+            {/* Contenu animé (fade in/out) */}
+            <div
+              className="space-y-4 transition-opacity duration-300"
+              style={{ opacity: fading ? 0 : 1 }}
             >
-              {featured.image_url ? (
-                <img
-                  src={featured.image_url}
-                  alt={featured.name}
-                  className="w-full h-full object-contain transition-transform duration-300 hover:scale-105"
-                />
-              ) : (
-                <span className="text-5xl font-bold text-white/20" style={GROTESK}>
-                  {featured.name.charAt(0)}
-                </span>
-              )}
-            </div>
-
-            {/* Infos produit */}
-            <div>
-              {featured.category && (
-                <span
-                  className="text-[10px] font-bold uppercase tracking-widest text-emerald-400"
-                  style={JAKARTA}
-                >
-                  {featured.category.name}
-                </span>
-              )}
-              <h3
-                className="text-base font-semibold text-white mt-0.5 leading-snug line-clamp-2"
-                style={GROTESK}
+              {/* Image produit */}
+              <div className="w-full h-44 rounded-xl overflow-hidden flex items-center justify-center p-3"
+                style={{ background: 'rgba(255,255,255,0.05)' }}
               >
-                {featured.name}
-              </h3>
-            </div>
-
-            {/* Prix + CTA */}
-            <div className="flex items-end justify-between pt-1">
-              <div>
-                <span
-                  className="text-2xl font-bold leading-none"
-                  style={{ ...GROTESK, color: '#68dba9' }}
-                >
-                  {featured.price.toLocaleString('fr-FR')} {currency}
-                </span>
-                {featured.compare_at_price && (
-                  <span className="block text-xs text-slate-400 line-through mt-0.5" style={JAKARTA}>
-                    {featured.compare_at_price.toLocaleString('fr-FR')} {currency}
+                {featured.image_url ? (
+                  <img
+                    src={featured.image_url}
+                    alt={featured.name}
+                    className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <span className="text-5xl font-bold text-white/20" style={GROTESK}>
+                    {featured.name.charAt(0)}
                   </span>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => navigate(`/shop/${slug}/products/${featured.uid}`)}
-                className="h-10 px-4 rounded-xl text-slate-900 font-semibold text-sm flex items-center gap-1.5 transition-colors hover:opacity-90"
-                style={{ ...JAKARTA, background: '#68dba9' }}
-              >
-                <ShoppingBagIcon className="h-4 w-4 shrink-0" />
-                Voir
-              </button>
+
+              {/* Infos produit */}
+              <div>
+                {featured.category && (
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400" style={JAKARTA}>
+                    {featured.category.name}
+                  </span>
+                )}
+                <h3 className="text-base font-semibold text-white mt-0.5 leading-snug line-clamp-2" style={GROTESK}>
+                  {featured.name}
+                </h3>
+              </div>
+
+              {/* Prix + CTA */}
+              <div className="flex items-end justify-between pt-1">
+                <div>
+                  <span className="text-2xl font-bold leading-none" style={{ ...GROTESK, color: '#68dba9' }}>
+                    {featured.price.toLocaleString('fr-FR')} {currency}
+                  </span>
+                  {featured.compare_at_price && (
+                    <span className="block text-xs text-slate-400 line-through mt-0.5" style={JAKARTA}>
+                      {featured.compare_at_price.toLocaleString('fr-FR')} {currency}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/shop/${slug}/products/${featured.uid}`)}
+                  className="h-10 px-4 rounded-xl text-slate-900 font-semibold text-sm flex items-center gap-1.5 transition-all hover:opacity-90 active:scale-95"
+                  style={{ ...JAKARTA, background: '#68dba9' }}
+                >
+                  <ShoppingBagIcon className="h-4 w-4 shrink-0" />
+                  Voir
+                </button>
+              </div>
             </div>
+
+            {/* Indicateurs de position (dots) — si plusieurs produits */}
+            {featuredList.length > 1 && (
+              <div className="flex items-center justify-center gap-1.5 pt-1">
+                {featuredList.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={`Produit ${i + 1}`}
+                    onClick={() => { setFading(true); setTimeout(() => { setFeaturedIdx(i); setFading(false) }, 200) }}
+                    className={`rounded-full transition-all duration-300 ${
+                      i === featuredIdx
+                        ? 'w-5 h-1.5 bg-emerald-400'
+                        : 'w-1.5 h-1.5 bg-white/30 hover:bg-white/60'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
