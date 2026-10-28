@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
 import { useShopStore } from '@/shop/store/shopStore'
+import { subscribeNewsletter } from '@/shop/services/shop'
 
 interface Props { slug: string }
 
@@ -29,12 +31,17 @@ const SOCIAL_ITEMS = [
 
 // Couleur dot par mot-clé dans le nom du moyen de paiement
 function methodDot(m: string) {
-  if (/wave/i.test(m))          return 'bg-blue-500'
-  if (/orange/i.test(m))        return 'bg-orange-500'
-  if (/moov|mtn/i.test(m))      return 'bg-yellow-500'
-  if (/free/i.test(m))          return 'bg-red-500'
-  if (/cash|livraison/i.test(m)) return 'bg-emerald-500'
+  if (/wave/i.test(m))           return 'bg-blue-500'
+  if (/orange/i.test(m))         return 'bg-orange-500'
+  if (/moov|mtn/i.test(m))       return 'bg-yellow-500'
+  if (/free/i.test(m))           return 'bg-red-500'
+  if (/cash|livraison|espèce/i.test(m)) return 'bg-emerald-500'
   return 'bg-slate-400'
+}
+
+// Formatte un slug ou libellé brut en titre lisible : "orange_money" → "Orange Money"
+function formatMethodName(m: string): string {
+  return m.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
 // Accordéon mobile pour les colonnes footer
@@ -66,7 +73,14 @@ function FooterAccordion({ title, children }: { title: string; children: React.R
 // ── Composant principal ───────────────────────────────────────────────────────
 
 export default function ShopFooter({ slug }: Props) {
-  const shopConfig = useShopStore((s) => s.shopConfig)
+  const shopConfig  = useShopStore((s) => s.shopConfig)
+  const [email, setEmail] = useState('')
+  const [done,  setDone]  = useState(false)
+
+  const { mutate: subscribe, isPending } = useMutation({
+    mutationFn: (e: string) => subscribeNewsletter(slug, e),
+    onSuccess: () => { setDone(true); setEmail('') },
+  })
 
   const waNumber   = shopConfig?.whatsapp_number?.replace(/[^0-9]/g, '') ?? null
   const year       = new Date().getFullYear()
@@ -90,24 +104,38 @@ export default function ShopFooter({ slug }: Props) {
               Recevez nos alertes arrivages, promotions flash et tarifs pros.
             </p>
           </div>
-          <form
-            className="flex items-center gap-2 w-full lg:w-auto lg:min-w-[380px]"
-            onSubmit={(e) => e.preventDefault()}
-          >
-            <input
-              type="email"
-              placeholder="Votre adresse email…"
-              className="flex-1 h-11 px-4 rounded-xl bg-slate-700 text-white placeholder:text-slate-500 text-sm border border-slate-600 focus:outline-none focus:border-[var(--shop-primary,#006948)] transition-colors"
+          {done ? (
+            <div
+              className="flex items-center gap-3 px-5 py-3 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 text-sm w-full lg:w-auto lg:min-w-[380px]"
               style={JAKARTA}
-            />
-            <button
-              type="submit"
-              className="h-11 px-5 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90 shrink-0"
-              style={{ ...JAKARTA, background: 'var(--shop-primary,#006948)' }}
             >
-              S'inscrire
-            </button>
-          </form>
+              <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5" /></svg>
+              Inscription confirmée ! Vous recevrez nos offres.
+            </div>
+          ) : (
+            <form
+              className="flex items-center gap-2 w-full lg:w-auto lg:min-w-[380px]"
+              onSubmit={(e) => { e.preventDefault(); if (email) subscribe(email) }}
+            >
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Votre adresse email…"
+                required
+                className="flex-1 h-11 px-4 rounded-xl bg-slate-700 text-white placeholder:text-slate-500 text-sm border border-slate-600 focus:outline-none focus:border-[var(--shop-primary,#006948)] transition-colors"
+                style={JAKARTA}
+              />
+              <button
+                type="submit"
+                disabled={isPending || !email}
+                className="h-11 px-5 rounded-xl font-semibold text-sm text-white transition-all hover:opacity-90 shrink-0 disabled:opacity-60"
+                style={{ ...JAKARTA, background: 'var(--shop-primary,#006948)' }}
+              >
+                {isPending ? '…' : "S'inscrire"}
+              </button>
+            </form>
+          )}
         </div>
       </div>
 
@@ -237,7 +265,7 @@ export default function ShopFooter({ slug }: Props) {
               {methods.map((m) => (
                 <div key={m} className="flex items-center gap-2 text-sm text-slate-400">
                   <span className={`w-2 h-2 rounded-full shrink-0 ${methodDot(m)}`} />
-                  {m}
+                  {formatMethodName(m)}
                 </div>
               ))}
             </div>

@@ -173,6 +173,10 @@ export async function createShopOrder(
   return data
 }
 
+export async function subscribeNewsletter(slug: string, email: string): Promise<void> {
+  await shopApi.post(`/api/v1/public/${slug}/newsletter/subscribe`, { email })
+}
+
 // ── API admin (utilise apiClient tenant — Bearer + X-Tenant-ID) ──────────────
 
 export async function getShopSettings(): Promise<{ data: Record<string, unknown> }> {

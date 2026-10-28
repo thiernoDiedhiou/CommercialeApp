@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Shop;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\NewsletterSubscriber;
 use App\Models\Product;
 use App\Models\ProductLot;
 use App\Models\ShopOrder;
@@ -357,6 +358,23 @@ class PublicShopController extends Controller
             ],
             'whatsapp_url' => $whatsappUrl,
         ], 201);
+    }
+
+    // ── POST /api/v1/public/{slug}/newsletter/subscribe ──────────────────────
+
+    public function subscribe(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+        ]);
+
+        // firstOrCreate pour ignorer silencieusement les doublons (privacy)
+        NewsletterSubscriber::firstOrCreate(
+            ['tenant_id' => $this->tenantService->currentId(), 'email' => $validated['email']],
+            ['is_active' => true],
+        );
+
+        return response()->json(['message' => 'Inscription confirmée.']);
     }
 
     // ── Helpers privés ────────────────────────────────────────────────────────
