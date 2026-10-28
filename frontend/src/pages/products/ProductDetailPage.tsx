@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  PencilSquareIcon, ArrowLeftIcon, CubeIcon,
+  PencilSquareIcon, CubeIcon,
   ChartBarIcon, ArrowsUpDownIcon, TagIcon, PlusIcon,
 } from '@heroicons/react/24/outline'
+import Breadcrumb from '@/components/ui/Breadcrumb'
 import type { StockAdjustPrefill } from '@/components/stock/StockAdjustModal'
 import { getProduct, getProductStockMovements, createVariant, updateVariant, getProductLots, createProductLot, updateProductLot, regularizeProductLots } from '@/services/api/products'
 import { getAttributes } from '@/services/api/attributes'
@@ -50,6 +52,7 @@ export default function ProductDetailPage() {
   const { uid } = useParams<{ uid: string }>()
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { t } = useTranslation()
   const activeBranchUid = useAuthStore((s) => s.activeBranch?.uid ?? null)
   const [adjustOpen, setAdjustOpen] = useState(false)
   const [adjustPrefill, setAdjustPrefill] = useState<StockAdjustPrefill | null>(null)
@@ -183,14 +186,11 @@ export default function ProductDetailPage() {
 
   return (
     <div className="p-4 sm:p-6 space-y-5 max-w-5xl mx-auto">
+      <Breadcrumb items={[{ label: t('products.title'), to: '/products' }, { label: product.name }]} />
+
       {/* En-tête */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <button type="button" onClick={() => navigate('/products')}
-            className="rounded-lg p-1.5 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition"
-            aria-label="Retour aux produits">
-            <ArrowLeftIcon className="h-5 w-5" />
-          </button>
           {product.image_url ? (
             <img src={product.image_url} alt={product.name}
               className="h-14 w-14 rounded-xl object-cover ring-1 ring-gray-200" />
