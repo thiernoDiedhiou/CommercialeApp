@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Helmet } from 'react-helmet-async'
-import { ChevronRightIcon, BoltIcon, CheckBadgeIcon } from '@heroicons/react/24/outline'
+import { ChevronRightIcon, BoltIcon, CheckBadgeIcon, CheckCircleIcon } from '@heroicons/react/24/solid'
 import { getShopProduct } from '@/shop/services/shop'
 import { useShopStore } from '@/shop/store/shopStore'
 import { ProductGallery, VariantPicker, AddToCartBar, SimilarProducts } from '@/shop/components/product'
@@ -38,8 +38,6 @@ function KeyHighlights({ description }: { description: string | null }) {
     .filter((s) => s.length > 3)
     .slice(0, 6)
 
-  const ICONS = ['⚡', '🎯', '🔒', '✅', '🚀', '💡']
-
   // Aucun bullet détecté → paragraphe brut avec retours à la ligne préservés
   if (bullets.length < 2) {
     return (
@@ -58,7 +56,7 @@ function KeyHighlights({ description }: { description: string | null }) {
     )
   }
 
-  // Bullets courts (≤ 60 chars) → grille 2 colonnes avec icônes
+  // Bullets courts (≤ 60 chars) → grille 2 colonnes
   const allShort = bullets.every((b) => b.length <= 60)
 
   return (
@@ -73,23 +71,21 @@ function KeyHighlights({ description }: { description: string | null }) {
 
       {/* Paragraphe d'intro si présent */}
       {intro && (
-        <p className="text-sm text-slate-600 leading-relaxed" style={JAKARTA}>
+        <p className="text-sm text-slate-500 leading-relaxed" style={JAKARTA}>
           {intro}
         </p>
       )}
 
       {allShort ? (
         // Grille 2 colonnes pour les specs courtes (Gen: 8th, RAM: 32g…)
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-2">
           {bullets.map((b, i) => (
-            <div key={i} className="p-3 bg-slate-50 rounded-xl flex items-start gap-2.5">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-base"
-                style={{ background: 'var(--shop-primary-10, rgba(0,105,72,0.08))' }}
-              >
-                {ICONS[i] ?? '✓'}
-              </div>
-              <p className="text-xs font-medium text-slate-700 leading-snug mt-0.5" style={JAKARTA}>
+            <div key={i} className="flex items-center gap-2 py-1.5">
+              <CheckCircleIcon
+                className="w-4 h-4 flex-shrink-0"
+                style={{ color: 'var(--shop-primary, #006948)' }}
+              />
+              <p className="text-xs font-medium text-slate-700 leading-snug" style={JAKARTA}>
                 {b}
               </p>
             </div>
@@ -99,13 +95,11 @@ function KeyHighlights({ description }: { description: string | null }) {
         // Liste verticale pour les bullets longues (phrases complètes)
         <ul className="space-y-2">
           {bullets.map((b, i) => (
-            <li key={i} className="flex items-start gap-2.5">
-              <div
-                className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 text-sm mt-0.5"
-                style={{ background: 'var(--shop-primary-10, rgba(0,105,72,0.08))' }}
-              >
-                {ICONS[i] ?? '✓'}
-              </div>
+            <li key={i} className="flex items-start gap-2">
+              <CheckCircleIcon
+                className="w-4 h-4 flex-shrink-0 mt-0.5"
+                style={{ color: 'var(--shop-primary, #006948)' }}
+              />
               <p className="text-sm text-slate-600 leading-relaxed" style={JAKARTA}>
                 {b}
               </p>
