@@ -121,18 +121,18 @@ export default function ShopProductCard({ product, slug }: Props) {
         className="group relative flex flex-col h-full overflow-hidden rounded-xl bg-white border border-slate-200 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:border-slate-300 cursor-pointer"
       >
         {/* ── Zone image ───────────────────────────────────────────────────────── */}
-        <div className="relative aspect-square overflow-hidden bg-slate-100">
+        <div className="relative aspect-square bg-slate-50 flex items-center justify-center overflow-hidden">
           {product.image_url ? (
             <img
               src={product.image_url}
               alt={product.name}
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+              className="max-w-[88%] max-h-[88%] w-auto h-auto object-contain transition-transform duration-500 group-hover:scale-[1.06]"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="text-5xl font-bold text-slate-200 select-none" style={GROTESK}>
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+              <span className="text-5xl font-bold text-slate-300 select-none" style={GROTESK}>
                 {product.name.charAt(0).toUpperCase()}
               </span>
             </div>
