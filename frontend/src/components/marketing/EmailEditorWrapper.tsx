@@ -225,41 +225,47 @@ export const EmailEditorWrapper = forwardRef<EmailEditorHandle, Props>(
       },
     }))
 
-    const onReady = () => {
+    type UnlayerInstance = {
+      loadDesign: (design: object) => void
+      registerCallback: (name: string, cb: (d: unknown, done: (r: unknown) => void) => void) => void
+    }
+
+    const onReady = (unlayer: UnlayerInstance) => {
       setReady(true)
-      if (initialDesign) {
-        editorRef.current?.loadDesign(initialDesign as Parameters<EditorRef['loadDesign']>[0])
-      } else {
-        // Nouvelle campagne → template de démarrage avec couleur tenant
-        const design = JSON.parse(JSON.stringify(DEFAULT_DESIGN))
-        // Remplace la couleur verte par défaut par celle du tenant
-        const headerCol = design.body.rows[0].columns[0].values
-        const ctaCol    = design.body.rows[2].columns[0].values
-        headerCol.backgroundColor = primaryColor
-        design.body.rows[0].values.backgroundColor      = primaryColor
-        design.body.rows[0].values.columnsBackgroundColor = primaryColor
-        ctaCol.backgroundColor  = '#ffffff'
-        const btnValues = design.body.rows[2].columns[0].contents[0].values
-        btnValues.buttonColors.backgroundColor      = primaryColor
-        btnValues.buttonColors.hoverBackgroundColor = primaryColor
-        editorRef.current?.loadDesign(design as Parameters<EditorRef['loadDesign']>[0])
-      }
+
       // Upload d'images vers le backend
-      ;(editorRef.current as unknown as { editor?: { registerCallback: (name: string, cb: (d: unknown, done: (r: unknown) => void) => void) => void } })
-        ?.editor?.registerCallback('image', async (data: unknown, done: (r: unknown) => void) => {
-          const file = (data as { attachments?: File[] })?.attachments?.[0]
-          if (!file) { done({ progress: 0 }); return }
-          const form = new FormData()
-          form.append('image', file)
-          try {
-            const res = await apiClient.post<{ url: string }>('/api/v1/marketing/media', form, {
-              headers: { 'Content-Type': undefined },
-            })
-            done({ progress: 100, url: res.data.url })
-          } catch {
-            done({ progress: 0 })
-          }
-        })
+      unlayer.registerCallback('image', async (data: unknown, done: (r: unknown) => void) => {
+        const file = (data as { attachments?: File[] })?.attachments?.[0]
+        if (!file) { done({ progress: 0 }); return }
+        const form = new FormData()
+        form.append('image', file)
+        try {
+          const res = await apiClient.post<{ url: string }>('/api/v1/marketing/media', form, {
+            headers: { 'Content-Type': undefined },
+          })
+          done({ progress: 100, url: res.data.url })
+        } catch {
+          done({ progress: 0 })
+        }
+      })
+
+      // loadDesign doit être appelé avec un léger délai après onReady
+      setTimeout(() => {
+        if (initialDesign) {
+          unlayer.loadDesign(initialDesign)
+        } else {
+          // Nouvelle campagne → template de démarrage avec couleur tenant
+          const design = JSON.parse(JSON.stringify(DEFAULT_DESIGN)) as typeof DEFAULT_DESIGN
+          design.body.rows[0].columns[0].values.backgroundColor        = primaryColor
+          design.body.rows[0].values.backgroundColor                   = primaryColor
+          design.body.rows[0].values.columnsBackgroundColor            = primaryColor
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(design.body.rows[2].columns[0].contents[0] as any).values.buttonColors.backgroundColor      = primaryColor
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(design.body.rows[2].columns[0].contents[0] as any).values.buttonColors.hoverBackgroundColor = primaryColor
+          unlayer.loadDesign(design)
+        }
+      }, 500)
     }
 
     return (
@@ -272,7 +278,7 @@ export const EmailEditorWrapper = forwardRef<EmailEditorHandle, Props>(
         )}
         <EmailEditor
           ref={editorRef}
-          onReady={onReady}
+          onReady={onReady as Parameters<typeof EmailEditor>[0]['onReady']}
           minHeight="620px"
           options={{
             displayMode: 'email',
