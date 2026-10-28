@@ -31,7 +31,11 @@ const DEFAULT_METHODS = ['Wave', 'Orange Money', 'Moov Money', 'Cash Livraison']
 
 export default function PaymentBar() {
   const shopConfig = useShopStore((s) => s.shopConfig)
-  const methods    = shopConfig?.payment_methods?.length
+  // Priorité : pos_payment_methods (configurés dans Paramètres → Vente & Caisse)
+  // Fallback : payment_methods (modes boutique), puis DEFAULT_METHODS
+  const methods    = shopConfig?.pos_payment_methods?.length
+    ? shopConfig.pos_payment_methods
+    : shopConfig?.payment_methods?.length && !shopConfig.payment_methods.every(m => ['cod','whatsapp'].includes(m))
     ? shopConfig.payment_methods
     : DEFAULT_METHODS
 

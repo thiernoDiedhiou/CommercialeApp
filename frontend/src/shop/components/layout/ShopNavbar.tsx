@@ -10,6 +10,7 @@ import {
 import { useShopStore } from '@/shop/store/shopStore'
 import { getShopCategories } from '@/shop/services/shop'
 import { getCategoryIcon } from '@/shop/utils/categoryIcons'
+import { formatCurrency } from '@/lib/utils'
 
 interface Props {
   slug              : string
@@ -83,10 +84,11 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
     setSearchValue(urlSearch)
   }, [searchParams, location.pathname])
 
-  const shopConfig = useShopStore((s) => s.shopConfig)
-  const items      = useShopStore((s) => s.items)
-  const toggleCart = useShopStore((s) => s.toggleCart)
-  const itemCount  = items.reduce((sum, item) => sum + item.quantity, 0)
+  const shopConfig  = useShopStore((s) => s.shopConfig)
+  const items       = useShopStore((s) => s.items)
+  const toggleCart  = useShopStore((s) => s.toggleCart)
+  const itemCount   = items.reduce((sum, item) => sum + item.quantity, 0)
+  const cartTotal   = items.reduce((sum, item) => sum + item.total, 0)
 
   const { data: categoriesResult } = useQuery({
     queryKey : ['shop-categories', slug],
@@ -170,7 +172,7 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
                   </>
                 )}
               </div>
-              {/* Droite : WhatsApp + devise */}
+              {/* Droite : WhatsApp + devise pill */}
               <div className="flex items-center gap-4">
                 {whatsappNumber && (
                   <a
@@ -186,9 +188,10 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
                   </a>
                 )}
                 {shopConfig?.currency && (
-                  <span className="font-semibold text-slate-200 uppercase tracking-wide">
-                    {shopConfig.currency}
-                  </span>
+                  <div className="flex items-center gap-1 bg-white/10 rounded-md px-2 py-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">DEVISE:</span>
+                    <span className="text-[11px] font-bold text-emerald-400 uppercase">{shopConfig.currency}</span>
+                  </div>
                 )}
               </div>
             </div>
@@ -197,7 +200,7 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
 
         {/* ── Ligne principale : Logo / Recherche / Actions ────────────────── */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16 gap-4">
+          <div className="flex items-center h-20 gap-4 sm:gap-6">
 
             {/* Logo */}
             <Link to={`/shop/${slug}`} className="flex-shrink-0">
@@ -245,18 +248,29 @@ export default function ShopNavbar({ slug, mobileMenuOpen, onMobileMenuToggle }:
                 </button>
               )}
 
-              {/* Panier */}
+              {/* Panier — mobile : icône seule / desktop : icône + total */}
               <button
                 type="button"
                 onClick={toggleCart}
                 aria-label={`Panier — ${itemCount} article${itemCount > 1 ? 's' : ''}`}
-                className="relative p-2 rounded-full text-slate-600 hover:bg-slate-100 transition-colors"
+                className="relative flex items-center gap-2.5 sm:px-4 sm:py-2.5 sm:rounded-xl transition-colors text-slate-600 hover:bg-slate-50 sm:border sm:border-slate-200 hover:border-[var(--shop-primary,#006948)]/30"
               >
-                <ShoppingCartIcon className="h-6 w-6" />
+                <div className="relative">
+                  <ShoppingCartIcon className="h-6 w-6" />
+                  {itemCount > 0 && (
+                    <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white bg-[var(--shop-primary,#006948)]">
+                      {itemCount > 99 ? '99+' : itemCount}
+                    </span>
+                  )}
+                </div>
+                {/* Total visible seulement sur desktop si panier non vide */}
                 {itemCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white bg-[var(--shop-primary,#006948)]">
-                    {itemCount > 99 ? '99+' : itemCount}
-                  </span>
+                  <div className="hidden sm:flex flex-col text-left leading-tight">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">PANIER</span>
+                    <span className="text-sm font-bold text-slate-900" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                      {formatCurrency(cartTotal, shopConfig?.currency)}
+                    </span>
+                  </div>
                 )}
               </button>
 

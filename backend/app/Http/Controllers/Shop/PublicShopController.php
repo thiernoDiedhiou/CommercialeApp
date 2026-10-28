@@ -68,6 +68,10 @@ class PublicShopController extends Controller
         $secondary = $shop->secondary_color ?? $tenant->secondary_color;
         $accent = $shop->accent_color ?? $primary;
 
+        // Modes de paiement POS (libellés libres configurés dans Paramètres → Vente & Caisse)
+        $posMethodsRaw = $tenant->settings()->where('key', 'pos_payment_methods')->value('value');
+        $posMethods = $posMethodsRaw ? json_decode($posMethodsRaw, true) : [];
+
         return response()->json([
             'shop' => [
                 'name' => $shop->shop_name ?? $tenant->name,
@@ -91,6 +95,7 @@ class PublicShopController extends Controller
                 'footer_text' => $shop->footer_text,
                 'minimum_order' => (float) $shop->minimum_order,
                 'payment_methods' => $shop->payment_methods ?? ['cod', 'whatsapp'],
+                'pos_payment_methods' => is_array($posMethods) ? $posMethods : [],
                 'delivery_zones' => $shop->delivery_zones ?? [],
                 'trust_badges' => $shop->trust_badges ?? null,
                 'promo_blocks' => $shop->promo_blocks ?? [],

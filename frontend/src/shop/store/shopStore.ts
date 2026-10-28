@@ -50,6 +50,7 @@ export interface ShopConfig {
   footer_text             : string | null
   minimum_order           : number
   payment_methods         : string[]
+  pos_payment_methods     : string[]
   delivery_zones          : DeliveryZone[]
   trust_badges            : TrustBadge[] | null
   promo_blocks            : PromoBlock[]

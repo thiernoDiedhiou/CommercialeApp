@@ -71,7 +71,9 @@ export default function ShopFooter({ slug }: Props) {
   const waNumber   = shopConfig?.whatsapp_number?.replace(/[^0-9]/g, '') ?? null
   const year       = new Date().getFullYear()
   const appName    = import.meta.env.VITE_APP_NAME ?? 'DiDi Sphere'
-  const methods    = shopConfig?.payment_methods ?? ['Wave', 'Orange Money', 'Moov Money', 'Cash Livraison']
+  const methods    = shopConfig?.pos_payment_methods?.length
+    ? shopConfig.pos_payment_methods
+    : ['Wave', 'Orange Money', 'Moov Money', 'Cash Livraison']
   const hasSocials = SOCIAL_ITEMS.some(({ key }) => !!shopConfig?.[key])
 
   return (
