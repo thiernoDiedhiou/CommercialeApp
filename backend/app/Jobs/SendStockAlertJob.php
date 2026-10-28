@@ -20,9 +20,9 @@ class SendStockAlertJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 3;
-
-    public array $backoff = [60, 300]; // 1 min puis 5 min entre les tentatives
+    public string $queue  = 'notifications';
+    public int    $tries  = 3;
+    public array  $backoff = [60, 300]; // 1 min puis 5 min entre les tentatives
 
     public function __construct(
         public readonly Tenant $tenant,
@@ -53,8 +53,4 @@ class SendStockAlertJob implements ShouldQueue
         return [new RateLimited('tenant-notifications')];
     }
 
-    public function queue(): string
-    {
-        return 'notifications';
-    }
 }

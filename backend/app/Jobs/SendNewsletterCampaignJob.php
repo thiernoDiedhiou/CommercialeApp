@@ -12,14 +12,15 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class SendNewsletterCampaignJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 1;
-    public int $timeout = 300; // 5 min max
+    public string $queue   = 'notifications';
+    public int    $tries   = 1;
+    public int    $timeout = 300; // 5 min max
 
     public function __construct(
         public readonly NewsletterCampaign $campaign,
@@ -57,11 +58,12 @@ class SendNewsletterCampaignJob implements ShouldQueue
 
     public function failed(\Throwable $e): void
     {
+        Log::error('SendNewsletterCampaignJob failed', [
+            'campaign_id' => $this->campaign->id,
+            'error'       => $e->getMessage(),
+            'file'        => $e->getFile().':'.$e->getLine(),
+        ]);
         $this->campaign->update(['status' => 'draft']);
     }
 
-    public function queue(): string
-    {
-        return 'notifications';
-    }
 }
