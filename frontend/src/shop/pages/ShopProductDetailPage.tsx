@@ -25,15 +25,23 @@ function Sep() {
 function KeyHighlights({ description }: { description: string | null }) {
   if (!description) return null
 
-  // Essaie de parser la description en bullet points
-  const bullets = description
-    .split(/[•\n\r]+/)
-    .map((s) => s.replace(/^[-–—*\s]+/, '').trim())
-    .filter((s) => s.length > 5 && s.length < 80)
-    .slice(0, 4)
+  // Sépare le paragraphe d'intro (avant le premier •) des bullets
+  const hasBulletChar = description.includes('•')
+  const parts = hasBulletChar ? description.split('•') : description.split(/\n/)
 
+  const intro = hasBulletChar
+    ? parts[0].trim()
+    : ''
+
+  const bullets = (hasBulletChar ? parts.slice(1) : parts)
+    .map((s) => s.replace(/^[-–—*\s]+/, '').trim())
+    .filter((s) => s.length > 3)
+    .slice(0, 6)
+
+  const ICONS = ['⚡', '🎯', '🔒', '✅', '🚀', '💡']
+
+  // Aucun bullet détecté → paragraphe brut avec retours à la ligne préservés
   if (bullets.length < 2) {
-    // Affiche la description brute
     return (
       <div className="px-4">
         <h2
@@ -43,39 +51,68 @@ function KeyHighlights({ description }: { description: string | null }) {
           <BoltIcon className="w-4 h-4 text-[var(--shop-primary,#006948)]" />
           Description du produit
         </h2>
-        <p className="text-sm text-slate-600 leading-relaxed" style={JAKARTA}>
+        <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap" style={JAKARTA}>
           {description}
         </p>
       </div>
     )
   }
 
-  const ICONS = ['⚡', '🎯', '🔒', '✅']
+  // Bullets courts (≤ 60 chars) → grille 2 colonnes avec icônes
+  const allShort = bullets.every((b) => b.length <= 60)
 
   return (
-    <div className="px-4">
+    <div className="px-4 space-y-3">
       <h2
-        className="text-sm font-bold text-slate-900 flex items-center gap-1.5 mb-3"
+        className="text-sm font-bold text-slate-900 flex items-center gap-1.5"
         style={JAKARTA}
       >
         <BoltIcon className="w-4 h-4 text-[var(--shop-primary,#006948)]" />
         Points forts &amp; Atouts majeurs
       </h2>
-      <div className="grid grid-cols-2 gap-2.5">
-        {bullets.map((b, i) => (
-          <div key={i} className="p-3 bg-slate-50 rounded-xl flex items-start gap-2.5">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-base"
-              style={{ background: 'var(--shop-primary-10, rgba(0,105,72,0.08))' }}
-            >
-              {ICONS[i] ?? '✓'}
+
+      {/* Paragraphe d'intro si présent */}
+      {intro && (
+        <p className="text-sm text-slate-600 leading-relaxed" style={JAKARTA}>
+          {intro}
+        </p>
+      )}
+
+      {allShort ? (
+        // Grille 2 colonnes pour les specs courtes (Gen: 8th, RAM: 32g…)
+        <div className="grid grid-cols-2 gap-2.5">
+          {bullets.map((b, i) => (
+            <div key={i} className="p-3 bg-slate-50 rounded-xl flex items-start gap-2.5">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-base"
+                style={{ background: 'var(--shop-primary-10, rgba(0,105,72,0.08))' }}
+              >
+                {ICONS[i] ?? '✓'}
+              </div>
+              <p className="text-xs font-medium text-slate-700 leading-snug mt-0.5" style={JAKARTA}>
+                {b}
+              </p>
             </div>
-            <p className="text-xs font-medium text-slate-700 leading-snug mt-0.5" style={JAKARTA}>
-              {b}
-            </p>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        // Liste verticale pour les bullets longues (phrases complètes)
+        <ul className="space-y-2">
+          {bullets.map((b, i) => (
+            <li key={i} className="flex items-start gap-2.5">
+              <div
+                className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 text-sm mt-0.5"
+                style={{ background: 'var(--shop-primary-10, rgba(0,105,72,0.08))' }}
+              >
+                {ICONS[i] ?? '✓'}
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed" style={JAKARTA}>
+                {b}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
