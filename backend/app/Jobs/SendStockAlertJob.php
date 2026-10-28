@@ -20,7 +20,6 @@ class SendStockAlertJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $queue  = 'notifications';
     public int    $tries  = 3;
     public array  $backoff = [60, 300]; // 1 min puis 5 min entre les tentatives
 

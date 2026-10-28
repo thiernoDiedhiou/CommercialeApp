@@ -157,7 +157,8 @@ class NewsletterController extends Controller
         }
 
         $tenant = $this->tenantService->current();
-        SendNewsletterCampaignJob::dispatch($campaign, $tenant);
+        SendNewsletterCampaignJob::dispatch($campaign, $tenant)
+            ->onQueue('notifications');
 
         return response()->json([
             'message'     => "Envoi en cours vers {$count} abonné(s).",

@@ -18,9 +18,8 @@ class SendNewsletterCampaignJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $queue   = 'notifications';
-    public int    $tries   = 1;
-    public int    $timeout = 300; // 5 min max
+    public int $tries      = 1;
+    public int $timeout    = 300; // 5 min max
 
     public function __construct(
         public readonly NewsletterCampaign $campaign,
