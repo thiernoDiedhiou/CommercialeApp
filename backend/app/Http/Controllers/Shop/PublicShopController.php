@@ -377,6 +377,25 @@ class PublicShopController extends Controller
         return response()->json(['message' => 'Inscription confirmée.']);
     }
 
+    // ── GET /api/v1/public/{slug}/newsletter/unsubscribe?token=xxx ───────────
+
+    public function unsubscribe(Request $request): \Illuminate\Http\Response
+    {
+        $token = $request->query('token');
+
+        if ($token) {
+            NewsletterSubscriber::where('tenant_id', $this->tenantService->currentId())
+                ->where('unsubscribe_token', $token)
+                ->update(['is_active' => false]);
+        }
+
+        // Réponse HTML légère — pas de frontend requis
+        return response('<html><body style="font-family:sans-serif;text-align:center;padding:60px;">
+            <h2>Désinscription confirmée</h2>
+            <p>Vous ne recevrez plus de newsletters de cette boutique.</p>
+        </body></html>', 200)->header('Content-Type', 'text/html');
+    }
+
     // ── Helpers privés ────────────────────────────────────────────────────────
 
     private function formatProduct(Product $product, bool $detailed = false): array

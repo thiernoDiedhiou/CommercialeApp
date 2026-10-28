@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { useShopStore } from '@/shop/store/shopStore'
 import { subscribeNewsletter } from '@/shop/services/shop'

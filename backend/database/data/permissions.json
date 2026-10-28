@@ -167,5 +167,14 @@
       { "name": "shop.manage", "display_name": "Gérer les paramètres boutique", "action": "manage" },
       { "name": "shop.orders", "display_name": "Gérer les commandes boutique",  "action": "orders" }
     ]
+  },
+  {
+    "module": "marketing",
+    "display_name": "Marketing",
+    "permissions": [
+      { "name": "marketing.view",   "display_name": "Voir les campagnes et abonnés",  "action": "view"   },
+      { "name": "marketing.create", "display_name": "Créer et gérer les campagnes",   "action": "create" },
+      { "name": "marketing.send",   "display_name": "Envoyer des campagnes email",    "action": "send"   }
+    ]
   }
 ]

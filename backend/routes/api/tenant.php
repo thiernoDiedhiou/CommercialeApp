@@ -27,6 +27,7 @@ use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\Sale\ReturnController;
 use App\Http\Controllers\Sale\SaleController;
 use App\Http\Controllers\Settings\SettingsController;
+use App\Http\Controllers\Marketing\NewsletterController;
 use App\Http\Controllers\Shop\ShopAdminController;
 use App\Http\Controllers\Stock\StockController;
 use App\Http\Controllers\Stock\StockTransferController;
@@ -415,5 +416,35 @@ Route::middleware(['auth:sanctum', 'subscription'])->group(function () {
             ->middleware('permission:shop.orders');
         Route::put('orders/{order:uid}/status', [ShopAdminController::class, 'updateStatus'])
             ->middleware('permission:shop.orders');
+    });
+
+    // ── Marketing — Newsletter ────────────────────────────────────────────────
+    Route::prefix('marketing')->name('marketing.')->group(function () {
+        Route::get('stats', [NewsletterController::class, 'stats'])
+            ->middleware('permission:marketing.view');
+
+        // Abonnés
+        Route::get('subscribers', [NewsletterController::class, 'subscribers'])
+            ->middleware('permission:marketing.view');
+        Route::get('subscribers/export', [NewsletterController::class, 'exportSubscribers'])
+            ->middleware('permission:marketing.view');
+        Route::patch('subscribers/{id}/toggle', [NewsletterController::class, 'toggleSubscriber'])
+            ->middleware('permission:marketing.create');
+        Route::delete('subscribers/{id}', [NewsletterController::class, 'destroySubscriber'])
+            ->middleware('permission:marketing.create');
+
+        // Campagnes
+        Route::get('campaigns', [NewsletterController::class, 'index'])
+            ->middleware('permission:marketing.view');
+        Route::post('campaigns', [NewsletterController::class, 'store'])
+            ->middleware('permission:marketing.create');
+        Route::get('campaigns/{campaign:uid}', [NewsletterController::class, 'show'])
+            ->middleware('permission:marketing.view');
+        Route::put('campaigns/{campaign:uid}', [NewsletterController::class, 'update'])
+            ->middleware('permission:marketing.create');
+        Route::delete('campaigns/{campaign:uid}', [NewsletterController::class, 'destroy'])
+            ->middleware('permission:marketing.create');
+        Route::post('campaigns/{campaign:uid}/send', [NewsletterController::class, 'send'])
+            ->middleware('permission:marketing.send');
     });
 });

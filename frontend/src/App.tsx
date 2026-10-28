@@ -60,6 +60,7 @@ import ShopSettingsPage from '@/pages/shop/ShopSettingsPage'
 import ShopOrdersPage from '@/pages/shop/ShopOrdersPage'
 import CategoriesPage from '@/pages/products/CategoriesPage'
 import BrandsPage from '@/pages/products/BrandsPage'
+import MarketingPage from '@/pages/marketing/MarketingPage'
 import ProfilePage from '@/pages/profile/ProfilePage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -167,6 +168,7 @@ export default function App() {
           <Route path="purchases/:uid"     element={<RequirePermission permission="purchases.view"><PurchaseDetailPage /></RequirePermission>} />
           <Route path="purchases/:uid/edit" element={<RequirePermission permission="purchases.edit"><PurchaseFormPage /></RequirePermission>} />
           <Route path="profile"           element={<ProfilePage />} />
+          <Route path="marketing"          element={<MarketingPage />} />
           <Route path="activity-logs"     element={<ActivityLogPage />} />
           <Route path="settings"          element={<SettingsPage />} />
           <Route path="shop-settings"     element={<ShopSettingsPage />} />

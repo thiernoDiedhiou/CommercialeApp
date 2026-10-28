@@ -39,6 +39,8 @@ Route::prefix('v1/public/{slug}')
             ->middleware('throttle:10,1');
         Route::post('newsletter/subscribe', [PublicShopController::class, 'subscribe'])
             ->middleware('throttle:5,1');
+        Route::get('newsletter/unsubscribe', [PublicShopController::class, 'unsubscribe'])
+            ->middleware('throttle:10,1');
     });
 
 // ── Webhooks paiement — pas d'auth, pas de ResolveTenant ────────────────────
